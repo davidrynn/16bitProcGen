@@ -17,7 +17,7 @@ public class TerrainChunk : MonoBehaviour
         meshRenderer = GetComponent<MeshRenderer>();
     }
 
-    public void GenerateChunk(Vector2 chunkPos, float[,] heightMap, Dictionary<TerrainType, Texture2D> terrainTextures, TerrainType[] possibleTerrains)
+    public void GenerateChunk(Vector2 chunkPos, float[,] heightMap, Dictionary<TerrainType, Texture2D> terrainTextures, Biome biome)
     {
         mesh = new Mesh();
         meshFilter.mesh = mesh;
@@ -26,18 +26,22 @@ public class TerrainChunk : MonoBehaviour
         int[] triangles = new int[width * depth * 6];
         Vector2[] uvs = new Vector2[vertices.Length];
 
-        TerrainType dominantTerrain = possibleTerrains[Random.Range(0, possibleTerrains.Length)];
+        float totalHeight = 0f;
 
         for (int z = 0; z <= depth; z++)
         {
             for (int x = 0; x <= width; x++)
             {
                 float y = heightMap[(int)chunkPos.x + x, (int)chunkPos.y + z];
+
                 vertices[z * (width + 1) + x] = new Vector3(x, y, z);
                 uvs[z * (width + 1) + x] = new Vector2((float)x / width, (float)z / depth);
+
+                totalHeight += y;
             }
         }
 
+        // Generate triangles
         int trisIndex = 0;
         for (int z = 0; z < depth; z++)
         {
@@ -54,17 +58,24 @@ public class TerrainChunk : MonoBehaviour
             }
         }
 
+        // Assign texture based on average height
+        float avgHeight = totalHeight / vertices.Length;
+        TerrainType dominantTerrainType = biome.GetTerrainType(avgHeight);
+
+        if (terrainTextures.ContainsKey(dominantTerrainType))
+        {
+            meshRenderer.material.mainTexture = terrainTextures[dominantTerrainType];
+        }
+        else
+        {
+            Debug.LogWarning($"No texture found for terrain type {dominantTerrainType}");
+        }
+
+        // Apply mesh updates
         mesh.vertices = vertices;
         mesh.triangles = triangles;
         mesh.uv = uvs;
         mesh.RecalculateNormals();
-
-        // Assign material with correct texture
-        if (meshRenderer.material == null)
-        {
-            meshRenderer.material = new Material(Shader.Find("Standard"));
-        }
-        meshRenderer.material.mainTexture = terrainTextures[dominantTerrain];
 
         // Add MeshCollider
         MeshCollider meshCollider = GetComponent<MeshCollider>();

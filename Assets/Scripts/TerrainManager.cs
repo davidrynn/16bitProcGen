@@ -4,50 +4,126 @@ using UnityEngine;
 
 public class TerrainManager : MonoBehaviour
 {
+    public static TerrainManager Instance { get; private set; }
     public GameObject terrainChunkPrefab;
     public int chunkSize = 16;
     public int chunksX = 5;
     public int chunksZ = 5;
-    public float noiseScale = 0.1f;
-    public float heightScale = 5f;
+    public float worldScale = 2f;
 
     private Dictionary<Vector2, TerrainChunk> chunks = new Dictionary<Vector2, TerrainChunk>();
     private float[,] heightMap;
-    public Dictionary<TerrainType, Texture2D> terrainTextures = new Dictionary<TerrainType, Texture2D>();
-    public Dictionary<BiomeType, TerrainType[]> biomeTerrainMapping = new Dictionary<BiomeType, TerrainType[]>();
+    private List<Biome> biomes;
+    private Dictionary<TerrainType, Texture2D> terrainTextures = new Dictionary<TerrainType, Texture2D>();
+
+    void Awake()
+    {
+        if (Instance == null)
+        {
+            Instance = this;
+        }
+        else
+        {
+            Destroy(gameObject);
+        }
+    }
 
     void Start()
     {
-        GenerateHeightMap();
-        GenerateBiomeTerrainMapping();
+        GenerateBiomes();
         GenerateTerrainTextures();
+        GenerateHeightMap();
         GenerateTerrain();
     }
 
-    void GenerateHeightMap()
+    void Update()
+    {
+        if (Input.GetKeyDown(KeyCode.R)) // Press 'R' to regenerate
+        {
+            GenerateHeightMap();
+            GenerateTerrain();
+        }
+    }
+
+    private void GenerateBiomes()
+    {
+        biomes = new List<Biome>();
+
+        Biome desert = new Biome
+        {
+            biomeType = BiomeType.Desert,
+            noiseScale = 0.05f,
+            heightMultiplier = 3f,
+            terrainChances = new List<Biome.TerrainProbability>
+            {
+                new Biome.TerrainProbability { terrainType = TerrainType.Sand, minHeight = 0f, maxHeight = 2f, probability = 0.8f },
+                new Biome.TerrainProbability { terrainType = TerrainType.Rock, minHeight = 2f, maxHeight = 5f, probability = 0.2f }
+            }
+        };
+
+        Biome forest = new Biome
+        {
+            biomeType = BiomeType.Forest,
+            noiseScale = 0.1f,
+            heightMultiplier = 6f,
+            terrainChances = new List<Biome.TerrainProbability>
+            {
+                new Biome.TerrainProbability { terrainType = TerrainType.Grass, minHeight = 0f, maxHeight = 4f, probability = 0.7f },
+                new Biome.TerrainProbability { terrainType = TerrainType.Dirt, minHeight = 4f, maxHeight = 8f, probability = 0.3f }
+            }
+        };
+
+        Biome mountains = new Biome
+        {
+            biomeType = BiomeType.Mountains,
+            noiseScale = 0.1f,
+            heightMultiplier = 12f,
+            terrainChances = new List<Biome.TerrainProbability>
+            {
+                new Biome.TerrainProbability { terrainType = TerrainType.Rock, minHeight = 0f, maxHeight = 10f, probability = 0.7f },
+                new Biome.TerrainProbability { terrainType = TerrainType.Snow, minHeight = 10f, maxHeight = 20f, probability = 0.3f }
+            }
+        };
+
+        Biome swamp = new Biome
+        {
+            biomeType = BiomeType.Swamp,
+            noiseScale = 0.07f,
+            heightMultiplier = 4f,
+            terrainChances = new List<Biome.TerrainProbability>
+            {
+                new Biome.TerrainProbability { terrainType = TerrainType.Mud, minHeight = 0f, maxHeight = 3f, probability = 0.6f },
+                new Biome.TerrainProbability { terrainType = TerrainType.Water, minHeight = 3f, maxHeight = 5f, probability = 0.4f }
+            }
+        };
+
+        biomes.Add(desert);
+        biomes.Add(forest);
+        biomes.Add(mountains);
+        biomes.Add(swamp);
+    }
+
+    private void GenerateHeightMap()
     {
         heightMap = new float[chunksX * chunkSize + 1, chunksZ * chunkSize + 1];
+
         for (int z = 0; z <= chunksZ * chunkSize; z++)
         {
             for (int x = 0; x <= chunksX * chunkSize; x++)
             {
-                heightMap[x, z] = Mathf.PerlinNoise(x * noiseScale, z * noiseScale) * heightScale;
+                Vector2 worldPos = new Vector2(x, z);
+                Biome biome = DetermineBiome(worldPos);
+                float noiseValue = Mathf.PerlinNoise(
+                    (x + biome.noiseOffsetX) * biome.noiseScale,
+                    (z + biome.noiseOffsetZ) * biome.noiseScale
+                );
+
+                heightMap[x, z] = noiseValue * biome.heightMultiplier;
             }
         }
     }
 
-    void GenerateBiomeTerrainMapping()
-    {
-        biomeTerrainMapping[BiomeType.Desert] = new TerrainType[] { TerrainType.Sand, TerrainType.Rock };
-        biomeTerrainMapping[BiomeType.Forest] = new TerrainType[] { TerrainType.Grass, TerrainType.Dirt, TerrainType.Flora };
-        biomeTerrainMapping[BiomeType.Mountains] = new TerrainType[] { TerrainType.Rock, TerrainType.Snow };
-        biomeTerrainMapping[BiomeType.Volcanic] = new TerrainType[] { TerrainType.Lava, TerrainType.Rock };
-        biomeTerrainMapping[BiomeType.Plains] = new TerrainType[] { TerrainType.Grass, TerrainType.Dirt };
-        biomeTerrainMapping[BiomeType.Swamp] = new TerrainType[] { TerrainType.Mud, TerrainType.Water, TerrainType.Flora };
-        biomeTerrainMapping[BiomeType.Arctic] = new TerrainType[] { TerrainType.Snow, TerrainType.Ice };
-    }
-
-    void GenerateTerrainTextures()
+    private void GenerateTerrainTextures()
     {
         terrainTextures[TerrainType.Grass] = GenerateSolidColorTexture(Color.green, 16, 16);
         terrainTextures[TerrainType.Snow] = GenerateSolidColorTexture(Color.white, 16, 16);
@@ -59,7 +135,17 @@ public class TerrainManager : MonoBehaviour
         terrainTextures[TerrainType.Lava] = GenerateSolidColorTexture(Color.red, 16, 16);
     }
 
-    Texture2D GenerateSolidColorTexture(Color color, int width, int height)
+    private Biome DetermineBiome(Vector2 position)
+    {
+        float noiseValue = Mathf.PerlinNoise(position.x * 0.01f, position.y * 0.01f);
+
+        if (noiseValue < 0.2f) return biomes.Find(b => b.biomeType == BiomeType.Swamp);
+        if (noiseValue < 0.4f) return biomes.Find(b => b.biomeType == BiomeType.Desert);
+        if (noiseValue < 0.7f) return biomes.Find(b => b.biomeType == BiomeType.Forest);
+        return biomes.Find(b => b.biomeType == BiomeType.Mountains);
+    }
+
+    private Texture2D GenerateSolidColorTexture(Color color, int width, int height)
     {
         Texture2D texture = new Texture2D(width, height);
         for (int x = 0; x < width; x++)
@@ -73,27 +159,14 @@ public class TerrainManager : MonoBehaviour
         return texture;
     }
 
-    BiomeType DetermineBiome(Vector2 chunkPos)
-    {
-        float noiseValue = Mathf.PerlinNoise(chunkPos.x * 0.05f, chunkPos.y * 0.05f);
-        if (noiseValue < 0.2f) return BiomeType.Ocean;
-        if (noiseValue < 0.4f) return BiomeType.Swamp;
-        if (noiseValue < 0.6f) return BiomeType.Forest;
-        if (noiseValue < 0.75f) return BiomeType.Plains;
-        if (noiseValue < 0.9f) return BiomeType.Mountains;
-        return BiomeType.Volcanic;
-    }
-
-    void GenerateTerrain()
+    private void GenerateTerrain()
     {
         for (int x = 0; x < chunksX; x++)
         {
             for (int z = 0; z < chunksZ; z++)
             {
                 Vector2 chunkPos = new Vector2(x * chunkSize, z * chunkSize);
-                BiomeType biome = DetermineBiome(chunkPos);
-                TerrainType[] possibleTerrains = biomeTerrainMapping[biome];
-                TerrainType selectedTerrain = possibleTerrains[Random.Range(0, possibleTerrains.Length)];
+                Biome biome = DetermineBiome(chunkPos);
 
                 GameObject newChunk = Instantiate(terrainChunkPrefab, new Vector3(chunkPos.x, 0, chunkPos.y), Quaternion.identity);
                 TerrainChunk terrainChunk = newChunk.GetComponent<TerrainChunk>();
@@ -102,7 +175,7 @@ public class TerrainManager : MonoBehaviour
                 {
                     terrainChunk.width = chunkSize;
                     terrainChunk.depth = chunkSize;
-                    terrainChunk.GenerateChunk(chunkPos, heightMap, terrainTextures, possibleTerrains: possibleTerrains);
+                    terrainChunk.GenerateChunk(chunkPos, heightMap, terrainTextures, biome);
                     chunks[chunkPos] = terrainChunk;
                 }
             }
