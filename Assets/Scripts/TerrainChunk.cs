@@ -17,7 +17,7 @@ public class TerrainChunk : MonoBehaviour
         meshRenderer = GetComponent<MeshRenderer>();
     }
 
-    public void GenerateChunk(Vector2 chunkPos, float[,] heightMap, Dictionary<TerrainType, Texture2D> terrainTextures)
+    public void GenerateChunk(Vector2 chunkPos, float[,] heightMap, Dictionary<TerrainType, Texture2D> terrainTextures, TerrainType[] possibleTerrains)
     {
         mesh = new Mesh();
         meshFilter.mesh = mesh;
@@ -26,19 +26,13 @@ public class TerrainChunk : MonoBehaviour
         int[] triangles = new int[width * depth * 6];
         Vector2[] uvs = new Vector2[vertices.Length];
 
-        TerrainType dominantTerrain = TerrainType.Grass;
+        TerrainType dominantTerrain = possibleTerrains[Random.Range(0, possibleTerrains.Length)];
 
         for (int z = 0; z <= depth; z++)
         {
             for (int x = 0; x <= width; x++)
             {
                 float y = heightMap[(int)chunkPos.x + x, (int)chunkPos.y + z];
-
-                if (y < 2f) dominantTerrain = TerrainType.Water;
-                else if (y < 5f) dominantTerrain = TerrainType.Grass;
-                else if (y < 8f) dominantTerrain = TerrainType.Snow;
-                else dominantTerrain = TerrainType.Ice;
-
                 vertices[z * (width + 1) + x] = new Vector3(x, y, z);
                 uvs[z * (width + 1) + x] = new Vector2((float)x / width, (float)z / depth);
             }

@@ -4,6 +4,7 @@ public enum BiomeType
     Forest,
     Mountains,
     Volcanic,
+    Ocean,
     Plains,
     Swamp,
     Arctic

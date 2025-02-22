@@ -73,6 +73,17 @@ public class TerrainManager : MonoBehaviour
         return texture;
     }
 
+    BiomeType DetermineBiome(Vector2 chunkPos)
+    {
+        float noiseValue = Mathf.PerlinNoise(chunkPos.x * 0.05f, chunkPos.y * 0.05f);
+        if (noiseValue < 0.2f) return BiomeType.Ocean;
+        if (noiseValue < 0.4f) return BiomeType.Swamp;
+        if (noiseValue < 0.6f) return BiomeType.Forest;
+        if (noiseValue < 0.75f) return BiomeType.Plains;
+        if (noiseValue < 0.9f) return BiomeType.Mountains;
+        return BiomeType.Volcanic;
+    }
+
     void GenerateTerrain()
     {
         for (int x = 0; x < chunksX; x++)
@@ -80,6 +91,10 @@ public class TerrainManager : MonoBehaviour
             for (int z = 0; z < chunksZ; z++)
             {
                 Vector2 chunkPos = new Vector2(x * chunkSize, z * chunkSize);
+                BiomeType biome = DetermineBiome(chunkPos);
+                TerrainType[] possibleTerrains = biomeTerrainMapping[biome];
+                TerrainType selectedTerrain = possibleTerrains[Random.Range(0, possibleTerrains.Length)];
+
                 GameObject newChunk = Instantiate(terrainChunkPrefab, new Vector3(chunkPos.x, 0, chunkPos.y), Quaternion.identity);
                 TerrainChunk terrainChunk = newChunk.GetComponent<TerrainChunk>();
 
@@ -87,7 +102,7 @@ public class TerrainManager : MonoBehaviour
                 {
                     terrainChunk.width = chunkSize;
                     terrainChunk.depth = chunkSize;
-                    terrainChunk.GenerateChunk(chunkPos, heightMap, terrainTextures);
+                    terrainChunk.GenerateChunk(chunkPos, heightMap, terrainTextures, possibleTerrains: possibleTerrains);
                     chunks[chunkPos] = terrainChunk;
                 }
             }
