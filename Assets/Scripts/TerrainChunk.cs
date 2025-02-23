@@ -17,7 +17,7 @@ public class TerrainChunk : MonoBehaviour
         meshRenderer = GetComponent<MeshRenderer>();
     }
 
-    public void GenerateChunk(Vector2 chunkPos, float[,] heightMap, Dictionary<TerrainType, Texture2D> terrainTextures, Biome biome)
+    public void GenerateChunk(Vector2 chunkPos, float[,] heightMap, Dictionary<TerrainType, Texture2D> terrainTextures, BiomeData biome)
     {
         mesh = new Mesh();
         meshFilter.mesh = mesh;
