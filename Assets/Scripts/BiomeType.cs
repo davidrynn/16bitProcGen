@@ -7,5 +7,8 @@ public enum BiomeType
     Ocean,
     Plains,
     Swamp,
-    Arctic
+    Arctic,
+    Alien,
+    Rocky,
+    Crystalline
 }

@@ -10,19 +10,15 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 2a10217f5ac1cb34f8cb35dfbbe169db, type: 3}
-  m_Name: Ocean
+  m_Name: Cystalline
   m_EditorClassIdentifier: 
-  biomeType: 4
-  noiseType: 0
+  biomeType: 10
+  noiseType: 2
   noiseScale: 0.1
-  heightMultiplier: 30
+  heightMultiplier: 20
   noiseOffset: {x: 0, y: 0}
   terrainChances:
-  - terrainType: 2
+  - terrainType: 10
     minHeight: 0
-    maxHeight: 50
-    probability: 0.1
-  - terrainType: 3
-    minHeight: 50
-    maxHeight: 500
+    maxHeight: 1000
     probability: 1

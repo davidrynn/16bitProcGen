@@ -13,10 +13,10 @@ MonoBehaviour:
   m_Name: Desert
   m_EditorClassIdentifier: 
   biomeType: 0
+  noiseType: 0
   noiseScale: 0.1
-  heightMultiplier: 0.01
-  noiseOffsetX: 0
-  noiseOffsetZ: 0
+  heightMultiplier: 10
+  noiseOffset: {x: 0, y: 0}
   terrainChances:
   - terrainType: 1
     minHeight: 0

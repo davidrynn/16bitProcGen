@@ -1,11 +1,12 @@
 Shader "Custom/CelShading"
 {
-    // Implements cel shading with 16bit-like rendering
     Properties
     {
         _MainTex ("Texture", 2D) = "white" {}
         _ColorSteps ("Color Steps", Range(2, 32)) = 16
         _ShadeSteps ("Shading Steps", Range(1, 5)) = 3
+        _MinShade ("Minimum Shade", Range(0, 1)) = 0.2 // Controls darkest shading
+        _MaxShade ("Maximum Shade", Range(0, 1)) = 1.0 // Controls brightest shading
     }
     SubShader
     {
@@ -35,6 +36,8 @@ Shader "Custom/CelShading"
             sampler2D _MainTex;
             float _ColorSteps;
             float _ShadeSteps;
+            float _MinShade;
+            float _MaxShade;
 
             v2f vert (appdata_t v)
             {
@@ -54,11 +57,14 @@ Shader "Custom/CelShading"
                 // Cel shading calculation
                 float3 normal = normalize(i.worldNormal);
                 float3 lightDir = normalize(_WorldSpaceLightPos0.xyz);
-                float diff = max(dot(normal, lightDir), 0.0);
-
-                // Quantize the shading into steps
+                float diff = max(dot(normal, lightDir), _MinShade);
+                
+                // Quantize shading into steps for cel shading
                 diff = floor(diff * _ShadeSteps) / _ShadeSteps;
-
+                
+                // Remap shading to avoid extreme darkness
+                diff = lerp(_MinShade, _MaxShade, diff);
+                
                 col.rgb *= diff; // Apply stepped shading
                 return col;
             }

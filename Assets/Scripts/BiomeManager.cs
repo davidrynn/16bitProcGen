@@ -7,7 +7,12 @@ public class BiomeManager : MonoBehaviour
 
     public BiomeData GetBiome(BiomeType type)
     {
-        return biomes.Find(b => b.biomeType == type);
+        BiomeData biomeData = biomes.Find(b => b.biomeType == type);
+        if (biomeData == null)
+        {
+            Debug.LogError("Biome not found: " + type);
+        }
+        return biomeData;
     }
 
     public List<BiomeData> GetAllBiomes()
