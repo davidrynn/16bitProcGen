@@ -5,7 +5,8 @@ using UnityEngine;
 public class BiomeData : ScriptableObject
 {
     public BiomeType biomeType;
-
+    [Tooltip("Controls the biome size on the terrain. Larger values = larger biomes.")]
+    public float biomeScale = 0.5f;
     [Header("Noise Settings")]
     public NoiseType noiseType;
     [Range(0.001f, 0.5f)]
@@ -91,6 +92,11 @@ High values = dramatic cliffs, sharp polygonal peaks.
                 INoiseFunction voronaiNoise = new VoronoiNoise(noiseScale);
 
                 height = voronaiNoise.Generate(adjustedX, adjustedZ); // Custom implementation
+                break;
+
+            case NoiseType.Test:
+                INoiseFunction testNoise = new TestNoise(noiseScale);
+                height = testNoise.Generate(adjustedX, adjustedZ);
                 break;
         }
 

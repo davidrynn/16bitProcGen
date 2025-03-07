@@ -10,5 +10,6 @@ public enum BiomeType
     Arctic,
     Alien,
     Rocky,
-    Crystalline
+    Crystalline,
+    Test
 }

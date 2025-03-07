@@ -4,8 +4,8 @@ using UnityEngine;
 
 public class PlayerController : MonoBehaviour
 {
-    public float moveSpeed = 5f;
-    public float jumpForce = 5f;
+    public float moveSpeed = 60f;
+    public float jumpForce = 10f;
     public Camera playerCamera;
     public float mouseSensitivity = 2f;
     public float maxLookAngle = 90f;
@@ -37,6 +37,11 @@ public class PlayerController : MonoBehaviour
         if (Input.GetKeyDown(KeyCode.Space))
         {
             rb.AddForce(Vector3.up * jumpForce, ForceMode.Impulse);
+        }
+
+        if (Input.GetKeyDown(KeyCode.LeftShift))
+        {
+            rb.AddForce(Vector3.forward * jumpForce, ForceMode.Acceleration);
         }
     }
 

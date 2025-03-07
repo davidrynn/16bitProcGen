@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -13,6 +13,7 @@ public class TerrainManager : MonoBehaviour
     public int chunksX = 5;
     public int chunksZ = 5;
     public float worldScale = 2f;
+    public BiomeData defaultBiome;
 
     private Dictionary<Vector2, TerrainChunk> chunks = new Dictionary<Vector2, TerrainChunk>();
    // private float[,] heightMap;
@@ -25,6 +26,7 @@ public class TerrainManager : MonoBehaviour
     public void Initialize(BiomeManager biomeManager)
     {
         this.biomeManager = biomeManager;
+        this.defaultBiome = biomeManager.GetBiome(BiomeType.Plains);
     }
 
     void Awake()
@@ -134,6 +136,8 @@ public class TerrainManager : MonoBehaviour
         terrainTextures[TerrainType.Lava] = GenerateSolidColorTexture(Color.red, 16, 16);
         terrainTextures[TerrainType.Flora] = GenerateSolidColorTexture(new Color(0f, 0.392f, 0f, 1f), 16, 16);
         terrainTextures[TerrainType.Chrystal] = GenerateSolidColorTexture(new Color(0.5f, 0f, 0.5f, 1f), 16, 16);
+        // Set a default texture in case of missing assignment
+        terrainTextures[TerrainType.Default] = GenerateGradientTexture(16, 16);
 
         // Debug check here:
         foreach (TerrainType terrainType in Enum.GetValues(typeof(TerrainType)))
@@ -149,18 +153,85 @@ public class TerrainManager : MonoBehaviour
         }
     }
 
+    public Texture2D GenerateGradientTexture(int width, int height)
+    {
+        Texture2D texture = new Texture2D(width, height);
+        Debug.Log("Generating gradient texture");
+        for (int x = 0; x < width; x++)
+        {
+            for (int y = 0; y < height; y++)
+            {
+                // ✅ Use both X and Y for the gradient effect
+                float tX = (float)x / width;  // Normalized 0-1
+                float tY = (float)y / height; // Normalized 0-1
+
+                // ✅ Blend both axes for a smooth gradient
+                float blendFactor = (tX + tY) / 2f; // Average both directions
+                Color color = Color.Lerp(Color.blue, Color.green, blendFactor);
+
+                texture.SetPixel(x, y, color);
+            }
+        }
+
+        texture.Apply();
+        return texture;
+    }
+
+
 
 
     private BiomeData DetermineBiome(Vector2 position)
     {
-        return biomeManager.GetBiome(BiomeType.Desert);
-        float noiseValue = Mathf.PerlinNoise(position.x * 0.01f, position.y * 0.01f);
+        float highestWeight = 0f;
+        BiomeData selectedBiome = null;
 
-        if (noiseValue < 0.2f) return biomeManager.GetBiome(BiomeType.Swamp);
-        if (noiseValue < 0.4f) return biomeManager.GetBiome(BiomeType.Desert);
-        if (noiseValue < 0.7f) return biomeManager.GetBiome(BiomeType.Forest);
-        return biomeManager.GetBiome(BiomeType.Mountains);
+        foreach (BiomeData biome in biomeManager.GetAllBiomes())
+        {
+            //if(biome.biomeType == BiomeType.Test)
+            //{
+            //    selectedBiome = biome;
+            //}
+            float biomeNoise = Mathf.PerlinNoise(position.x * biome.biomeScale, position.y * biome.biomeScale);
+
+            if (biomeNoise > highestWeight)
+            {
+                highestWeight = biomeNoise;
+                selectedBiome = biome;
+            }
+        }
+
+        return selectedBiome;
     }
+
+    public Dictionary<BiomeData, float> DetermineBiomeWeights(Vector2 position)
+    {
+        Dictionary<BiomeData, float> biomeWeights = new Dictionary<BiomeData, float>();
+        float totalWeight = 0f;
+
+        foreach (BiomeData biome in biomeManager.GetAllBiomes())
+        {
+            float noiseValue = Mathf.PerlinNoise(position.x * biome.biomeScale, position.y * biome.biomeScale);
+            biomeWeights.Add(biome, noiseValue);
+            totalWeight += noiseValue;
+        }
+
+        // Normalize weights to sum up to 1
+        foreach (BiomeData biome in biomeManager.GetAllBiomes())
+        {
+            biomeWeights[biome] /= totalWeight;
+        }
+
+        return biomeWeights;
+    }
+
+    //public Dictionary<BiomeData, float> DetermineBiomeWeights(Vector2 position)
+    //{
+    //    BiomeData testBiome = biomeManager.GetBiome(BiomeType.Test);
+    //    return new Dictionary<BiomeData, float> { { testBiome, 1.0f } };
+    //}
+
+
+
 
 
     private Texture2D GenerateSolidColorTexture(Color color, int width, int height)

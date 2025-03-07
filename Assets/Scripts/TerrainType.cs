@@ -10,5 +10,6 @@ public enum TerrainType
     Ice,
     Lava,
     Flora, // Trees, bushes, plants
-    Chrystal // Alien, magical, etc.
+    Chrystal, // Alien, magical, etc.
+    Default
 }

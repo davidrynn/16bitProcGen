@@ -113,4 +113,40 @@ public class VoronoiNoise : INoiseFunction
     }
 }
 
+public class TestNoise : INoiseFunction
+{
+    private float scale;
+    public TestNoise(float scale)
+    {
+        this.scale = scale;
+    }
+    public float Generate(float x, float z)
+    {
+        // Get local position within the chunk (0 to 1)
+        float localX = (x % 16) / 16f;
+        float localZ = (z % 16) / 16f;
+
+        // Fixed corner heights for every chunk (ensuring every chunk is identical)
+        float h00 = 0.5f;   // Bottom-left corner
+        float h10 = 1.0f;   // Bottom-right corner
+        float h01 = 1.5f;   // Top-left corner
+        float h11 = 2.0f;  // Top-right corner
+
+        // Bilinear interpolation to smoothly blend heights inside the chunk
+        float height =
+            h00 * (1 - localX) * (1 - localZ) +  // Influence from bottom-left
+            h10 * localX * (1 - localZ) +        // Influence from bottom-right
+            h01 * (1 - localX) * localZ +        // Influence from top-left
+            h11 * localX * localZ;               // Influence from top-right
+
+        return height; // Every chunk will have the exact same height distribution
+    }
+
+
+
+
+
+
+}
+
 

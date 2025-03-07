@@ -35,6 +35,11 @@ public class BiomeDataEditor : Editor
                 biome.noiseScale = 0.1f;
                 biome.heightMultiplier = 20f;
                 break;
+
+            case NoiseType.Test:
+                biome.noiseScale = 0.1f;
+                biome.heightMultiplier = 20f;
+                break;
         }
 
         EditorUtility.SetDirty(biome);
