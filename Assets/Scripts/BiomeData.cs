@@ -7,6 +7,31 @@ public class BiomeData : ScriptableObject
     public BiomeType biomeType;
     [Tooltip("Controls the biome size on the terrain. Larger values = larger biomes.")]
     public float biomeScale = 0.5f;
+
+    [Header("Biome Properties")]
+    [Tooltip("Base temperature of the biome in Celsius")]
+    public float baseTemperature = 20f;
+    [Tooltip("How much the temperature can vary from the base temperature")]
+    public float temperatureVariation = 10f;
+    [Tooltip("Humidity level of the biome (0-1)")]
+    [Range(0f, 1f)]
+    public float humidity = 0.5f;
+    [Tooltip("Base wind speed in the biome")]
+    public float windSpeed = 5f;
+    [Tooltip("How quickly weather can change in this biome")]
+    public float weatherChangeFrequency = 1f;
+    [Tooltip("Ambient light color for this biome")]
+    public Color ambientLight = Color.white;
+    [Tooltip("Base fog density for this biome")]
+    [Range(0f, 1f)]
+    public float fogDensity = 0.1f;
+
+    [Header("Weather Settings")]
+    [Tooltip("Possible weather types that can occur in this biome")]
+    public List<WeatherType> possibleWeatherTypes = new List<WeatherType>();
+    [Tooltip("Probability weights for each weather type (should match possibleWeatherTypes)")]
+    public List<float> weatherProbabilities = new List<float>();
+
     [Header("Noise Settings")]
     public NoiseType noiseType;
     [Range(0.001f, 0.5f)]
@@ -58,6 +83,13 @@ High values = dramatic cliffs, sharp polygonal peaks.
     public float heightMultiplier = 5f;
     public Vector2 noiseOffset;
 
+    [Header("Biome Transition")]
+    [Tooltip("How smoothly this biome blends with others (0-1)")]
+    [Range(0f, 1f)]
+    public float transitionSmoothness = 0.5f;
+    [Tooltip("Additional noise scale for biome transitions")]
+    public float transitionNoiseScale = 0.2f;
+
     [System.Serializable]
     public struct TerrainProbability
     {
@@ -90,8 +122,7 @@ High values = dramatic cliffs, sharp polygonal peaks.
 
             case NoiseType.Voronoi:
                 INoiseFunction voronaiNoise = new VoronoiNoise(noiseScale);
-
-                height = voronaiNoise.Generate(adjustedX, adjustedZ); // Custom implementation
+                height = voronaiNoise.Generate(adjustedX, adjustedZ);
                 break;
 
             case NoiseType.Test:
@@ -115,5 +146,75 @@ High values = dramatic cliffs, sharp polygonal peaks.
             }
         }
         return terrainChances[0].terrainType;
+    }
+
+    // Get current temperature with variation
+    public float GetCurrentTemperature()
+    {
+        float timeBasedNoise = Mathf.PerlinNoise(Time.time * 0.1f, 0) * 2 - 1;
+        return baseTemperature + (timeBasedNoise * temperatureVariation);
+    }
+
+    // Get current humidity with variation
+    public float GetCurrentHumidity()
+    {
+        float timeBasedNoise = Mathf.PerlinNoise(Time.time * 0.05f, 100) * 0.2f;
+        return Mathf.Clamp01(humidity + timeBasedNoise);
+    }
+
+    // Get current wind speed with variation
+    public float GetCurrentWindSpeed()
+    {
+        float timeBasedNoise = Mathf.PerlinNoise(Time.time * 0.2f, 200) * 2 - 1;
+        return Mathf.Max(0, windSpeed + (timeBasedNoise * windSpeed * 0.3f));
+    }
+
+    // Get transition factor between this biome and another
+    public float GetTransitionFactor(Vector2 position, BiomeData otherBiome)
+    {
+        float transitionNoise = Mathf.PerlinNoise(
+            position.x * transitionNoiseScale,
+            position.y * transitionNoiseScale
+        );
+        return Mathf.Lerp(0, 1, transitionNoise * transitionSmoothness);
+    }
+
+    // Get weather probability for a specific weather type
+    public float GetWeatherProbability(WeatherType weatherType)
+    {
+        int index = possibleWeatherTypes.IndexOf(weatherType);
+        if (index >= 0 && index < weatherProbabilities.Count)
+        {
+            return weatherProbabilities[index];
+        }
+        return 0f;
+    }
+
+    // Validate the biome data
+    private void OnValidate()
+    {
+        // Ensure weather probabilities match possible weather types
+        while (weatherProbabilities.Count < possibleWeatherTypes.Count)
+        {
+            weatherProbabilities.Add(1f);
+        }
+        while (weatherProbabilities.Count > possibleWeatherTypes.Count)
+        {
+            weatherProbabilities.RemoveAt(weatherProbabilities.Count - 1);
+        }
+
+        // Normalize weather probabilities
+        float total = 0f;
+        foreach (float prob in weatherProbabilities)
+        {
+            total += prob;
+        }
+        if (total > 0)
+        {
+            for (int i = 0; i < weatherProbabilities.Count; i++)
+            {
+                weatherProbabilities[i] /= total;
+            }
+        }
     }
 }

@@ -16,7 +16,6 @@ public class TerrainManager : MonoBehaviour
     public BiomeData defaultBiome;
 
     private Dictionary<Vector2, TerrainChunk> chunks = new Dictionary<Vector2, TerrainChunk>();
-   // private float[,] heightMap;
     private List<Biome> biomes;
     private Dictionary<TerrainType, Texture2D> terrainTextures = new Dictionary<TerrainType, Texture2D>();
     private BiomeManager biomeManager;
@@ -43,25 +42,35 @@ public class TerrainManager : MonoBehaviour
 
     void Start()
     {
+        if (biomeManager == null)
+        {
+            Debug.LogError("BiomeManager not initialized!");
+            return;
+        }
+
         GenerateTerrainTextures();
         CreateChunk(new Vector2(0, 0));
-
-        //   GenerateHeightMap();
         GenerateTerrain();
     }
 
     void Update()
     {
+        if (player == null)
+        {
+            Debug.LogError("Player reference is missing!");
+            return;
+        }
+
         currentPlayerChunkCoord = new Vector2(
             Mathf.FloorToInt(player.position.x / chunkSize),
             Mathf.FloorToInt(player.position.z / chunkSize)
-            );
+        );
+
         if (currentPlayerChunkCoord != playerLastChunkCoord)
         {
             playerLastChunkCoord = currentPlayerChunkCoord;
             UpdateVisibleChunks();
         }
-
     }
 
     void UpdateVisibleChunks()
@@ -73,8 +82,8 @@ public class TerrainManager : MonoBehaviour
             for (int xOffset = -viewDistance; xOffset <= viewDistance; xOffset++)
             {
                 Vector2 viewedChunkCoord = new Vector2(
-                    Mathf.FloorToInt(currentPlayerChunkCoord.x + xOffset),
-                    Mathf.FloorToInt(currentPlayerChunkCoord.y + zOffset)
+                    currentPlayerChunkCoord.x + xOffset,
+                    currentPlayerChunkCoord.y + zOffset
                 );
 
                 alreadyUpdatedChunks.Add(viewedChunkCoord);
@@ -100,27 +109,6 @@ public class TerrainManager : MonoBehaviour
         }
     }
 
-    //private void GenerateHeightMap()
-    //{
-    //    heightMap = new float[chunksX * chunkSize + 1, chunksZ * chunkSize + 1];
-
-    //    for (int z = 0; z <= chunksZ * chunkSize; z++)
-    //    {
-    //        for (int x = 0; x <= chunksX * chunkSize; x++)
-    //        {
-    //            Vector2 worldPos = new Vector2(x, z);
-    //            BiomeData biome = DetermineBiome(worldPos);
-    //            if (biome == null)
-    //            {
-    //                Debug.LogError("No biome found for position " + worldPos);
-    //                continue;
-    //            };
-    //            heightMap[x, z] = biome.GenerateHeight(worldPos.x, worldPos.y);
-    //        }
-    //    }
-    //}
-
-
     private void GenerateTerrainTextures()
     {
         terrainTextures = new Dictionary<TerrainType, Texture2D>();
@@ -136,20 +124,143 @@ public class TerrainManager : MonoBehaviour
         terrainTextures[TerrainType.Lava] = GenerateSolidColorTexture(Color.red, 16, 16);
         terrainTextures[TerrainType.Flora] = GenerateSolidColorTexture(new Color(0f, 0.392f, 0f, 1f), 16, 16);
         terrainTextures[TerrainType.Chrystal] = GenerateSolidColorTexture(new Color(0.5f, 0f, 0.5f, 1f), 16, 16);
-        // Set a default texture in case of missing assignment
         terrainTextures[TerrainType.Default] = GenerateGradientTexture(16, 16);
 
-        // Debug check here:
         foreach (TerrainType terrainType in Enum.GetValues(typeof(TerrainType)))
         {
             if (!terrainTextures.ContainsKey(terrainType))
             {
                 Debug.LogError($"Missing texture for terrain type: {terrainType}");
             }
-            else
+        }
+    }
+
+    private BiomeData DetermineBiome(Vector2 position)
+    {
+        if (biomeManager == null)
+        {
+            Debug.LogError("BiomeManager is null in DetermineBiome");
+            return defaultBiome;
+        }
+
+        float highestWeight = 0f;
+        BiomeData selectedBiome = defaultBiome;
+
+        foreach (BiomeData biome in biomeManager.GetAllBiomes())
+        {
+            float biomeNoise = Mathf.PerlinNoise(
+                position.x * biome.biomeScale / worldScale,
+                position.y * biome.biomeScale / worldScale
+            );
+
+            if (biomeNoise > highestWeight)
             {
-                Debug.Log($"Texture assigned successfully for terrain type: {terrainType}");
+                highestWeight = biomeNoise;
+                selectedBiome = biome;
             }
+        }
+
+        return selectedBiome;
+    }
+
+    public Dictionary<BiomeData, float> DetermineBiomeWeights(Vector2 position)
+    {
+        if (biomeManager == null)
+        {
+            Debug.LogError("BiomeManager is null in DetermineBiomeWeights");
+            return new Dictionary<BiomeData, float> { { defaultBiome, 1.0f } };
+        }
+
+        Dictionary<BiomeData, float> biomeWeights = new Dictionary<BiomeData, float>();
+        float totalWeight = 0f;
+
+        foreach (BiomeData biome in biomeManager.GetAllBiomes())
+        {
+            float noiseValue = Mathf.PerlinNoise(
+                position.x * biome.biomeScale / worldScale,
+                position.y * biome.biomeScale / worldScale
+            );
+            biomeWeights.Add(biome, noiseValue);
+            totalWeight += noiseValue;
+        }
+
+        if (totalWeight > 0)
+        {
+            foreach (BiomeData biome in biomeManager.GetAllBiomes())
+            {
+                biomeWeights[biome] /= totalWeight;
+            }
+        }
+        else
+        {
+            biomeWeights[defaultBiome] = 1.0f;
+        }
+
+        return biomeWeights;
+    }
+
+    private Texture2D GenerateSolidColorTexture(Color color, int width, int height)
+    {
+        Texture2D texture = new Texture2D(width, height);
+        for (int x = 0; x < width; x++)
+        {
+            for (int y = 0; y < height; y++)
+            {
+                texture.SetPixel(x, y, color);
+            }
+        }
+        texture.Apply();
+        return texture;
+    }
+
+    private void GenerateTerrain()
+    {
+        for (int x = 0; x < chunksX; x++)
+        {
+            for (int z = 0; z < chunksZ; z++)
+            {
+                Vector2 chunkPos = new Vector2(x, z);
+                CreateChunk(chunkPos);
+            }
+        }
+    }
+
+    void CreateChunk(Vector2 chunkCoord)
+    {
+        if (terrainChunkPrefab == null)
+        {
+            Debug.LogError("TerrainChunk prefab is missing!");
+            return;
+        }
+
+        Vector3 chunkPosition = new Vector3(
+            chunkCoord.x * chunkSize,
+            0,
+            chunkCoord.y * chunkSize
+        );
+
+        GameObject chunkObj = Instantiate(terrainChunkPrefab, chunkPosition, Quaternion.identity);
+        chunkObj.transform.parent = transform;
+
+        BiomeData biome = DetermineBiome(chunkPosition);
+        if (biome == null)
+        {
+            Debug.LogError($"No biome found for chunk at {chunkCoord}");
+            biome = defaultBiome;
+        }
+
+        TerrainChunk chunk = chunkObj.GetComponent<TerrainChunk>();
+        if (chunk != null)
+        {
+            chunk.width = chunkSize;
+            chunk.depth = chunkSize;
+            chunk.GenerateChunk(chunkCoord, terrainTextures, biome);
+            chunks[chunkCoord] = chunk;
+        }
+        else
+        {
+            Debug.LogError($"TerrainChunk component missing on prefab at {chunkCoord}");
+            Destroy(chunkObj);
         }
     }
 
@@ -176,117 +287,4 @@ public class TerrainManager : MonoBehaviour
         texture.Apply();
         return texture;
     }
-
-
-
-
-    private BiomeData DetermineBiome(Vector2 position)
-    {
-        float highestWeight = 0f;
-        BiomeData selectedBiome = null;
-
-        foreach (BiomeData biome in biomeManager.GetAllBiomes())
-        {
-            //if(biome.biomeType == BiomeType.Test)
-            //{
-            //    selectedBiome = biome;
-            //}
-            float biomeNoise = Mathf.PerlinNoise(position.x * biome.biomeScale, position.y * biome.biomeScale);
-
-            if (biomeNoise > highestWeight)
-            {
-                highestWeight = biomeNoise;
-                selectedBiome = biome;
-            }
-        }
-
-        return selectedBiome;
-    }
-
-    public Dictionary<BiomeData, float> DetermineBiomeWeights(Vector2 position)
-    {
-        Dictionary<BiomeData, float> biomeWeights = new Dictionary<BiomeData, float>();
-        float totalWeight = 0f;
-
-        foreach (BiomeData biome in biomeManager.GetAllBiomes())
-        {
-            float noiseValue = Mathf.PerlinNoise(position.x * biome.biomeScale, position.y * biome.biomeScale);
-            biomeWeights.Add(biome, noiseValue);
-            totalWeight += noiseValue;
-        }
-
-        // Normalize weights to sum up to 1
-        foreach (BiomeData biome in biomeManager.GetAllBiomes())
-        {
-            biomeWeights[biome] /= totalWeight;
-        }
-
-        return biomeWeights;
-    }
-
-    //public Dictionary<BiomeData, float> DetermineBiomeWeights(Vector2 position)
-    //{
-    //    BiomeData testBiome = biomeManager.GetBiome(BiomeType.Test);
-    //    return new Dictionary<BiomeData, float> { { testBiome, 1.0f } };
-    //}
-
-
-
-
-
-    private Texture2D GenerateSolidColorTexture(Color color, int width, int height)
-    {
-        Texture2D texture = new Texture2D(width, height);
-        for (int x = 0; x < width; x++)
-        {
-            for (int y = 0; y < height; y++)
-            {
-                texture.SetPixel(x, y, color);
-            }
-        }
-        texture.Apply();
-        return texture;
-    }
-
-    private void GenerateTerrain()
-    {
-        for (int x = 0; x < chunksX; x++)
-        {
-            for (int z = 0; z < chunksZ; z++)
-            {
-                Vector2 chunkPos = new Vector2(x * chunkSize, z * chunkSize);
-                BiomeData biome = DetermineBiome(chunkPos);
-
-                GameObject newChunk = Instantiate(terrainChunkPrefab, new Vector3(chunkPos.x, 0, chunkPos.y), Quaternion.identity);
-                TerrainChunk terrainChunk = newChunk.GetComponent<TerrainChunk>();
-
-                if (terrainChunk != null)
-                {
-                    terrainChunk.width = chunkSize;
-                    terrainChunk.depth = chunkSize;
-                    terrainChunk.GenerateChunk(chunkPos, terrainTextures, biome);
-                    chunks[chunkPos] = terrainChunk;
-                }
-            }
-        }
-    }
-
-    void CreateChunk(Vector2 chunkCoord)
-    {
-        Vector3 chunkPosition = new Vector3(chunkCoord.x * chunkSize, 0, chunkCoord.y * chunkSize);
-        GameObject chunkObj = Instantiate(terrainChunkPrefab, chunkPosition, Quaternion.identity);
-        BiomeData biome = DetermineBiome(chunkPosition);
-
-        TerrainChunk chunk = chunkObj.GetComponent<TerrainChunk>();
-
-        if (chunk != null)
-        {
-            chunk.width = chunkSize;
-            chunk.depth = chunkSize;
-            chunk.GenerateChunk(chunkCoord, terrainTextures, biome); // Pass chunkCoord correctly
-
-            chunks.Add(chunkCoord, chunk);
-        }
-    }
-
 }

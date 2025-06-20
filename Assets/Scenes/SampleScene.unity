@@ -119,6 +119,62 @@ NavMeshSettings:
     debug:
       m_Flags: 0
   m_NavMeshData: {fileID: 0}
+--- !u!1 &32913534
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 32913536}
+  - component: {fileID: 32913535}
+  m_Layer: 0
+  m_Name: WeatherSystem
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &32913535
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 32913534}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2ae2d46a0afbd814fb52fba7903fd525, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  minWeatherDuration: 1.5
+  maxWeatherDuration: 300
+  transitionDuration: 3.29
+  minWeatherIntensity: 0.361
+  maxWeatherIntensity: 0.395
+  weatherEffectsParent: {fileID: 0}
+  mainCamera: {fileID: 330585545}
+  effectHeight: 16.3
+  effectWidth: 76.7
+  effectDepth: 77.5
+  debugMode: 1
+  debugWeatherType: 1
+--- !u!4 &32913536
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 32913534}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!43 &35184980
 Mesh:
   m_ObjectHideFlags: 0
@@ -623,6 +679,7 @@ MonoBehaviour:
   - {fileID: 11400000, guid: d2802f289cf3089449839203d5343fbc, type: 2}
   - {fileID: 11400000, guid: 4e256b59ccae99444bdaefc9403bd693, type: 2}
   - {fileID: 11400000, guid: a1a4ccf7675f2834f86f6bd68dac49fe, type: 2}
+  - {fileID: 11400000, guid: ce8871183cd6de547af25668d7a7a605, type: 2}
 --- !u!1 &832575517
 GameObject:
   m_ObjectHideFlags: 0
@@ -686,6 +743,7 @@ GameObject:
   - component: {fileID: 834328176}
   - component: {fileID: 834328181}
   - component: {fileID: 834328180}
+  - component: {fileID: 834328182}
   m_Layer: 0
   m_Name: Player
   m_TagString: Untagged
@@ -797,11 +855,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7d01b2027b37fd747a148c82e6ac77ab, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  moveSpeed: 5
+  moveSpeed: 15
   jumpForce: 5
   playerCamera: {fileID: 330585545}
   mouseSensitivity: 2
   maxLookAngle: 90
+  airControlFactor: 0.5
+  slingshotCooldown: 0.5
 --- !u!54 &834328181
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -829,6 +889,23 @@ Rigidbody:
   m_Interpolate: 0
   m_Constraints: 0
   m_CollisionDetection: 0
+--- !u!114 &834328182
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 834328175}
+  m_Enabled: 0
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9e0bda66caf51674a96525ff6355762a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  maxCharge: 10
+  chargeMultiplier: 0.1
+  powerFactor: 5
+  minChargeThreshold: 0.1
+  minLookUpAngle: -30
 --- !u!1 &1043636398
 GameObject:
   m_ObjectHideFlags: 0
@@ -945,6 +1022,7 @@ MonoBehaviour:
   chunksX: 10
   chunksZ: 10
   worldScale: 4
+  defaultBiome: {fileID: 0}
 --- !u!4 &1342945339
 Transform:
   m_ObjectHideFlags: 0
@@ -982,6 +1060,7 @@ MonoBehaviour:
   - {fileID: 11400000, guid: a2c6ce920900c5148b68b0925ce03f07, type: 2}
   - {fileID: 11400000, guid: 4e256b59ccae99444bdaefc9403bd693, type: 2}
   - {fileID: 11400000, guid: 9ed9a5095aeceaa47866ac99356d9858, type: 2}
+  - {fileID: 11400000, guid: ce8871183cd6de547af25668d7a7a605, type: 2}
 --- !u!1 &1855401671
 GameObject:
   m_ObjectHideFlags: 0
@@ -1079,3 +1158,4 @@ SceneRoots:
   - {fileID: 1043636401}
   - {fileID: 632200907}
   - {fileID: 1855401675}
+  - {fileID: 32913536}

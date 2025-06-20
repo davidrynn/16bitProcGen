@@ -11,6 +11,8 @@ public class TerrainChunk : MonoBehaviour
     private MeshFilter meshFilter;
     private MeshRenderer meshRenderer;
     private Mesh mesh;
+    private MeshCollider meshCollider;
+    private bool isGenerated = false;
 
     private void OnDrawGizmos()
     {
@@ -27,17 +29,37 @@ public class TerrainChunk : MonoBehaviour
     {
         meshFilter = GetComponent<MeshFilter>();
         meshRenderer = GetComponent<MeshRenderer>();
+        meshCollider = GetComponent<MeshCollider>();
+        if (meshCollider == null)
+        {
+            meshCollider = gameObject.AddComponent<MeshCollider>();
+        }
     }
 
     public void SetVisible(bool visible)
     {
-        meshRenderer.enabled = visible;
+        if (meshRenderer != null)
+        {
+            meshRenderer.enabled = visible;
+        }
     }
-
 
     public void GenerateChunk(Vector2 chunkPos, Dictionary<TerrainType, Texture2D> terrainTextures, BiomeData biome)
     {
+        if (biome == null)
+        {
+            Debug.LogError($"No biome provided for chunk at {chunkPos}");
+            return;
+        }
+
+        if (terrainTextures == null || terrainTextures.Count == 0)
+        {
+            Debug.LogError($"No terrain textures provided for chunk at {chunkPos}");
+            return;
+        }
+
         mesh = new Mesh();
+        mesh.name = $"Chunk_{chunkPos.x}_{chunkPos.y}";
         meshFilter.mesh = mesh;
 
         // Generate mesh data
@@ -47,11 +69,11 @@ public class TerrainChunk : MonoBehaviour
 
         int[] triangles = GenerateTriangles();
 
-        // ✅ Debug: Check if mesh data is valid
+        // Debug: Check if mesh data is valid
         if (vertices.Length == 0 || triangles.Length == 0)
         {
             Debug.LogError($"[ERROR] Chunk at {chunkPos} failed: No vertices or triangles!");
-            return; // Stop execution if mesh is invalid
+            return;
         }
 
         // Apply mesh data
@@ -59,69 +81,10 @@ public class TerrainChunk : MonoBehaviour
 
         // Assign texture
         AssignTerrainTexture(vertices, terrainTextures, biome);
+
+        isGenerated = true;
     }
 
-
-    //private void GenerateVerticesAndUVs(Vector2 chunkPos, BiomeData biome, out Vector3[] vertices, out Vector2[] uvs)
-    //{
-    //    vertices = new Vector3[(width + 1) * (depth + 1)];
-    //    uvs = new Vector2[vertices.Length];
-
-    //    float totalHeight = 0f;
-    //    BiomeType? previousBiome = null;
-
-    //    for (int z = 0, i = 0; z <= depth; z++)
-    //    {
-    //        for (int x = 0; x <= width; x++, i++)
-    //        {
-    //            // ✅ Correct global position calculation
-    //            float globalX = chunkPos.x * width + x;
-    //            float globalZ = chunkPos.y * depth + z;
-    //            Vector2 worldPos = new Vector2(globalX, globalZ);
-
-    //            TerrainManager terrainManager = TerrainManager.Instance;
-    //            var biomeWeights = terrainManager.DetermineBiomeWeights(worldPos);
-
-    //            // Ensure biomeWeights is not empty
-    //            if (biomeWeights.Count == 0)
-    //            {
-    //                biomeWeights.Add(terrainManager.defaultBiome, 1.0f);
-    //            }
-
-    //            // Determine the strongest biome
-    //            BiomeData strongestBiome = null;
-    //            float highestWeight = 0f;
-    //            foreach (var pair in biomeWeights)
-    //            {
-    //                if (pair.Value > highestWeight)
-    //                {
-    //                    highestWeight = pair.Value;
-    //                    strongestBiome = pair.Key;
-    //                }
-    //            }
-
-    //            // Debug biome transition
-    //            if (strongestBiome != null && strongestBiome.biomeType != previousBiome)
-    //            {
-    //                Debug.Log($"Biome changed to {strongestBiome.biomeType} at world position ({globalX}, {globalZ})");
-    //                previousBiome = strongestBiome.biomeType;
-    //            }
-
-    //            // Blend height based on biome weights
-    //            float blendedHeight = 0f;
-    //            foreach (var pair in biomeWeights)
-    //            {
-    //                blendedHeight += pair.Key.GenerateHeight(globalX, globalZ) * pair.Value;
-    //                Debug.Log("blended height is" + blendedHeight);
-    //            }
-
-    //            totalHeight += blendedHeight;
-
-    //            vertices[i] = new Vector3(x, blendedHeight, z);
-    //            uvs[i] = new Vector2((float)x / width, (float)z / depth);
-    //        }
-    //    }
-    //}
     private void GenerateVerticesAndUVs(Vector2 chunkPos, BiomeData biome, out Vector3[] vertices, out Vector2[] uvs)
     {
         vertices = new Vector3[(width + 1) * (depth + 1)];
@@ -131,8 +94,9 @@ public class TerrainChunk : MonoBehaviour
         {
             for (int x = 0; x <= width; x++, i++)
             {
-                float globalX = chunkPos.x + x;
-                float globalZ = chunkPos.y + z;
+                // Correct global position calculation
+                float globalX = chunkPos.x * width + x;
+                float globalZ = chunkPos.y * depth + z;
                 float height = biome.GenerateHeight(globalX, globalZ);
 
                 vertices[i] = new Vector3(x, height, z);
@@ -168,21 +132,39 @@ public class TerrainChunk : MonoBehaviour
 
     private void ApplyMeshData(Vector3[] vertices, int[] triangles, Vector2[] uvs)
     {
+        if (mesh == null)
+        {
+            Debug.LogError("Mesh is null in ApplyMeshData");
+            return;
+        }
+
+        mesh.Clear();
         mesh.vertices = vertices;
         mesh.triangles = triangles;
         mesh.uv = uvs;
         mesh.RecalculateNormals();
+        mesh.RecalculateBounds();
 
-        MeshCollider meshCollider = GetComponent<MeshCollider>();
-        if (meshCollider == null)
+        // Update collider
+        if (meshCollider != null)
         {
-            meshCollider = gameObject.AddComponent<MeshCollider>();
+            meshCollider.sharedMesh = null; // Clear old mesh
+            meshCollider.sharedMesh = mesh; // Set new mesh
         }
-        meshCollider.sharedMesh = mesh;
+        else
+        {
+            Debug.LogError("MeshCollider is null in ApplyMeshData");
+        }
     }
 
     private void AssignTerrainTexture(Vector3[] vertices, Dictionary<TerrainType, Texture2D> terrainTextures, BiomeData biome)
     {
+        if (vertices == null || vertices.Length == 0)
+        {
+            Debug.LogError("No vertices provided for texture assignment");
+            return;
+        }
+
         float totalHeight = 0f;
         foreach (var vertex in vertices)
         {
@@ -194,17 +176,33 @@ public class TerrainChunk : MonoBehaviour
 
         if (terrainTextures.ContainsKey(dominantTerrainType))
         {
-              Material mat = meshRenderer.material;
-        mat.SetTexture("_BaseMap", terrainTextures[dominantTerrainType]); // ✅ Try this for URP Shader
-        mat.SetTexture("_MainTex", terrainTextures[dominantTerrainType]); // ✅ Standard Shader
-
+            Material mat = meshRenderer.material;
+            if (mat != null)
+            {
+                mat.SetTexture("_BaseMap", terrainTextures[dominantTerrainType]); // URP Shader
+                mat.SetTexture("_MainTex", terrainTextures[dominantTerrainType]); // Standard Shader
+            }
+            else
+            {
+                Debug.LogError("Material is null in AssignTerrainTexture");
+            }
         }
         else
         {
             Debug.LogWarning($"No texture found for terrain type {dominantTerrainType} for height: {avgHeight}");
-            meshRenderer.material.mainTexture = terrainTextures[TerrainType.Default];
+            if (terrainTextures.ContainsKey(TerrainType.Default))
+            {
+                meshRenderer.material.mainTexture = terrainTextures[TerrainType.Default];
+            }
+            else
+            {
+                Debug.LogError("Default texture not found!");
+            }
         }
     }
 
-
+    public bool IsGenerated()
+    {
+        return isGenerated;
+    }
 }
