@@ -9,5 +9,6 @@ public enum WeatherType
     AcidRain,
     Blizzard,
     HeatWave,
+    Hail,
     VolcanicAsh
 } 

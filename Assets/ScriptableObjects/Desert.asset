@@ -13,6 +13,7 @@ MonoBehaviour:
   m_Name: Desert
   m_EditorClassIdentifier: 
   biomeType: 0
+  biomeScale: 0.5
   noiseType: 0
   noiseScale: 0.1
   heightMultiplier: 10

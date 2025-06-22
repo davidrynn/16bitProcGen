@@ -13,16 +13,24 @@ MonoBehaviour:
   m_Name: Plains
   m_EditorClassIdentifier: 
   biomeType: 5
-  noiseScale: 0.01
+  biomeScale: 0.5
+  baseTemperature: 20
+  temperatureVariation: 10
+  humidity: 0.5
+  windSpeed: 5
+  weatherChangeFrequency: 1
+  ambientLight: {r: 1, g: 1, b: 1, a: 1}
+  fogDensity: 0.1
+  possibleWeatherTypes: 
+  weatherProbabilities: []
+  noiseType: 0
+  noiseScale: 0.5
   heightMultiplier: 0.001
-  noiseOffsetX: 0
-  noiseOffsetZ: 0
+  noiseOffset: {x: 0, y: 0}
+  transitionSmoothness: 0.5
+  transitionNoiseScale: 0.2
   terrainChances:
   - terrainType: 0
     minHeight: 0
     maxHeight: 50
-    probability: 0.9
-  - terrainType: 9
-    minHeight: 0
-    maxHeight: 50
-    probability: 0.1
+    probability: 1

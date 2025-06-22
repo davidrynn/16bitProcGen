@@ -13,6 +13,7 @@ MonoBehaviour:
   m_Name: Cystalline
   m_EditorClassIdentifier: 
   biomeType: 10
+  biomeScale: 0.5
   noiseType: 2
   noiseScale: 0.1
   heightMultiplier: 20

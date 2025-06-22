@@ -10,20 +10,16 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 2a10217f5ac1cb34f8cb35dfbbe169db, type: 3}
-  m_Name: Alien
+  m_Name: Test
   m_EditorClassIdentifier: 
-  biomeType: 8
+  biomeType: 11
   biomeScale: 0.5
-  noiseType: 1
-  noiseScale: 0.12
-  heightMultiplier: 15
+  noiseType: 3
+  noiseScale: 0.1
+  heightMultiplier: 20
   noiseOffset: {x: 0, y: 0}
   terrainChances:
-  - terrainType: 2
-    minHeight: 0
-    maxHeight: 50
-    probability: 0.085
-  - terrainType: 10
+  - terrainType: 11
     minHeight: 0
     maxHeight: 1000
-    probability: 0.993
+    probability: 1

@@ -1,0 +1,46 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 0}
+  m_Name: LODSettings
+  m_EditorClassIdentifier: Assembly-CSharp::LODSettings
+  lodLevels:
+  - name: High
+    distance: 5
+    meshResolution: 16
+    useCollider: 1
+    useShadows: 1
+    material: {fileID: 0}
+    textureQuality: 1
+  - name: Medium
+    distance: 15
+    meshResolution: 8
+    useCollider: 1
+    useShadows: 0
+    material: {fileID: 2100000, guid: 9bbf02c57c169f44facade859a4fc2da, type: 2}
+    textureQuality: 0.5
+  - name: Low
+    distance: 30
+    meshResolution: 4
+    useCollider: 0
+    useShadows: 0
+    material: {fileID: 2100000, guid: 9bbf02c57c169f44facade859a4fc2da, type: 2}
+    textureQuality: 0.25
+  - name: Ultra Low
+    distance: 50
+    meshResolution: 2
+    useCollider: 0
+    useShadows: 0
+    material: {fileID: 2100000, guid: 9bbf02c57c169f44facade859a4fc2da, type: 2}
+    textureQuality: 0.1
+  updateInterval: 0.5
+  enableLOD: 1
+  showLODGizmos: 0
