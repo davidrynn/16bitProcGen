@@ -1,6 +1,6 @@
 using UnityEngine;
 
-public class WeatherEffect : MonoBehaviour
+public class WeatherEffect_Old : MonoBehaviour
 {
     [Header("Effect Settings")]
     public WeatherType weatherType;

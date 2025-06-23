@@ -3,23 +3,35 @@ using UnityEngine;
 public class GameManager : MonoBehaviour
 {
     private TerrainManager terrainManager;
-    private LODTerrainManager lodTerrainManager;
     private BiomeManager biomeManager;
+    private WeatherSystem weatherSystem;
+
     void Start()
     {
-        biomeManager = FindAnyObjectByType<BiomeManager>(); 
-        terrainManager = FindAnyObjectByType<TerrainManager>(); // Find existing TerrainManager
-        lodTerrainManager = FindAnyObjectByType<LODTerrainManager>(); // Find existing LODTerrainManager
-        if (terrainManager != null)
+        // Find systems
+        biomeManager = FindAnyObjectByType<BiomeManager>();
+        terrainManager = FindAnyObjectByType<TerrainManager>();
+        weatherSystem = FindAnyObjectByType<WeatherSystem>();
+
+        // Initialize terrain manager with biome manager
+        if (terrainManager != null && biomeManager != null)
         {
-            terrainManager.Initialize(biomeManager); // Pass biome manager
-        } else if (lodTerrainManager != null)
-        {
-            lodTerrainManager.Initialize(biomeManager); // Pass biome manager
+            terrainManager.Initialize(biomeManager);
         }
         else
         {
-            Debug.LogError("TerrainManager not found in the scene!");
+            Debug.LogError("TerrainManager or BiomeManager not found!");
+        }
+
+        // Initialize weather system if present
+        if (weatherSystem != null && biomeManager != null)
+        {
+            // Set initial biome for weather
+            BiomeData defaultBiome = biomeManager.GetBiome(BiomeType.Plains);
+            if (defaultBiome != null)
+            {
+                weatherSystem.SetBiome(defaultBiome);
+            }
         }
     }
 }

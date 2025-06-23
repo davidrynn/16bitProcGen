@@ -171,21 +171,19 @@ public class LODTerrainChunk : MonoBehaviour
                 meshFilter.mesh = mesh;
             }
             
-            // Update collider - simple approach since all LOD levels have useCollider = true
-            if (meshCollider != null)
+            // Update collider - match original TerrainChunk.cs exactly
+            if (meshCollider != null && lodLevel.useCollider)
             {
-                if (lodLevel.useCollider)
-                {
-                    meshCollider.sharedMesh = mesh;
-                    meshCollider.enabled = true;
-                }
-                else
-                {
-                    meshCollider.enabled = false;
-                }
+                meshCollider.sharedMesh = null; // Clear old mesh - THIS WAS MISSING!
+                meshCollider.sharedMesh = mesh; // Set new mesh
+                meshCollider.enabled = true;
+            }
+            else if (meshCollider != null)
+            {
+                meshCollider.enabled = false;
             }
             
-            // Update material
+            // Update material (only if needed)
             if (meshRenderer != null && terrainTextures != null)
             {
                 TerrainType dominantType = GetDominantTerrainType();
@@ -306,23 +304,23 @@ public class LODTerrainChunk : MonoBehaviour
         }
 
         int[] triangles = new int[resolution * resolution * 6];
-        int tris = 0;
+        int tris = 0, vert = 0;
 
         for (int z = 0; z < resolution; z++)
         {
             for (int x = 0; x < resolution; x++)
             {
-                int vert = z * (resolution + 1) + x;
-                
                 triangles[tris + 0] = vert;
                 triangles[tris + 1] = vert + resolution + 1;
                 triangles[tris + 2] = vert + 1;
                 triangles[tris + 3] = vert + 1;
                 triangles[tris + 4] = vert + resolution + 1;
                 triangles[tris + 5] = vert + resolution + 2;
-                
+
+                vert++;
                 tris += 6;
             }
+            vert++; // Correcting vertex offset for next row - THIS WAS MISSING!
         }
 
         lodTriangles[resolution] = triangles;
@@ -382,10 +380,11 @@ public class LODTerrainChunk : MonoBehaviour
         {
             meshFilter.mesh = mesh;
             
-            // Set the collider immediately - this is critical for collision detection
+            // Set the collider immediately - match original TerrainChunk.cs exactly
             if (meshCollider != null)
             {
-                meshCollider.sharedMesh = mesh;
+                meshCollider.sharedMesh = null; // Clear old mesh - THIS WAS MISSING!
+                meshCollider.sharedMesh = mesh; // Set new mesh
                 meshCollider.enabled = true;
                 Debug.Log($"Set collider for chunk {name} with mesh {mesh.name}");
             }

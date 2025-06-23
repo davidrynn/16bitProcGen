@@ -2,55 +2,56 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
+public enum SimpleWeatherType
+{
+    Clear,
+    Rain,
+    Snow,
+    Storm,
+    Fog
+}
+
+[System.Serializable]
+public struct WeatherEffect
+{
+    public SimpleWeatherType weatherType;
+    public GameObject effectPrefab;
+    public AudioClip soundEffect;
+    [Range(0f, 1f)]
+    public float intensity;
+}
+
 public class WeatherSystem : MonoBehaviour
 {
     public static WeatherSystem Instance { get; private set; }
 
     [Header("Weather Settings")]
-    [Tooltip("Minimum time between weather changes (in seconds)")]
-    public float minWeatherDuration = 60f;
-    [Tooltip("Maximum time between weather changes (in seconds)")]
-    public float maxWeatherDuration = 300f;
-    [Tooltip("How long weather transitions should take (in seconds)")]
-    public float transitionDuration = 2f;
-    [Tooltip("Minimum intensity for weather effects (0-1)")]
-    [Range(0f, 1f)]
-    public float minWeatherIntensity = 0.3f;
-    [Tooltip("Maximum intensity for weather effects (0-1)")]
-    [Range(0f, 1f)]
-    public float maxWeatherIntensity = 1f;
+    public float weatherChangeInterval = 30f; // Seconds between weather changes
+    public float transitionDuration = 2f; // How long transitions take
 
     [Header("Weather Effects")]
-    [Tooltip("Parent transform for all weather effect objects")]
-    public Transform weatherEffectsParent;
-    [Tooltip("Prefabs for different weather effects")]
-    public Dictionary<WeatherType, GameObject> weatherEffectPrefabs;
-    [Tooltip("Audio sources for weather sounds")]
-    public Dictionary<WeatherType, AudioSource> weatherAudioSources;
-    [Tooltip("Camera to follow for weather effects")]
+    public WeatherEffect[] weatherEffects;
+
+    [Header("Effect Positioning")]
     public Camera mainCamera;
-    [Tooltip("How far above the camera the weather effects should be")]
-    public float effectHeight = 50f;
-    [Tooltip("How wide the weather effect area should be")]
+    public float effectHeight = 10f;
     public float effectWidth = 100f;
-    [Tooltip("How far the weather effect should extend")]
     public float effectDepth = 100f;
 
     [Header("Debug")]
     public bool debugMode = false;
-    public WeatherType debugWeatherType;
+    public SimpleWeatherType debugWeather;
 
     // Current state
-    private WeatherType currentWeather;
-    private WeatherType targetWeather;
-    private float currentWeatherIntensity = 0f;
-    private float targetWeatherIntensity = 0f;
+    private SimpleWeatherType currentWeather = SimpleWeatherType.Clear;
+    private SimpleWeatherType targetWeather = SimpleWeatherType.Clear;
+    private GameObject currentEffect;
+    private AudioSource audioSource;
     private BiomeData currentBiome;
-    private Coroutine weatherTransitionCoroutine;
-    private GameObject currentWeatherEffect;
-    private AudioSource currentWeatherAudio;
-    private ParticleSystem currentParticleSystem;
-    private float currentBaseEmissionRate = 1000f; // Default base emission rate
+    private Coroutine weatherCoroutine;
+
+    // Store original emission rates for proper fading
+    private Dictionary<ParticleSystem, float> originalEmissionRates = new Dictionary<ParticleSystem, float>();
 
     private void Awake()
     {
@@ -68,72 +69,40 @@ public class WeatherSystem : MonoBehaviour
 
     private void InitializeWeatherSystem()
     {
-        weatherEffectPrefabs = new Dictionary<WeatherType, GameObject>();
-        weatherAudioSources = new Dictionary<WeatherType, AudioSource>();
-
         // Find main camera if not set
         if (mainCamera == null)
         {
             mainCamera = Camera.main;
         }
 
-        // Create weather effects parent if it doesn't exist
-        if (weatherEffectsParent == null)
+        // Add audio source if not present
+        audioSource = GetComponent<AudioSource>();
+        if (audioSource == null)
         {
-            GameObject parent = new GameObject("WeatherEffects");
-            weatherEffectsParent = parent.transform;
-            parent.transform.SetParent(transform);
-        }
-
-        // Initialize weather effect prefabs
-        foreach (WeatherType weatherType in System.Enum.GetValues(typeof(WeatherType)))
-        {
-            // Load prefabs from Resources folder
-            string prefabPath = $"WeatherEffects/{weatherType}Effect";
-            GameObject prefab = Resources.Load<GameObject>(prefabPath);
-            if (prefab != null)
-            {
-                weatherEffectPrefabs[weatherType] = prefab;
-            }
-            else
-            {
-                Debug.LogWarning($"Could not find weather effect prefab: {prefabPath}");
-            }
+            audioSource = gameObject.AddComponent<AudioSource>();
         }
 
         // Set initial weather
-        currentWeather = WeatherType.Clear;
-        targetWeather = WeatherType.Clear;
-        currentWeatherIntensity = 0f;
-        targetWeatherIntensity = 0f;
-
-        // If in debug mode, set the initial weather
-        if (debugMode)
-        {
-            SetWeather(debugWeatherType);
-        }
+        currentWeather = SimpleWeatherType.Clear;
+        targetWeather = SimpleWeatherType.Clear;
     }
 
     private void Start()
     {
-        // Set initial weather if in debug mode
         if (debugMode)
         {
-            SetWeather(debugWeatherType);
+            SetWeather(debugWeather);
         }
         else
         {
-            StartCoroutine(WeatherCycle());
+            StartWeatherCycle();
         }
     }
 
     private void Update()
     {
-        // Update current weather effects
-        UpdateWeatherEffects();
-        
-        // Only update position if we have an active weather effect
-        if (currentWeatherEffect != null)
+        // Update effect position to follow camera
+        if (currentEffect != null && mainCamera != null)
         {
             UpdateEffectPosition();
         }
@@ -141,18 +110,6 @@ public class WeatherSystem : MonoBehaviour
 
     private void UpdateEffectPosition()
     {
-        if (mainCamera == null)
-        {
-            Debug.LogError("Main camera is null!");
-            return;
-        }
-        
-        if (currentWeatherEffect == null)
-        {
-            return;
-        }
-
-        // Position the effect above the camera
         Vector3 cameraPos = mainCamera.transform.position;
         Vector3 newPos = new Vector3(
             cameraPos.x,
@@ -160,28 +117,16 @@ public class WeatherSystem : MonoBehaviour
             cameraPos.z
         );
         
-        currentWeatherEffect.transform.position = newPos;
+        currentEffect.transform.position = newPos;
 
         // Update particle system shape if it exists
-        if (currentParticleSystem != null)
+        var particleSystems = currentEffect.GetComponentsInChildren<ParticleSystem>();
+        foreach (var ps in particleSystems)
         {
-            var shape = currentParticleSystem.shape;
-            shape.scale = new Vector3(effectWidth, 1f, effectDepth);
-        }
-    }
-
-    private IEnumerator WeatherCycle()
-    {
-        while (true)
-        {
-            // Wait for random duration
-            float waitTime = Random.Range(minWeatherDuration, maxWeatherDuration);
-            yield return new WaitForSeconds(waitTime);
-
-            // Only change weather if not in debug mode
-            if (!debugMode)
+            var shape = ps.shape;
+            if (shape.enabled)
             {
-                ChangeWeather();
+                shape.scale = new Vector3(effectWidth, 1f, effectDepth);
             }
         }
     }
@@ -189,332 +134,170 @@ public class WeatherSystem : MonoBehaviour
     public void SetBiome(BiomeData biome)
     {
         currentBiome = biome;
-        // Adjust weather probabilities based on new biome
-        ChangeWeather();
-    }
 
-    private void ChangeWeather()
-    {
-        if (currentBiome == null) return;
-
-        // Select new weather based on biome probabilities
-        WeatherType newWeather = SelectNewWeather();
-        SetWeather(newWeather);
-    }
-
-    private WeatherType SelectNewWeather()
-    {
-        if (currentBiome == null) return WeatherType.Clear;
-
-        float totalProbability = 0f;
-        float randomValue = Random.value;
-
-        foreach (WeatherType weatherType in currentBiome.possibleWeatherTypes)
+        // Change weather based on biome
+        if (currentBiome != null && Random.value < currentBiome.weatherChangeChance)
         {
-            float probability = currentBiome.GetWeatherProbability(weatherType);
-            totalProbability += probability;
-
-            if (randomValue <= totalProbability)
-            {
-                return weatherType;
-            }
+            SetWeather(currentBiome.defaultWeather);
         }
-
-        return WeatherType.Clear;
     }
 
-    public void SetWeather(WeatherType newWeather)
+    public void SetWeather(SimpleWeatherType newWeather)
     {
-        if (newWeather == currentWeather && currentWeatherEffect != null)
-        {
-            return;
-        }
+        if (newWeather == currentWeather) return;
 
         targetWeather = newWeather;
-        if (weatherTransitionCoroutine != null)
+
+        if (weatherCoroutine != null)
         {
-            StopCoroutine(weatherTransitionCoroutine);
+            StopCoroutine(weatherCoroutine);
         }
-        weatherTransitionCoroutine = StartCoroutine(TransitionWeather());
+
+        weatherCoroutine = StartCoroutine(TransitionWeather());
+    }
+
+    private void StartWeatherCycle()
+    {
+        StartCoroutine(WeatherCycle());
+    }
+
+    private IEnumerator WeatherCycle()
+    {
+        while (true)
+        {
+            yield return new WaitForSeconds(weatherChangeInterval);
+
+            if (!debugMode && currentBiome != null)
+            {
+                // Random weather change based on biome
+                if (Random.value < currentBiome.weatherChangeChance)
+                {
+                    SimpleWeatherType newWeather = GetRandomWeatherForBiome(currentBiome);
+                    SetWeather(newWeather);
+                }
+            }
+        }
+    }
+
+    private SimpleWeatherType GetRandomWeatherForBiome(BiomeData biome)
+    {
+        // Simple biome-based weather logic
+        switch (biome.biomeType)
+        {
+            case BiomeType.Desert:
+                return Random.value < 0.8f ? SimpleWeatherType.Clear : SimpleWeatherType.Storm;
+            case BiomeType.Forest:
+                return Random.value < 0.6f ? SimpleWeatherType.Clear : SimpleWeatherType.Rain;
+            case BiomeType.Mountains:
+                return Random.value < 0.5f ? SimpleWeatherType.Clear : SimpleWeatherType.Snow;
+            case BiomeType.Arctic:
+                return Random.value < 0.7f ? SimpleWeatherType.Snow : SimpleWeatherType.Clear;
+            case BiomeType.Swamp:
+                return Random.value < 0.4f ? SimpleWeatherType.Fog : SimpleWeatherType.Rain;
+            default:
+                return SimpleWeatherType.Clear;
+        }
     }
 
     private IEnumerator TransitionWeather()
     {
-        float startTime = Time.time;
-        float startIntensity = currentWeatherIntensity;
-        targetWeatherIntensity = maxWeatherIntensity;
-
-        // Fade out current weather
-        while (Time.time < startTime + transitionDuration)
+        // Fade out current effect
+        if (currentEffect != null)
         {
-            float t = (Time.time - startTime) / transitionDuration;
-            currentWeatherIntensity = Mathf.Lerp(startIntensity, 0f, t);
-            yield return null;
+            float fadeTime = 0f;
+            while (fadeTime < transitionDuration)
+            {
+                fadeTime += Time.deltaTime;
+                float alpha = 1f - (fadeTime / transitionDuration);
+                
+                // Fade out particle systems using stored original rates
+                var particleSystems = currentEffect.GetComponentsInChildren<ParticleSystem>();
+                foreach (var ps in particleSystems)
+                {
+                    if (originalEmissionRates.ContainsKey(ps))
+                    {
+                        var emission = ps.emission;
+                        emission.rateOverTime = originalEmissionRates[ps] * alpha;
+                    }
+                }
+                
+                yield return null;
+            }
+            
+            Destroy(currentEffect);
+            currentEffect = null;
+            originalEmissionRates.Clear();
         }
 
-        // Switch weather effects
-        if (currentWeatherEffect != null)
+        // Fade in new effect
+        WeatherEffect effect = GetWeatherEffect(targetWeather);
+        if (effect.effectPrefab != null)
         {
-            Destroy(currentWeatherEffect);
-            currentWeatherEffect = null;
+            // Create effect at camera position
+            Vector3 spawnPos = mainCamera != null ? 
+                mainCamera.transform.position + Vector3.up * effectHeight : 
+                transform.position;
+            
+            currentEffect = Instantiate(effect.effectPrefab, spawnPos, Quaternion.identity);
+            currentEffect.transform.SetParent(transform);
+            
+            // Store original emission rates and set to 0 initially
+            var particleSystems = currentEffect.GetComponentsInChildren<ParticleSystem>();
+            originalEmissionRates.Clear();
+            
+            foreach (var ps in particleSystems)
+            {
+                var emission = ps.emission;
+                float originalRate = emission.rateOverTime.constant;
+                originalEmissionRates[ps] = originalRate;
+                emission.rateOverTime = 0f;
+            }
+            
+            float fadeTime = 0f;
+            while (fadeTime < transitionDuration)
+            {
+                fadeTime += Time.deltaTime;
+                float alpha = fadeTime / transitionDuration;
+                float intensity = effect.intensity <= 0f ? 1f : effect.intensity;
+                
+                foreach (var ps in particleSystems)
+                {
+                    if (originalEmissionRates.ContainsKey(ps))
+                    {
+                        var emission = ps.emission;
+                        emission.rateOverTime = originalEmissionRates[ps] * alpha * intensity;
+                    }
+                }
+                
+                yield return null;
+            }
         }
-        if (currentWeatherAudio != null)
+
+        // Play sound effect
+        if (effect.soundEffect != null && audioSource != null)
         {
-            currentWeatherAudio.Stop();
-            currentWeatherAudio = null;
+            audioSource.clip = effect.soundEffect;
+            audioSource.Play();
         }
 
         currentWeather = targetWeather;
-        SpawnWeatherEffect(currentWeather);
-
-        // Fade in new weather
-        startTime = Time.time;
-        startIntensity = minWeatherIntensity;
-        while (Time.time < startTime + transitionDuration)
-        {
-            float t = (Time.time - startTime) / transitionDuration;
-            currentWeatherIntensity = Mathf.Lerp(startIntensity, targetWeatherIntensity, t);
-            yield return null;
-        }
-
-        currentWeatherIntensity = targetWeatherIntensity;
     }
 
-    private void SpawnWeatherEffect(WeatherType weatherType)
+    private WeatherEffect GetWeatherEffect(SimpleWeatherType weatherType)
     {
-        if (weatherEffectPrefabs.TryGetValue(weatherType, out GameObject prefab))
+        foreach (var effect in weatherEffects)
         {
-            // Destroy existing effect if any
-            if (currentWeatherEffect != null)
+            if (effect.weatherType == weatherType)
             {
-                Destroy(currentWeatherEffect);
+                return effect;
             }
-
-            // Create new effect
-            currentWeatherEffect = Instantiate(prefab, weatherEffectsParent);
-            
-            // Force position update
-            if (mainCamera != null)
-            {
-                Vector3 cameraPos = mainCamera.transform.position;
-                Vector3 newPos = new Vector3(
-                    cameraPos.x,
-                    cameraPos.y + effectHeight,
-                    cameraPos.z
-                );
-                currentWeatherEffect.transform.position = newPos;
-            }
-
-            // Get particle system
-            currentParticleSystem = currentWeatherEffect.GetComponentInChildren<ParticleSystem>();
-            if (currentParticleSystem != null)
-            {
-                // Configure particle system for weather type
-                ConfigureParticleSystem(weatherType);
-                
-                // Force particle system to play
-                currentParticleSystem.Play();
-            }
-            else
-            {
-                Debug.LogError($"No particle system found in weather effect prefab: {weatherType}");
-            }
-
-            // Set initial intensity
-            SetWeatherEffectIntensity(currentWeatherIntensity);
         }
-        else
-        {
-            Debug.LogError($"No prefab found for weather type: {weatherType}");
-        }
+
+        // Return default clear weather effect
+        return new WeatherEffect { weatherType = SimpleWeatherType.Clear };
     }
 
-    private string GetGameObjectPath(GameObject obj)
-    {
-        string path = obj.name;
-        Transform parent = obj.transform.parent;
-        while (parent != null)
-        {
-            path = parent.name + "/" + path;
-            parent = parent.parent;
-        }
-        return path;
-    }
-
-    private void ConfigureParticleSystem(WeatherType weatherType)
-    {
-        if (currentParticleSystem == null) return;
-
-        var main = currentParticleSystem.main;
-        var emission = currentParticleSystem.emission;
-        var shape = currentParticleSystem.shape;
-
-        // Force particle system to stop before reconfiguring
-        currentParticleSystem.Stop();
-        currentParticleSystem.Clear();
-
-        // Disable any modules that might affect emission rate
-        var lifetimeByEmitterSpeed = currentParticleSystem.lifetimeByEmitterSpeed;
-        lifetimeByEmitterSpeed.enabled = false;
-
-        switch (weatherType)
-        {
-            case WeatherType.Rain:
-                main.startSpeed = 40f;
-                main.startSize = 0.05f;
-                main.gravityModifier = 1f;
-                main.startLifetime = 0.5f;
-                main.simulationSpace = ParticleSystemSimulationSpace.World;
-                main.playOnAwake = true;
-                currentBaseEmissionRate = 1000f;
-                emission.rateOverTime = currentBaseEmissionRate;
-                shape.shapeType = ParticleSystemShapeType.Box;
-                break;
-
-            case WeatherType.Snow:
-                main.startSpeed = 2f;
-                main.startSize = 0.2f;
-                main.gravityModifier = 0.1f;
-                main.startLifetime = 5f;
-                main.simulationSpace = ParticleSystemSimulationSpace.World;
-                currentBaseEmissionRate = 500f;
-                emission.rateOverTime = currentBaseEmissionRate;
-                shape.shapeType = ParticleSystemShapeType.Box;
-                break;
-
-            case WeatherType.Sandstorm:
-                main.startSpeed = 15f;
-                main.startSize = 0.15f;
-                main.gravityModifier = 0.2f;
-                main.startLifetime = 3f;
-                main.simulationSpace = ParticleSystemSimulationSpace.World;
-                currentBaseEmissionRate = 800f;
-                emission.rateOverTime = currentBaseEmissionRate;
-                shape.shapeType = ParticleSystemShapeType.Box;
-                break;
-
-            case WeatherType.Fog:
-                main.startSpeed = 0.5f;
-                main.startSize = 5f;
-                main.gravityModifier = 0f;
-                main.startLifetime = 10f;
-                main.simulationSpace = ParticleSystemSimulationSpace.World;
-                currentBaseEmissionRate = 50f;
-                emission.rateOverTime = currentBaseEmissionRate;
-                shape.shapeType = ParticleSystemShapeType.Sphere;
-                break;
-
-            case WeatherType.Thunderstorm:
-                main.startSpeed = 45f;
-                main.startSize = 0.08f;
-                main.gravityModifier = 1.2f;
-                main.startLifetime = 0.4f;
-                main.simulationSpace = ParticleSystemSimulationSpace.World;
-                main.playOnAwake = true;
-                currentBaseEmissionRate = 1500f;
-                emission.rateOverTime = currentBaseEmissionRate;
-                shape.shapeType = ParticleSystemShapeType.Box;
-                break;
-
-            case WeatherType.AcidRain:
-                main.startSpeed = 35f;
-                main.startSize = 0.06f;
-                main.gravityModifier = 1.1f;
-                main.startLifetime = 0.6f;
-                main.simulationSpace = ParticleSystemSimulationSpace.World;
-                main.playOnAwake = true;
-                currentBaseEmissionRate = 1200f;
-                emission.rateOverTime = currentBaseEmissionRate;
-                shape.shapeType = ParticleSystemShapeType.Box;
-                break;
-
-            case WeatherType.Blizzard:
-                main.startSpeed = 8f;
-                main.startSize = 0.3f;
-                main.gravityModifier = 0.05f;
-                main.startLifetime = 8f;
-                main.simulationSpace = ParticleSystemSimulationSpace.World;
-                currentBaseEmissionRate = 800f;
-                emission.rateOverTime = currentBaseEmissionRate;
-                shape.shapeType = ParticleSystemShapeType.Box;
-                break;
-
-            case WeatherType.HeatWave:
-                
-                break;
-
-            case WeatherType.VolcanicAsh:
-                main.startSpeed = 3f;
-                main.startSize = 0.4f;
-                main.gravityModifier = 0.3f;
-                main.startLifetime = 12f;
-                main.simulationSpace = ParticleSystemSimulationSpace.World;
-                currentBaseEmissionRate = 400f;
-                emission.rateOverTime = currentBaseEmissionRate;
-                shape.shapeType = ParticleSystemShapeType.Box;
-                break;
-        }
-
-        // Set the shape size
-        shape.scale = new Vector3(effectWidth, 1f, effectDepth);
-        
-        // Force particle system to play
-        currentParticleSystem.Play();
-    }
-
-    private void UpdateWeatherEffects()
-    {
-        if (currentWeatherEffect != null)
-        {
-            SetWeatherEffectIntensity(currentWeatherIntensity);
-        }
-    }
-
-    private void SetWeatherEffectIntensity(float intensity)
-    {
-        if (currentWeatherEffect == null)
-        {
-            Debug.LogError("Current weather effect is null!");
-            return;
-        }
-
-        // Clamp intensity between min and max
-        intensity = Mathf.Clamp(intensity, minWeatherIntensity, maxWeatherIntensity);
-
-        // Update particle systems
-        if (currentParticleSystem != null)
-        {
-            var emission = currentParticleSystem.emission;
-            float newRate = currentBaseEmissionRate * intensity; 
-            emission.rateOverTime = newRate;
-        }
-        else
-        {
-            Debug.LogWarning("No particle system found to update intensity");
-        }
-
-        // Update audio
-        AudioSource audioSource = currentWeatherEffect.GetComponent<AudioSource>();
-        if (audioSource != null)
-        {
-            audioSource.volume = intensity;
-            if (intensity > minWeatherIntensity && !audioSource.isPlaying)
-            {
-                audioSource.Play();
-            }
-            else if (intensity <= minWeatherIntensity && audioSource.isPlaying)
-            {
-                audioSource.Stop();
-            }
-        }
-        else
-        {
-            Debug.LogWarning("No audio source found on weather effect");
-        }
-    }
-
-    // Public methods for other systems to query weather state
-    public WeatherType GetCurrentWeather() => currentWeather;
-    public float GetWeatherIntensity() => currentWeatherIntensity;
-    public bool IsWeatherActive(WeatherType weatherType) => currentWeather == weatherType && currentWeatherIntensity > 0.1f;
-} 
+    // Public getters
+    public SimpleWeatherType GetCurrentWeather() => currentWeather;
+    public bool IsWeatherActive(SimpleWeatherType weatherType) => currentWeather == weatherType;
+}
