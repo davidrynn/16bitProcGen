@@ -16,7 +16,6 @@ public class TerrainManager : MonoBehaviour
     public BiomeData defaultBiome;
 
     private Dictionary<Vector2, TerrainChunk> chunks = new Dictionary<Vector2, TerrainChunk>();
-    private List<Biome> biomes;
     private Dictionary<TerrainType, Texture2D> terrainTextures = new Dictionary<TerrainType, Texture2D>();
     private BiomeManager biomeManager;
     private Vector2 currentPlayerChunkCoord;
