@@ -14,8 +14,11 @@ public class TerrainManager : MonoBehaviour
     public int chunksZ = 5;
     public float worldScale = 2f;
     public BiomeData defaultBiome;
+    [Header("LOD Debug")]
+    public bool showLODDebug = true;
+    public Transform playerTransform;
 
-    private Dictionary<Vector2, TerrainChunk> chunks = new Dictionary<Vector2, TerrainChunk>();
+    public Dictionary<Vector2, TerrainChunk> chunks = new Dictionary<Vector2, TerrainChunk>();
     private Dictionary<TerrainType, Texture2D> terrainTextures = new Dictionary<TerrainType, Texture2D>();
     private BiomeManager biomeManager;
     private Vector2 currentPlayerChunkCoord;
@@ -69,6 +72,21 @@ public class TerrainManager : MonoBehaviour
         {
             playerLastChunkCoord = currentPlayerChunkCoord;
             UpdateVisibleChunks();
+        }
+
+        // Update LOD for visible chunks
+        foreach (var chunk in chunks.Values)
+        {
+            if (chunk.IsGenerated())
+            {
+                float distance = Vector3.Distance(player.position, chunk.transform.position);
+                chunk.UpdateLOD(distance);
+            }
+        }
+
+        if (showLODDebug)
+        {
+            UpdateLODForAllChunks();
         }
     }
 
@@ -266,7 +284,6 @@ public class TerrainManager : MonoBehaviour
     public Texture2D GenerateGradientTexture(int width, int height)
     {
         Texture2D texture = new Texture2D(width, height);
-        Debug.Log("Generating gradient texture");
         for (int x = 0; x < width; x++)
         {
             for (int y = 0; y < height; y++)
@@ -285,5 +302,45 @@ public class TerrainManager : MonoBehaviour
 
         texture.Apply();
         return texture;
+    }
+
+    private void UpdateLODForAllChunks()
+    {
+        if (playerTransform == null)
+        {
+            playerTransform = FindFirstObjectByType<PlayerController>()?.transform;
+            return;
+        }
+
+        foreach (var chunk in chunks.Values)
+        {
+            if (chunk != null)
+            {
+                float distance = Vector3.Distance(playerTransform.position, chunk.transform.position);
+                chunk.UpdateLOD(distance);
+            }
+        }
+    }
+
+    private void OnDrawGizmos()
+    {
+        if (!showLODDebug || chunks == null) return;
+        
+        foreach (var chunk in chunks.Values)
+        {
+            if (chunk != null)
+            {
+                // Color based on LOD level
+                Color[] lodColors = { Color.green, Color.yellow, Color.red, Color.magenta };
+                int lodLevel = Mathf.Min(chunk.currentLODLevel, lodColors.Length - 1);
+                
+                Gizmos.color = lodColors[lodLevel];
+                Vector3 pos = chunk.transform.position;
+                Gizmos.DrawWireCube(
+                    new Vector3(pos.x + chunk.width / 2f, 0, pos.z + chunk.depth / 2f),
+                    new Vector3(chunk.width, 0, chunk.depth)
+                );
+            }
+        }
     }
 }
