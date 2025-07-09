@@ -1,0 +1,35 @@
+// Basic test compute shader to verify compute shader pipeline
+#pragma kernel BasicTest
+
+// Simple output buffer
+RWStructuredBuffer<float> output;
+
+// Simple input parameters
+int resolution;
+float testValue;
+
+[numthreads(8,8,1)]
+void BasicTest(uint3 id : SV_DispatchThreadID)
+{
+    // Calculate index
+    int index = (int)id.y * resolution + (int)id.x;
+    
+    // Check bounds
+    if (id.x >= (uint)resolution || id.y >= (uint)resolution)
+        return;
+    
+    // Write a simple pattern to verify the kernel is running
+    float value = (float)(id.x + id.y) * testValue;
+    
+    // Add some variation to make it obvious if it's working
+    if (id.x == 0 && id.y == 0)
+    {
+        value = 1000.0f; // Special marker value
+    }
+    else if (id.x == (uint)(resolution - 1) && id.y == (uint)(resolution - 1))
+    {
+        value = 2000.0f; // Another marker value
+    }
+    
+    output[index] = value;
+} 

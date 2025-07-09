@@ -1,0 +1,141 @@
+// Shaders/TerrainNoise.compute
+#pragma kernel GenerateNoise
+#pragma kernel GenerateBiomeNoise
+#pragma kernel GenerateStructureNoise
+
+#include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
+
+// Output buffers
+RWStructuredBuffer<float> heights;
+RWStructuredBuffer<float> biomeNoise;
+RWStructuredBuffer<float> structureNoise;
+
+// Input data - individual variables for easier C# binding
+float3 chunk_position;
+int chunk_resolution;
+float chunk_worldScale;
+float chunk_time;
+float chunk_biomeScale;
+float chunk_noiseScale;
+float chunk_heightMultiplier;
+float2 chunk_noiseOffset;
+
+// Simple hash function for noise generation
+float hash(float2 p)
+{
+    float3 p3 = frac(float3(p.xyx) * float3(.1031, .1030, .0973));
+    p3 += dot(p3, p3.yzx + 33.33);
+    return frac((p3.x + p3.y) * p3.z);
+}
+
+// Simple 2D noise function
+float noise2D(float2 p)
+{
+    float2 i = floor(p);
+    float2 f = frac(p);
+    
+    float a = hash(i);
+    float b = hash(i + float2(1.0, 0.0));
+    float c = hash(i + float2(0.0, 1.0));
+    float d = hash(i + float2(1.0, 1.0));
+    
+    float2 u = f * f * (3.0 - 2.0 * f);
+    
+    return lerp(lerp(a, b, u.x), lerp(c, d, u.x), u.y);
+}
+
+// Fractal noise (multiple octaves)
+float fractalNoise(float2 p, float scale, int octaves)
+{
+    float value = 0.0;
+    float amplitude = 1.0;
+    float frequency = 1.0;
+    
+    for (int i = 0; i < octaves; i++)
+    {
+        value += amplitude * noise2D(p * frequency * scale);
+        amplitude *= 0.5;
+        frequency *= 2.0;
+    }
+    
+    return value;
+}
+
+// Noise functions
+float GeneratePerlinNoise(float2 pos, float scale)
+{
+    return fractalNoise(pos, scale, 4);
+}
+
+float GenerateCellularNoise(float2 pos, float scale)
+{
+    // Simple cellular-like noise using distance to random points
+    float minDist = 1.0;
+    
+    for (int i = 0; i < 4; i++)
+    {
+        float2 randomPoint = float2(
+            hash(pos + float2(i * 123.456, i * 789.012)),
+            hash(pos + float2(i * 345.678, i * 901.234))
+        );
+        
+        float dist = length(pos * scale - randomPoint);
+        minDist = min(minDist, dist);
+    }
+    
+    return minDist;
+}
+
+float GenerateSimplexNoise(float2 pos, float scale)
+{
+    // Simplified simplex-like noise
+    return fractalNoise(pos, scale, 3) * 0.5 + 0.5;
+}
+
+// Main noise generation kernel
+[numthreads(8,8,1)]
+void GenerateNoise(uint3 id : SV_DispatchThreadID)
+{
+    // Calculate index based on actual resolution - cast to int to avoid signed/unsigned mismatch
+    int index = (int)id.y * chunk_resolution + (int)id.x;
+    
+    // Check bounds
+    if (id.x >= (uint)chunk_resolution || id.y >= (uint)chunk_resolution)
+        return;
+    
+    // Calculate world position
+    float2 worldPos = chunk_position.xz + float2((float)id.x, (float)id.y) * chunk_worldScale;
+    
+    // Generate noise based on world position
+    float noiseValue = GeneratePerlinNoise(worldPos + chunk_noiseOffset, chunk_noiseScale);
+    
+    // Apply height multiplier
+    float height = noiseValue * chunk_heightMultiplier;
+    
+    // Write to buffer
+    heights[index] = height;
+}
+
+// Biome-specific noise generation
+[numthreads(8,8,1)]
+void GenerateBiomeNoise(uint3 id : SV_DispatchThreadID)
+{
+    int index = (int)id.y * chunk_resolution + (int)id.x;
+    float2 worldPos = chunk_position.xz + float2((float)id.x, (float)id.y) * chunk_worldScale;
+    
+    // Generate biome-specific noise
+    float biomeValue = GeneratePerlinNoise(worldPos + chunk_noiseOffset, chunk_noiseScale);
+    biomeNoise[index] = biomeValue;
+}
+
+// Structure placement noise generation
+[numthreads(8,8,1)]
+void GenerateStructureNoise(uint3 id : SV_DispatchThreadID)
+{
+    int index = (int)id.y * chunk_resolution + (int)id.x;
+    float2 worldPos = chunk_position.xz + float2((float)id.x, (float)id.y) * chunk_worldScale;
+    
+    // Generate structure placement noise
+    float structureValue = GenerateCellularNoise(worldPos, 0.02);
+    structureNoise[index] = structureValue;
+}

@@ -1,0 +1,30 @@
+// Resources/Shaders/TerrainModification.compute
+#pragma kernel ApplyModification
+
+// Input data
+int resolution;
+float3 center;
+float radius;
+float strength;
+
+// Buffers
+RWStructuredBuffer<float> heights;
+
+[numthreads(8,8,1)]
+void ApplyModification(uint3 id : SV_DispatchThreadID)
+{
+    int index = (int)id.y * resolution + (int)id.x;
+    float height = heights[index];
+    
+    // Simple modification
+    float2 worldPos = float2((float)id.x, (float)id.y);
+    float2 center2D = center.xz;
+    float distance = length(worldPos - center2D);
+    
+    if (distance <= radius)
+    {
+        height += strength * 0.1f;
+    }
+    
+    heights[index] = height;
+} 

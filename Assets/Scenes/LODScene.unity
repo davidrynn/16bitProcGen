@@ -1117,8 +1117,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   player: {fileID: 834328179}
   terrainChunkPrefab: {fileID: 8443483847253475244, guid: 7e6782fd8d4e9d34d8a9e088d0dc92ae, type: 3}
-  chunkSize: 16
-  viewDistance: 4
+  chunkSize: 4
+  viewDistance: 12
   chunksX: 5
   chunksZ: 5
   worldScale: 2

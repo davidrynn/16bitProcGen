@@ -1,0 +1,19 @@
+// Resources/Shaders/WFCGeneration.compute
+// Force reimport
+#pragma kernel PropagateConstraints
+
+// Input data
+int resolution;
+float constraintStrength;
+
+// Buffers
+RWStructuredBuffer<int> cells;
+
+[numthreads(8,8,1)]
+void PropagateConstraints(uint3 id : SV_DispatchThreadID)
+{
+    int index = (int)id.y * resolution + (int)id.x;
+    
+    // Simple constraint propagation
+    cells[index] = 1;
+} 

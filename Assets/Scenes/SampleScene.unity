@@ -145,21 +145,38 @@ MonoBehaviour:
   m_GameObject: {fileID: 32913534}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 2ae2d46a0afbd814fb52fba7903fd525, type: 3}
+  m_Script: {fileID: 11500000, guid: a991e29f3a2b4064ca8cf3d6ae5f90bf, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  minWeatherDuration: 1.5
-  maxWeatherDuration: 300
-  transitionDuration: 3.29
-  minWeatherIntensity: 0.361
-  maxWeatherIntensity: 0.395
-  weatherEffectsParent: {fileID: 0}
+  weatherChangeInterval: 30
+  transitionDuration: 2
+  weatherEffects:
+  - weatherType: 0
+    effectPrefab: {fileID: 0}
+    soundEffect: {fileID: 0}
+    intensity: 0
+  - weatherType: 1
+    effectPrefab: {fileID: 5516465006268937987, guid: 667fc21c36e804c42968d700dfcb633f, type: 3}
+    soundEffect: {fileID: 8300000, guid: c2c882e6e8c099f48bbb44dc4667af4f, type: 3}
+    intensity: 0.599
+  - weatherType: 2
+    effectPrefab: {fileID: 2066832875437205169, guid: 9f8c62fc294b97d4b8f9ea40a7649acd, type: 3}
+    soundEffect: {fileID: 0}
+    intensity: 0.087
+  - weatherType: 3
+    effectPrefab: {fileID: 3587624418322101760, guid: f2ba042a3d6b6d944a6e5f189744674b, type: 3}
+    soundEffect: {fileID: 8300000, guid: af4f625b57788164bad449e50ab4c4bb, type: 3}
+    intensity: 0.983
+  - weatherType: 4
+    effectPrefab: {fileID: 3743336953475187264, guid: a096f9893d3d7244ab116408a22a479c, type: 3}
+    soundEffect: {fileID: 0}
+    intensity: 1
   mainCamera: {fileID: 330585545}
-  effectHeight: 16.3
-  effectWidth: 76.7
-  effectDepth: 77.5
-  debugMode: 1
-  debugWeatherType: 1
+  effectHeight: 10.5
+  effectWidth: 100
+  effectDepth: 100
+  debugMode: 0
+  debugWeather: 1
 --- !u!4 &32913536
 Transform:
   m_ObjectHideFlags: 0
@@ -622,7 +639,6 @@ GameObject:
   m_Component:
   - component: {fileID: 632200907}
   - component: {fileID: 632200906}
-  - component: {fileID: 632200908}
   m_Layer: 0
   m_Name: GameManager
   m_TagString: Untagged
@@ -657,29 +673,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &632200908
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 632200905}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 98604b8cd2391d840b0ec62c4f4a4763, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  biomes:
-  - {fileID: 11400000, guid: e8dc4538a64a90d45b0b32e9efab34f9, type: 2}
-  - {fileID: 11400000, guid: 49e2c8e14c17f734ba40a29fb8198ee7, type: 2}
-  - {fileID: 11400000, guid: 14b7d205477f6bf4998475615252fc4c, type: 2}
-  - {fileID: 11400000, guid: 55e1c0f6f327ba143a210a6cd9da4716, type: 2}
-  - {fileID: 11400000, guid: a2c6ce920900c5148b68b0925ce03f07, type: 2}
-  - {fileID: 11400000, guid: 9ed9a5095aeceaa47866ac99356d9858, type: 2}
-  - {fileID: 11400000, guid: d2802f289cf3089449839203d5343fbc, type: 2}
-  - {fileID: 11400000, guid: 4e256b59ccae99444bdaefc9403bd693, type: 2}
-  - {fileID: 11400000, guid: a1a4ccf7675f2834f86f6bd68dac49fe, type: 2}
-  - {fileID: 11400000, guid: ce8871183cd6de547af25668d7a7a605, type: 2}
 --- !u!1 &832575517
 GameObject:
   m_ObjectHideFlags: 0
@@ -743,7 +736,6 @@ GameObject:
   - component: {fileID: 834328176}
   - component: {fileID: 834328181}
   - component: {fileID: 834328180}
-  - component: {fileID: 834328182}
   m_Layer: 0
   m_Name: Player
   m_TagString: Untagged
@@ -860,8 +852,6 @@ MonoBehaviour:
   playerCamera: {fileID: 330585545}
   mouseSensitivity: 2
   maxLookAngle: 90
-  airControlFactor: 0.5
-  slingshotCooldown: 0.5
 --- !u!54 &834328181
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -889,23 +879,6 @@ Rigidbody:
   m_Interpolate: 0
   m_Constraints: 0
   m_CollisionDetection: 0
---- !u!114 &834328182
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 834328175}
-  m_Enabled: 0
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 9e0bda66caf51674a96525ff6355762a, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  maxCharge: 10
-  chargeMultiplier: 0.1
-  powerFactor: 5
-  minChargeThreshold: 0.1
-  minLookUpAngle: -30
 --- !u!1 &1043636398
 GameObject:
   m_ObjectHideFlags: 0
@@ -1018,11 +991,13 @@ MonoBehaviour:
   player: {fileID: 834328179}
   terrainChunkPrefab: {fileID: 5866918359075794232, guid: 96563a9821d4dea4c87514140c69d958, type: 3}
   chunkSize: 5
-  viewDistance: 4
+  viewDistance: 33
   chunksX: 10
   chunksZ: 10
   worldScale: 4
-  defaultBiome: {fileID: 0}
+  defaultBiome: {fileID: 11400000, guid: d2802f289cf3089449839203d5343fbc, type: 2}
+  showLODDebug: 1
+  playerTransform: {fileID: 834328179}
 --- !u!4 &1342945339
 Transform:
   m_ObjectHideFlags: 0

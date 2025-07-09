@@ -1,0 +1,31 @@
+// Resources/Shaders/StructureGeneration.compute
+#pragma kernel GenerateStructure
+
+// Input data
+int resolution;
+float3 position;
+float size;
+
+// Buffers
+RWStructuredBuffer<float> heights;
+RWStructuredBuffer<int> structures;
+
+[numthreads(8,8,1)]
+void GenerateStructure(uint3 id : SV_DispatchThreadID)
+{
+    int index = (int)id.y * resolution + (int)id.x;
+    float height = heights[index];
+    
+    // Simple structure generation
+    float2 worldPos = float2((float)id.x, (float)id.y);
+    float2 structurePos = position.xz;
+    float distance = length(worldPos - structurePos);
+    
+    if (distance <= size)
+    {
+        height += 5.0f;
+        structures[index] = 1;
+    }
+    
+    heights[index] = height;
+} 

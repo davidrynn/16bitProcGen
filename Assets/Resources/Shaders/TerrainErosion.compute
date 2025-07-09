@@ -1,0 +1,26 @@
+// Resources/Shaders/TerrainErosion.compute
+// Hydraulic erosion simulation for terrain
+// Force reimport
+#pragma kernel ApplyErosion
+
+// Input data
+int resolution;
+float erosionStrength;
+float time;
+
+// Buffers
+RWStructuredBuffer<float> heights;
+
+[numthreads(8,8,1)]
+void ApplyErosion(uint3 id : SV_DispatchThreadID)
+{
+    int index = (int)id.y * resolution + (int)id.x;
+    float height = heights[index];
+    
+    // Simple erosion effect
+    float erosion = erosionStrength * 0.01f;
+    height -= erosion;
+    
+    // Store result
+    heights[index] = height;
+} 

@@ -1,0 +1,262 @@
+// Resources/Shaders/WeatherEffects.compute
+// Enhanced weather effects for terrain
+#pragma kernel ApplyWeatherEffects
+#pragma kernel ApplyRainEffects
+#pragma kernel ApplySnowEffects
+#pragma kernel ApplyStormEffects
+
+// Input data
+int resolution;
+float time;
+float deltaTime;
+
+// Weather parameters
+float temperature;
+float humidity;
+float windSpeed;
+float windDirection;
+float weatherIntensity;
+
+// Weather type (0=Clear, 1=Rain, 2=Snow, 3=Storm, 4=Fog)
+int weatherType;
+
+// Buffers
+RWStructuredBuffer<float> heights;
+RWStructuredBuffer<float> moisture;
+RWStructuredBuffer<float> temperatureBuffer;
+
+// Utility functions
+float hash(float2 p)
+{
+    float3 p3 = frac(float3(p.xyx) * float3(.1031, .1030, .0973));
+    p3 += dot(p3, p3.yxz+33.33);
+    return frac((p3.x + p3.y) * p3.z);
+}
+
+float noise(float2 p)
+{
+    float2 i = floor(p);
+    float2 f = frac(p);
+    f = f * f * (3.0 - 2.0 * f);
+    
+    float a = hash(i);
+    float b = hash(i + float2(1.0, 0.0));
+    float c = hash(i + float2(0.0, 1.0));
+    float d = hash(i + float2(1.0, 1.0));
+    
+    return lerp(lerp(a, b, f.x), lerp(c, d, f.x), f.y);
+}
+
+// Rain effects - Enhanced for visibility
+void ApplyRainEffect(int index, float2 pos, float height)
+{
+    // Rain erodes terrain more visibly
+    float rainErosion = weatherIntensity * 0.005f * deltaTime;
+    height -= rainErosion;
+    
+    // Add moisture
+    moisture[index] = min(1.0f, moisture[index] + weatherIntensity * 0.2f * deltaTime);
+    
+    // Add some noise-based erosion for more visible effect
+    float noiseErosion = noise(pos * 10.0f + time * 0.1f) * weatherIntensity * 0.002f * deltaTime;
+    height -= noiseErosion;
+    
+    heights[index] = max(0.0f, height);
+}
+
+// Snow effects - Enhanced for visibility
+void ApplySnowEffect(int index, float2 pos, float height)
+{
+    // Snow accumulates on terrain more visibly
+    float snowAccumulation = weatherIntensity * 0.01f * deltaTime;
+    
+    // Accumulate snow on lower areas (valleys) and some on higher areas
+    if (height < 0.7f)
+    {
+        height += snowAccumulation;
+    }
+    else
+    {
+        // Light snow on peaks
+        height += snowAccumulation * 0.3f;
+    }
+    
+    // Add noise-based snow patterns
+    float snowPattern = noise(pos * 5.0f + time * 0.05f) * weatherIntensity * 0.005f * deltaTime;
+    height += snowPattern;
+    
+    // Snow reduces temperature
+    temperatureBuffer[index] = max(-20.0f, temperature - weatherIntensity * 10.0f);
+    
+    heights[index] = height;
+}
+
+// Storm effects - Enhanced for visibility
+void ApplyStormEffect(int index, float2 pos, float height)
+{
+    // Storms cause more erosion
+    float stormErosion = weatherIntensity * 0.015f * deltaTime;
+    height -= stormErosion;
+    
+    // High wind effects - more dramatic
+    float windEffect = sin(time * windSpeed * 0.2f + pos.x * 15.0f) * 0.005f;
+    height += windEffect * weatherIntensity;
+    
+    // Add turbulent wind patterns
+    float turbulence = sin(time * 3.0f + pos.x * 25.0f) * cos(time * 2.0f + pos.y * 20.0f);
+    height += turbulence * weatherIntensity * 0.003f * deltaTime;
+    
+    // High moisture
+    moisture[index] = min(1.0f, moisture[index] + weatherIntensity * 0.3f * deltaTime);
+    
+    heights[index] = max(0.0f, height);
+}
+
+// Fog effects - Enhanced for visibility
+void ApplyFogEffect(int index, float2 pos, float height)
+{
+    // Fog creates subtle terrain smoothing
+    float fogSmoothing = weatherIntensity * 0.002f * deltaTime;
+    
+    // Smooth terrain slightly
+    float smoothedHeight = height * (1.0f - fogSmoothing);
+    height = smoothedHeight;
+    
+    // Add very subtle fog-based height variations
+    float fogVariation = noise(pos * 3.0f + time * 0.02f) * weatherIntensity * 0.001f * deltaTime;
+    height += fogVariation;
+    
+    // Fog increases humidity significantly
+    moisture[index] = min(1.0f, moisture[index] + weatherIntensity * 0.15f * deltaTime);
+    
+    // Slight temperature reduction
+    temperatureBuffer[index] = max(0.0f, temperature - weatherIntensity * 5.0f);
+    
+    heights[index] = height;
+}
+
+// Clear weather effects - Enhanced for visibility
+void ApplyClearEffect(int index, float2 pos, float height)
+{
+    // Clear weather slowly dries terrain
+    moisture[index] = max(0.0f, moisture[index] - 0.02f * deltaTime);
+    
+    // Normal temperature
+    temperatureBuffer[index] = temperature;
+    
+    // Very subtle terrain stabilization
+    float stabilization = 0.001f * deltaTime;
+    height = height * (1.0f - stabilization);
+    
+    heights[index] = height;
+}
+
+// Main weather effects kernel
+[numthreads(8,8,1)]
+void ApplyWeatherEffects(uint3 id : SV_DispatchThreadID)
+{
+    int index = (int)id.y * resolution + (int)id.x;
+    float height = heights[index];
+    
+    // Calculate position in world space
+    float2 pos = float2(id.x, id.y) / resolution;
+    
+    // Apply weather effects based on type
+    switch (weatherType)
+    {
+        case 1: // Rain
+            ApplyRainEffect(index, pos, height);
+            break;
+        case 2: // Snow
+            ApplySnowEffect(index, pos, height);
+            break;
+        case 3: // Storm
+            ApplyStormEffect(index, pos, height);
+            break;
+        case 4: // Fog
+            ApplyFogEffect(index, pos, height);
+            break;
+        default: // Clear
+            ApplyClearEffect(index, pos, height);
+            break;
+    }
+    
+    // Update moisture based on humidity
+    moisture[index] = humidity;
+    
+    // Update temperature buffer
+    temperatureBuffer[index] = temperature;
+}
+
+// Specialized rain kernel for heavy rain effects
+[numthreads(8,8,1)]
+void ApplyRainEffects(uint3 id : SV_DispatchThreadID)
+{
+    int index = (int)id.y * resolution + (int)id.x;
+    float height = heights[index];
+    
+    // Heavy rain erosion - more dramatic
+    float heavyErosion = weatherIntensity * 0.02f * deltaTime;
+    height -= heavyErosion;
+    
+    // Add channeling effects
+    float2 pos = float2(id.x, id.y) / resolution;
+    float channeling = noise(pos * 8.0f) * weatherIntensity * 0.01f * deltaTime;
+    height -= channeling;
+    
+    // Saturation
+    moisture[index] = 1.0f;
+    
+    heights[index] = max(0.0f, height);
+}
+
+// Specialized snow kernel for blizzard effects
+[numthreads(8,8,1)]
+void ApplySnowEffects(uint3 id : SV_DispatchThreadID)
+{
+    int index = (int)id.y * resolution + (int)id.x;
+    float height = heights[index];
+    
+    // Heavy snow accumulation - more dramatic
+    float heavySnow = weatherIntensity * 0.03f * deltaTime;
+    height += heavySnow;
+    
+    // Add snow drift effects
+    float2 pos = float2(id.x, id.y) / resolution;
+    float snowDrift = noise(pos * 6.0f + time * 0.1f) * weatherIntensity * 0.015f * deltaTime;
+    height += snowDrift;
+    
+    // Extreme cold
+    temperatureBuffer[index] = -30.0f;
+    
+    heights[index] = height;
+}
+
+// Specialized storm kernel for extreme weather
+[numthreads(8,8,1)]
+void ApplyStormEffects(uint3 id : SV_DispatchThreadID)
+{
+    int index = (int)id.y * resolution + (int)id.x;
+    float height = heights[index];
+    
+    // Extreme erosion - very dramatic
+    float extremeErosion = weatherIntensity * 0.04f * deltaTime;
+    height -= extremeErosion;
+    
+    // Turbulent wind effects - very dramatic
+    float2 pos = float2(id.x, id.y) / resolution;
+    float turbulence = sin(time * 5.0f + pos.x * 30.0f) * cos(time * 3.0f + pos.y * 25.0f);
+    height += turbulence * weatherIntensity * 0.01f * deltaTime;
+    
+    // Add lightning-like terrain scarring
+    float lightning = noise(pos * 20.0f + time * 10.0f);
+    if (lightning > 0.95f)
+    {
+        height -= weatherIntensity * 0.02f * deltaTime;
+    }
+    
+    // Maximum moisture
+    moisture[index] = 1.0f;
+    
+    heights[index] = max(0.0f, height);
+} 

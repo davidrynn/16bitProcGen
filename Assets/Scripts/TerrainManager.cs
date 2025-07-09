@@ -140,7 +140,7 @@ public class TerrainManager : MonoBehaviour
         terrainTextures[TerrainType.Mud] = GenerateSolidColorTexture(new Color(0.4f, 0.25f, 0.1f), 16, 16);
         terrainTextures[TerrainType.Lava] = GenerateSolidColorTexture(Color.red, 16, 16);
         terrainTextures[TerrainType.Flora] = GenerateSolidColorTexture(new Color(0f, 0.392f, 0f, 1f), 16, 16);
-        terrainTextures[TerrainType.Chrystal] = GenerateSolidColorTexture(new Color(0.5f, 0f, 0.5f, 1f), 16, 16);
+        terrainTextures[TerrainType.Crystal] = GenerateSolidColorTexture(new Color(0.5f, 0f, 0.5f, 1f), 16, 16);
         terrainTextures[TerrainType.Default] = GenerateGradientTexture(16, 16);
 
         foreach (TerrainType terrainType in Enum.GetValues(typeof(TerrainType)))
