@@ -19,8 +19,8 @@ namespace DOTS.Test
         [SerializeField] private float updateInterval = 0.5f;
         
         [Header("Height Graph")]
-        [SerializeField] private int graphWidth = 200;
-        [SerializeField] private int graphHeight = 100;
+        [SerializeField] private float graphWidthPercent = 0.15f; // 15% of screen width
+        [SerializeField] private float graphHeightPercent = 0.12f; // 12% of screen height
         [SerializeField] private Color heightColor = Color.green;
         [SerializeField] private Color changeColor = Color.red;
         
@@ -31,10 +31,14 @@ namespace DOTS.Test
         [SerializeField] private Color fogOverlayColor = new Color(0.7f, 0.7f, 0.7f, 0.3f);
         
         [Header("Layout Settings")]
-        [SerializeField] private int margin = 20;
-        [SerializeField] private int textHeight = 25;
-        [SerializeField] private int panelWidth = 250;
-        [SerializeField] private int panelHeight = 120;
+        [SerializeField] private float marginPercent = 0.02f; // 2% of screen size
+        [SerializeField] private float textHeightPercent = 0.03f; // 3% of screen height
+        [SerializeField] private float panelWidthPercent = 0.18f; // 18% of screen width
+        [SerializeField] private float panelHeightPercent = 0.15f; // 15% of screen height
+        
+        [Header("Input Settings")]
+        [SerializeField] private KeyCode toggleCursorKey = KeyCode.Tab;
+        [SerializeField] private bool enableCursorToggle = true;
         
         private EntityManager entityManager;
         private EntityQuery terrainQuery;
@@ -53,6 +57,7 @@ namespace DOTS.Test
         private int activeChunks = 0;
         
         private Vector2 scrollPosition = Vector2.zero;
+        private bool cursorUnlocked = false;
         
         void Start()
         {
@@ -92,11 +97,34 @@ namespace DOTS.Test
         {
             if (!enableVisualization) return;
             
+            HandleCursorToggle();
+            
             float currentTime = Time.time;
             if (currentTime - lastUpdateTime > updateInterval)
             {
                 UpdateHeightData();
                 lastUpdateTime = currentTime;
+            }
+        }
+        
+        private void HandleCursorToggle()
+        {
+            if (!enableCursorToggle) return;
+            
+            if (Input.GetKeyDown(toggleCursorKey))
+            {
+                cursorUnlocked = !cursorUnlocked;
+                
+                if (cursorUnlocked)
+                {
+                    Cursor.lockState = CursorLockMode.None;
+                    Cursor.visible = true;
+                }
+                else
+                {
+                    Cursor.lockState = CursorLockMode.Locked;
+                    Cursor.visible = false;
+                }
             }
         }
         
@@ -178,6 +206,9 @@ namespace DOTS.Test
         {
             if (!enableVisualization) return;
             
+            // Handle mouse wheel input for scroll views
+            HandleMouseWheel();
+            
             if (showHeightGraph)
             {
                 DrawHeightGraph();
@@ -189,6 +220,31 @@ namespace DOTS.Test
             }
             
             DrawDebugInfo();
+            
+            // Show cursor status
+            if (cursorUnlocked)
+            {
+                DrawCursorStatus();
+            }
+        }
+        
+        private void HandleMouseWheel()
+        {
+            float scrollDelta = Input.GetAxis("Mouse ScrollWheel");
+            if (scrollDelta != 0)
+            {
+                // Apply scroll to the weather info panel
+                scrollPosition.y -= scrollDelta * 50f; // Adjust sensitivity
+                scrollPosition.y = Mathf.Max(0, scrollPosition.y);
+            }
+        }
+        
+        private void DrawCursorStatus()
+        {
+            // Show a small indicator that cursor is unlocked
+            GUI.color = new Color(1, 1, 0, 0.8f);
+            GUI.Label(new Rect(10, Screen.height - 30, 200, 20), "Cursor Unlocked - Press Tab to lock");
+            GUI.color = Color.white;
         }
         
         /// <summary>
@@ -196,6 +252,11 @@ namespace DOTS.Test
         /// </summary>
         private void DrawHeightGraph()
         {
+            // Calculate proportional dimensions with constraints
+            int graphWidth = Mathf.Clamp(Mathf.RoundToInt(Screen.width * graphWidthPercent), 150, 400);
+            int graphHeight = Mathf.Clamp(Mathf.RoundToInt(Screen.height * graphHeightPercent), 80, 200);
+            int margin = Mathf.Clamp(Mathf.RoundToInt(Mathf.Min(Screen.width, Screen.height) * marginPercent), 10, 50);
+            
             // Height graph (bottom-right)
             Rect graphRect = new Rect(Screen.width - graphWidth - margin, Screen.height - graphHeight - margin - 50, 
                                     graphWidth, graphHeight);
@@ -273,6 +334,12 @@ namespace DOTS.Test
 
         private void DrawWeatherInfo()
         {
+            // Calculate proportional dimensions with constraints
+            int margin = Mathf.Clamp(Mathf.RoundToInt(Mathf.Min(Screen.width, Screen.height) * marginPercent), 10, 50);
+            int panelWidth = Mathf.Clamp(Mathf.RoundToInt(Screen.width * panelWidthPercent), 200, 400);
+            int panelHeight = Mathf.Clamp(Mathf.RoundToInt(Screen.height * panelHeightPercent), 100, 200);
+            int textHeight = Mathf.Clamp(Mathf.RoundToInt(Screen.height * textHeightPercent), 20, 40);
+            
             // Weather info panel (top-left)
             Rect weatherPanel = new Rect(margin, margin, panelWidth, panelHeight);
             
@@ -280,23 +347,29 @@ namespace DOTS.Test
             GUI.color = new Color(0, 0, 0, 0.8f);
             GUI.Box(weatherPanel, "");
             
+            // Create scroll view for weather info
+            Rect scrollViewRect = new Rect(weatherPanel.x + 5, weatherPanel.y + 5, weatherPanel.width - 10, weatherPanel.height - 10);
+            Rect contentRect = new Rect(0, 0, scrollViewRect.width - 20, textHeight * 8); // Extra height for content
+            
+            scrollPosition = GUI.BeginScrollView(scrollViewRect, scrollPosition, contentRect);
+            
             // Title
             GUI.color = Color.white;
-            GUI.Label(new Rect(weatherPanel.x + 10, weatherPanel.y + 5, weatherPanel.width - 20, textHeight), 
-                     $"Weather: {currentWeather}");
+            GUI.Label(new Rect(0, 0, contentRect.width, textHeight), $"Weather: {currentWeather}");
             
             // Weather details
-            GUI.Label(new Rect(weatherPanel.x + 10, weatherPanel.y + 30, weatherPanel.width - 20, textHeight), 
-                     $"Active Chunks: {activeChunks}");
-            GUI.Label(new Rect(weatherPanel.x + 10, weatherPanel.y + 55, weatherPanel.width - 20, textHeight), 
-                     $"Intensity: {weatherIntensity:F2}");
+            GUI.Label(new Rect(0, textHeight, contentRect.width, textHeight), $"Active Chunks: {activeChunks}");
+            GUI.Label(new Rect(0, textHeight * 2, contentRect.width, textHeight), $"Intensity: {weatherIntensity:F2}");
             
             // Height info
-            GUI.Label(new Rect(weatherPanel.x + 10, weatherPanel.y + 80, weatherPanel.width - 20, textHeight), 
-                     $"Height: {lastHeight:F4}");
-            GUI.Label(new Rect(weatherPanel.x + 10, weatherPanel.y + 105, weatherPanel.width - 20, textHeight), 
-                     $"Max Change: {maxHeightChange:F4}");
+            GUI.Label(new Rect(0, textHeight * 3, contentRect.width, textHeight), $"Height: {lastHeight:F4}");
+            GUI.Label(new Rect(0, textHeight * 4, contentRect.width, textHeight), $"Max Change: {maxHeightChange:F4}");
             
+            // Additional debug info that might be useful
+            GUI.Label(new Rect(0, textHeight * 5, contentRect.width, textHeight), $"Time: {Time.time:F1}s");
+            GUI.Label(new Rect(0, textHeight * 6, contentRect.width, textHeight), $"FPS: {Mathf.RoundToInt(1f / Time.deltaTime)}");
+            
+            GUI.EndScrollView();
             GUI.color = Color.white;
         }
         
@@ -305,21 +378,50 @@ namespace DOTS.Test
         /// </summary>
         private void DrawDebugInfo()
         {
+            // Calculate proportional dimensions with constraints
+            int margin = Mathf.Clamp(Mathf.RoundToInt(Mathf.Min(Screen.width, Screen.height) * marginPercent), 10, 50);
+            int panelWidth = Mathf.Clamp(Mathf.RoundToInt(Screen.width * panelWidthPercent), 200, 400);
+            int panelHeight = Mathf.Clamp(Mathf.RoundToInt(Screen.height * panelHeightPercent), 100, 200);
+            int textHeight = Mathf.Clamp(Mathf.RoundToInt(Screen.height * textHeightPercent), 20, 40);
+            
             // Debug info panel (top-right)
             Rect debugPanel = new Rect(Screen.width - panelWidth - margin, margin, panelWidth, panelHeight);
             
             GUI.color = new Color(0, 0, 0, 0.8f);
             GUI.Box(debugPanel, "");
             
+            // Create scroll view for debug info
+            Rect scrollViewRect = new Rect(debugPanel.x + 5, debugPanel.y + 5, debugPanel.width - 10, debugPanel.height - 10);
+            Rect contentRect = new Rect(0, 0, scrollViewRect.width - 20, textHeight * 10); // Extra height for content
+            
+            Vector2 debugScrollPosition = GUI.BeginScrollView(scrollViewRect, Vector2.zero, contentRect);
+            
             GUI.color = Color.white;
-            GUI.Label(new Rect(debugPanel.x + 10, debugPanel.y + 5, debugPanel.width - 20, textHeight), "Debug Info");
-            GUI.Label(new Rect(debugPanel.x + 10, debugPanel.y + 30, debugPanel.width - 20, textHeight), 
+            GUI.Label(new Rect(0, 0, contentRect.width, textHeight), "Debug Info");
+            GUI.Label(new Rect(0, textHeight, contentRect.width, textHeight), 
                      $"FPS: {Mathf.RoundToInt(1f / Time.deltaTime)}");
-            GUI.Label(new Rect(debugPanel.x + 10, debugPanel.y + 55, debugPanel.width - 20, textHeight), 
+            GUI.Label(new Rect(0, textHeight * 2, contentRect.width, textHeight), 
                      $"Time: {Time.time:F1}s");
-            GUI.Label(new Rect(debugPanel.x + 10, debugPanel.y + 80, debugPanel.width - 20, textHeight), 
+            GUI.Label(new Rect(0, textHeight * 3, contentRect.width, textHeight), 
                      $"Entities: {terrainQuery.CalculateEntityCount()}");
             
+            // Additional debug info
+            GUI.Label(new Rect(0, textHeight * 4, contentRect.width, textHeight), 
+                     $"Screen: {Screen.width}x{Screen.height}");
+            GUI.Label(new Rect(0, textHeight * 5, contentRect.width, textHeight), 
+                     $"Memory: {System.GC.GetTotalMemory(false) / 1024 / 1024}MB");
+            
+            // Instructions
+            GUI.Label(new Rect(0, textHeight * 6, contentRect.width, textHeight), 
+                     "=== CONTROLS ===");
+            GUI.Label(new Rect(0, textHeight * 7, contentRect.width, textHeight), 
+                     $"Press {toggleCursorKey} to toggle cursor");
+            GUI.Label(new Rect(0, textHeight * 8, contentRect.width, textHeight), 
+                     "Mouse wheel to scroll panels");
+            GUI.Label(new Rect(0, textHeight * 9, contentRect.width, textHeight), 
+                     "Click and drag to scroll");
+            
+            GUI.EndScrollView();
             GUI.color = Color.white;
         }
         
