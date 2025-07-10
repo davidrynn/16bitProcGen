@@ -130,15 +130,7 @@ public partial class TerrainGenerationSystem : SystemBase
     /// </summary>
     private NativeArray<float> GenerateTerrainWithComputeShader(DOTS.Terrain.TerrainData terrainData)
     {
-        // TEMPORARY: Hardcoded test mode to bypass compute shader issues
-        bool useHardcodedTest = true;
-        
-        if (useHardcodedTest)
-        {
-            Debug.Log("[DOTS] Using hardcoded test heights - bypassing compute shader");
-            return GenerateHardcodedTestHeights(terrainData);
-        }
-        
+        // Remove the hardcoded test entirely - use compute shader directly
         var computeShader = computeManager.NoiseShader;
         if (computeShader == null)
         {
@@ -158,8 +150,8 @@ public partial class TerrainGenerationSystem : SystemBase
         
         Debug.Log($"[DOTS] Created buffer with size: {totalSize}, stride: {sizeof(float)}");
         
-        var heights = new NativeArray<float>(totalSize, Allocator.Temp);
-        
+        var tempArray = new float[totalSize];
+
         // Debug: Check initial buffer contents
         var initialHeights = new float[totalSize];
         heightBuffer.GetData(initialHeights);
@@ -232,27 +224,23 @@ public partial class TerrainGenerationSystem : SystemBase
             Debug.Log($"[DOTS] Compute shader dispatch completed");
             
             // Read back results directly
-            heightBuffer.GetData(heights.ToArray());
+            heightBuffer.GetData(tempArray);
             
             // Debug: Check if buffer was actually written to
             Debug.Log($"[DOTS] Buffer size: {heightBuffer.count}, Stride: {heightBuffer.stride}");
             
             // Debug: Check if the buffer was actually modified
             bool hasNonZeroValues = false;
-            for (int i = 0; i < Mathf.Min(10, heights.Length); i++)
+            for (int i = 0; i < Mathf.Min(10, tempArray.Length); i++)
             {
-                if (heights[i] != 0)
+                if (tempArray[i] != 0)
                 {
                     hasNonZeroValues = true;
                     break;
                 }
             }
-            Debug.Log($"[DOTS] Buffer has non-zero values: {hasNonZeroValues}");
-            
-            // Debug: Check first few values to see what's being generated
-            Debug.Log($"[DOTS] First 5 height values: {heights[0]}, {heights[1]}, {heights[2]}, {heights[3]}, {heights[4]}");
-            Debug.Log($"[DOTS] Last 5 height values: {heights[totalSize-5]}, {heights[totalSize-4]}, {heights[totalSize-3]}, {heights[totalSize-2]}, {heights[totalSize-1]}");
-            
+            Debug.Log($"[DOTS] Buffer has non-zero values: {hasNonZeroValues}"); // Add this line to use the variable
+              
             // Cleanup
             heightBuffer.Release();
             
@@ -261,11 +249,12 @@ public partial class TerrainGenerationSystem : SystemBase
         catch (System.Exception e)
         {
             Debug.LogError($"[DOTS] Compute shader generation failed: {e.Message}");
-            heights.Dispose();
+            // Remove the tempArray.Dispose() call - float[] doesn't need disposal
+            heightBuffer.Release(); // Make sure to release the buffer even on error
             return new NativeArray<float>(0, Allocator.Temp);
         }
         
-        return heights;
+        return new NativeArray<float>(tempArray, Allocator.Temp);
     }
     
     /// <summary>

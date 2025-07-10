@@ -69,7 +69,7 @@ namespace DOTS.Terrain.Test
             }
             
             // Get TerrainEntityManager
-            entityManager = FindObjectOfType<TerrainEntityManager>();
+            entityManager = FindFirstObjectByType<TerrainEntityManager>();
             if (entityManager == null)
             {
                 Debug.LogError("TerrainEntityManager not found!");

@@ -12,7 +12,6 @@ public class BasicComputeShaderTest : MonoBehaviour
     [SerializeField] private float testValue = 10.0f;
     
     [Header("Test Results")]
-    [SerializeField] private bool testPassed = false;
     [SerializeField] private string testMessage = "";
     
     private void Start()
@@ -113,13 +112,11 @@ public class BasicComputeShaderTest : MonoBehaviour
             // Clean up
             outputBuffer.Release();
             
-            testPassed = true;
             testMessage = "Basic compute shader test passed! Compute shader pipeline is working.";
             Debug.Log("=== BASIC COMPUTE SHADER TEST PASSED ===");
         }
         catch (System.Exception e)
         {
-            testPassed = false;
             testMessage = $"Test failed: {e.Message}";
             Debug.LogError($"=== BASIC COMPUTE SHADER TEST FAILED: {e.Message} ===");
         }
