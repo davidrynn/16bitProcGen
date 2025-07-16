@@ -14,7 +14,8 @@ namespace DOTS.Terrain.Test
     public class HybridGenerationTest : MonoBehaviour
     {
         [Header("Test Settings")]
-        [SerializeField] private int testChunkCount = 3;
+        [SerializeField] private int gridSize = 2;        // Size of the grid (2x2, 3x3, etc.)
+        [SerializeField] private bool useGridLayout = true; // Toggle between line and grid
         [SerializeField] private bool runOnStart = true;
         [SerializeField] private bool logPerformance = true;
         
@@ -126,35 +127,74 @@ namespace DOTS.Terrain.Test
         /// <returns>True if entities were created successfully</returns>
         private bool CreateTestEntities()
         {
-            DebugLog($"Creating {testChunkCount} test terrain entities...", true);
+            int totalChunks = useGridLayout ? gridSize * gridSize : gridSize;
+            DebugLog($"Creating {totalChunks} terrain entities with {(useGridLayout ? "grid" : "line")} layout...", true);
             
             try
             {
-                for (int i = 0; i < testChunkCount; i++)
+                int chunksCreated = 0;
+                
+                if (useGridLayout)
                 {
-                    // Create terrain entity with test data
-                    var entity = entityManager.CreateTerrainEntity(
-                        new int2(i, 0), // Chunk position
-                        64, // Resolution (increased for better visibility)
-                        1f, // Size (decreased for more variation)
-                        BiomeType.Plains // Default biome type
-                    );
-                    
-                    if (entity == Entity.Null)
+                    // Create a 2D grid of chunks
+                    for (int z = 0; z < gridSize; z++)
                     {
-                        DebugError($"Failed to create terrain entity {i}");
-                        return false;
+                        for (int x = 0; x < gridSize; x++)
+                        {
+                            // Create terrain entity with test data
+                            var entity = entityManager.CreateTerrainEntity(
+                                new int2(x, z), // 2D grid position
+                                64, // Resolution
+                                10f, // World scale
+                                BiomeType.Plains // Default biome type
+                            );
+                            
+                            if (entity == Entity.Null)
+                            {
+                                DebugError($"Failed to create terrain entity at ({x}, {z})");
+                                return false;
+                            }
+                            
+                            // Mark the entity for generation
+                            var terrainData = defaultWorld.EntityManager.GetComponentData<TerrainData>(entity);
+                            terrainData.needsGeneration = true;
+                            defaultWorld.EntityManager.SetComponentData(entity, terrainData);
+                            
+                            DebugLog($"✓ Created terrain entity {chunksCreated} at chunk position ({x}, {z}) - marked for generation", true);
+                            chunksCreated++;
+                        }
                     }
-                    
-                    // Mark the entity for generation
-                    var terrainData = defaultWorld.EntityManager.GetComponentData<TerrainData>(entity);
-                    terrainData.needsGeneration = true;
-                    defaultWorld.EntityManager.SetComponentData(entity, terrainData);
-                    
-                    DebugLog($"✓ Created terrain entity {i} at chunk position ({i}, 0) - marked for generation", true);
+                }
+                else
+                {
+                    // Create a horizontal line of chunks
+                    for (int i = 0; i < gridSize; i++)
+                    {
+                        // Create terrain entity with test data
+                        var entity = entityManager.CreateTerrainEntity(
+                            new int2(i, 0), // Chunk position
+                            64, // Resolution
+                            10f, // World scale
+                            BiomeType.Plains // Default biome type
+                        );
+                        
+                        if (entity == Entity.Null)
+                        {
+                            DebugError($"Failed to create terrain entity {i}");
+                            return false;
+                        }
+                        
+                        // Mark the entity for generation
+                        var terrainData = defaultWorld.EntityManager.GetComponentData<TerrainData>(entity);
+                        terrainData.needsGeneration = true;
+                        defaultWorld.EntityManager.SetComponentData(entity, terrainData);
+                        
+                        DebugLog($"✓ Created terrain entity {i} at chunk position ({i}, 0) - marked for generation", true);
+                        chunksCreated++;
+                    }
                 }
                 
-                DebugLog($"✓ Created {testChunkCount} test entities successfully - all marked for generation");
+                DebugLog($"✓ Created {chunksCreated} test entities successfully - all marked for generation");
                 return true;
             }
             catch (System.Exception e)
@@ -192,11 +232,12 @@ namespace DOTS.Terrain.Test
             // Check terrain entities specifically
             var terrainQuery = defaultWorld.EntityManager.CreateEntityQuery(typeof(TerrainData));
             var terrainCount = terrainQuery.CalculateEntityCount();
-            DebugLog($"✓ Found {terrainCount} terrain entities");
+            int expectedCount = useGridLayout ? gridSize * gridSize : gridSize;
+            DebugLog($"✓ Found {terrainCount} terrain entities (expected {expectedCount})");
             
-            if (terrainCount < testChunkCount)
+            if (terrainCount < expectedCount)
             {
-                DebugWarning($"Expected {testChunkCount} terrain entities, found {terrainCount}");
+                DebugWarning($"Expected {expectedCount} terrain entities, found {terrainCount}");
             }
             
             DebugLog("✓ System integration verified");
@@ -343,6 +384,16 @@ namespace DOTS.Terrain.Test
         /// <summary>
         /// Gets current system status
         /// </summary>
+        [ContextMenu("Cleanup Test Entities")]
+        public void CleanupTestEntities()
+        {
+            if (entityManager != null)
+            {
+                Debug.Log("HybridGenerationTest: Manually cleaning up test entities");
+                entityManager.DestroyAllTerrainEntities();
+            }
+        }
+        
         [ContextMenu("Get System Status")]
         public void GetSystemStatus()
         {
@@ -376,7 +427,13 @@ namespace DOTS.Terrain.Test
         
         private void OnDestroy()
         {
-            // Cleanup if needed
+            // Cleanup test entities to prevent memory leaks
+            if (entityManager != null)
+            {
+                Debug.Log("HybridGenerationTest: Cleaning up test entities");
+                entityManager.DestroyAllTerrainEntities();
+            }
+            
             Debug.Log("HybridGenerationTest: Destroyed");
         }
 

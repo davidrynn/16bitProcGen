@@ -366,6 +366,17 @@ namespace DOTS.Terrain.Test
             Debug.LogError($"[HybridSetup] {message}");
         }
         
+        private void OnDestroy()
+        {
+            // Clean up any remaining terrain entities to prevent memory leaks
+            var entityManager = FindFirstObjectByType<TerrainEntityManager>();
+            if (entityManager != null)
+            {
+                Debug.Log("HybridTestSetup: Cleaning up terrain entities");
+                entityManager.DestroyAllTerrainEntities();
+            }
+        }
+        
         void OnGUI()
         {
             if (!enableDebugLogs) return;
