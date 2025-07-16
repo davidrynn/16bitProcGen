@@ -103,14 +103,29 @@ void GenerateNoise(uint3 id : SV_DispatchThreadID)
     if (id.x >= (uint)chunk_resolution || id.y >= (uint)chunk_resolution)
         return;
     
-    // Calculate world position
-    float2 worldPos = chunk_position.xz + float2((float)id.x, (float)id.y) * chunk_worldScale;
+    // FIXED: Calculate world position with proper vertex spacing
+    // chunk_worldScale is the total size of the chunk
+    // We need to calculate the step size between vertices
+    float vertexStep = chunk_worldScale / (float)(chunk_resolution - 1);
     
-    // Generate noise based on world position
-    float noiseValue = GeneratePerlinNoise(worldPos + chunk_noiseOffset, chunk_noiseScale);
+    // Calculate world position with proper spacing
+    float2 worldPos = chunk_position.xz + float2((float)id.x, (float)id.y) * vertexStep;
     
-    // Apply height multiplier
-    float height = noiseValue * chunk_heightMultiplier;
+    // MULTI-LAYER NOISE: Combine multiple noise layers for more interesting terrain
+    // Base terrain (large features)
+    float baseNoise = GeneratePerlinNoise(worldPos + chunk_noiseOffset, chunk_noiseScale);
+    
+    // Medium detail (medium features)
+    float mediumNoise = GeneratePerlinNoise(worldPos + chunk_noiseOffset + float2(1000.0, 1000.0), chunk_noiseScale * 4.0) * 0.5;
+    
+    // Fine detail (small features)
+    float fineNoise = GeneratePerlinNoise(worldPos + chunk_noiseOffset + float2(2000.0, 2000.0), chunk_noiseScale * 16.0) * 0.25;
+    
+    // Combine noise layers
+    float combinedNoise = baseNoise + mediumNoise + fineNoise;
+    
+    // Apply height multiplier (allow negative values for more natural terrain)
+    float height = combinedNoise * chunk_heightMultiplier;
     
     // Write to buffer
     heights[index] = height;
@@ -121,7 +136,10 @@ void GenerateNoise(uint3 id : SV_DispatchThreadID)
 void GenerateBiomeNoise(uint3 id : SV_DispatchThreadID)
 {
     int index = (int)id.y * chunk_resolution + (int)id.x;
-    float2 worldPos = chunk_position.xz + float2((float)id.x, (float)id.y) * chunk_worldScale;
+    
+    // Use same coordinate system fix
+    float vertexStep = chunk_worldScale / (float)(chunk_resolution - 1);
+    float2 worldPos = chunk_position.xz + float2((float)id.x, (float)id.y) * vertexStep;
     
     // Generate biome-specific noise
     float biomeValue = GeneratePerlinNoise(worldPos + chunk_noiseOffset, chunk_noiseScale);
@@ -133,7 +151,10 @@ void GenerateBiomeNoise(uint3 id : SV_DispatchThreadID)
 void GenerateStructureNoise(uint3 id : SV_DispatchThreadID)
 {
     int index = (int)id.y * chunk_resolution + (int)id.x;
-    float2 worldPos = chunk_position.xz + float2((float)id.x, (float)id.y) * chunk_worldScale;
+    
+    // Use same coordinate system fix
+    float vertexStep = chunk_worldScale / (float)(chunk_resolution - 1);
+    float2 worldPos = chunk_position.xz + float2((float)id.x, (float)id.y) * vertexStep;
     
     // Generate structure placement noise
     float structureValue = GenerateCellularNoise(worldPos, 0.02);

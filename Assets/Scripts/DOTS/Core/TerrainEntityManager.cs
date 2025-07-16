@@ -121,12 +121,8 @@ public class TerrainEntityManager : MonoBehaviour
     {
         if (entityManager.Exists(entity))
         {
-            // Get terrain data to clean up ComputeBuffers
-            if (entityManager.HasComponent<DOTS.Terrain.TerrainData>(entity))
-            {
-                var terrainData = entityManager.GetComponentData<DOTS.Terrain.TerrainData>(entity);
-                CleanupTerrainData(terrainData);
-            }
+            // Clean up blob assets before destroying entity
+            CleanupTerrainData(entity);
             
             entityManager.DestroyEntity(entity);
             Debug.Log($"Destroyed terrain entity {entity}");
@@ -193,25 +189,41 @@ public class TerrainEntityManager : MonoBehaviour
     /// <summary>
     /// Cleans up terrain data when destroying entities
     /// </summary>
-    /// <param name="terrainData">Terrain data to clean up</param>
-    private void CleanupTerrainData(DOTS.Terrain.TerrainData terrainData)
+    /// <param name="entity">Entity to clean up</param>
+    private void CleanupTerrainData(Entity entity)
     {
-        // Dispose blob assets
-        if (terrainData.heightData.IsCreated)
+        // Clean up terrain data blob assets
+        if (entityManager.HasComponent<DOTS.Terrain.TerrainData>(entity))
         {
-            terrainData.heightData.Dispose();
+            var terrainData = entityManager.GetComponentData<DOTS.Terrain.TerrainData>(entity);
+            
+            if (terrainData.heightData.IsCreated)
+            {
+                terrainData.heightData.Dispose();
+            }
+            
+            if (terrainData.modifications.IsCreated)
+            {
+                terrainData.modifications.Dispose();
+            }
+            
+            // Note: ComputeBuffer cleanup is handled by TerrainComputeBufferManager
+            var bufferManager = FindFirstObjectByType<TerrainComputeBufferManager>();
+            if (bufferManager != null)
+            {
+                bufferManager.ReleaseChunkBuffers(terrainData.chunkPosition);
+            }
         }
         
-        if (terrainData.modifications.IsCreated)
+        // Clean up biome component blob assets
+        if (entityManager.HasComponent<BiomeComponent>(entity))
         {
-            terrainData.modifications.Dispose();
-        }
-        
-        // Note: ComputeBuffer cleanup is handled by TerrainComputeBufferManager
-        var bufferManager = FindFirstObjectByType<TerrainComputeBufferManager>();
-        if (bufferManager != null)
-        {
-            bufferManager.ReleaseChunkBuffers(terrainData.chunkPosition);
+            var biomeComponent = entityManager.GetComponentData<BiomeComponent>(entity);
+            
+            if (biomeComponent.terrainData.IsCreated)
+            {
+                biomeComponent.terrainData.Dispose();
+            }
         }
     }
     

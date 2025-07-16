@@ -51,7 +51,16 @@ public static class BiomeBuilder
         }
         
         var result = builder.CreateBlobAssetReference<BiomeTerrainData>(Allocator.Persistent);
-        builder.Dispose();
+        
+        // Ensure builder is disposed even if an exception occurs
+        try
+        {
+            builder.Dispose();
+        }
+        catch (System.Exception e)
+        {
+            Debug.LogError($"BiomeBuilder: Error disposing BlobBuilder: {e.Message}");
+        }
         
         return result;
     }

@@ -30,17 +30,24 @@ namespace DOTS.Terrain.Generation
         private ComputeBuffer biomeBuffer;
         private ComputeBuffer structureBuffer;
         
-        // Settings
-        private const int MAX_CHUNKS_PER_FRAME = 4; // Limit to prevent frame drops
-        private const int DEFAULT_BUFFER_SIZE = 1024 * 1024; // 1M floats
-        
-        // Debug settings
-        private bool enableDebugLogs = false; // Set to true in inspector or via code
-        private bool enableVerboseLogs = false; // Set to true for detailed logging
+        // Settings reference
+        private TerrainGenerationSettings settings;
         
         protected override void OnCreate()
         {
             Debug.Log("HybridTerrainGenerationSystem: Initializing...");
+            
+            // Load settings
+            settings = TerrainGenerationSettings.Default;
+            if (settings != null)
+            {
+                settings.ValidateSettings();
+                Debug.Log("HybridTerrainGenerationSystem: Settings loaded successfully");
+            }
+            else
+            {
+                Debug.LogWarning("HybridTerrainGenerationSystem: No settings found, using defaults");
+            }
             
             // Initialize performance counters
             lastGenerationTime = 0f;
@@ -132,7 +139,7 @@ namespace DOTS.Terrain.Generation
                     }
                 }).WithoutBurst().Run();
             
-            if (totalEntities > 0 && enableDebugLogs)
+            if (totalEntities > 0 && settings?.enableDebugLogs == true)
             {
                 DebugLog($"Found {totalEntities} terrain entities, {entitiesNeedingGeneration} need generation", true);
             }
@@ -142,7 +149,7 @@ namespace DOTS.Terrain.Generation
                 .ForEach((Entity entity, ref TerrainData terrain) =>
                 {
                     // Check if this terrain needs generation
-                    if (terrain.needsGeneration && chunksProcessedThisFrame < MAX_CHUNKS_PER_FRAME)
+                    if (terrain.needsGeneration && chunksProcessedThisFrame < settings?.maxChunksPerFrame)
                     {
                         DebugLog($"Processing entity {entity.Index} - resolution: {terrain.resolution}, position: {terrain.chunkPosition}", true);
                         
@@ -208,10 +215,10 @@ namespace DOTS.Terrain.Generation
                     resolution = resolution,
                     worldScale = terrain.worldScale,
                     time = (float)SystemAPI.Time.ElapsedTime,
-                    biomeScale = 1.0f,
-                    noiseScale = 0.1f, // Increased from 0.01f
-                    heightMultiplier = 50.0f, // Increased from 1.0f
-                    noiseOffset = float2.zero
+                    biomeScale = settings?.biomeScale ?? 1.0f,
+                    noiseScale = settings?.noiseScale ?? 0.02f,
+                    heightMultiplier = settings?.heightMultiplier ?? 100.0f,
+                    noiseOffset = settings?.noiseOffset ?? new float2(123.456f, 789.012f)
                 };
 
                 // Get the correct kernel ID
@@ -249,7 +256,7 @@ namespace DOTS.Terrain.Generation
                 heightBuffer.GetData(heights);
 
                 // DEBUG: Check height values
-                if (enableDebugLogs)
+                if (settings?.logHeightValues == true)
                 {
                     DebugLog($"Height values - First: {heights[0]:F2}, Last: {heights[totalSize-1]:F2}, Sample: {heights[totalSize/2]:F2}");
                 }
@@ -266,7 +273,7 @@ namespace DOTS.Terrain.Generation
                 for (int i = 0; i < totalSize; i++)
                 {
                     heightArray[i] = heights[i];
-                    terrainTypeArray[i] = GetTerrainTypeFromHeight(heights[i]);
+                    terrainTypeArray[i] = settings?.GetTerrainTypeFromHeight(heights[i]) ?? TerrainType.Grass;
                 }
 
                 // Update terrain data
@@ -353,15 +360,11 @@ namespace DOTS.Terrain.Generation
         }
         
         /// <summary>
-        /// Determines terrain type based on height value
+        /// Determines terrain type based on height value (legacy method - now uses settings)
         /// </summary>
         private TerrainType GetTerrainTypeFromHeight(float height)
         {
-            if (height < 10f) return TerrainType.Water;
-            if (height < 20f) return TerrainType.Sand;
-            if (height < 35f) return TerrainType.Grass;
-            if (height < 45f) return TerrainType.Flora;
-            return TerrainType.Rock;
+            return settings?.GetTerrainTypeFromHeight(height) ?? TerrainType.Grass;
         }
         
         /// <summary>
@@ -390,7 +393,7 @@ namespace DOTS.Terrain.Generation
         private void UpdatePerformanceMetrics()
         {
             // Only log performance if debug is enabled
-            if (enableDebugLogs)
+            if (settings?.enableDebugLogs == true)
             {
                 DebugLog($"Performance: Last Gen: {lastGenerationTime:F3}s, Chunks This Frame: {chunksProcessedThisFrame}, Total Chunks: {totalChunksProcessed}", true);
             }
@@ -406,9 +409,10 @@ namespace DOTS.Terrain.Generation
             try
             {
                 // Create buffers for GPU computation
-                heightBuffer = new ComputeBuffer(DEFAULT_BUFFER_SIZE, sizeof(float));
-                biomeBuffer = new ComputeBuffer(DEFAULT_BUFFER_SIZE, sizeof(float));
-                structureBuffer = new ComputeBuffer(DEFAULT_BUFFER_SIZE, sizeof(float));
+                int bufferSize = settings?.defaultBufferSize ?? 1024 * 1024;
+                heightBuffer = new ComputeBuffer(bufferSize, sizeof(float));
+                biomeBuffer = new ComputeBuffer(bufferSize, sizeof(float));
+                structureBuffer = new ComputeBuffer(bufferSize, sizeof(float));
                 
                 buffersInitialized = true;
                 Debug.Log("HybridTerrainGenerationSystem: Buffers initialized successfully");
@@ -481,7 +485,7 @@ namespace DOTS.Terrain.Generation
         {
             // Create a new GameObject for the mesh
             var meshGO = new GameObject($"DOTS_TerrainMesh_{terrain.chunkPosition.x}_{terrain.chunkPosition.y}");
-            meshGO.transform.position = new Vector3(terrain.chunkPosition.x * terrain.worldScale * (resolution - 1), 0, terrain.chunkPosition.y * terrain.worldScale * (resolution - 1));
+            meshGO.transform.position = new Vector3(terrain.chunkPosition.x * terrain.worldScale, 0, terrain.chunkPosition.y * terrain.worldScale);
 
             var meshFilter = meshGO.AddComponent<MeshFilter>();
             var meshRenderer = meshGO.AddComponent<MeshRenderer>();
@@ -507,17 +511,25 @@ namespace DOTS.Terrain.Generation
                 if (heights[i] > maxH) maxH = heights[i];
             }
             float range = Mathf.Max(0.0001f, maxH - minH);
-            // Debug.Log($"[MeshGen] Min height: {minH}, Max height: {maxH}, Range: {range}");
+            DebugLog($"[MeshGen] Min height: {minH}, Max height: {maxH}, Range: {range}");
 
-            // Clamp/normalize heights for visualization
+            // Calculate vertex spacing to match the compute shader coordinate system
+            float vertexStep = terrain.worldScale / (float)(resolution - 1);
+
+            // Generate vertices with the same coordinate system as the compute shader
             for (int z = 0; z < resolution; z++)
             {
                 for (int x = 0; x < resolution; x++)
                 {
                     int index = z * resolution + x;
-                    float y = (heights[index] - minH) / range; // Normalize to 0..1
-                    y *= 5f; // Scale for visibility
-                    vertices[index] = new Vector3(x * terrain.worldScale, y, z * terrain.worldScale);
+                    
+                    // Use raw height directly - no normalization or mesh height scaling
+                    float y = heights[index];
+                    
+                    // Use the same vertex spacing as the compute shader
+                    float vertexX = x * vertexStep;
+                    float vertexZ = z * vertexStep;
+                    vertices[index] = new Vector3(vertexX, y, vertexZ);
                     uvs[index] = new Vector2((float)x / (resolution - 1), (float)z / (resolution - 1));
                 }
             }
@@ -551,7 +563,7 @@ namespace DOTS.Terrain.Generation
         /// </summary>
         private void DebugLog(string message, bool verbose = false)
         {
-            if (enableDebugLogs && (!verbose || enableVerboseLogs))
+            if (settings?.enableDebugLogs == true && (!verbose || settings?.enableVerboseLogs == true))
             {
                 Debug.Log($"[HybridSystem] {message}");
             }

@@ -144,7 +144,10 @@ namespace DOTS.Terrain.Weather
         /// </summary>
         private bool ApplyWeatherEffectsWithComputeShader(ref WeatherComponent weather, ref TerrainData terrain)
         {
-            DebugLog($"Applying weather effects: {weather.weatherType} to terrain at {terrain.chunkPosition}", true);
+            if (enableDebugLogs)
+            {
+                Debug.Log($"Applying weather effects: {weather.weatherType} to terrain at {terrain.chunkPosition}");
+            }
             
             if (computeManager?.WeatherShader == null)
             {
@@ -194,8 +197,11 @@ namespace DOTS.Terrain.Weather
                     }
                     return false;
                 }
+                if (enableDebugLogs)
+                {
+                    DebugLog($"Using weather kernel index: {kernelIndex}", true);
+                }
                 
-                DebugLog($"Using weather kernel index: {kernelIndex}", true);
                 
                 weatherShader.SetBuffer(kernelIndex, "heights", heightBuffer);
                 weatherShader.SetBuffer(kernelIndex, "moisture", moistureBuffer);
