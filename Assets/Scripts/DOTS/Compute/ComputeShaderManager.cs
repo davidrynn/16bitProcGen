@@ -16,6 +16,7 @@ public class ComputeShaderManager
     private ComputeShader erosionShader;
     private ComputeShader weatherShader;
     private ComputeShader modificationShader;
+    private ComputeShader terrainGlobRemovalShader;
     private ComputeShader wfcShader;
     private ComputeShader structureShader;
     
@@ -71,6 +72,7 @@ public class ComputeShaderManager
         erosionShader = Resources.Load<ComputeShader>("Shaders/TerrainErosion");
         weatherShader = Resources.Load<ComputeShader>("Shaders/WeatherEffects");
         modificationShader = Resources.Load<ComputeShader>("Shaders/TerrainModification");
+        terrainGlobRemovalShader = Resources.Load<ComputeShader>("Shaders/TerrainGlobRemoval");
         wfcShader = Resources.Load<ComputeShader>("Shaders/WFCGeneration");
         structureShader = Resources.Load<ComputeShader>("Shaders/StructureGeneration");
         
@@ -81,6 +83,7 @@ public class ComputeShaderManager
             Debug.Log($"[DOTS] TerrainErosion shader loaded: {erosionShader != null}");
             Debug.Log($"[DOTS] WeatherEffects shader loaded: {weatherShader != null}");
             Debug.Log($"[DOTS] TerrainModification shader loaded: {modificationShader != null}");
+            Debug.Log($"[DOTS] TerrainGlobRemoval shader loaded: {terrainGlobRemovalShader != null}");
             Debug.Log($"[DOTS] WFCGeneration shader loaded: {wfcShader != null}");
             Debug.Log($"[DOTS] StructureGeneration shader loaded: {structureShader != null}");
         }
@@ -206,6 +209,11 @@ public class ComputeShaderManager
     public ComputeShader ModificationShader => modificationShader;
     
     /// <summary>
+    /// Gets the terrain glob removal Compute Shader
+    /// </summary>
+    public ComputeShader TerrainGlobRemovalShader => terrainGlobRemovalShader;
+    
+    /// <summary>
     /// Gets the WFC Compute Shader
     /// </summary>
     public ComputeShader WFCShader => wfcShader;
@@ -271,6 +279,12 @@ public class ComputeShaderManager
             allValid = false;
         }
         
+        if (terrainGlobRemovalShader == null)
+        {
+            Debug.LogError("[DOTS] TerrainGlobRemoval Compute Shader is missing!");
+            allValid = false;
+        }
+        
         if (wfcShader == null)
         {
             Debug.LogError("[DOTS] WFC Compute Shader is missing!");
@@ -284,6 +298,35 @@ public class ComputeShaderManager
         }
         
         return allValid;
+    }
+    
+    /// <summary>
+    /// Gets a Compute Shader by name
+    /// </summary>
+    /// <param name="shaderName">Name of the shader to get</param>
+    /// <returns>The Compute Shader or null if not found</returns>
+    public ComputeShader GetComputeShader(string shaderName)
+    {
+        switch (shaderName.ToLower())
+        {
+            case "terrainnoise":
+                return noiseShader;
+            case "terrainerosion":
+                return erosionShader;
+            case "weathereffects":
+                return weatherShader;
+            case "terrainmodification":
+                return modificationShader;
+            case "terrainglobremoval":
+                return terrainGlobRemovalShader;
+            case "wfcgeneration":
+                return wfcShader;
+            case "structuregeneration":
+                return structureShader;
+            default:
+                Debug.LogWarning($"[DOTS] Unknown Compute Shader name: {shaderName}");
+                return null;
+        }
     }
     
     /// <summary>

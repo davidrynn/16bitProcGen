@@ -107,7 +107,7 @@ public class TerrainTestCameraController : MonoBehaviour
         
         deltaTime += (Time.deltaTime - deltaTime) * 0.1f;
         fps = 1.0f / deltaTime;
-    }
+    } 
     
     void OnGUI()
     {

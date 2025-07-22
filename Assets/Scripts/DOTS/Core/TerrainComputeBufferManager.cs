@@ -11,6 +11,7 @@ public class TerrainComputeBufferManager : MonoBehaviour
 {
     private Dictionary<int2, ComputeBuffer> heightBuffers = new Dictionary<int2, ComputeBuffer>();
     private Dictionary<int2, ComputeBuffer> biomeBuffers = new Dictionary<int2, ComputeBuffer>();
+    private Dictionary<int2, ComputeBuffer> terrainTypeBuffers = new Dictionary<int2, ComputeBuffer>();
     
     /// <summary>
     /// Gets or creates a height buffer for a terrain chunk
@@ -55,6 +56,27 @@ public class TerrainComputeBufferManager : MonoBehaviour
     }
     
     /// <summary>
+    /// Gets or creates a terrain type buffer for a terrain chunk
+    /// </summary>
+    /// <param name="chunkPosition">Position of the terrain chunk</param>
+    /// <param name="resolution">Resolution of the terrain grid</param>
+    /// <returns>ComputeBuffer for terrain type data (int)</returns>
+    public ComputeBuffer GetTerrainTypeBuffer(int2 chunkPosition, int resolution)
+    {
+        if (terrainTypeBuffers.TryGetValue(chunkPosition, out ComputeBuffer buffer))
+        {
+            return buffer;
+        }
+        
+        // Create new buffer
+        int bufferSize = resolution * resolution;
+        buffer = new ComputeBuffer(bufferSize, sizeof(int));
+        terrainTypeBuffers[chunkPosition] = buffer;
+        
+        return buffer;
+    }
+    
+    /// <summary>
     /// Releases a height buffer for a terrain chunk
     /// </summary>
     /// <param name="chunkPosition">Position of the terrain chunk</param>
@@ -81,6 +103,19 @@ public class TerrainComputeBufferManager : MonoBehaviour
     }
     
     /// <summary>
+    /// Releases a terrain type buffer for a terrain chunk
+    /// </summary>
+    /// <param name="chunkPosition">Position of the terrain chunk</param>
+    public void ReleaseTerrainTypeBuffer(int2 chunkPosition)
+    {
+        if (terrainTypeBuffers.TryGetValue(chunkPosition, out ComputeBuffer buffer))
+        {
+            buffer.Release();
+            terrainTypeBuffers.Remove(chunkPosition);
+        }
+    }
+    
+    /// <summary>
     /// Releases all buffers for a terrain chunk
     /// </summary>
     /// <param name="chunkPosition">Position of the terrain chunk</param>
@@ -88,6 +123,7 @@ public class TerrainComputeBufferManager : MonoBehaviour
     {
         ReleaseHeightBuffer(chunkPosition);
         ReleaseBiomeBuffer(chunkPosition);
+        ReleaseTerrainTypeBuffer(chunkPosition);
     }
     
     /// <summary>
@@ -106,6 +142,12 @@ public class TerrainComputeBufferManager : MonoBehaviour
             buffer.Release();
         }
         biomeBuffers.Clear();
+        
+        foreach (var buffer in terrainTypeBuffers.Values)
+        {
+            buffer.Release();
+        }
+        terrainTypeBuffers.Clear();
     }
     
     private void OnDestroy()

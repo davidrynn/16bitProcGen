@@ -1,0 +1,161 @@
+#pragma kernel RemoveTerrainGlob
+#pragma kernel UpdateTerrainHeight
+#pragma kernel SmoothTerrainEdges
+
+// Buffers
+RWStructuredBuffer<float> heights;
+RWStructuredBuffer<float> terrainTypes;
+RWStructuredBuffer<float> removedMask;
+
+// Individual parameters instead of structs for easier C# binding
+// Terrain chunk parameters
+float3 chunkPosition;
+int chunkResolution;
+float chunkWorldScale;
+float chunkTime;
+
+// Glob removal parameters
+float3 globCenter;
+float globRadius;
+float globStrength;
+int globRemovalType;
+float globMaxDepth;
+bool globAllowUnderground;
+
+// Simple noise function for natural edge variation
+float GenerateNoise(float2 pos, float scale)
+{
+    // Simple hash-based noise since Unity's noise functions aren't available in compute shaders
+    float2 p = pos * scale;
+    float2 i = floor(p);
+    float2 f = frac(p);
+    
+    // Simple hash function
+    float n = dot(i, float2(1.0, 157.0));
+    float noise1 = frac(sin(n) * 43758.5453);
+    float noise2 = frac(sin(n + 1.0) * 43758.5453);
+    
+    // Interpolate between noise values
+    return lerp(noise1, noise2, f.x) * 2.0 - 1.0;
+}
+
+// Calculate distance from point to glob center
+float CalculateDistance(float3 worldPos, float3 globCenter)
+{
+    return distance(worldPos, globCenter);
+}
+
+// Create smooth spherical removal mask
+float CreateGlobMask(float3 worldPos, float3 globCenter, float radius)
+{
+    float dist = CalculateDistance(worldPos, globCenter);
+    
+    // Create smooth falloff for natural glob shape
+    float falloff = 1.0 - smoothstep(0.0, radius, dist);
+    
+    // Add some noise for natural variation
+    float noiseValue = GenerateNoise(worldPos.xz, 0.1) * 0.1;
+    falloff += noiseValue;
+    
+    return saturate(falloff);
+}
+
+// Remove terrain glob at specified location
+[numthreads(8,8,1)]
+void RemoveTerrainGlob(uint3 id : SV_DispatchThreadID)
+{
+    int index = id.y * chunkResolution + id.x;
+    float3 worldPos = chunkPosition + float3(id.x, 0, id.y) * chunkWorldScale;
+    
+    // Calculate glob removal mask
+    float globMask = CreateGlobMask(worldPos, globCenter, globRadius);
+    
+    // Apply removal based on mask strength
+    if (globMask > 0.1)
+    {
+        // Mark this area for removal
+        removedMask[index] = globMask;
+        
+        // Reduce terrain height based on glob mask
+        float currentHeight = heights[index];
+        float removalAmount = globMask * globStrength;
+        float newHeight = currentHeight - removalAmount;
+        
+        // Apply depth restrictions if underground digging is limited
+        if (!globAllowUnderground && newHeight < 0.0)
+        {
+            newHeight = 0.0; // Don't allow underground digging
+        }
+        else if (globAllowUnderground && newHeight < globMaxDepth)
+        {
+            newHeight = globMaxDepth; // Respect maximum depth limit
+        }
+        
+        heights[index] = newHeight;
+        
+        // Optionally change terrain type to "removed" or "hole"
+        if (globMask > 0.8)
+        {
+            terrainTypes[index] = 0.0; // Mark as removed
+        }
+    }
+}
+
+// Update terrain height after glob removal
+[numthreads(8,8,1)]
+void UpdateTerrainHeight(uint3 id : SV_DispatchThreadID)
+{
+    int index = id.y * chunkResolution + id.x;
+    
+    // Apply any height modifications from glob removal
+    if (removedMask[index] > 0.0)
+    {
+        // Allow negative heights for underground layers
+        // No minimum height restriction - terrain can go deep underground
+        
+        // Clear the removal mask
+        removedMask[index] = 0.0;
+    }
+}
+
+// Smooth terrain edges around removal areas
+[numthreads(8,8,1)]
+void SmoothTerrainEdges(uint3 id : SV_DispatchThreadID)
+{
+    int index = id.y * chunkResolution + id.x;
+    int x = id.x;
+    int y = id.y;
+    
+    // Only process if we're near a removal area
+    if (removedMask[index] > 0.0)
+    {
+        // Sample neighboring heights for smoothing
+        float centerHeight = heights[index];
+        float totalHeight = centerHeight;
+        int neighborCount = 1;
+        
+        // Check 8 neighbors
+        for (int dx = -1; dx <= 1; dx++)
+        {
+            for (int dy = -1; dy <= 1; dy++)
+            {
+                if (dx == 0 && dy == 0) continue;
+                
+                int nx = x + dx;
+                int ny = y + dy;
+                
+                if (nx >= 0 && nx < chunkResolution && ny >= 0 && ny < chunkResolution)
+                {
+                    int neighborIndex = ny * chunkResolution + nx;
+                    totalHeight += heights[neighborIndex];
+                    neighborCount++;
+                }
+            }
+        }
+        
+        // Apply smoothing
+        float smoothedHeight = totalHeight / neighborCount;
+        float smoothingFactor = 0.3; // Adjust for more/less smoothing
+        heights[index] = lerp(centerHeight, smoothedHeight, smoothingFactor);
+    }
+}
