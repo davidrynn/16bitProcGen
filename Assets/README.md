@@ -29,6 +29,74 @@
 
 ---
 
+## Unity.Transforms Integration
+
+### ✅ Transform Components Added to TerrainData
+- [ ] `TerrainData` now includes transform fields: `worldPosition`, `rotation`, `scale`
+- [ ] `TerrainEntityManager` automatically adds `LocalTransform` and `LocalToWorld` components
+- [ ] `TerrainTransformSystem` synchronizes transforms with terrain data changes
+
+### ✅ Transform Synchronization
+- [ ] World position is calculated from chunk position and world scale
+- [ ] Y position is updated based on terrain's average height after generation
+- [ ] Transforms are automatically updated when terrain data changes
+
+### ✅ Testing Transform Integration
+- [ ] Use `TransformIntegrationTest` to verify transform components are working
+- [ ] Check console for `[TerrainTransformSystem] Updated transform` messages
+- [ ] Use context menu options to inspect and force transform updates
+
+## Terrain Glob System
+
+### ✅ TerrainGlobComponent
+- [ ] `TerrainGlobComponent` represents terrain globs removed from terrain
+- [ ] Includes physics properties: velocity, angular velocity, mass, bounciness, friction
+- [ ] State flags: isGrounded, isCollected, isDestroyed, lifetime
+- [ ] Collection properties: collectionRadius, canBeCollected, resourceValue
+- [ ] Visual properties: scale, rotation, visualAlpha
+
+### ✅ TerrainGlobPhysicsComponent
+- [ ] Optional physics behavior for globs
+- [ ] Physics settings: gravityScale, dragCoefficient, maxVelocity, maxAngularVelocity
+- [ ] Collision properties: collisionRadius, collideWithTerrain, collideWithOtherGlobs, collideWithPlayer
+
+### ✅ TerrainGlobRenderComponent
+- [ ] Optional rendering for globs
+- [ ] Visual settings: meshScale, meshVariant, color, useTerrainColor
+
+### ✅ TerrainGlobPhysicsSystem
+- [ ] Handles physics behavior for all terrain globs
+- [ ] Applies gravity, air resistance, and ground collision
+- [ ] Manages glob bouncing, rolling, and velocity clamping
+- [ ] Provides glob creation and destruction methods
+- [ ] Performance monitoring and cleanup
+
+### ✅ Testing Glob Physics
+- [ ] Use `GlobPhysicsTest` to verify glob physics system
+- [ ] Test glob creation, physics behavior, and cleanup
+- [ ] Check console for physics stats and glob updates
+- [ ] Use context menu options to create test globs and force physics updates
+
+### ✅ Transform System Architecture
+```csharp
+// TerrainData includes transform information
+public struct TerrainData : IComponentData
+{
+    // ... existing fields ...
+    public float3 worldPosition;    // Calculated world position
+    public quaternion rotation;     // Terrain chunk rotation
+    public float3 scale;           // Terrain chunk scale
+}
+
+// TerrainTransformSystem keeps transforms synchronized
+public partial class TerrainTransformSystem : SystemBase
+{
+    // Updates LocalTransform and LocalToWorld when TerrainData changes
+}
+```
+
+---
+
 ## Quick Fix for Duplicate System Errors
 
 1. Ensure your system class is marked as `partial`.
@@ -38,4 +106,4 @@
 ---
 
 **Tip:**  
-Add this checklist to your project’s `README.md` or developer documentation to help your team avoid common DOTS system pitfalls! 
+Add this checklist to your project's `README.md` or developer documentation to help your team avoid common DOTS system pitfalls! 

@@ -1,6 +1,7 @@
 using Unity.Entities;
 using Unity.Mathematics;
 using Unity.Collections;
+using Unity.Transforms;
 using UnityEngine;
 
 namespace DOTS.Terrain
@@ -20,5 +21,11 @@ namespace DOTS.Terrain
         public BlobAssetReference<TerrainModificationData> modifications; // Modification history
         public bool needsGeneration;                                 // Flag indicating if terrain needs generation
         public bool needsModification;                               // Flag indicating if modifications need processing
+        public bool needsMeshUpdate;                                 // Flag indicating if mesh needs to be rebuilt after modification
+        
+        // NEW: Unity.Transforms integration
+        public float3 worldPosition;                                 // Calculated world position from chunkPosition
+        public quaternion rotation;                                  // Terrain chunk rotation
+        public float3 scale;                                         // Terrain chunk scale
     }
 } 

@@ -123,8 +123,6 @@ namespace DOTS.Terrain.Test
             return true;
         }
 
-        private bool generationCompleted = false;
-        
         private System.Collections.IEnumerator WaitForGenerationCoroutine()
         {
             int maxFrames = 120; // Wait up to 2 seconds at 60fps
@@ -140,7 +138,6 @@ namespace DOTS.Terrain.Test
                     if (!terrainData.needsGeneration)
                     {
                         Debug.Log("✓ Terrain generation completed!");
-                        generationCompleted = true;
                         break;
                     }
                 }

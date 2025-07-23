@@ -174,6 +174,21 @@ namespace DOTS.Terrain.Generation
                             DebugWarning($"Failed to generate terrain for entity {entity.Index}");
                         }
                     }
+                    // If mesh update is needed (e.g., after modification), rebuild mesh
+                    else if (terrain.needsMeshUpdate)
+                    {
+                        DebugLog($"Mesh update needed for entity {entity.Index} - rebuilding mesh", true);
+                        if (terrain.heightData.IsCreated)
+                        {
+                            // Read heights from blob asset
+                            ref var heightData = ref terrain.heightData.Value;
+                            var heights = new float[heightData.heights.Length];
+                            for (int i = 0; i < heights.Length; i++)
+                                heights[i] = heightData.heights[i];
+                            GenerateTerrainMesh(terrain, heights, terrain.resolution);
+                        }
+                        terrain.needsMeshUpdate = false;
+                    }
                 }).WithoutBurst().Run();
             
             lastGenerationTime = UnityEngine.Time.realtimeSinceStartup - startTime;
@@ -383,8 +398,24 @@ namespace DOTS.Terrain.Generation
         /// <param name="terrain">Reference to terrain data</param>
         private void ApplyGameLogic(ref TerrainData terrain)
         {
-            // TODO: Implement in Step 5
-            // Debug.Log("HybridTerrainGenerationSystem: ApplyGameLogic - Not implemented yet");
+            // Calculate average height from the generated terrain data
+            if (terrain.heightData.IsCreated)
+            {
+                ref var heightData = ref terrain.heightData.Value;
+                float totalHeight = 0f;
+                
+                for (int i = 0; i < heightData.heights.Length; i++)
+                {
+                    totalHeight += heightData.heights[i];
+                }
+                
+                terrain.averageHeight = totalHeight / heightData.heights.Length;
+                
+                // Update world position Y coordinate based on average height
+                terrain.worldPosition.y = terrain.averageHeight;
+                
+                DebugLog($"Applied game logic: Average height = {terrain.averageHeight:F3}, World position = {terrain.worldPosition}", true);
+            }
         }
         
         /// <summary>

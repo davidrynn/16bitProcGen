@@ -1,5 +1,6 @@
 using Unity.Entities;
 using Unity.Mathematics;
+using Unity.Transforms;
 using UnityEngine;
 using DOTS.Terrain;
 
@@ -34,7 +35,7 @@ public class TerrainEntityManager : MonoBehaviour
         var world = World.DefaultGameObjectInjectionWorld;
         if (world == null)
         {
-            Debug.LogError("TerrainEntityManager: No default world found!");
+            Debug.LogWarning("TerrainEntityManager: No default world found! This is normal during initialization. Will retry when needed.");
             return;
         }
         
@@ -48,6 +49,26 @@ public class TerrainEntityManager : MonoBehaviour
     }
     
     /// <summary>
+    /// Ensures the EntityManager is initialized with retry logic
+    /// </summary>
+    private bool EnsureInitialized()
+    {
+        if (isInitialized) return true;
+        
+        // Try to initialize
+        InitializeIfNeeded();
+        
+        // If still not initialized, the world might not be ready yet
+        if (!isInitialized)
+        {
+            Debug.LogWarning("TerrainEntityManager: World not ready yet - initialization will be retried when world becomes available");
+            return false;
+        }
+        
+        return true;
+    }
+    
+    /// <summary>
     /// Creates a terrain entity at the specified chunk position
     /// </summary>
     /// <param name="chunkPosition">2D position of the terrain chunk</param>
@@ -55,28 +76,7 @@ public class TerrainEntityManager : MonoBehaviour
     /// <returns>Created entity</returns>
     public Entity CreateTerrainEntity(int2 chunkPosition, BiomeType biomeType = BiomeType.Plains)
     {
-        InitializeIfNeeded();
-        
-        if (!isInitialized)
-        {
-            Debug.LogError("TerrainEntityManager: Failed to initialize - cannot create entity");
-            return Entity.Null;
-        }
-        
-        // Create entity with terrain data
-        var terrainData = TerrainDataBuilder.CreateTerrainData(chunkPosition, defaultResolution, defaultWorldScale);
-        var biomeComponent = BiomeBuilder.CreateBiomeComponent(biomeType);
-        
-        // Create entity
-        var entity = entityManager.CreateEntity();
-        
-        // Add components
-        entityManager.AddComponentData(entity, terrainData);
-        entityManager.AddComponentData(entity, biomeComponent);
-        
-        Debug.Log($"Created terrain entity at {chunkPosition} with biome {biomeType}");
-        
-        return entity;
+        return CreateTerrainEntity(chunkPosition, defaultResolution, defaultWorldScale, biomeType);
     }
     
     /// <summary>
@@ -89,11 +89,9 @@ public class TerrainEntityManager : MonoBehaviour
     /// <returns>Created entity</returns>
     public Entity CreateTerrainEntity(int2 chunkPosition, int resolution, float worldScale, BiomeType biomeType)
     {
-        InitializeIfNeeded();
-        
-        if (!isInitialized)
+        if (!EnsureInitialized())
         {
-            Debug.LogError("TerrainEntityManager: Failed to initialize - cannot create entity");
+            Debug.LogError("TerrainEntityManager: Failed to initialize - cannot create entity. Make sure you're in Play Mode and DOTS world is available.");
             return Entity.Null;
         }
         
@@ -104,9 +102,29 @@ public class TerrainEntityManager : MonoBehaviour
         // Create entity
         var entity = entityManager.CreateEntity();
         
-        // Add components
+        // Add terrain and biome components
         entityManager.AddComponentData(entity, terrainData);
         entityManager.AddComponentData(entity, biomeComponent);
+        
+        // NEW: Add Unity.Transforms components
+        var localTransform = new LocalTransform
+        {
+            Position = terrainData.worldPosition,
+            Rotation = terrainData.rotation,
+            Scale = terrainData.scale.x // LocalTransform uses single scale value
+        };
+        entityManager.AddComponentData(entity, localTransform);
+        
+        // Add LocalToWorld component for rendering
+        var localToWorld = new LocalToWorld
+        {
+            Value = float4x4.TRS(
+                localTransform.Position,
+                localTransform.Rotation,
+                new float3(localTransform.Scale)
+            )
+        };
+        entityManager.AddComponentData(entity, localToWorld);
         
         Debug.Log($"Created terrain entity at {chunkPosition} with resolution {resolution}, scale {worldScale}, biome {biomeType}");
         

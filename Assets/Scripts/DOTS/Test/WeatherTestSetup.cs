@@ -20,8 +20,6 @@ namespace DOTS.Test
         
         [Header("Weather Configuration")]
         [SerializeField] private WeatherType initialWeather = WeatherType.Clear;
-        [SerializeField] private float weatherChangeInterval = 10f;
-        [SerializeField] private bool autoChangeWeather = true;
         
         [Header("Weather Parameters")]
         [SerializeField] private float temperature = 20f;
