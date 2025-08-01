@@ -35,7 +35,7 @@ namespace DOTS.Terrain.Weather
         
         protected override void OnCreate()
         {
-            Debug.Log("[DOTS] HybridWeatherSystem: Initializing...");
+            DOTS.Terrain.Core.DebugSettings.LogWeather("HybridWeatherSystem: Initializing...");
             lastWeatherUpdateTime = 0f;
             chunksWithWeatherEffects = 0;
             
@@ -70,7 +70,7 @@ namespace DOTS.Terrain.Weather
                 DebugError($"Failed to get ComputeShaderManager: {e.Message}");
             }
             
-            Debug.Log("[DOTS] HybridWeatherSystem: Initialization complete");
+            DOTS.Terrain.Core.DebugSettings.LogWeather("HybridWeatherSystem: Initialization complete");
         }
         
         protected override void OnUpdate()
@@ -106,7 +106,7 @@ namespace DOTS.Terrain.Weather
                 }
                 else
                 {
-                    DebugWarning("TerrainComputeBufferManager not found - weather effects will be skipped");
+                    // Silently skip weather effects if buffer manager not available
                     return;
                 }
             }
@@ -146,7 +146,7 @@ namespace DOTS.Terrain.Weather
         {
             if (enableDebugLogs)
             {
-                Debug.Log($"Applying weather effects: {weather.weatherType} to terrain at {terrain.chunkPosition}");
+                DOTS.Terrain.Core.DebugSettings.LogWeather($"Applying weather effects: {weather.weatherType} to terrain at {terrain.chunkPosition}");
             }
             
             if (computeManager?.WeatherShader == null)
@@ -302,25 +302,22 @@ namespace DOTS.Terrain.Weather
                 temperatureBuffer = null;
             }
             
-            Debug.Log("[DOTS] HybridWeatherSystem: Cleanup complete");
+            DOTS.Terrain.Core.DebugSettings.LogWeather("HybridWeatherSystem: Cleanup complete");
         }
         
         private void DebugLog(string message, bool verbose = false)
         {
-            if (enableDebugLogs || verbose)
-            {
-                Debug.Log($"[DOTS] HybridWeatherSystem: {message}");
-            }
+            DOTS.Terrain.Core.DebugSettings.LogWeather($"HybridWeatherSystem: {message}", verbose);
         }
         
         private void DebugError(string message)
         {
-            Debug.LogError($"[DOTS] HybridWeatherSystem: {message}");
+            DOTS.Terrain.Core.DebugSettings.LogError($"HybridWeatherSystem: {message}");
         }
         
         private void DebugWarning(string message)
         {
-            Debug.LogWarning($"[DOTS] HybridWeatherSystem: {message}");
+            DOTS.Terrain.Core.DebugSettings.LogWarning($"HybridWeatherSystem: {message}");
         }
     }
 } 

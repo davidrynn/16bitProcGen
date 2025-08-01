@@ -39,7 +39,7 @@ public partial class TerrainModificationSystem : SystemBase
         
         if (bufferManager == null)
         {
-            Debug.LogWarning("[TerrainModificationSystem] TerrainComputeBufferManager not found - terrain modifications will be logged only");
+            // Silently skip - this is expected when testing WFC without terrain systems
         }
         
         // Get reference to glob physics system
