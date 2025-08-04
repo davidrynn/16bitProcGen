@@ -24,10 +24,18 @@ namespace DOTS.Terrain.Test
         private bool testPassed = false;
         private string testResult = "";
         
+        // Static flag to control if this specific test can run
+        private static bool enableWFCTest = false;
+        
+        public static void SetWFCTestEnabled(bool enabled)
+        {
+            enableWFCTest = enabled;
+        }
+        
         protected override void OnCreate()
         {
-            // Only initialize if test systems are enabled
-            if (!DOTS.Terrain.Core.DebugSettings.EnableTestSystems)
+            // Only initialize if test systems are enabled AND WFC test is specifically enabled
+            if (!DOTS.Terrain.Core.DebugSettings.EnableTestSystems || !enableWFCTest)
             {
                 // Don't log anything - just return silently
                 return;
@@ -42,8 +50,8 @@ namespace DOTS.Terrain.Test
         
         protected override void OnUpdate()
         {
-            // Only run if test systems are enabled
-            if (!DOTS.Terrain.Core.DebugSettings.EnableTestSystems)
+            // Only run if test systems are enabled AND WFC test is specifically enabled
+            if (!DOTS.Terrain.Core.DebugSettings.EnableTestSystems || !enableWFCTest)
             {
                 return;
             }

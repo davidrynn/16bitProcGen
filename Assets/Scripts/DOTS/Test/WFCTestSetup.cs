@@ -10,7 +10,9 @@ namespace DOTS.Terrain.Test
     public class WFCTestSetup : MonoBehaviour
     {
         [Header("Test Settings")]
-        public bool runTestOnStart = true;
+        [Tooltip("Automatically start test when component starts")]
+        public bool runTestOnStart = false;
+        [Tooltip("Timeout for test completion in seconds")]
         public float testTimeout = 10.0f;
 
         private WFCSystemTest testSystem;
@@ -18,7 +20,8 @@ namespace DOTS.Terrain.Test
 
         void Start()
         {
-            if (runTestOnStart)
+            // Only run if test systems are enabled
+            if (runTestOnStart && DOTS.Terrain.Core.DebugSettings.EnableTestSystems)
                 StartTest();
         }
 
@@ -46,6 +49,16 @@ namespace DOTS.Terrain.Test
         public void StartTest()
         {
             if (testStarted) return;
+            
+            // Only run if test systems are enabled
+            if (!DOTS.Terrain.Core.DebugSettings.EnableTestSystems)
+            {
+                Debug.LogWarning("[WFC Test] Test systems are disabled - not starting test");
+                return;
+            }
+
+            // Enable the WFC test specifically
+            WFCSystemTest.SetWFCTestEnabled(true);
 
             var world = World.DefaultGameObjectInjectionWorld;
             if (world == null)
@@ -74,7 +87,25 @@ namespace DOTS.Terrain.Test
             if (!testStarted) return;
 
             testStarted = false;
+            
+            // Disable the WFC test specifically
+            WFCSystemTest.SetWFCTestEnabled(false);
+            
             Debug.Log("[WFC Test] Test stopped");
+        }
+        
+        [ContextMenu("Disable Auto-Start")]
+        public void DisableAutoStart()
+        {
+            runTestOnStart = false;
+            Debug.Log("[WFC Test] Auto-start disabled");
+        }
+        
+        [ContextMenu("Enable Auto-Start")]
+        public void EnableAutoStart()
+        {
+            runTestOnStart = true;
+            Debug.Log("[WFC Test] Auto-start enabled");
         }
     }
 } 

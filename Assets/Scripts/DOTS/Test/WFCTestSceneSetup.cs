@@ -11,7 +11,8 @@ namespace DOTS.Terrain.Test
     {
         [Header("Test Configuration")]
         public TestType testType = TestType.SimpleRendering;
-        public bool autoSetup = true;
+        [Tooltip("Automatically set up test environment on start")]
+        public bool autoSetup = false;
         
         [Header("Debug Settings")]
         [Tooltip("Enable test systems to run (WFCSystemTest, SimpleRenderingTest, etc.)")]
@@ -121,6 +122,10 @@ namespace DOTS.Terrain.Test
         public void EnableSimpleRenderingTest()
         {
             testType = TestType.SimpleRendering;
+            
+            // Disable WFC test specifically when running simple test
+            WFCSystemTest.SetWFCTestEnabled(false);
+            
             SetupTestEnvironment();
         }
         
@@ -128,6 +133,10 @@ namespace DOTS.Terrain.Test
         public void EnableFullWFCTest()
         {
             testType = TestType.FullWFC;
+            
+            // Enable WFC test specifically when running full WFC test
+            WFCSystemTest.SetWFCTestEnabled(true);
+            
             SetupTestEnvironment();
         }
         
@@ -138,7 +147,45 @@ namespace DOTS.Terrain.Test
             enableTestDebug = false;
             enableRenderingDebug = false;
             enableWFCDebug = false;
+            
+            // Disable WFC test specifically
+            WFCSystemTest.SetWFCTestEnabled(false);
+            
             SetupTestEnvironment();
+        }
+        
+        [ContextMenu("Disable All Test Components")]
+        public void DisableAllTestComponents()
+        {
+            // Disable all WFCTestSetup components
+            var wfcSetups = FindObjectsOfType<WFCTestSetup>();
+            foreach (var setup in wfcSetups)
+            {
+                setup.runTestOnStart = false;
+                setup.StopTest();
+                Debug.Log($"[WFC Test Setup] Disabled WFCTestSetup on {setup.gameObject.name}");
+            }
+            
+            // Disable all SimpleTestManager components
+            var simpleManagers = FindObjectsOfType<SimpleTestManager>();
+            foreach (var manager in simpleManagers)
+            {
+                manager.enabled = false;
+                Debug.Log($"[WFC Test Setup] Disabled SimpleTestManager on {manager.gameObject.name}");
+            }
+            
+            // Disable all WFCTestSceneSetup components
+            var sceneSetups = FindObjectsOfType<WFCTestSceneSetup>();
+            foreach (var setup in sceneSetups)
+            {
+                setup.enableTestSystems = false;
+                setup.enableTestDebug = false;
+                setup.enableRenderingDebug = false;
+                setup.enableWFCDebug = false;
+                Debug.Log($"[WFC Test Setup] Disabled WFCTestSceneSetup on {setup.gameObject.name}");
+            }
+            
+            Debug.Log("[WFC Test Setup] All test components disabled");
         }
     }
 }

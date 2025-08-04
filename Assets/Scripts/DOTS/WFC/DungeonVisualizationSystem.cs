@@ -58,77 +58,93 @@ namespace DOTS.Terrain.WFC
                 DOTS.Terrain.Core.DebugSettings.LogRendering($"DungeonVisualizationSystem: OnUpdate called (update {updateCounter})");
             }
             
-            // Create command buffer for this frame
-            ecb = new EntityCommandBuffer(Allocator.TempJob);
+            // Only create command buffer if we need to process entities
+            bool needsCommandBuffer = false;
+            int processedCount = 0;
+            int totalEntities = 0;
+            bool hasUnvisualizedEntities = false;
             
-            try
-            {
-                // Single consolidated loop to process entities
-                int processedCount = 0;
-                int totalEntities = 0;
-                bool hasUnvisualizedEntities = false;
-                
-                Entities
-                    .WithAll<DungeonElementInstance>()
-                    .ForEach((Entity entity, in DungeonElementComponent element, in LocalTransform transform) =>
+            // First pass: count entities and check if we need to process any
+            Entities
+                .WithAll<DungeonElementInstance>()
+                .ForEach((Entity entity, in DungeonElementComponent element, in LocalTransform transform) =>
+                {
+                    totalEntities++;
+                    
+                    // Check if this entity needs visualization
+                    if (!EntityManager.HasComponent<DungeonVisualized>(entity))
                     {
-                        totalEntities++;
-                        
-                        // Check if this entity needs visualization
-                        if (!EntityManager.HasComponent<DungeonVisualized>(entity))
+                        hasUnvisualizedEntities = true;
+                        needsCommandBuffer = true;
+                    }
+                }).WithoutBurst().Run();
+            
+            // Only create command buffer and process if needed
+            if (needsCommandBuffer)
+            {
+                ecb = new EntityCommandBuffer(Allocator.TempJob);
+                
+                try
+                {
+                    // Second pass: process entities that need visualization
+                    Entities
+                        .WithAll<DungeonElementInstance>()
+                        .ForEach((Entity entity, in DungeonElementComponent element, in LocalTransform transform) =>
                         {
-                            hasUnvisualizedEntities = true;
-                            
-                            // Log first few entities for debugging
-                            if (processedCount < 3)
+                            // Check if this entity needs visualization
+                            if (!EntityManager.HasComponent<DungeonVisualized>(entity))
                             {
-                                DOTS.Terrain.Core.DebugSettings.LogRendering($"DungeonVisualizationSystem: Processing entity {entity.Index} - {element.elementType} at {transform.Position}");
+                                // Log first few entities for debugging
+                                if (processedCount < 3)
+                                {
+                                    DOTS.Terrain.Core.DebugSettings.LogRendering($"DungeonVisualizationSystem: Processing entity {entity.Index} - {element.elementType} at {transform.Position}");
+                                }
+                                
+                                CreateVisualization(entity, element, transform);
+                                processedCount++;
                             }
-                            
-                            CreateVisualization(entity, element, transform);
-                            processedCount++;
+                        }).WithoutBurst().Run();
+                
+                    if (processedCount > 0)
+                    {
+                        DOTS.Terrain.Core.DebugSettings.LogRendering($"DungeonVisualizationSystem: Processed {processedCount} entities for visualization");
+                    }
+                    
+                    // Play back the command buffer to apply structural changes
+                    ecb.Playback(EntityManager);
+                }
+                finally
+                {
+                    // Ensure command buffer is always disposed
+                    ecb.Dispose();
+                }
+            }
+            
+            // Handle completion logic (outside the command buffer block)
+            if (!hasUnvisualizedEntities && totalEntities > 0)
+            {
+                DOTS.Terrain.Core.DebugSettings.LogRendering($"DungeonVisualizationSystem: All {totalEntities} entities visualized - stopping updates");
+                visualizationComplete = true;
+            }
+            else if (totalEntities == 0)
+            {
+                // Check if WFC is complete and we have no more entities to visualize
+                bool wfcComplete = false;
+                Entities
+                    .WithAll<WFCComponent>()
+                    .ForEach((in WFCComponent wfc) =>
+                    {
+                        if (wfc.isCollapsed)
+                        {
+                            wfcComplete = true;
                         }
                     }).WithoutBurst().Run();
                 
-                // Handle completion logic
-                if (!hasUnvisualizedEntities && totalEntities > 0)
+                if (wfcComplete)
                 {
-                    DOTS.Terrain.Core.DebugSettings.LogRendering($"DungeonVisualizationSystem: All {totalEntities} entities visualized - stopping updates");
+                    DOTS.Terrain.Core.DebugSettings.LogRendering("DungeonVisualizationSystem: WFC complete and no more entities to visualize - stopping updates");
                     visualizationComplete = true;
                 }
-                else if (totalEntities == 0)
-                {
-                    // Check if WFC is complete and we have no more entities to visualize
-                    bool wfcComplete = false;
-                    Entities
-                        .WithAll<WFCComponent>()
-                        .ForEach((in WFCComponent wfc) =>
-                        {
-                            if (wfc.isCollapsed)
-                            {
-                                wfcComplete = true;
-                            }
-                        }).WithoutBurst().Run();
-                    
-                    if (wfcComplete)
-                    {
-                        DOTS.Terrain.Core.DebugSettings.LogRendering("DungeonVisualizationSystem: WFC complete and no more entities to visualize - stopping updates");
-                        visualizationComplete = true;
-                    }
-                }
-                
-                if (processedCount > 0)
-                {
-                    DOTS.Terrain.Core.DebugSettings.LogRendering($"DungeonVisualizationSystem: Processed {processedCount} entities for visualization");
-                }
-                
-                // Play back the command buffer to apply structural changes
-                ecb.Playback(EntityManager);
-            }
-            finally
-            {
-                // Ensure command buffer is always disposed
-                ecb.Dispose();
             }
         }
         
