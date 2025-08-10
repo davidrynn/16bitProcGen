@@ -66,7 +66,8 @@ namespace DOTS.Terrain.WFC
             
             // First pass: count entities and check if we need to process any
             Entities
-                .WithAll<DungeonElementInstance>()
+                .WithAll<DungeonElementComponent>()
+                .WithNone<Prefab>()
                 .ForEach((Entity entity, in DungeonElementComponent element, in LocalTransform transform) =>
                 {
                     totalEntities++;
@@ -88,21 +89,19 @@ namespace DOTS.Terrain.WFC
                 {
                     // Second pass: process entities that need visualization
                     Entities
-                        .WithAll<DungeonElementInstance>()
+                        .WithAll<DungeonElementComponent>()
+                        .WithNone<DungeonVisualized>()
+                        .WithNone<Prefab>()
                         .ForEach((Entity entity, in DungeonElementComponent element, in LocalTransform transform) =>
                         {
-                            // Check if this entity needs visualization
-                            if (!EntityManager.HasComponent<DungeonVisualized>(entity))
+                            // Log first few entities for debugging
+                            if (processedCount < 3)
                             {
-                                // Log first few entities for debugging
-                                if (processedCount < 3)
-                                {
-                                    DOTS.Terrain.Core.DebugSettings.LogRendering($"DungeonVisualizationSystem: Processing entity {entity.Index} - {element.elementType} at {transform.Position}");
-                                }
-                                
-                                CreateVisualization(entity, element, transform);
-                                processedCount++;
+                                DOTS.Terrain.Core.DebugSettings.LogRendering($"DungeonVisualizationSystem: Processing entity {entity.Index} - {element.elementType} at {transform.Position}");
                             }
+                            
+                            CreateVisualization(entity, element, transform);
+                            processedCount++;
                         }).WithoutBurst().Run();
                 
                     if (processedCount > 0)
@@ -193,9 +192,24 @@ namespace DOTS.Terrain.WFC
             
             if (go != null)
             {
-                // Set position and rotation
+                // Set position
                 go.transform.position = transform.Position;
-                go.transform.rotation = transform.Rotation;
+                
+                // Set rotation - preserve floor/corridor orientation, apply wall/door/corner rotation
+                if (elementType == DungeonElementType.Floor || elementType == DungeonElementType.Corridor)
+                {
+                    // For floor and corridor, preserve the 90° X rotation and only apply Y rotation for orientation
+                    var unityQuaternion = new Quaternion(transform.Rotation.value.x, transform.Rotation.value.y, transform.Rotation.value.z, transform.Rotation.value.w);
+                    var floorRotation = Quaternion.Euler(90, unityQuaternion.eulerAngles.y, 0);
+                    go.transform.rotation = floorRotation;
+                }
+                else
+                {
+                    // For walls, doors, and corners, apply the full transform rotation
+                    var unityQuaternion = new Quaternion(transform.Rotation.value.x, transform.Rotation.value.y, transform.Rotation.value.z, transform.Rotation.value.w);
+                    go.transform.rotation = unityQuaternion;
+                }
+                
                 go.transform.localScale = Vector3.one * transform.Scale;
                 
                 // Parent to visualization container
@@ -211,7 +225,7 @@ namespace DOTS.Terrain.WFC
         private GameObject CreateFloorGameObject()
         {
             var go = GameObject.CreatePrimitive(PrimitiveType.Quad);
-            go.transform.rotation = Quaternion.Euler(90, 0, 0); // Rotate 90° around X to face up in XZ plane
+            // Rotation will be set in CreateDungeonGameObject to preserve floor orientation
             
             // Set material
             var renderer = go.GetComponent<Renderer>();
@@ -251,7 +265,7 @@ namespace DOTS.Terrain.WFC
         private GameObject CreateCorridorGameObject()
         {
             var go = GameObject.CreatePrimitive(PrimitiveType.Quad);
-            go.transform.rotation = Quaternion.Euler(90, 0, 0); // Rotate 90° around X to face up in XZ plane
+            // Rotation will be set in CreateDungeonGameObject to preserve corridor orientation
             
             // Set material
             var renderer = go.GetComponent<Renderer>();

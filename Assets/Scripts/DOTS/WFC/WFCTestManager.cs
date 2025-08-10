@@ -116,10 +116,6 @@ namespace DOTS.Terrain.WFC
             // Check if all systems are complete
             if (testStarted && !testCompleted)
             {
-                bool wfcComplete = false;
-                bool renderingComplete = false;
-                bool visualizationComplete = false;
-                
                 // Check WFC completion
                 if (wfcSystem != null)
                 {

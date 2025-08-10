@@ -16,18 +16,20 @@ namespace DOTS.Terrain.Test
         
         [Header("Debug Settings")]
         [Tooltip("Enable test systems to run (WFCSystemTest, SimpleRenderingTest, etc.)")]
-        public bool enableTestSystems = false;
-        [Tooltip("Enable debug logging for test systems")]
+        public bool enableTestSystems = true;
+        [Tooltip("Enable detailed logging for test systems")]
         public bool enableTestDebug = false;
-        [Tooltip("Enable debug logging for rendering systems")]
+        [Tooltip("Enable detailed logging for rendering systems")]
         public bool enableRenderingDebug = false;
-        [Tooltip("Enable debug logging for WFC systems")]
+        [Tooltip("Enable detailed logging for WFC systems")]
         public bool enableWFCDebug = false;
         
         public enum TestType
         {
             SimpleRendering,
-            FullWFC
+            FullWFC,
+            DungeonRendering,
+            DungeonDOTSRendering
         }
         
         void Start()
@@ -55,7 +57,7 @@ namespace DOTS.Terrain.Test
         private void ConfigureDebugSettings()
         {
             // Find or create DebugController
-            var debugController = FindObjectOfType<DebugController>();
+            var debugController = UnityEngine.Object.FindFirstObjectByType<DebugController>();
             if (debugController == null)
             {
                 var debugGO = new GameObject("DebugController");
@@ -86,8 +88,8 @@ namespace DOTS.Terrain.Test
         private void AddTestManager()
         {
             // Remove any existing test managers
-            var existingSimple = FindObjectOfType<SimpleTestManager>();
-            var existingWFC = FindObjectOfType<WFCTestSetup>();
+            var existingSimple = UnityEngine.Object.FindFirstObjectByType<SimpleTestManager>();
+            var existingWFC = UnityEngine.Object.FindFirstObjectByType<WFCTestSetup>();
             
             if (existingSimple != null)
             {
@@ -115,6 +117,20 @@ namespace DOTS.Terrain.Test
                     wfcGO.AddComponent<WFCTestSetup>();
                     Debug.Log("[WFC Test Setup] Added WFCTestSetup");
                     break;
+                    
+                case TestType.DungeonRendering:
+                    // Enable the dungeon rendering test specifically
+                    WFCDungeonRenderingTest.SetWFCDungeonTestEnabled(true);
+                    WFCDungeonRenderingTest.SetDOTSRendering(false);
+                    Debug.Log("[WFC Test Setup] Enabled DungeonRendering test");
+                    break;
+                    
+                case TestType.DungeonDOTSRendering:
+                    // Enable the dungeon DOTS rendering test specifically
+                    WFCDungeonRenderingTest.SetWFCDungeonTestEnabled(true);
+                    WFCDungeonRenderingTest.SetDOTSRendering(true);
+                    Debug.Log("[WFC Test Setup] Enabled DungeonDOTSRendering test");
+                    break;
             }
         }
         
@@ -140,6 +156,30 @@ namespace DOTS.Terrain.Test
             SetupTestEnvironment();
         }
         
+        [ContextMenu("Enable Dungeon Rendering Test")]
+        public void EnableDungeonRenderingTest()
+        {
+            testType = TestType.DungeonRendering;
+            
+            // Enable dungeon rendering test specifically
+            WFCDungeonRenderingTest.SetWFCDungeonTestEnabled(true);
+            
+            SetupTestEnvironment();
+        }
+        
+        [ContextMenu("Enable Dungeon DOTS Rendering Test")]
+        public void EnableDungeonDOTSRenderingTest()
+        {
+            testType = TestType.DungeonDOTSRendering;
+            
+            // Enable dungeon DOTS rendering test specifically
+            WFCDungeonRenderingTest.SetWFCDungeonTestEnabled(true);
+            
+            SetupTestEnvironment();
+        }
+        
+
+        
         [ContextMenu("Disable All Tests")]
         public void DisableAllTests()
         {
@@ -150,6 +190,7 @@ namespace DOTS.Terrain.Test
             
             // Disable WFC test specifically
             WFCSystemTest.SetWFCTestEnabled(false);
+            WFCDungeonRenderingTest.SetWFCDungeonTestEnabled(false);
             
             SetupTestEnvironment();
         }
@@ -158,7 +199,7 @@ namespace DOTS.Terrain.Test
         public void DisableAllTestComponents()
         {
             // Disable all WFCTestSetup components
-            var wfcSetups = FindObjectsOfType<WFCTestSetup>();
+            var wfcSetups = UnityEngine.Object.FindObjectsByType<WFCTestSetup>(FindObjectsSortMode.None);
             foreach (var setup in wfcSetups)
             {
                 setup.runTestOnStart = false;
@@ -167,7 +208,7 @@ namespace DOTS.Terrain.Test
             }
             
             // Disable all SimpleTestManager components
-            var simpleManagers = FindObjectsOfType<SimpleTestManager>();
+            var simpleManagers = UnityEngine.Object.FindObjectsByType<SimpleTestManager>(FindObjectsSortMode.None);
             foreach (var manager in simpleManagers)
             {
                 manager.enabled = false;
@@ -175,7 +216,7 @@ namespace DOTS.Terrain.Test
             }
             
             // Disable all WFCTestSceneSetup components
-            var sceneSetups = FindObjectsOfType<WFCTestSceneSetup>();
+            var sceneSetups = UnityEngine.Object.FindObjectsByType<WFCTestSceneSetup>(FindObjectsSortMode.None);
             foreach (var setup in sceneSetups)
             {
                 setup.enableTestSystems = false;

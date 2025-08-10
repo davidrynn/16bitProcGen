@@ -55,6 +55,8 @@ namespace DOTS.Terrain.WFC
         {
             // Create prefab entities using pure code approach
             prefabs = DungeonPrefabCreator.CreatePrefabs(EntityManager);
+            // Ensure prefabs are tagged so they are excluded by systems that should only process instances
+            TagPrefabsAsPrefab(prefabs);
         }
         
         protected override void OnUpdate()
@@ -73,15 +75,22 @@ namespace DOTS.Terrain.WFC
             
             // Check if dungeon generation is requested
             bool dungeonGenerationRequested = false;
+            int requestCount = 0;
             Entities
                 .WithAll<DungeonGenerationRequest>()
                 .ForEach((in DungeonGenerationRequest request) =>
                 {
+                    requestCount++;
                     if (request.isActive)
                     {
                         dungeonGenerationRequested = true;
                     }
                 }).WithoutBurst().Run();
+                
+            if (updateCounter % 100 == 0)
+            {
+                DOTS.Terrain.Core.DebugSettings.LogRendering($"DungeonRenderingSystem: Found {requestCount} DungeonGenerationRequest entities, active={dungeonGenerationRequested}");
+            }
                 
             if (!dungeonGenerationRequested)
             {
@@ -106,6 +115,11 @@ namespace DOTS.Terrain.WFC
             }
                 
             var wfcComponent = SystemAPI.GetSingleton<WFCComponent>();
+            
+            if (updateCounter % 100 == 0)
+            {
+                DOTS.Terrain.Core.DebugSettings.LogRendering($"DungeonRenderingSystem: WFC state - isCollapsed={wfcComponent.isCollapsed}, isGenerating={wfcComponent.isGenerating}, iterations={wfcComponent.iterations}");
+            }
             
             // Only process if WFC is complete
             if (!wfcComponent.isCollapsed)
@@ -156,6 +170,12 @@ namespace DOTS.Terrain.WFC
             // Play back the command buffer to apply structural changes
             ecb.Playback(EntityManager);
             ecb.Dispose();
+            
+            // Force a frame delay to ensure components are applied before visualization system runs
+            if (processedCells > 0)
+            {
+                DOTS.Terrain.Core.DebugSettings.LogRendering($"DungeonRenderingSystem: Applied {processedCells} entities with DungeonElementInstance components");
+            }
         }
         
         private void SpawnDungeonElement(ref WFCCell cell)
@@ -230,6 +250,23 @@ namespace DOTS.Terrain.WFC
                 // Add a component to track this as a spawned dungeon element (deferred via command buffer)
                 ecb.AddComponent<DungeonElementInstance>(instance);
             }
+        }
+
+        private void TagPrefabsAsPrefab(DungeonPrefabs createdPrefabs)
+        {
+            void EnsurePrefab(Entity e)
+            {
+                if (e != Entity.Null && !EntityManager.HasComponent<Prefab>(e))
+                {
+                    EntityManager.AddComponent<Prefab>(e);
+                }
+            }
+
+            EnsurePrefab(createdPrefabs.floorPrefab);
+            EnsurePrefab(createdPrefabs.wallPrefab);
+            EnsurePrefab(createdPrefabs.doorPrefab);
+            EnsurePrefab(createdPrefabs.corridorPrefab);
+            EnsurePrefab(createdPrefabs.cornerPrefab);
         }
     }
 } 
