@@ -1,19 +1,207 @@
 // Resources/Shaders/WFCGeneration.compute
 // Force reimport
 #pragma kernel PropagateConstraints
+#pragma kernel CollapseCell
+#pragma kernel UpdateEntropy
 
 // Input data
 int resolution;
 float constraintStrength;
+float time;
+
+// WFC data structures
+struct WFCCell
+{
+    int positionX;
+    int positionY;
+    int collapsed;
+    float entropy;
+    int selectedPattern;
+    int patternCount;
+};
+
+struct WFCPattern
+{
+    int patternId;
+    float weight;
+    int terrainType;
+    int connections[4]; // North, East, South, West
+};
 
 // Buffers
-RWStructuredBuffer<int> cells;
+RWStructuredBuffer<WFCCell> cells;
+RWStructuredBuffer<WFCPattern> patterns;
+RWStructuredBuffer<int> constraints;
+RWStructuredBuffer<float> entropyBuffer;
+
+// Helper functions
+float CalculateEntropy(int patternCount, float weights[16])
+{
+    float totalWeight = 0.0f;
+    float entropy = 0.0f;
+    
+    for (int j = 0; j < patternCount; j++)
+    {
+        totalWeight += weights[j];
+    }
+    
+    if (totalWeight <= 0.0f) return 0.0f;
+    
+    for (int k = 0; k < patternCount; k++)
+    {
+        float probability = weights[k] / totalWeight;
+        if (probability > 0.0f)
+        {
+            entropy -= probability * log(probability);
+        }
+    }
+    
+    return entropy;
+}
+
+bool CheckConstraint(int patternId, int direction, int neighborPattern)
+{
+    // Simple constraint checking
+    // In a real implementation, this would check against the constraints buffer
+    return true;
+}
 
 [numthreads(8,8,1)]
 void PropagateConstraints(uint3 id : SV_DispatchThreadID)
 {
-    int index = (int)id.y * resolution + (int)id.x;
+    int x = (int)id.x;
+    int y = (int)id.y;
+    int index = y * resolution + x;
     
-    // Simple constraint propagation
-    cells[index] = 1;
-} 
+    if (x >= resolution || y >= resolution) return;
+    
+    WFCCell cell = cells[index];
+    
+    if (cell.collapsed == 1) return;
+    
+    // Propagate constraints from neighboring cells
+    float weights[16];
+    int validPatterns[16];
+    int validCount = 0;
+    
+    // Initialize with all possible patterns
+    // Simplified version for demonstration
+    weights[0] = 1.0f;
+    validPatterns[0] = 0;
+    validCount = 1;
+    
+    // Check constraints from neighbors
+    for (int dir = 0; dir < 4; dir++)
+    {
+        int nx = x;
+        int ny = y;
+        
+        // Calculate neighbor position
+        switch (dir)
+        {
+            case 0: ny = y - 1; break; // North
+            case 1: nx = x + 1; break; // East
+            case 2: ny = y + 1; break; // South
+            case 3: nx = x - 1; break; // West
+        }
+        
+        if (nx >= 0 && nx < resolution && ny >= 0 && ny < resolution)
+        {
+            int neighborIndex = ny * resolution + nx;
+            WFCCell neighbor = cells[neighborIndex];
+            
+            if (neighbor.collapsed == 1)
+            {
+                // Check constraints against collapsed neighbor
+                int neighborPattern = neighbor.selectedPattern;
+                
+                // Remove invalid patterns based on constraints
+                // Simplified version for demonstration
+                if (!CheckConstraint(validPatterns[0], dir, neighborPattern))
+                {
+                    weights[0] = 0.0f;
+                }
+            }
+        }
+    }
+    
+    // Update cell with new valid patterns
+    int newValidCount = 0;
+    if (weights[0] > 0.0f)
+    {
+        newValidCount = 1;
+    }
+    
+    cell.patternCount = newValidCount;
+    cell.entropy = CalculateEntropy(newValidCount, weights);
+    
+    cells[index] = cell;
+}
+
+[numthreads(8,8,1)]
+void CollapseCell(uint3 id : SV_DispatchThreadID)
+{
+    int x = (int)id.x;
+    int y = (int)id.y;
+    int index = y * resolution + x;
+    
+    if (x >= resolution || y >= resolution) return;
+    
+    WFCCell cell = cells[index];
+    
+    if (cell.collapsed == 1 || cell.patternCount <= 0) return;
+    
+    // Find cell with lowest entropy (highest priority)
+    float minEntropy = 999.0f;
+    int collapseIndex = -1;
+    
+    // Note: This is a simplified version for demonstration
+    // In a real implementation, this would need a different approach
+    // as we can't iterate over all cells in a single thread
+    WFCCell checkCell = cells[index];
+    if (checkCell.collapsed == 0 && checkCell.entropy < minEntropy && checkCell.patternCount > 0)
+    {
+        minEntropy = checkCell.entropy;
+        collapseIndex = index;
+    }
+    
+    if (collapseIndex == index)
+    {
+        // Collapse this cell
+        if (cell.patternCount > 0)
+        {
+            // Select a pattern based on weights
+            // Simplified version for demonstration
+            float totalWeight = patterns[0].weight;
+            float randomValue = fmod(sin(time + index * 123.456f) * 43758.5453f, totalWeight);
+            cell.selectedPattern = 0;
+            
+            cell.collapsed = 1;
+            cell.entropy = 0.0f;
+            cell.patternCount = 1;
+        }
+    }
+    
+    cells[index] = cell;
+}
+
+[numthreads(8,8,1)]
+void UpdateEntropy(uint3 id : SV_DispatchThreadID)
+{
+    int x = (int)id.x;
+    int y = (int)id.y;
+    int index = y * resolution + x;
+    
+    if (x >= resolution || y >= resolution) return;
+    
+    WFCCell cell = cells[index];
+    
+    if (cell.collapsed == 1)
+    {
+        entropyBuffer[index] = 0.0f;
+    }
+    else
+    {
+        entropyBuffer[index] = cell.entropy;
+    }
+}

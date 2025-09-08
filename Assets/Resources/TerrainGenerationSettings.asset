@@ -15,13 +15,12 @@ MonoBehaviour:
   maxChunksPerFrame: 4
   defaultBufferSize: 1048576
   noiseScale: 0.02
-  heightMultiplier: 100
+  heightMultiplier: 10
   biomeScale: 1
-  noiseOffset: {x: 123.456, y: 789.012}
-  meshHeightScale: 20
-  enableDebugLogs: 0
+  noiseOffset: {x: 0, y: 0}
+  enableDebugLogs: 1
   enableVerboseLogs: 0
-  logHeightValues: 0
+  logHeightValues: 1
   waterThreshold: 10
   sandThreshold: 20
   grassThreshold: 35

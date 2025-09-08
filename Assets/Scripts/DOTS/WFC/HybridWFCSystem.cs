@@ -63,6 +63,38 @@ namespace DOTS.Terrain.WFC
             DOTS.Terrain.Core.DebugSettings.LogWFC("HybridWFCSystem: Initialization complete");
         }
         
+        private bool HasAdjacentWall(int2 pos)
+        {
+            // Check immediate N/E/S/W neighbors for walls
+            bool northWall = IsWallAt(new int2(pos.x, pos.y + 1));
+            bool southWall = IsWallAt(new int2(pos.x, pos.y - 1));
+            bool eastWall  = IsWallAt(new int2(pos.x + 1, pos.y));
+            bool westWall  = IsWallAt(new int2(pos.x - 1, pos.y));
+
+            // If any neighbor is wall without an interposed floor, disallow wall selection here
+            // This approximates "no wall face adjacency" by forbidding immediate wall-wall faces.
+            if (northWall || southWall || eastWall || westWall)
+            {
+                return true;
+            }
+            return false;
+        }
+
+        private bool IsWallAt(int2 pos)
+        {
+            // Query WFCCell for this position; for simplicity scan cells (grid sizes are small in tests)
+            var cells = cellQuery.ToComponentDataArray<WFCCell>(Allocator.Temp);
+            for (int i = 0; i < cells.Length; i++)
+            {
+                if (cells[i].position.x == pos.x && cells[i].position.y == pos.y && cells[i].collapsed && cells[i].selectedPattern == 1)
+                {
+                    cells.Dispose();
+                    return true;
+                }
+            }
+            cells.Dispose();
+            return false;
+        }
         protected override void OnUpdate()
         {
             float currentTime = (float)SystemAPI.Time.ElapsedTime;
@@ -198,10 +230,10 @@ namespace DOTS.Terrain.WFC
         /// </summary>
         private void InitializeWFCData(ref WFCComponent wfc)
         {
-            DebugLog("Initializing WFC data with dungeon patterns and constraints");
+            DebugLog("Initializing WFC data with dungeon macro-tile patterns and constraints");
             
-            // Create dungeon patterns instead of terrain patterns
-            var patterns = WFCBuilder.CreateBasicDungeonPatterns();
+            // Create macro-tile patterns with rotated variants
+            var patterns = WFCBuilder.CreateDungeonMacroTilePatterns();
             var constraints = WFCBuilder.CreateBasicDungeonConstraints();
             
             // Convert Lists to Arrays
@@ -304,10 +336,12 @@ namespace DOTS.Terrain.WFC
             // Initialize possible patterns if not already done
             if (cell.possiblePatternsMask == 0)
             {
-                // Start with all patterns possible
-                cell.possiblePatternsMask = 0x1F; // 5 patterns (0-4) = 11111 in binary
-                cell.patternCount = 5;
-                DebugLog($"Initialized cell at {cell.position} with {cell.patternCount} patterns");
+                // Allow all macro-tile patterns (up to 32)
+                int patternCount = wfcQuery.ToComponentDataArray<WFCComponent>(Allocator.Temp)[0].patterns.Value.patternCount;
+                uint mask = (patternCount >= 32) ? 0xFFFFFFFFu : ((1u << patternCount) - 1u);
+                cell.possiblePatternsMask = mask;
+                cell.patternCount = math.min(32, patternCount);
+                DebugLog($"Initialized cell at {cell.position} with {cell.patternCount} macro-tile patterns");
             }
             
             // Calculate entropy based on possible patterns
@@ -338,83 +372,40 @@ namespace DOTS.Terrain.WFC
                 cell.collapsed = true;
                 DebugLog($"Cell at {cell.position} collapsed to pattern {selectedPattern} (entropy=1)");
             }
-            else if (possibleCount <= 3 && UnityEngine.Random.Range(0f, 1f) < 0.5f) // Increased probability and entropy threshold
+            else if (possibleCount <= 3 && UnityEngine.Random.Range(0f, 1f) < 0.5f)
             {
-                // More aggressive random collapse for testing
+                // Random collapse among currently possible patterns
                 DebugLog($"Cell at {cell.position} considering random collapse (entropy={possibleCount})");
                 
-                int selectedPattern;
-                // Create more diverse patterns - don't heavily favor floor
-                if (WFCCellHelpers.IsPatternPossible(ref cell, 0) && UnityEngine.Random.Range(0f, 1f) < 0.3f)
+                int[] possiblePatterns = new int[possibleCount];
+                int index = 0;
+                for (int i = 0; i < 32; i++)
                 {
-                    selectedPattern = 0; // Floor - reduced preference
-                }
-                else if (WFCCellHelpers.IsPatternPossible(ref cell, 1) && UnityEngine.Random.Range(0f, 1f) < 0.4f)
-                {
-                    selectedPattern = 1; // Wall - give walls a good chance
-                }
-                else if (WFCCellHelpers.IsPatternPossible(ref cell, 2) && UnityEngine.Random.Range(0f, 1f) < 0.3f)
-                {
-                    selectedPattern = 2; // Door
-                }
-                else if (WFCCellHelpers.IsPatternPossible(ref cell, 3) && UnityEngine.Random.Range(0f, 1f) < 0.3f)
-                {
-                    selectedPattern = 3; // Corridor
-                }
-                else if (WFCCellHelpers.IsPatternPossible(ref cell, 4) && UnityEngine.Random.Range(0f, 1f) < 0.3f)
-                {
-                    selectedPattern = 4; // Corner
-                }
-                else
-                {
-                    // Select a random possible pattern
-                    int[] possiblePatterns = new int[possibleCount];
-                    int index = 0;
-                    for (int i = 0; i < 32; i++)
+                    if (WFCCellHelpers.IsPatternPossible(ref cell, i))
                     {
-                        if (WFCCellHelpers.IsPatternPossible(ref cell, i))
-                        {
-                            possiblePatterns[index++] = i;
-                        }
+                        possiblePatterns[index++] = i;
                     }
-                    selectedPattern = possiblePatterns[UnityEngine.Random.Range(0, possibleCount)];
                 }
+                int selectedPattern = possiblePatterns[UnityEngine.Random.Range(0, possibleCount)];
                 cell.selectedPattern = selectedPattern;
                 cell.collapsed = true;
                 DebugLog($"Cell at {cell.position} collapsed to pattern {selectedPattern} (random collapse)");
             }
-            else if (UnityEngine.Random.Range(0f, 1f) < 0.1f) // 10% chance to collapse any cell for testing
+            else if (UnityEngine.Random.Range(0f, 1f) < 0.1f)
             {
-                // Force some cells to collapse to ensure progress
+                // Force collapse: choose any possible pattern randomly
                 DebugLog($"Cell at {cell.position} forced collapse (entropy={possibleCount})");
                 
-                int selectedPattern;
-                // For forced collapse, be more random to create variety
-                if (WFCCellHelpers.IsPatternPossible(ref cell, 0) && UnityEngine.Random.Range(0f, 1f) < 0.4f)
+                int[] possiblePatterns = new int[possibleCount];
+                int index = 0;
+                for (int i = 0; i < 32; i++)
                 {
-                    selectedPattern = 0; // Floor
+                    if (WFCCellHelpers.IsPatternPossible(ref cell, i))
+                    {
+                        possiblePatterns[index++] = i;
+                    }
                 }
-                else if (WFCCellHelpers.IsPatternPossible(ref cell, 1) && UnityEngine.Random.Range(0f, 1f) < 0.5f)
-                {
-                    selectedPattern = 1; // Wall
-                }
-                else if (WFCCellHelpers.IsPatternPossible(ref cell, 2) && UnityEngine.Random.Range(0f, 1f) < 0.4f)
-                {
-                    selectedPattern = 2; // Door
-                }
-                else if (WFCCellHelpers.IsPatternPossible(ref cell, 3) && UnityEngine.Random.Range(0f, 1f) < 0.4f)
-                {
-                    selectedPattern = 3; // Corridor
-                }
-                else if (WFCCellHelpers.IsPatternPossible(ref cell, 4) && UnityEngine.Random.Range(0f, 1f) < 0.4f)
-                {
-                    selectedPattern = 4; // Corner
-                }
-                else
-                {
-                    // Select first available pattern as fallback
-                    selectedPattern = WFCCellHelpers.GetFirstPossiblePattern(cell.possiblePatternsMask);
-                }
+                int selectedPattern = possiblePatterns.Length > 0 ? possiblePatterns[UnityEngine.Random.Range(0, possiblePatterns.Length)] : WFCCellHelpers.GetFirstPossiblePattern(cell.possiblePatternsMask);
                 cell.selectedPattern = selectedPattern;
                 cell.collapsed = true;
                 DebugLog($"Cell at {cell.position} collapsed to pattern {selectedPattern} (forced collapse)");
@@ -519,7 +510,8 @@ namespace DOTS.Terrain.WFC
                 if (cell.entropy <= 0.1f)
                 {
                     cell.collapsed = true;
-                    cell.selectedPattern = index % 5; // Simple pattern selection
+                    // Fallback simple selection: pick first available pattern
+                    cell.selectedPattern = WFCCellHelpers.GetFirstPossiblePattern(cell.possiblePatternsMask);
                     cell.entropy = 0f;
                 }
             }

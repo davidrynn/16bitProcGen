@@ -91,17 +91,17 @@ namespace DOTS.Terrain.Test
             DOTS.Terrain.Core.DebugSettings.LogTest("SimpleRenderingTest: Created DungeonGenerationRequest");
             
             // Create a few simple entities with different types
-            CreateTestEntity(DungeonElementType.Floor, new float3(0, 0, 0));
-            CreateTestEntity(DungeonElementType.Wall, new float3(1, 0, 0));
-            CreateTestEntity(DungeonElementType.Door, new float3(2, 0, 0));
+            CreateTestEntity(DungeonElementType.RoomFloor, new float3(0, 0, 0));
+            CreateTestEntity(DungeonElementType.RoomEdge, new float3(1, 0, 0));
+            CreateTestEntity(DungeonElementType.CorridorEndDoorway, new float3(2, 0, 0));
             CreateTestEntity(DungeonElementType.Corridor, new float3(0, 0, 1));
             CreateTestEntity(DungeonElementType.Corner, new float3(1, 0, 1));
             
             // Create a few more to make a small pattern
-            CreateTestEntity(DungeonElementType.Floor, new float3(3, 0, 0));
-            CreateTestEntity(DungeonElementType.Floor, new float3(4, 0, 0));
-            CreateTestEntity(DungeonElementType.Wall, new float3(0, 0, 2));
-            CreateTestEntity(DungeonElementType.Wall, new float3(1, 0, 2));
+            CreateTestEntity(DungeonElementType.RoomFloor, new float3(3, 0, 0));
+            CreateTestEntity(DungeonElementType.RoomFloor, new float3(4, 0, 0));
+            CreateTestEntity(DungeonElementType.RoomEdge, new float3(0, 0, 2));
+            CreateTestEntity(DungeonElementType.RoomEdge, new float3(1, 0, 2));
             
             testInitialized = true;
             testCompleted = true;

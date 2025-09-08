@@ -1,7 +1,10 @@
+#if UNITY_EDITOR || TESTING_DUNGEON_VIZ
 using Unity.Entities;
 using Unity.Transforms;
 using Unity.Collections;
+using Unity.Mathematics;
 using UnityEngine;
+using DOTS.Terrain.WFC.Authoring;
 
 namespace DOTS.Terrain.WFC
 {
@@ -18,16 +21,42 @@ namespace DOTS.Terrain.WFC
         private int updateCounter = 0;
         private bool visualizationComplete = false;
         
+        // Macro-only: Prefer direct reference from the scene's authoring registry
+        private DungeonPrefabRegistryAuthoring registryAuthoring;
+        
         protected override void OnCreate()
         {
             DOTS.Terrain.Core.DebugSettings.LogRendering("DungeonVisualizationSystem: OnCreate called", true);
             
             // Create a parent GameObject for all dungeon visualizations
             visualizationParent = new GameObject("Dungeon Visualization");
+
+            // Find a scene-level authoring registry to use assigned macro prefabs directly
+            registryAuthoring = Object.FindFirstObjectByType<DungeonPrefabRegistryAuthoring>();
+            if (registryAuthoring != null)
+            {
+                DOTS.Terrain.Core.DebugSettings.LogRendering("DungeonVisualizationSystem (Macro-only): Found DungeonPrefabRegistryAuthoring in scene - will use assigned roomFloor/roomEdge prefabs");
+            }
         }
         
         protected override void OnUpdate()
         {
+            // Macro-only: Require registry with macro prefabs
+            if (registryAuthoring == null)
+            {
+                registryAuthoring = Object.FindFirstObjectByType<DungeonPrefabRegistryAuthoring>();
+            }
+            if (registryAuthoring == null)
+            {
+                DOTS.Terrain.Core.DebugSettings.LogError("DungeonVisualizationSystem (Macro-only): Missing DungeonPrefabRegistryAuthoring in scene. Cannot visualize.");
+                return;
+            }
+            if (registryAuthoring.roomFloorPrefab == null || registryAuthoring.roomEdgePrefab == null)
+            {
+                DOTS.Terrain.Core.DebugSettings.LogError("DungeonVisualizationSystem (Macro-only): roomFloorPrefab or roomEdgePrefab not assigned on DungeonPrefabRegistryAuthoring.");
+                return;
+            }
+
             // If visualization is complete, stop updating
             if (visualizationComplete)
             {
@@ -55,7 +84,7 @@ namespace DOTS.Terrain.WFC
             updateCounter++;
             if (updateCounter % 50 == 0) // Log more frequently for debugging
             {
-                DOTS.Terrain.Core.DebugSettings.LogRendering($"DungeonVisualizationSystem: OnUpdate called (update {updateCounter})");
+                DOTS.Terrain.Core.DebugSettings.LogRendering($"DungeonVisualizationSystem (Macro-only): OnUpdate called (update {updateCounter})");
             }
             
             // Only create command buffer if we need to process entities
@@ -119,6 +148,51 @@ namespace DOTS.Terrain.WFC
                 }
             }
             
+            // If there are no element entities at all but WFC is complete, try a direct WFCCell visualization pass
+            if (totalEntities == 0)
+            {
+                bool wfcComplete = false;
+                float cellSize = 1f;
+                if (SystemAPI.HasSingleton<WFCComponent>())
+                {
+                    var wfc = SystemAPI.GetSingleton<WFCComponent>();
+                    wfcComplete = wfc.isCollapsed;
+                    cellSize = math.max(0.0001f, wfc.cellSize);
+                }
+                if (wfcComplete)
+                {
+                    DOTS.Terrain.Core.DebugSettings.LogRendering("DungeonVisualizationSystem (Macro-only): No element entities. Visualizing WFCCells directly.", true);
+                    int spawned = 0;
+                    var wfcSingleton = SystemAPI.GetSingleton<WFCComponent>();
+                    ref var patterns = ref wfcSingleton.patterns.Value.patterns; // required ref access per EA0001
+                    int patternsLength = patterns.Length;
+                    var patternTypes = new NativeArray<int>(patternsLength, Allocator.Temp);
+                    for (int i = 0; i < patternsLength; i++)
+                    {
+                        patternTypes[i] = patterns[i].type;
+                    }
+                    Entities
+                        .WithAll<WFCCell>()
+                        .ForEach((in WFCCell cell) =>
+                        {
+                            if (!cell.collapsed) return;
+                            if (cell.selectedPattern < 0 || cell.selectedPattern >= patternsLength) return;
+                            int patType = patternTypes[cell.selectedPattern];
+                            var elementType = (DungeonElementType)(DungeonPatternType)patType;
+                            var pos = new float3(cell.position.x * cellSize, 0, cell.position.y * cellSize);
+                            var lt = new LocalTransform { Position = pos, Rotation = quaternion.identity, Scale = 1f };
+                            var go = CreateDungeonGameObject(elementType, lt);
+                            if (go != null) spawned++;
+                        }).WithoutBurst().Run();
+                    patternTypes.Dispose();
+                    DOTS.Terrain.Core.DebugSettings.LogRendering($"DungeonVisualizationSystem (Macro-only): Spawned {spawned} GameObjects from WFCCells.", true);
+                    if (spawned > 0)
+                    {
+                        visualizationComplete = true;
+                    }
+                }
+            }
+
             // Handle completion logic (outside the command buffer block)
             if (!hasUnvisualizedEntities && totalEntities > 0)
             {
@@ -149,18 +223,18 @@ namespace DOTS.Terrain.WFC
         
         private void CreateVisualization(Entity entity, DungeonElementComponent element, LocalTransform transform)
         {
-            DOTS.Terrain.Core.DebugSettings.LogRendering($"DungeonVisualizationSystem: Creating visualization for entity {entity.Index} - {element.elementType} at {transform.Position}");
+            DOTS.Terrain.Core.DebugSettings.LogRendering($"DungeonVisualizationSystem (Macro-only): Creating visualization for entity {entity.Index} - {element.elementType} at {transform.Position}");
             
             // Create a GameObject for this entity
             var go = CreateDungeonGameObject(element.elementType, transform);
             
             if (go != null)
             {
-                DOTS.Terrain.Core.DebugSettings.LogRendering($"DungeonVisualizationSystem: Successfully created GameObject '{go.name}' at {go.transform.position}");
+                DOTS.Terrain.Core.DebugSettings.LogRendering($"DungeonVisualizationSystem (Macro-only): Successfully created GameObject '{go.name}' at {go.transform.position}");
             }
             else
             {
-                DOTS.Terrain.Core.DebugSettings.LogError($"DungeonVisualizationSystem: Failed to create GameObject for {element.elementType}");
+                DOTS.Terrain.Core.DebugSettings.LogError($"DungeonVisualizationSystem (Macro-only): Failed to create GameObject for {element.elementType}");
             }
             
             // Mark this entity as visualized (deferred via command buffer)
@@ -173,13 +247,13 @@ namespace DOTS.Terrain.WFC
             
             switch (elementType)
             {
-                case DungeonElementType.Floor:
+                case DungeonElementType.RoomFloor:
                     go = CreateFloorGameObject();
                     break;
-                case DungeonElementType.Wall:
+                case DungeonElementType.RoomEdge:
                     go = CreateWallGameObject();
                     break;
-                case DungeonElementType.Door:
+                case DungeonElementType.CorridorEndDoorway:
                     go = CreateDoorGameObject();
                     break;
                 case DungeonElementType.Corridor:
@@ -195,18 +269,25 @@ namespace DOTS.Terrain.WFC
                 // Set position
                 go.transform.position = transform.Position;
                 
-                // Set rotation - preserve floor/corridor orientation, apply wall/door/corner rotation
-                if (elementType == DungeonElementType.Floor || elementType == DungeonElementType.Corridor)
+                // Set rotation
+                var unityQuaternion = new Quaternion(transform.Rotation.value.x, transform.Rotation.value.y, transform.Rotation.value.z, transform.Rotation.value.w);
+                if (elementType == DungeonElementType.RoomFloor || elementType == DungeonElementType.Corridor)
                 {
-                    // For floor and corridor, preserve the 90° X rotation and only apply Y rotation for orientation
-                    var unityQuaternion = new Quaternion(transform.Rotation.value.x, transform.Rotation.value.y, transform.Rotation.value.z, transform.Rotation.value.w);
-                    var floorRotation = Quaternion.Euler(90, unityQuaternion.eulerAngles.y, 0);
-                    go.transform.rotation = floorRotation;
+                    // If using a primitive Quad, rotate 90° around X to lie on XZ; prefabs remain on XZ
+                    var meshFilter = go.GetComponent<MeshFilter>();
+                    bool isPrimitiveQuad = meshFilter != null && meshFilter.sharedMesh != null && meshFilter.sharedMesh.name == "Quad";
+                    if (isPrimitiveQuad)
+                    {
+                        go.transform.rotation = Quaternion.Euler(90, unityQuaternion.eulerAngles.y, 0);
+                    }
+                    else
+                    {
+                        go.transform.rotation = Quaternion.Euler(0, unityQuaternion.eulerAngles.y, 0);
+                    }
                 }
                 else
                 {
                     // For walls, doors, and corners, apply the full transform rotation
-                    var unityQuaternion = new Quaternion(transform.Rotation.value.x, transform.Rotation.value.y, transform.Rotation.value.z, transform.Rotation.value.w);
                     go.transform.rotation = unityQuaternion;
                 }
                 
@@ -224,64 +305,51 @@ namespace DOTS.Terrain.WFC
         
         private GameObject CreateFloorGameObject()
         {
-            var go = GameObject.CreatePrimitive(PrimitiveType.Quad);
-            // Rotation will be set in CreateDungeonGameObject to preserve floor orientation
-            
-            // Set material
-            var renderer = go.GetComponent<Renderer>();
-            renderer.material = CreateMaterial(Color.gray);
-            
-            return go;
+            // Late-bind the authoring registry in case the scene loaded after OnCreate
+            // Macro-only: Instantiate roomFloor prefab
+            return Object.Instantiate(registryAuthoring.roomFloorPrefab);
         }
         
         private GameObject CreateWallGameObject()
         {
-            var go = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            
-            // Scale to make it thin and tall
-            go.transform.localScale = new Vector3(1f, 2f, 0.1f);
-            
-            // Set material
-            var renderer = go.GetComponent<Renderer>();
-            renderer.material = CreateMaterial(Color.brown);
-            
-            return go;
+            // Macro-only: Instantiate roomEdge prefab
+            return Object.Instantiate(registryAuthoring.roomEdgePrefab);
         }
         
         private GameObject CreateDoorGameObject()
         {
+            if (registryAuthoring != null && registryAuthoring.doorPrefab != null)
+            {
+                return Object.Instantiate(registryAuthoring.doorPrefab);
+            }
             var go = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            
-            // Scale to make it door-sized
             go.transform.localScale = new Vector3(0.8f, 2f, 0.1f);
-            
-            // Set material
             var renderer = go.GetComponent<Renderer>();
             renderer.material = CreateMaterial(Color.yellow);
-            
             return go;
         }
         
         private GameObject CreateCorridorGameObject()
         {
+            if (registryAuthoring != null && registryAuthoring.corridorPrefab != null)
+            {
+                return Object.Instantiate(registryAuthoring.corridorPrefab);
+            }
             var go = GameObject.CreatePrimitive(PrimitiveType.Quad);
-            // Rotation will be set in CreateDungeonGameObject to preserve corridor orientation
-            
-            // Set material
             var renderer = go.GetComponent<Renderer>();
             renderer.material = CreateMaterial(Color.blue);
-            
             return go;
         }
         
         private GameObject CreateCornerGameObject()
         {
+            if (registryAuthoring != null && registryAuthoring.cornerPrefab != null)
+            {
+                return Object.Instantiate(registryAuthoring.cornerPrefab);
+            }
             var go = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            
-            // Set material
             var renderer = go.GetComponent<Renderer>();
             renderer.material = CreateMaterial(Color.red);
-            
             return go;
         }
         
@@ -329,3 +397,5 @@ namespace DOTS.Terrain.WFC
     
 
 } 
+// File only included in Editor or when TESTING_DUNGEON_VIZ is defined
+#endif

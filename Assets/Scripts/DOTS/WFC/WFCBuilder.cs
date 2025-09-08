@@ -83,78 +83,59 @@ namespace DOTS.Terrain.WFC
         }
         
         /// <summary>
-        /// Creates a basic dungeon pattern set and converts to WFCPatterns
+        /// Creates dungeon macro-tile patterns with 0/90/180/270 rotated variants.
+        /// Patterns use 'F' (open) and 'W' (closed) on edges.
         /// </summary>
-        public static List<WFCPattern> CreateBasicDungeonPatterns()
+        public static List<WFCPattern> CreateDungeonMacroTilePatterns()
         {
-            var patterns = new List<WFCPattern>();
+            var result = new List<WFCPattern>();
 
-            // Floor: open on all sides
-            patterns.Add(PatternConversion.ToWFCPattern(new DungeonPattern
+            int nextId = 0;
+
+            // Helper to add a base tile and 3 rotations
+            void AddRotated(DungeonPatternType type, byte n, byte e, byte s, byte w, float weight)
             {
-                id = 0,
-                name = "Floor",
-                type = DungeonPatternType.Floor,
-                north = (byte)'F',
-                east = (byte)'F',
-                south = (byte)'F',
-                west = (byte)'F',
-                weight = 1.0f
-            }));
+                byte rn = n, re = e, rs = s, rw = w;
+                for (int rot = 0; rot < 4; rot++)
+                {
+                    var dp = new DungeonPattern
+                    {
+                        id = nextId++,
+                        name = type.ToString() + "_" + rot * 90,
+                        type = type,
+                        north = rn,
+                        east = re,
+                        south = rs,
+                        west = rw,
+                        weight = weight
+                    };
+                    result.Add(PatternConversion.ToWFCPattern(dp));
 
-            // Wall: closed on all sides
-            patterns.Add(PatternConversion.ToWFCPattern(new DungeonPattern
-            {
-                id = 1,
-                name = "Wall",
-                type = DungeonPatternType.Wall,
-                north = (byte)'W',
-                east = (byte)'W',
-                south = (byte)'W',
-                west = (byte)'W',
-                weight = 1.0f
-            }));
+                    // Rotate edges clockwise for next variant
+                    byte oldN = rn;
+                    rn = rw; // N <- W
+                    rw = rs; // W <- S
+                    rs = re; // S <- E
+                    re = oldN; // E <- N
+                }
+            }
 
-            // Door: open N/S, wall E/W
-            patterns.Add(PatternConversion.ToWFCPattern(new DungeonPattern
-            {
-                id = 2,
-                name = "Door",
-                type = DungeonPatternType.Door,
-                north = (byte)'F',
-                east = (byte)'W',
-                south = (byte)'F',
-                west = (byte)'W',
-                weight = 0.5f
-            }));
+            // Room floor: open all sides
+            AddRotated(DungeonPatternType.Floor, (byte)'F', (byte)'F', (byte)'F', (byte)'F', 1.0f);
 
-            // Corridor: open N/S, wall E/W
-            patterns.Add(PatternConversion.ToWFCPattern(new DungeonPattern
-            {
-                id = 3,
-                name = "Corridor",
-                type = DungeonPatternType.Corridor,
-                north = (byte)'F',
-                east = (byte)'W',
-                south = (byte)'F',
-                west = (byte)'W',
-                weight = 1.0f
-            }));
+            // Room edge: one closed face, three open
+            AddRotated(DungeonPatternType.Wall, (byte)'W', (byte)'F', (byte)'F', (byte)'F', 1.0f);
 
-            // Corner: wall N/W, open E/S
-            patterns.Add(PatternConversion.ToWFCPattern(new DungeonPattern
-            {
-                id = 4,
-                name = "Corner",
-                type = DungeonPatternType.Corner,
-                north = (byte)'W',
-                east = (byte)'F',
-                south = (byte)'F',
-                west = (byte)'W',
-                weight = 0.8f
-            }));
+            // Corridor straight: open N/S, closed E/W
+            AddRotated(DungeonPatternType.Corridor, (byte)'F', (byte)'W', (byte)'F', (byte)'W', 1.0f);
 
-            return patterns;
+            // Corner: open N and E, closed S and W (rotated gives the other corners)
+            AddRotated(DungeonPatternType.Corner, (byte)'F', (byte)'F', (byte)'W', (byte)'W', 1.0f);
+
+            // Corridor end with doorway: treat door side as open for adjacency
+            AddRotated(DungeonPatternType.Door, (byte)'F', (byte)'W', (byte)'W', (byte)'W', 0.9f);
+
+            return result;
         }
         
         /// <summary>
@@ -164,33 +145,8 @@ namespace DOTS.Terrain.WFC
         {
             var constraints = new List<WFCConstraint>();
             
-            // Floor can connect to Floor, Wall, Door, Corridor
-            constraints.Add(CreateConstraint(0, 0, 1, 1.0f)); // Floor North -> Floor
-            constraints.Add(CreateConstraint(0, 1, 1, 1.0f)); // Floor East -> Floor
-            constraints.Add(CreateConstraint(0, 2, 1, 1.0f)); // Floor South -> Floor
-            constraints.Add(CreateConstraint(0, 3, 1, 1.0f)); // Floor West -> Floor
-            
-            // Wall can connect to Floor, Door
-            constraints.Add(CreateConstraint(1, 0, 1, 1.0f)); // Wall North -> Floor
-            constraints.Add(CreateConstraint(1, 1, 1, 1.0f)); // Wall East -> Floor
-            constraints.Add(CreateConstraint(1, 2, 1, 1.0f)); // Wall South -> Floor
-            constraints.Add(CreateConstraint(1, 3, 1, 1.0f)); // Wall West -> Floor
-            
-            // Door connects Floor to Floor
-            constraints.Add(CreateConstraint(2, 0, 1, 1.0f)); // Door North -> Floor
-            constraints.Add(CreateConstraint(2, 2, 1, 1.0f)); // Door South -> Floor
-            
-            // Corridor connects to Floor, Corridor
-            constraints.Add(CreateConstraint(3, 0, 1, 1.0f)); // Corridor North -> Floor
-            constraints.Add(CreateConstraint(3, 1, 1, 1.0f)); // Corridor East -> Floor
-            constraints.Add(CreateConstraint(3, 2, 1, 1.0f)); // Corridor South -> Floor
-            constraints.Add(CreateConstraint(3, 3, 1, 1.0f)); // Corridor West -> Floor
-            
-            // Corner connects Wall to Floor
-            constraints.Add(CreateConstraint(4, 0, 1, 1.0f)); // Corner North -> Wall
-            constraints.Add(CreateConstraint(4, 1, 1, 1.0f)); // Corner East -> Wall
-            constraints.Add(CreateConstraint(4, 2, 1, 1.0f)); // Corner South -> Floor
-            constraints.Add(CreateConstraint(4, 3, 1, 1.0f)); // Corner West -> Floor
+            // Note: Current HybridWFCSystem does not apply constraints during propagation.
+            // We keep a placeholder list to remain API-compatible.
             
             return constraints;
         }

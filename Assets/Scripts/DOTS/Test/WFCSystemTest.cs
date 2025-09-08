@@ -18,6 +18,7 @@ namespace DOTS.Terrain.Test
         private Entity testWFCEntity;
         private float testStartTime;
         private float testTimeout = 10.0f; // 10 seconds timeout
+        private int currentPatternCount = 0;
         
         // Test results
         private bool testCompleted = false;
@@ -89,8 +90,9 @@ namespace DOTS.Terrain.Test
             // Create test WFC entity
             testWFCEntity = EntityManager.CreateEntity();
             
-            // Create and assign the basic dungeon pattern set
-            var patternList = WFCBuilder.CreateBasicDungeonPatterns();
+            // Create and assign the dungeon macro-tile pattern set
+            var patternList = WFCBuilder.CreateDungeonMacroTilePatterns();
+            currentPatternCount = patternList.Count;
             var constraintList = WFCBuilder.CreateBasicDungeonConstraints();
             
             var patternArray = new NativeArray<WFCPattern>(patternList.Count, Allocator.Temp);
@@ -128,7 +130,7 @@ namespace DOTS.Terrain.Test
             {
                 gridSize = new int2(16, 16),
                 patternSize = 1,
-                cellSize = 1.0f,
+                cellSize = 3.0f,
                 isCollapsed = false,
                 entropy = 1.0f,
                 selectedPattern = -1,
@@ -193,12 +195,12 @@ namespace DOTS.Terrain.Test
                     {
                         position = new int2(x, y),
                         collapsed = false,
-                        entropy = 5.0f, // Start with 5 possible patterns
+                        entropy = math.min(32, math.max(1, currentPatternCount)),
                         selectedPattern = -1,
                         needsUpdate = true,
-                        patternCount = 5,
+                        patternCount = math.min(32, math.max(1, currentPatternCount)),
                         visualized = false,
-                        possiblePatternsMask = 0x1F // 5 patterns (0-4) = 11111 in binary
+                        possiblePatternsMask = (currentPatternCount >= 32) ? 0xFFFFFFFFu : ((1u << currentPatternCount) - 1u)
                     };
                     
                     EntityManager.AddComponentData(cellEntity, cell);

@@ -121,15 +121,13 @@ namespace DOTS.Terrain.Test
                 case TestType.DungeonRendering:
                     // Enable the dungeon rendering test specifically
                     WFCDungeonRenderingTest.SetWFCDungeonTestEnabled(true);
-                    WFCDungeonRenderingTest.SetDOTSRendering(false);
                     Debug.Log("[WFC Test Setup] Enabled DungeonRendering test");
                     break;
                     
                 case TestType.DungeonDOTSRendering:
-                    // Enable the dungeon DOTS rendering test specifically
+                    // DOTS-only renderer was removed; map to standard DungeonRendering test
                     WFCDungeonRenderingTest.SetWFCDungeonTestEnabled(true);
-                    WFCDungeonRenderingTest.SetDOTSRendering(true);
-                    Debug.Log("[WFC Test Setup] Enabled DungeonDOTSRendering test");
+                    Debug.Log("[WFC Test Setup] DungeonDOTSRendering mapped to DungeonRendering (DOTS fallback removed)");
                     break;
             }
         }
