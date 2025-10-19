@@ -8,14 +8,10 @@ using DOTS.Terrain;
 using DOTS.Terrain.Modification;
 using TerrainData = DOTS.Terrain.TerrainData;
 
-public partial class TerrainModificationSystem : SystemBase
+public partial struct TerrainModificationSystem : ISystem
 {
-    private ComputeShaderManager computeManager;
-    private TerrainComputeBufferManager bufferManager;
-    private TerrainGlobPhysicsSystem globPhysicsSystem;
-    
-    // Queue for glob creations to avoid structural change issues
-    private List<GlobCreationData> queuedGlobCreations = new List<GlobCreationData>();
+    // Note: Managed fields are not allowed in struct systems
+    // We'll find these components at runtime instead of storing references
     
     // Data structure for queued glob creation
     private struct GlobCreationData
@@ -26,89 +22,58 @@ public partial class TerrainModificationSystem : SystemBase
         public TerrainType terrainType;
     }
     
-    protected override void OnCreate()
+    public void OnCreate(ref SystemState state)
     {
-        // Get references to required managers
-        computeManager = ComputeShaderManager.Instance;
-        bufferManager = Object.FindFirstObjectByType<TerrainComputeBufferManager>();
-        
-        if (computeManager == null)
-        {
-            Debug.LogError("[TerrainModificationSystem] ComputeShaderManager not found!");
-        }
-        
-        if (bufferManager == null)
-        {
-            // Silently skip - this is expected when testing WFC without terrain systems
-        }
-        
-        // Get reference to glob physics system
-        globPhysicsSystem = World.GetOrCreateSystemManaged<TerrainGlobPhysicsSystem>();
-        
-        if (globPhysicsSystem == null)
-        {
-            Debug.LogWarning("[TerrainModificationSystem] TerrainGlobPhysicsSystem not found - globs will not be created");
-        }
+        state.RequireForUpdate<PlayerModificationComponent>();
     }
-    
-    protected override void OnUpdate()
+
+    public void OnUpdate(ref SystemState state)
     {
-        // Retry finding buffer manager if it was null in OnCreate
-        if (bufferManager == null)
-        {
-            bufferManager = Object.FindFirstObjectByType<TerrainComputeBufferManager>();
-        }
+        // Find managers at runtime (no stored references in struct systems)
+        var computeManager = ComputeShaderManager.Instance;
+        var bufferManager = Object.FindFirstObjectByType<TerrainComputeBufferManager>();
         
         // Process modification requests
         var ecb = new EntityCommandBuffer(Allocator.Temp);
-        
-        Entities
-            .WithAll<PlayerModificationComponent>()
-            .ForEach((Entity entity, in PlayerModificationComponent modification) =>
+        var entityManager = state.EntityManager;
+        float elapsedTime = (float)SystemAPI.Time.ElapsedTime;
+
+        foreach (var (modification, entity) in SystemAPI.Query<RefRO<PlayerModificationComponent>>().WithEntityAccess())
+        {
+            if (bufferManager != null && computeManager != null)
             {
-                if (bufferManager != null && computeManager != null)
-                {
-                    ApplyTerrainGlobRemoval(modification);
-                    
-                    // Queue glob creation for after the ForEach loop
-                    if (globPhysicsSystem != null)
-                    {
-                        // Store modification data for later processing
-                        var globCreationData = new GlobCreationData
-                        {
-                            position = modification.position,
-                            radius = modification.radius,
-                            removalType = modification.removalType,
-                            terrainType = DetermineTerrainTypeAtPosition(modification.position)
-                        };
-                        
-                        // We'll process this after the ForEach loop
-                        QueueGlobCreation(globCreationData);
-                    }
-                }
-                else
-                {
-                    Debug.Log($"[TerrainModificationSystem] Modification Request: Pos={modification.position}, Radius={modification.radius}, Strength={modification.strength}, Res={modification.resolution}");
-                }
+                ApplyTerrainGlobRemoval(entityManager, elapsedTime, modification.ValueRO, computeManager, bufferManager);
                 
-                // Destroy the modification request entity
-                ecb.DestroyEntity(entity);
-            }).WithoutBurst().Run();
+                var globCreationData = new GlobCreationData
+                {
+                    position = modification.ValueRO.position,
+                    radius = modification.ValueRO.radius,
+                    removalType = modification.ValueRO.removalType,
+                    terrainType = DetermineTerrainTypeAtPosition(entityManager, modification.ValueRO.position)
+                };
+
+                // Create glob entity immediately instead of queuing
+                CreateGlobEntity(entityManager, globCreationData);
+            }
+            else
+            {
+                Debug.Log($"[TerrainModificationSystem] Modification Request: Pos={modification.ValueRO.position}, Radius={modification.ValueRO.radius}, Strength={modification.ValueRO.strength}, Res={modification.ValueRO.resolution}");
+            }
+
+            ecb.DestroyEntity(entity);
+        }
         
-        ecb.Playback(EntityManager);
+        ecb.Playback(entityManager);
         ecb.Dispose();
-        
-        // Process queued glob creations after structural changes are complete
-        ProcessQueuedGlobCreations();
     }
     
-    private void ApplyTerrainGlobRemoval(PlayerModificationComponent modification)
+    private void ApplyTerrainGlobRemoval(EntityManager entityManager, float elapsedTime, PlayerModificationComponent modification, ComputeShaderManager computeManager, TerrainComputeBufferManager bufferManager)
     {
         var globShader = computeManager.GetComputeShader("TerrainGlobRemoval");
         if (globShader == null) { Debug.LogError("[TerrainModificationSystem] TerrainGlobRemoval compute shader not found!"); return; }
-        var terrainChunk = FindTerrainChunkAtPosition(modification.position);
+        var terrainChunk = FindTerrainChunkAtPosition(entityManager, modification.position);
         if (terrainChunk == Entity.Null) { Debug.LogWarning($"[TerrainModificationSystem] No terrain chunk found at position {modification.position}"); return; }
-        var terrainData = EntityManager.GetComponentData<TerrainData>(terrainChunk);
+        var terrainData = entityManager.GetComponentData<TerrainData>(terrainChunk);
         if (!terrainData.heightData.IsCreated) { Debug.LogWarning($"[TerrainModificationSystem] Terrain chunk at {terrainData.chunkPosition} has no height data"); return; }
         
         // Get height data from blob asset
@@ -152,7 +117,7 @@ public partial class TerrainModificationSystem : SystemBase
         globShader.SetVector("chunkPosition", new Vector4(terrainData.chunkPosition.x, 0, terrainData.chunkPosition.y, 0));
         globShader.SetInt("chunkResolution", terrainData.resolution);
         globShader.SetFloat("chunkWorldScale", terrainData.worldScale);
-        globShader.SetFloat("chunkTime", (float)SystemAPI.Time.ElapsedTime);
+    globShader.SetFloat("chunkTime", elapsedTime);
         
         // Dispatch the compute shader
         int threadGroups = (terrainData.resolution + 7) / 8;
@@ -163,7 +128,7 @@ public partial class TerrainModificationSystem : SystemBase
         
         // Set needsMeshUpdate flag to true and update the entity
         terrainData.needsMeshUpdate = true;
-        EntityManager.SetComponentData(terrainChunk, terrainData);
+    entityManager.SetComponentData(terrainChunk, terrainData);
         
         // Update the terrain data (this would need to be done through a proper update system)
         // For now, just log the modification
@@ -178,24 +143,24 @@ public partial class TerrainModificationSystem : SystemBase
     /// <summary>
     /// Determines the terrain type at a given world position
     /// </summary>
-    private TerrainType DetermineTerrainTypeAtPosition(float3 worldPosition)
+    private TerrainType DetermineTerrainTypeAtPosition(EntityManager entityManager, float3 worldPosition)
     {
         // Find the terrain chunk at this position
-        var terrainChunk = FindTerrainChunkAtPosition(worldPosition);
+        var terrainChunk = FindTerrainChunkAtPosition(entityManager, worldPosition);
         if (terrainChunk == Entity.Null)
         {
             return TerrainType.Grass; // Default fallback
         }
-        
-        var terrainData = EntityManager.GetComponentData<TerrainData>(terrainChunk);
+
+        var terrainData = entityManager.GetComponentData<TerrainData>(terrainChunk);
         if (!terrainData.heightData.IsCreated)
         {
             return TerrainType.Grass; // Default fallback
         }
         
         // Get the terrain type from the height data
-        ref var heightData = ref terrainData.heightData.Value;
-        ref var terrainTypes = ref heightData.terrainTypes;
+    ref var heightData = ref terrainData.heightData.Value;
+    ref var terrainTypes = ref heightData.terrainTypes;
         
         // Calculate the index in the terrain data
         var chunkWorldPos = terrainData.chunkPosition;
@@ -218,71 +183,74 @@ public partial class TerrainModificationSystem : SystemBase
     }
     
     /// <summary>
-    /// Queues a glob creation for processing after structural changes
+    /// Creates a glob entity directly (no queuing needed in struct systems)
     /// </summary>
-    private void QueueGlobCreation(GlobCreationData globData)
+    private void CreateGlobEntity(EntityManager entityManager, GlobCreationData globData)
     {
-        queuedGlobCreations.Add(globData);
-    }
-    
-    /// <summary>
-    /// Processes all queued glob creations
-    /// </summary>
-    private void ProcessQueuedGlobCreations()
-    {
-        if (queuedGlobCreations.Count == 0) return;
+        // Create glob entity with physics component
+        var globEntity = entityManager.CreateEntity();
         
-        Debug.Log($"[TerrainModificationSystem] Processing {queuedGlobCreations.Count} queued glob creations");
-        
-        foreach (var globData in queuedGlobCreations)
+        var globComponent = new TerrainGlobComponent
         {
-            // Calculate glob radius based on removal type
-            float globRadius = globData.removalType switch
-            {
-                GlobRemovalType.Small => 1.0f,
-                GlobRemovalType.Medium => 2.0f,
-                GlobRemovalType.Large => 3.0f,
-                _ => globData.radius
-            };
-            
-            // Create the glob entity
-            var globEntity = globPhysicsSystem.CreateTerrainGlob(
-                globData.position,
-                globRadius,
-                globData.removalType,
-                globData.terrainType
-            );
-            
-            if (globEntity != Entity.Null)
-            {
-                Debug.Log($"[TerrainModificationSystem] Created glob entity {globEntity.Index} at {globData.position}");
-            }
-            else
-            {
-                Debug.LogWarning($"[TerrainModificationSystem] Failed to create glob entity at {globData.position}");
-            }
-        }
+            originalPosition = globData.position,
+            currentPosition = globData.position,
+            globRadius = globData.radius,
+            globType = globData.removalType,
+            terrainType = globData.terrainType,
+            velocity = float3.zero,
+            angularVelocity = float3.zero,
+            mass = 1.0f,
+            bounciness = 0.7f,
+            friction = 0.5f,
+            isGrounded = false,
+            isCollected = false,
+            isDestroyed = false,
+            lifetime = 0f,
+            collectionRadius = globData.radius * 2f,
+            canBeCollected = true,
+            resourceValue = 1,
+            scale = new float3(globData.radius),
+            rotation = quaternion.identity,
+            visualAlpha = 1.0f
+        };
         
-        // Clear the queue
-        queuedGlobCreations.Clear();
+        var physicsComponent = new TerrainGlobPhysicsComponent
+        {
+            enablePhysics = true,
+            gravityScale = 1.0f,
+            dragCoefficient = 0.1f,
+            maxVelocity = 10.0f,
+            maxAngularVelocity = 5.0f
+        };
+        
+        var transform = new LocalTransform
+        {
+            Position = globData.position,
+            Rotation = quaternion.identity,
+            Scale = globData.radius
+        };
+        
+        entityManager.AddComponentData(globEntity, globComponent);
+        entityManager.AddComponentData(globEntity, physicsComponent);
+        entityManager.AddComponentData(globEntity, transform);
+        
+        Debug.Log($"[TerrainModificationSystem] Created glob entity at {globData.position} with radius {globData.radius}");
     }
     
-    private Entity FindTerrainChunkAtPosition(float3 worldPosition)
+    
+    private Entity FindTerrainChunkAtPosition(EntityManager entityManager, float3 worldPosition)
     {
         // Simplified chunk finding - you'll need to implement proper chunk detection
         // This should find the terrain chunk that contains the given world position
         Entity foundChunk = Entity.Null;
         
-        // Use a temporary list to store found entities
-        var foundEntities = new NativeList<Entity>(Allocator.Temp);
-        
         // Use a different approach to avoid ForEach lambda issues
-        var query = GetEntityQuery(typeof(TerrainData));
+        var query = entityManager.CreateEntityQuery(ComponentType.ReadOnly<TerrainData>());
         var entities = query.ToEntityArray(Allocator.Temp);
         
         foreach (var entity in entities)
         {
-            var terrain = EntityManager.GetComponentData<TerrainData>(entity);
+            var terrain = entityManager.GetComponentData<TerrainData>(entity);
             
             // Simple bounds check - replace with proper chunk boundary detection
             var chunkWorldPos = terrain.chunkPosition;
@@ -297,6 +265,7 @@ public partial class TerrainModificationSystem : SystemBase
         }
         
         entities.Dispose();
+        query.Dispose();
         return foundChunk;
     }
 }

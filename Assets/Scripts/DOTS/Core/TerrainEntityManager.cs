@@ -106,12 +106,12 @@ public class TerrainEntityManager : MonoBehaviour
         entityManager.AddComponentData(entity, terrainData);
         entityManager.AddComponentData(entity, biomeComponent);
         
-        // NEW: Add Unity.Transforms components
+        // Add Unity.Transforms components
         var localTransform = new LocalTransform
         {
-            Position = terrainData.worldPosition,
-            Rotation = terrainData.rotation,
-            Scale = terrainData.scale.x // LocalTransform uses single scale value
+            Position = new float3(chunkPosition.x * worldScale, 0, chunkPosition.y * worldScale),
+            Rotation = quaternion.identity,
+            Scale = worldScale
         };
         entityManager.AddComponentData(entity, localTransform);
         

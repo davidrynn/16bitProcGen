@@ -12,7 +12,7 @@ namespace DOTS.Terrain.Modification
     /// </summary>
     [UpdateInGroup(typeof(SimulationSystemGroup))]
     [UpdateAfter(typeof(TerrainModificationSystem))]
-    public partial class TerrainGlobPhysicsSystem : SystemBase
+    public partial struct TerrainGlobPhysicsSystem : ISystem
     {
         // Physics constants
         private const float GRAVITY = -9.81f;
@@ -21,137 +21,125 @@ namespace DOTS.Terrain.Modification
         private const float AIR_FRICTION = 0.02f;
         
         // Performance monitoring
-        private int activeGlobs = 0;
-        private int groundedGlobs = 0;
-        private float lastUpdateTime = 0f;
+        private int activeGlobs;
+        private int groundedGlobs;
+        private float lastUpdateTime;
+
+        private static int latestActiveGlobs;
+        private static int latestGroundedGlobs;
+        private static float latestUpdateTime;
         
-        protected override void OnCreate()
+        public void OnCreate(ref SystemState state)
         {
             Debug.Log("[DOTS] TerrainGlobPhysicsSystem: Initializing...");
-            RequireForUpdate<TerrainGlobComponent>();
-            RequireForUpdate<TerrainGlobPhysicsComponent>();
+            state.RequireForUpdate<TerrainGlobComponent>();
+            state.RequireForUpdate<TerrainGlobPhysicsComponent>();
         }
-        
-        protected override void OnUpdate()
+
+        public void OnUpdate(ref SystemState state)
         {
             float deltaTime = (float)SystemAPI.Time.DeltaTime;
             lastUpdateTime = (float)SystemAPI.Time.ElapsedTime;
-            
-            // Update glob physics
-            UpdateGlobPhysics(deltaTime);
-            
-            // Handle glob destruction
-            HandleGlobDestruction();
-            
-            // Update performance metrics
-            UpdatePerformanceMetrics();
+
+            UpdateGlobPhysics(ref state, deltaTime);
+            HandleGlobDestruction(ref state);
+            UpdatePerformanceMetrics(deltaTime);
         }
         
         /// <summary>
         /// Updates physics for all terrain globs
         /// </summary>
-        private void UpdateGlobPhysics(float deltaTime)
+        private void UpdateGlobPhysics(ref SystemState state, float deltaTime)
         {
             activeGlobs = 0;
             groundedGlobs = 0;
             
-            Entities
-                .WithAll<TerrainGlobComponent, TerrainGlobPhysicsComponent>()
-                .ForEach((Entity entity, ref TerrainGlobComponent glob, ref TerrainGlobPhysicsComponent physics, ref LocalTransform transform) =>
+            foreach (var (glob, physics, transform) in SystemAPI
+                         .Query<RefRW<TerrainGlobComponent>, RefRW<TerrainGlobPhysicsComponent>, RefRW<LocalTransform>>())
+            {
+                ref var globData = ref glob.ValueRW;
+                ref var physicsData = ref physics.ValueRW;
+                ref var transformData = ref transform.ValueRW;
+
+                if (!physicsData.enablePhysics || globData.isDestroyed)
                 {
-                    if (!physics.enablePhysics || glob.isDestroyed)
-                        return;
-                    
-                    activeGlobs++;
-                    
-                    // Apply gravity
-                    if (physics.gravityScale > 0f)
+                    continue;
+                }
+
+                activeGlobs++;
+
+                if (physicsData.gravityScale > 0f)
+                {
+                    globData.velocity.y += GRAVITY * physicsData.gravityScale * deltaTime;
+                }
+
+                float drag = physicsData.dragCoefficient * AIR_FRICTION;
+                globData.velocity *= (1f - drag * deltaTime);
+                globData.angularVelocity *= (1f - drag * deltaTime);
+
+                globData.velocity = math.clamp(globData.velocity, -physicsData.maxVelocity, physicsData.maxVelocity);
+                globData.angularVelocity = math.clamp(globData.angularVelocity, -physicsData.maxAngularVelocity, physicsData.maxAngularVelocity);
+
+                globData.currentPosition += globData.velocity * deltaTime;
+                globData.rotation = math.mul(globData.rotation, quaternion.Euler(globData.angularVelocity * deltaTime));
+
+                bool wasGrounded = globData.isGrounded;
+                globData.isGrounded = globData.currentPosition.y <= GROUND_Y_THRESHOLD;
+
+                if (globData.isGrounded)
+                {
+                    groundedGlobs++;
+
+                    if (!wasGrounded && globData.velocity.y < 0f)
                     {
-                        glob.velocity.y += GRAVITY * physics.gravityScale * deltaTime;
+                        globData.velocity.y = -globData.velocity.y * globData.bounciness;
+                        globData.velocity.xz *= (1f - GROUND_FRICTION * deltaTime);
+                        globData.angularVelocity *= (1f - GROUND_FRICTION * deltaTime);
                     }
-                    
-                    // Apply air resistance
-                    float drag = physics.dragCoefficient * AIR_FRICTION;
-                    glob.velocity *= (1f - drag * deltaTime);
-                    
-                    // Apply angular velocity
-                    glob.angularVelocity *= (1f - drag * deltaTime);
-                    
-                    // Clamp velocities
-                    glob.velocity = math.clamp(glob.velocity, -physics.maxVelocity, physics.maxVelocity);
-                    glob.angularVelocity = math.clamp(glob.angularVelocity, -physics.maxAngularVelocity, physics.maxAngularVelocity);
-                    
-                    // Update position
-                    glob.currentPosition += glob.velocity * deltaTime;
-                    
-                    // Update rotation
-                    glob.rotation = math.mul(glob.rotation, quaternion.Euler(glob.angularVelocity * deltaTime));
-                    
-                    // Check for ground collision
-                    bool wasGrounded = glob.isGrounded;
-                    glob.isGrounded = glob.currentPosition.y <= GROUND_Y_THRESHOLD;
-                    
-                    if (glob.isGrounded)
+
+                    if (globData.currentPosition.y < GROUND_Y_THRESHOLD)
                     {
-                        groundedGlobs++;
-                        
-                        // Ground collision response
-                        if (!wasGrounded && glob.velocity.y < 0f)
-                        {
-                            // Bounce off ground
-                            glob.velocity.y = -glob.velocity.y * glob.bounciness;
-                            
-                            // Apply ground friction
-                            glob.velocity.xz *= (1f - GROUND_FRICTION * deltaTime);
-                            glob.angularVelocity *= (1f - GROUND_FRICTION * deltaTime);
-                        }
-                        
-                        // Keep glob on ground
-                        if (glob.currentPosition.y < GROUND_Y_THRESHOLD)
-                        {
-                            glob.currentPosition.y = GROUND_Y_THRESHOLD;
-                        }
+                        globData.currentPosition.y = GROUND_Y_THRESHOLD;
                     }
-                    
-                    // Update transform
-                    transform.Position = glob.currentPosition;
-                    transform.Rotation = glob.rotation;
-                    transform.Scale = glob.scale.x;
-                    
-                    // Update lifetime
-                    glob.lifetime += deltaTime;
-                    
-                }).WithoutBurst().Run();
+                }
+
+                transformData.Position = globData.currentPosition;
+                transformData.Rotation = globData.rotation;
+                transformData.Scale = globData.scale.x;
+
+                globData.lifetime += deltaTime;
+            }
         }
         
         /// <summary>
         /// Handles destruction of globs that should be destroyed
         /// </summary>
-        private void HandleGlobDestruction()
+        private void HandleGlobDestruction(ref SystemState state)
         {
             var ecb = new EntityCommandBuffer(Allocator.Temp);
-            
-            Entities
-                .WithAll<TerrainGlobComponent>()
-                .ForEach((Entity entity, in TerrainGlobComponent glob) =>
+
+            foreach (var (glob, entity) in SystemAPI.Query<RefRO<TerrainGlobComponent>>().WithEntityAccess())
+            {
+                if (glob.ValueRO.isDestroyed)
                 {
-                    if (glob.isDestroyed)
-                    {
-                        ecb.DestroyEntity(entity);
-                    }
-                }).WithoutBurst().Run();
-            
-            ecb.Playback(EntityManager);
+                    ecb.DestroyEntity(entity);
+                }
+            }
+
+            ecb.Playback(state.EntityManager);
             ecb.Dispose();
         }
         
         /// <summary>
         /// Updates performance monitoring metrics
         /// </summary>
-        private void UpdatePerformanceMetrics()
+        private void UpdatePerformanceMetrics(float deltaTime)
         {
-            // Log performance info periodically
-            if (lastUpdateTime % 5f < (float)SystemAPI.Time.DeltaTime) // Every 5 seconds
+            latestActiveGlobs = activeGlobs;
+            latestGroundedGlobs = groundedGlobs;
+            latestUpdateTime = lastUpdateTime;
+
+            if (lastUpdateTime % 5f < deltaTime)
             {
                 Debug.Log($"[TerrainGlobPhysicsSystem] Active globs: {activeGlobs}, Grounded: {groundedGlobs}");
             }
@@ -160,11 +148,10 @@ namespace DOTS.Terrain.Modification
         /// <summary>
         /// Creates a new terrain glob entity with physics
         /// </summary>
-        public Entity CreateTerrainGlob(float3 position, float radius, GlobRemovalType globType, TerrainType terrainType)
+        public static Entity CreateTerrainGlob(EntityManager entityManager, float3 position, float radius, GlobRemovalType globType, TerrainType terrainType)
         {
-            var entity = EntityManager.CreateEntity();
-            
-            // Create glob component
+            var entity = entityManager.CreateEntity();
+
             var globComponent = new TerrainGlobComponent
             {
                 originalPosition = position,
@@ -174,7 +161,7 @@ namespace DOTS.Terrain.Modification
                 terrainType = terrainType,
                 velocity = float3.zero,
                 angularVelocity = float3.zero,
-                mass = radius * 2f, // Mass based on size
+                mass = radius * 2f,
                 bounciness = 0.3f,
                 friction = 0.5f,
                 isGrounded = false,
@@ -188,8 +175,7 @@ namespace DOTS.Terrain.Modification
                 rotation = quaternion.identity,
                 visualAlpha = 1f
             };
-            
-            // Create physics component
+
             var physicsComponent = new TerrainGlobPhysicsComponent
             {
                 enablePhysics = true,
@@ -202,8 +188,7 @@ namespace DOTS.Terrain.Modification
                 collideWithOtherGlobs = true,
                 collideWithPlayer = false
             };
-            
-            // Create render component
+
             var renderComponent = new TerrainGlobRenderComponent
             {
                 enableRendering = true,
@@ -212,30 +197,28 @@ namespace DOTS.Terrain.Modification
                 color = GetTerrainColor(terrainType),
                 useTerrainColor = true
             };
-            
-            // Create transform component
+
             var transformComponent = new LocalTransform
             {
                 Position = position,
                 Rotation = quaternion.identity,
                 Scale = radius
             };
-            
-            // Add all components
-            EntityManager.AddComponentData(entity, globComponent);
-            EntityManager.AddComponentData(entity, physicsComponent);
-            EntityManager.AddComponentData(entity, renderComponent);
-            EntityManager.AddComponentData(entity, transformComponent);
-            
+
+            entityManager.AddComponentData(entity, globComponent);
+            entityManager.AddComponentData(entity, physicsComponent);
+            entityManager.AddComponentData(entity, renderComponent);
+            entityManager.AddComponentData(entity, transformComponent);
+
             Debug.Log($"[TerrainGlobPhysicsSystem] Created glob at {position} with radius {radius}");
-            
+
             return entity;
         }
-        
+
         /// <summary>
         /// Calculates resource value based on terrain type and glob size
         /// </summary>
-        private int CalculateResourceValue(TerrainType terrainType, GlobRemovalType globType)
+    private static int CalculateResourceValue(TerrainType terrainType, GlobRemovalType globType)
         {
             int baseValue = terrainType switch
             {
@@ -261,7 +244,7 @@ namespace DOTS.Terrain.Modification
         /// <summary>
         /// Gets the color for a terrain type
         /// </summary>
-        private float4 GetTerrainColor(TerrainType terrainType)
+    private static float4 GetTerrainColor(TerrainType terrainType)
         {
             return terrainType switch
             {
@@ -275,11 +258,9 @@ namespace DOTS.Terrain.Modification
         }
         
         /// <summary>
-        /// Gets performance statistics
-        /// </summary>
-        public (int activeGlobs, int groundedGlobs, float lastUpdateTime) GetPerformanceStats()
+        public static (int activeGlobs, int groundedGlobs, float lastUpdateTime) GetPerformanceStats()
         {
-            return (activeGlobs, groundedGlobs, lastUpdateTime);
+            return (latestActiveGlobs, latestGroundedGlobs, latestUpdateTime);
         }
     }
 } 

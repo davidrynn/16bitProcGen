@@ -23,9 +23,6 @@ namespace DOTS.Terrain.Weather
         private int chunksWithWeather;
         private float lastUpdateTime;
         
-        // Debug settings
-        private bool enableDebugLogs = false;
-        
         protected override void OnCreate()
         {
             DOTS.Terrain.Core.DebugSettings.LogWeather("WeatherSystem: Initializing...");
@@ -62,16 +59,18 @@ namespace DOTS.Terrain.Weather
             
             // Simple weather cycle for testing
             WeatherType newWeather = GetRandomWeather();
-            
-            Entities
-                .WithAll<WeatherComponent>()
-                .ForEach((Entity entity, ref WeatherComponent weather) =>
-                {
-                    weather.weatherType = newWeather;
-                    weather.needsWeatherUpdate = true;
-                    weather.intensity = UnityEngine.Random.Range(0.3f, 1.0f);
-                    weather.timeOffset = UnityEngine.Random.Range(0f, 1000f);
-                }).WithoutBurst().Run();
+            var query = GetEntityQuery(ComponentType.ReadWrite<WeatherComponent>());
+            using var entities = query.ToEntityArray(Allocator.Temp);
+
+            foreach (var entity in entities)
+            {
+                var weather = EntityManager.GetComponentData<WeatherComponent>(entity);
+                weather.weatherType = newWeather;
+                weather.needsWeatherUpdate = true;
+                weather.intensity = UnityEngine.Random.Range(0.3f, 1.0f);
+                weather.timeOffset = UnityEngine.Random.Range(0f, 1000f);
+                EntityManager.SetComponentData(entity, weather);
+            }
                 
             DebugLog($"Set global weather to: {newWeather}");
         }
@@ -82,19 +81,22 @@ namespace DOTS.Terrain.Weather
         private void ProcessWeatherEffects()
         {
             chunksWithWeather = 0;
-            
-            Entities
-                .WithAll<WeatherComponent>()
-                .ForEach((Entity entity, ref WeatherComponent weather) =>
+
+            var query = GetEntityQuery(ComponentType.ReadWrite<WeatherComponent>());
+            using var entities = query.ToEntityArray(Allocator.Temp);
+
+            foreach (var entity in entities)
+            {
+                var weather = EntityManager.GetComponentData<WeatherComponent>(entity);
+                if (weather.needsWeatherUpdate)
                 {
-                    if (weather.needsWeatherUpdate)
-                    {
-                        ApplyWeatherToChunk(ref weather);
-                        weather.needsWeatherUpdate = false;
-                        weather.isWeatherActive = true;
-                        chunksWithWeather++;
-                    }
-                }).WithoutBurst().Run();
+                    ApplyWeatherToChunk(ref weather);
+                    weather.needsWeatherUpdate = false;
+                    weather.isWeatherActive = true;
+                    chunksWithWeather++;
+                    EntityManager.SetComponentData(entity, weather);
+                }
+            }
         }
         
         /// <summary>
@@ -170,17 +172,18 @@ namespace DOTS.Terrain.Weather
         public (int activeChunks, WeatherType currentWeather) GetWeatherStats()
         {
             WeatherType currentWeather = WeatherType.Clear;
-            
-            // Get the most common weather type
-            Entities
-                .WithAll<WeatherComponent>()
-                .ForEach((in WeatherComponent weather) =>
+
+            var query = GetEntityQuery(ComponentType.ReadOnly<WeatherComponent>());
+            using var entities = query.ToEntityArray(Allocator.Temp);
+
+            foreach (var entity in entities)
+            {
+                var weather = EntityManager.GetComponentData<WeatherComponent>(entity);
+                if (weather.isWeatherActive)
                 {
-                    if (weather.isWeatherActive)
-                    {
-                        currentWeather = weather.weatherType;
-                    }
-                }).WithoutBurst().Run();
+                    currentWeather = weather.weatherType;
+                }
+            }
                 
             return (chunksWithWeather, currentWeather);
         }
@@ -191,15 +194,18 @@ namespace DOTS.Terrain.Weather
         public void ForceWeatherChange(WeatherType newWeather)
         {
             DebugLog($"Forcing weather change to: {newWeather}");
-            
-            Entities
-                .WithAll<WeatherComponent>()
-                .ForEach((Entity entity, ref WeatherComponent weather) =>
-                {
-                    weather.weatherType = newWeather;
-                    weather.needsWeatherUpdate = true;
-                    weather.intensity = 1.0f;
-                }).WithoutBurst().Run();
+
+            var query = GetEntityQuery(ComponentType.ReadWrite<WeatherComponent>());
+            using var entities = query.ToEntityArray(Allocator.Temp);
+
+            foreach (var entity in entities)
+            {
+                var weather = EntityManager.GetComponentData<WeatherComponent>(entity);
+                weather.weatherType = newWeather;
+                weather.needsWeatherUpdate = true;
+                weather.intensity = 1.0f;
+                EntityManager.SetComponentData(entity, weather);
+            }
         }
         
         private void DebugLog(string message)

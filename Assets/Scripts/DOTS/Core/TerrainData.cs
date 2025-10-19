@@ -23,9 +23,5 @@ namespace DOTS.Terrain
         public bool needsModification;                               // Flag indicating if modifications need processing
         public bool needsMeshUpdate;                                 // Flag indicating if mesh needs to be rebuilt after modification
         
-        // NEW: Unity.Transforms integration
-        public float3 worldPosition;                                 // Calculated world position from chunkPosition
-        public quaternion rotation;                                  // Terrain chunk rotation
-        public float3 scale;                                         // Terrain chunk scale
     }
 } 

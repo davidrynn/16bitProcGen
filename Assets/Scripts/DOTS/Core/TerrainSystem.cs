@@ -16,14 +16,12 @@ public partial class TerrainSystem : SystemBase
     protected override void OnUpdate() 
     {
         // Simple validation only - no complex processing needed
-        Entities
-            .WithAll<DOTS.Terrain.TerrainData>()
-            .ForEach((Entity entity, in DOTS.Terrain.TerrainData terrain) =>
+        foreach (var (terrain, entity) in SystemAPI.Query<RefRO<DOTS.Terrain.TerrainData>>().WithEntityAccess())
+        {
+            if (terrain.ValueRO.resolution <= 0)
             {
-                if (terrain.resolution <= 0)
-                {
-                    Debug.LogWarning($"[DOTS] Invalid resolution for entity {entity}");
-                }
-            }).WithoutBurst().Run();
+                Debug.LogWarning($"[DOTS] Invalid resolution for entity {entity}");
+            }
+        }
     }
 } 

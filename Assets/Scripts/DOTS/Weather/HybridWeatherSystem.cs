@@ -124,19 +124,28 @@ namespace DOTS.Terrain.Weather
         private void ProcessWeatherEffects()
         {
             chunksWithWeatherEffects = 0;
-            
-            Entities
-                .WithAll<WeatherComponent, TerrainData>()
-                .ForEach((Entity entity, ref WeatherComponent weather, ref TerrainData terrain) =>
+
+            var query = GetEntityQuery(ComponentType.ReadWrite<WeatherComponent>(), ComponentType.ReadOnly<TerrainData>());
+            using var entities = query.ToEntityArray(Allocator.Temp);
+
+            foreach (var entity in entities)
+            {
+                var weather = EntityManager.GetComponentData<WeatherComponent>(entity);
+                if (!weather.isWeatherActive)
                 {
-                    if (weather.isWeatherActive && terrain.needsGeneration == false)
+                    continue;
+                }
+
+                var terrain = EntityManager.GetComponentData<TerrainData>(entity);
+                if (!terrain.needsGeneration)
+                {
+                    if (ApplyWeatherEffectsWithComputeShader(ref weather, ref terrain))
                     {
-                        if (ApplyWeatherEffectsWithComputeShader(ref weather, ref terrain))
-                        {
-                            chunksWithWeatherEffects++;
-                        }
+                        chunksWithWeatherEffects++;
                     }
-                }).WithoutBurst().Run();
+                    EntityManager.SetComponentData(entity, weather);
+                }
+            }
         }
         
         /// <summary>
@@ -275,14 +284,17 @@ namespace DOTS.Terrain.Weather
         public void ForceWeatherEffectsUpdate()
         {
             DebugLog("Forcing weather effects update");
-            
-            Entities
-                .WithAll<WeatherComponent>()
-                .ForEach((Entity entity, ref WeatherComponent weather) =>
-                {
-                    weather.isWeatherActive = true;
-                    weather.needsWeatherUpdate = true;
-                }).WithoutBurst().Run();
+
+            var query = GetEntityQuery(ComponentType.ReadWrite<WeatherComponent>());
+            using var entities = query.ToEntityArray(Allocator.Temp);
+
+            foreach (var entity in entities)
+            {
+                var weather = EntityManager.GetComponentData<WeatherComponent>(entity);
+                weather.isWeatherActive = true;
+                weather.needsWeatherUpdate = true;
+                EntityManager.SetComponentData(entity, weather);
+            }
         }
         
         /// <summary>

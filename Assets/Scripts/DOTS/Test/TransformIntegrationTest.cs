@@ -157,20 +157,21 @@ public class TransformIntegrationTest : MonoBehaviour
                 var localTransform = entityManager.GetComponentData<LocalTransform>(entity);
                 var localToWorld = entityManager.GetComponentData<LocalToWorld>(entity);
                 
-                Debug.Log($"  TerrainData.worldPosition: {terrainData.worldPosition}");
+                Debug.Log($"  TerrainData.chunkPosition: {terrainData.chunkPosition}");
                 Debug.Log($"  LocalTransform.Position: {localTransform.Position}");
                 Debug.Log($"  LocalTransform.Rotation: {localTransform.Rotation}");
                 Debug.Log($"  LocalTransform.Scale: {localTransform.Scale}");
                 Debug.Log($"  LocalToWorld matrix: {localToWorld.Value}");
                 
-                // Verify positions match
-                if (math.all(terrainData.worldPosition == localTransform.Position))
+                // Verify positions are calculated correctly from chunk position
+                float3 expectedPosition = new float3(terrainData.chunkPosition.x * terrainData.worldScale, 0, terrainData.chunkPosition.y * terrainData.worldScale);
+                if (math.all(expectedPosition == localTransform.Position))
                 {
-                    Debug.Log($"  ✓ Positions match for entity {entity.Index}");
+                    Debug.Log($"  ✓ Position calculated correctly for entity {entity.Index}");
                 }
                 else
                 {
-                    Debug.LogWarning($"  ✗ Position mismatch for entity {entity.Index}: TerrainData={terrainData.worldPosition}, LocalTransform={localTransform.Position}");
+                    Debug.LogWarning($"  ✗ Position mismatch for entity {entity.Index}: Expected={expectedPosition}, LocalTransform={localTransform.Position}");
                 }
             }
             else
@@ -184,8 +185,8 @@ public class TransformIntegrationTest : MonoBehaviour
     {
         if (!logTransformUpdates) return;
         
-        Debug.Log("Transform updates will be logged by TerrainTransformSystem");
-        Debug.Log("Check console for '[TerrainTransformSystem] Updated transform' messages");
+        Debug.Log("Transform components are now managed directly by TerrainEntityManager");
+        Debug.Log("No separate transform synchronization system needed");
     }
     
     [ContextMenu("Check Current Transforms")]
@@ -211,7 +212,7 @@ public class TransformIntegrationTest : MonoBehaviour
             var terrainData = entityManager.GetComponentData<TerrainData>(entity);
             var localTransform = entityManager.GetComponentData<LocalTransform>(entity);
             
-            Debug.Log($"Entity {entity.Index}: Chunk={terrainData.chunkPosition}, WorldPos={terrainData.worldPosition}, TransformPos={localTransform.Position}, AvgHeight={terrainData.averageHeight}");
+            Debug.Log($"Entity {entity.Index}: Chunk={terrainData.chunkPosition}, TransformPos={localTransform.Position}, AvgHeight={terrainData.averageHeight}");
         }
         
         entities.Dispose();
@@ -237,11 +238,11 @@ public class TransformIntegrationTest : MonoBehaviour
         {
             var terrainData = entityManager.GetComponentData<TerrainData>(entity);
             
-            // Modify world position to trigger transform update
-            terrainData.worldPosition.y += 1f;
+            // Modify average height to test terrain data changes
+            terrainData.averageHeight += 1f;
             entityManager.SetComponentData(entity, terrainData);
             
-            Debug.Log($"Modified world position for entity {entity.Index} to {terrainData.worldPosition}");
+            Debug.Log($"Modified average height for entity {entity.Index} to {terrainData.averageHeight}");
         }
         
         entities.Dispose();

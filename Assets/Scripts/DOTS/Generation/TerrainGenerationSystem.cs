@@ -55,15 +55,13 @@ public partial class TerrainGenerationSystem : SystemBase
         }
         
         // Process terrain entities that need generation
-        Entities
-            .WithAll<DOTS.Terrain.TerrainData>()
-            .ForEach((Entity entity, ref DOTS.Terrain.TerrainData terrainData) =>
+        foreach (var (terrainData, entity) in SystemAPI.Query<RefRW<DOTS.Terrain.TerrainData>>().WithEntityAccess())
+        {
+            if (terrainData.ValueRO.needsGeneration)
             {
-                if (terrainData.needsGeneration)
-                {
-                    GenerateTerrainForEntity(entity, ref terrainData);
-                }
-            }).WithoutBurst().Run();
+                GenerateTerrainForEntity(entity, ref terrainData.ValueRW);
+            }
+        }
     }
     
     /// <summary>

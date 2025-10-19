@@ -39,5 +39,3 @@ namespace DOTS.Terrain.WFC
         public Entity cornerPrefab;
     }
 }
-
-

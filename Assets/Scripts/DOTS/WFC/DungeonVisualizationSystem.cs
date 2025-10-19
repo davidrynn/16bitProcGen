@@ -41,7 +41,33 @@ namespace DOTS.Terrain.WFC
         
         protected override void OnUpdate()
         {
-            // Macro-only: Require registry with macro prefabs
+            // If visualization is complete, stop updating
+            if (visualizationComplete)
+            {
+                return;
+            }
+            
+            // Check if dungeon generation is requested FIRST
+            bool dungeonGenerationRequested = false;
+            var requestQuery = GetEntityQuery(ComponentType.ReadOnly<DungeonGenerationRequest>());
+            using (var requests = requestQuery.ToComponentDataArray<DungeonGenerationRequest>(Allocator.Temp))
+            {
+                for (int i = 0; i < requests.Length; i++)
+                {
+                    if (requests[i].isActive)
+                    {
+                        dungeonGenerationRequested = true;
+                        break;
+                    }
+                }
+            }
+                
+            if (!dungeonGenerationRequested)
+            {
+                return; // Exit early - no dungeon generation requested, no need for registry
+            }
+            
+            // Only check for registry if we actually need to generate dungeons
             if (registryAuthoring == null)
             {
                 registryAuthoring = Object.FindFirstObjectByType<DungeonPrefabRegistryAuthoring>();
@@ -54,29 +80,6 @@ namespace DOTS.Terrain.WFC
             if (registryAuthoring.roomFloorPrefab == null || registryAuthoring.roomEdgePrefab == null)
             {
                 DOTS.Terrain.Core.DebugSettings.LogError("DungeonVisualizationSystem (Macro-only): roomFloorPrefab or roomEdgePrefab not assigned on DungeonPrefabRegistryAuthoring.");
-                return;
-            }
-
-            // If visualization is complete, stop updating
-            if (visualizationComplete)
-            {
-                return;
-            }
-            
-            // Check if dungeon generation is requested
-            bool dungeonGenerationRequested = false;
-            Entities
-                .WithAll<DungeonGenerationRequest>()
-                .ForEach((in DungeonGenerationRequest request) =>
-                {
-                    if (request.isActive)
-                    {
-                        dungeonGenerationRequested = true;
-                    }
-                }).WithoutBurst().Run();
-                
-            if (!dungeonGenerationRequested)
-            {
                 return;
             }
             
@@ -93,21 +96,34 @@ namespace DOTS.Terrain.WFC
             int totalEntities = 0;
             bool hasUnvisualizedEntities = false;
             
-            // First pass: count entities and check if we need to process any
-            Entities
-                .WithAll<DungeonElementComponent>()
-                .WithNone<Prefab>()
-                .ForEach((Entity entity, in DungeonElementComponent element, in LocalTransform transform) =>
+            var elementQuery = GetEntityQuery(new EntityQueryDesc
+            {
+                All = new ComponentType[]
                 {
-                    totalEntities++;
-                    
-                    // Check if this entity needs visualization
-                    if (!EntityManager.HasComponent<DungeonVisualized>(entity))
-                    {
-                        hasUnvisualizedEntities = true;
-                        needsCommandBuffer = true;
-                    }
-                }).WithoutBurst().Run();
+                    ComponentType.ReadOnly<DungeonElementComponent>(),
+                    ComponentType.ReadOnly<LocalTransform>()
+                },
+                None = new ComponentType[]
+                {
+                    ComponentType.ReadOnly<Prefab>()
+                }
+            });
+
+            using var elementEntities = elementQuery.ToEntityArray(Allocator.Temp);
+            using var elementComponents = elementQuery.ToComponentDataArray<DungeonElementComponent>(Allocator.Temp);
+            using var elementTransforms = elementQuery.ToComponentDataArray<LocalTransform>(Allocator.Temp);
+
+            totalEntities = elementEntities.Length;
+
+            for (int i = 0; i < elementEntities.Length; i++)
+            {
+                var entity = elementEntities[i];
+                if (!EntityManager.HasComponent<DungeonVisualized>(entity))
+                {
+                    hasUnvisualizedEntities = true;
+                    needsCommandBuffer = true;
+                }
+            }
             
             // Only create command buffer and process if needed
             if (needsCommandBuffer)
@@ -116,22 +132,25 @@ namespace DOTS.Terrain.WFC
                 
                 try
                 {
-                    // Second pass: process entities that need visualization
-                    Entities
-                        .WithAll<DungeonElementComponent>()
-                        .WithNone<DungeonVisualized>()
-                        .WithNone<Prefab>()
-                        .ForEach((Entity entity, in DungeonElementComponent element, in LocalTransform transform) =>
+                    for (int i = 0; i < elementEntities.Length; i++)
+                    {
+                        var entity = elementEntities[i];
+                        if (EntityManager.HasComponent<DungeonVisualized>(entity))
                         {
-                            // Log first few entities for debugging
-                            if (processedCount < 3)
-                            {
-                                DOTS.Terrain.Core.DebugSettings.LogRendering($"DungeonVisualizationSystem: Processing entity {entity.Index} - {element.elementType} at {transform.Position}");
-                            }
-                            
-                            CreateVisualization(entity, element, transform);
-                            processedCount++;
-                        }).WithoutBurst().Run();
+                            continue;
+                        }
+
+                        var element = elementComponents[i];
+                        var transform = elementTransforms[i];
+
+                        if (processedCount < 3)
+                        {
+                            DOTS.Terrain.Core.DebugSettings.LogRendering($"DungeonVisualizationSystem: Processing entity {entity.Index} - {element.elementType} at {transform.Position}");
+                        }
+
+                        CreateVisualization(entity, element, transform);
+                        processedCount++;
+                    }
                 
                     if (processedCount > 0)
                     {
@@ -149,7 +168,7 @@ namespace DOTS.Terrain.WFC
             }
             
             // If there are no element entities at all but WFC is complete, try a direct WFCCell visualization pass
-            if (totalEntities == 0)
+            if (totalEntities == 0 && DOTS.Terrain.Core.DebugSettings.EnableRenderingDebug)
             {
                 bool wfcComplete = false;
                 float cellSize = 1f;
@@ -171,19 +190,23 @@ namespace DOTS.Terrain.WFC
                     {
                         patternTypes[i] = patterns[i].type;
                     }
-                    Entities
-                        .WithAll<WFCCell>()
-                        .ForEach((in WFCCell cell) =>
+                    var cellQuery = GetEntityQuery(ComponentType.ReadOnly<WFCCell>());
+                    using (var cells = cellQuery.ToComponentDataArray<WFCCell>(Allocator.Temp))
+                    {
+                        for (int i = 0; i < cells.Length; i++)
                         {
-                            if (!cell.collapsed) return;
-                            if (cell.selectedPattern < 0 || cell.selectedPattern >= patternsLength) return;
+                            var cell = cells[i];
+                            if (!cell.collapsed) continue;
+                            if (cell.selectedPattern < 0 || cell.selectedPattern >= patternsLength) continue;
+
                             int patType = patternTypes[cell.selectedPattern];
                             var elementType = (DungeonElementType)(DungeonPatternType)patType;
                             var pos = new float3(cell.position.x * cellSize, 0, cell.position.y * cellSize);
                             var lt = new LocalTransform { Position = pos, Rotation = quaternion.identity, Scale = 1f };
                             var go = CreateDungeonGameObject(elementType, lt);
                             if (go != null) spawned++;
-                        }).WithoutBurst().Run();
+                        }
+                    }
                     patternTypes.Dispose();
                     DOTS.Terrain.Core.DebugSettings.LogRendering($"DungeonVisualizationSystem (Macro-only): Spawned {spawned} GameObjects from WFCCells.", true);
                     if (spawned > 0)
@@ -202,16 +225,7 @@ namespace DOTS.Terrain.WFC
             else if (totalEntities == 0)
             {
                 // Check if WFC is complete and we have no more entities to visualize
-                bool wfcComplete = false;
-                Entities
-                    .WithAll<WFCComponent>()
-                    .ForEach((in WFCComponent wfc) =>
-                    {
-                        if (wfc.isCollapsed)
-                        {
-                            wfcComplete = true;
-                        }
-                    }).WithoutBurst().Run();
+                bool wfcComplete = SystemAPI.HasSingleton<WFCComponent>() && SystemAPI.GetSingleton<WFCComponent>().isCollapsed;
                 
                 if (wfcComplete)
                 {

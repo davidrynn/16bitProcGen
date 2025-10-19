@@ -27,8 +27,8 @@ namespace DOTS.Terrain.WFC
         private float lastUpdateTime;
         private float totalGenerationTime;
         
-        // Debug settings
-        private bool enableDebugLogs = true; // Enable debug logs to see what's happening
+        // Random number generator for WFC (Burst-compatible)
+        private Unity.Mathematics.Random random;
         
         protected override void OnCreate()
         {
@@ -59,6 +59,18 @@ namespace DOTS.Terrain.WFC
             cellsProcessed = 0;
             lastUpdateTime = 0f;
             totalGenerationTime = 0f;
+            
+            // Initialize random generator (configurable seed for testing)
+            if (DOTS.Terrain.Core.DebugSettings.UseFixedWFCSeed)
+            {
+                random = new Unity.Mathematics.Random((uint)DOTS.Terrain.Core.DebugSettings.FixedWFCSeed);
+                DOTS.Terrain.Core.DebugSettings.LogWFC($"HybridWFCSystem: Random seed initialized to {DOTS.Terrain.Core.DebugSettings.FixedWFCSeed} for deterministic testing");
+            }
+            else
+            {
+                random = new Unity.Mathematics.Random((uint)System.DateTime.Now.Ticks);
+                DOTS.Terrain.Core.DebugSettings.LogWFC("HybridWFCSystem: Random generator initialized with time-based seed");
+            }
             
             DOTS.Terrain.Core.DebugSettings.LogWFC("HybridWFCSystem: Initialization complete");
         }
@@ -104,19 +116,17 @@ namespace DOTS.Terrain.WFC
             // Check if any WFC is still active
             bool hasActiveWFC = false;
             bool hasCompletedWFC = false;
-            Entities
-                .WithAll<WFCComponent>()
-                .ForEach((Entity entity, in WFCComponent wfc) =>
+            foreach (var wfc in SystemAPI.Query<RefRO<WFCComponent>>())
+            {
+                if (wfc.ValueRO.isGenerating || wfc.ValueRO.needsGeneration)
                 {
-                    if (wfc.isGenerating || wfc.needsGeneration)
-                    {
-                        hasActiveWFC = true;
-                    }
-                    if (wfc.isCollapsed)
-                    {
-                        hasCompletedWFC = true;
-                    }
-                }).WithoutBurst().Run();
+                    hasActiveWFC = true;
+                }
+                if (wfc.ValueRO.isCollapsed)
+                {
+                    hasCompletedWFC = true;
+                }
+            }
             
             // If no active WFC, don't process anything
             if (!hasActiveWFC)
@@ -149,33 +159,31 @@ namespace DOTS.Terrain.WFC
         {
             wfcEntitiesProcessed = 0;
             
-            Entities
-                .WithAll<WFCComponent>()
-                .ForEach((Entity entity, ref WFCComponent wfc) =>
+            foreach (var (wfc, entity) in SystemAPI.Query<RefRW<WFCComponent>>().WithEntityAccess())
+            {
+                if (wfc.ValueRO.needsGeneration && !wfc.ValueRO.isGenerating)
                 {
-                    if (wfc.needsGeneration && !wfc.isGenerating)
+                    DebugLog($"Starting WFC generation for entity {entity.Index}");
+                    
+                    // Start generation
+                    wfc.ValueRW.isGenerating = true;
+                    wfc.ValueRW.generationProgress = 0.0f;
+                    wfc.ValueRW.iterations = 0;
+                    
+                    // Initialize WFC data if needed
+                    if (wfc.ValueRO.patterns == BlobAssetReference<WFCPatternData>.Null)
                     {
-                        DebugLog($"Starting WFC generation for entity {entity.Index}");
-                        
-                        // Start generation
-                        wfc.isGenerating = true;
-                        wfc.generationProgress = 0.0f;
-                        wfc.iterations = 0;
-                        
-                        // Initialize WFC data if needed
-                        if (wfc.patterns == BlobAssetReference<WFCPatternData>.Null)
-                        {
-                            InitializeWFCData(ref wfc);
-                        }
-                        
-                        wfcEntitiesProcessed++;
+                        InitializeWFCData(ref wfc.ValueRW);
                     }
-                    else if (wfc.isGenerating)
-                    {
-                        // Continue generation
-                        ContinueWFCGeneration(ref wfc);
-                    }
-                }).WithoutBurst().Run();
+                    
+                    wfcEntitiesProcessed++;
+                }
+                else if (wfc.ValueRO.isGenerating)
+                {
+                    // Continue generation
+                    ContinueWFCGeneration(ref wfc.ValueRW);
+                }
+            }
         }
         
         /// <summary>
@@ -187,15 +195,13 @@ namespace DOTS.Terrain.WFC
             
             // Check if WFC is complete - if so, don't process cells
             bool wfcComplete = false;
-            Entities
-                .WithAll<WFCComponent>()
-                .ForEach((Entity entity, in WFCComponent wfc) =>
+            foreach (var wfc in SystemAPI.Query<RefRO<WFCComponent>>())
+            {
+                if (wfc.ValueRO.isCollapsed)
                 {
-                    if (wfc.isCollapsed)
-                    {
-                        wfcComplete = true;
-                    }
-                }).WithoutBurst().Run();
+                    wfcComplete = true;
+                }
+            }
             
             if (wfcComplete)
             {
@@ -203,26 +209,27 @@ namespace DOTS.Terrain.WFC
                 return;
             }
             
-            Entities
-                .WithAll<WFCCell>()
-                .ForEach((Entity entity, ref WFCCell cell) =>
+            foreach (var cell in SystemAPI.Query<RefRW<WFCCell>>())
+            {
+                if (!cell.ValueRO.collapsed)
                 {
-                    if (!cell.collapsed)
+                    // Always process non-collapsed cells
+                    ProcessWFCResults(ref cell.ValueRW);
+                    
+                    // Add some gradual entropy reduction for cells that don't collapse
+                    if (!cell.ValueRO.collapsed && cell.ValueRO.entropy > 1)
                     {
-                        // Always process non-collapsed cells
-                        ProcessWFCResults(ref cell);
-                        
-                        // Add some gradual entropy reduction for cells that don't collapse
-                        if (!cell.collapsed && cell.entropy > 1)
-                        {
-                            cell.entropy = math.max(1, cell.entropy - 0.5f); // Increased from 0.1f to 0.5f
-                        }
-                        
-                        cellsProcessed++;
+                        cell.ValueRW.entropy = math.max(1, cell.ValueRO.entropy - 0.5f);
                     }
-                }).WithoutBurst().Run();
+                    
+                    cellsProcessed++;
+                }
+            }
                 
-            DebugLog($"Processed {cellsProcessed} cells this frame");
+            if (cellsProcessed > 0)
+            {
+                DebugLog($"Processed {cellsProcessed} cells this frame");
+            }
         }
         
         /// <summary>
@@ -337,12 +344,22 @@ namespace DOTS.Terrain.WFC
             if (cell.possiblePatternsMask == 0)
             {
                 // Allow all macro-tile patterns (up to 32)
-                int patternCount = wfcQuery.ToComponentDataArray<WFCComponent>(Allocator.Temp)[0].patterns.Value.patternCount;
+                var initWfcComponents = wfcQuery.ToComponentDataArray<WFCComponent>(Allocator.Temp);
+                int patternCount = 0;
+                if (initWfcComponents.Length > 0 && initWfcComponents[0].patterns != BlobAssetReference<WFCPatternData>.Null)
+                {
+                    ref var patternDataRef = ref initWfcComponents[0].patterns.Value;
+                    patternCount = patternDataRef.patternCount;
+                }
+                initWfcComponents.Dispose();
                 uint mask = (patternCount >= 32) ? 0xFFFFFFFFu : ((1u << patternCount) - 1u);
                 cell.possiblePatternsMask = mask;
                 cell.patternCount = math.min(32, patternCount);
                 DebugLog($"Initialized cell at {cell.position} with {cell.patternCount} macro-tile patterns");
             }
+            
+            // Prune possibilities using collapsed neighbors and macro-tile edge rules
+            PruneWithCollapsedNeighbors(ref cell);
             
             // Calculate entropy based on possible patterns
             int possibleCount = WFCCellHelpers.CountPossiblePatterns(cell.possiblePatternsMask);
@@ -372,7 +389,7 @@ namespace DOTS.Terrain.WFC
                 cell.collapsed = true;
                 DebugLog($"Cell at {cell.position} collapsed to pattern {selectedPattern} (entropy=1)");
             }
-            else if (possibleCount <= 3 && UnityEngine.Random.Range(0f, 1f) < 0.5f)
+            else if (possibleCount <= 3 && random.NextFloat() < 0.5f)
             {
                 // Random collapse among currently possible patterns
                 DebugLog($"Cell at {cell.position} considering random collapse (entropy={possibleCount})");
@@ -386,12 +403,12 @@ namespace DOTS.Terrain.WFC
                         possiblePatterns[index++] = i;
                     }
                 }
-                int selectedPattern = possiblePatterns[UnityEngine.Random.Range(0, possibleCount)];
+                int selectedPattern = possiblePatterns[random.NextInt(0, possibleCount)];
                 cell.selectedPattern = selectedPattern;
                 cell.collapsed = true;
                 DebugLog($"Cell at {cell.position} collapsed to pattern {selectedPattern} (random collapse)");
             }
-            else if (UnityEngine.Random.Range(0f, 1f) < 0.1f)
+            else if (random.NextFloat() < 0.1f)
             {
                 // Force collapse: choose any possible pattern randomly
                 DebugLog($"Cell at {cell.position} forced collapse (entropy={possibleCount})");
@@ -405,20 +422,128 @@ namespace DOTS.Terrain.WFC
                         possiblePatterns[index++] = i;
                     }
                 }
-                int selectedPattern = possiblePatterns.Length > 0 ? possiblePatterns[UnityEngine.Random.Range(0, possiblePatterns.Length)] : WFCCellHelpers.GetFirstPossiblePattern(cell.possiblePatternsMask);
+                int selectedPattern = possiblePatterns.Length > 0 ? possiblePatterns[random.NextInt(0, possiblePatterns.Length)] : WFCCellHelpers.GetFirstPossiblePattern(cell.possiblePatternsMask);
                 cell.selectedPattern = selectedPattern;
                 cell.collapsed = true;
                 DebugLog($"Cell at {cell.position} collapsed to pattern {selectedPattern} (forced collapse)");
             }
             else
             {
-                // Debug: Log why cells aren't collapsing (less frequent)
-                if (cell.position.x < 2 && cell.position.y < 2 && UnityEngine.Random.Range(0f, 1f) < 0.1f)
+                // Reduced debug logging - only log occasionally to avoid spam
+                if (cell.position.x < 2 && cell.position.y < 2 && random.NextFloat() < 0.01f)
                 {
                     DebugLog($"Cell at {cell.position} not collapsing: possibleCount={possibleCount}");
                 }
             }
             // Otherwise, don't collapse - let entropy reduction happen naturally
+        }
+
+        /// <summary>
+        /// Applies neighbor-based constraint pruning: for each collapsed neighbor,
+        /// remove any patterns in this cell that are incompatible at that edge.
+        /// </summary>
+        private void PruneWithCollapsedNeighbors(ref WFCCell cell)
+        {
+            // Load pattern blob once
+            var wfcComponents = wfcQuery.ToComponentDataArray<WFCComponent>(Allocator.Temp);
+            if (wfcComponents.Length == 0 || wfcComponents[0].patterns == BlobAssetReference<WFCPatternData>.Null)
+            {
+                return;
+            }
+            ref var patternData = ref wfcComponents[0].patterns.Value;
+            wfcComponents.Dispose();
+            
+            // Fetch all cells to inspect neighbors (grids are small in tests)
+            var allCells = cellQuery.ToComponentDataArray<WFCCell>(Allocator.Temp);
+            
+            // Helper to find a collapsed neighbor by position
+            bool TryGetCollapsedNeighbor(int2 neighborPos, out WFCCell neighbor)
+            {
+                for (int i = 0; i < allCells.Length; i++)
+                {
+                    var c = allCells[i];
+                    if (c.position.x == neighborPos.x && c.position.y == neighborPos.y && c.collapsed && c.selectedPattern >= 0)
+                    {
+                        neighbor = c;
+                        return true;
+                    }
+                }
+                neighbor = default;
+                return false;
+            }
+            
+            // Copy mask to modify
+            uint newMask = cell.possiblePatternsMask;
+            
+            // For each direction, if neighbor collapsed, keep only patterns compatible with it
+            // 0=N, 1=E, 2=S, 3=W
+            int2 pos = cell.position;
+            // North neighbor
+            if (TryGetCollapsedNeighbor(new int2(pos.x, pos.y + 1), out var nCell))
+            {
+                int neighborIdx = nCell.selectedPattern;
+                var neighborPat = patternData.patterns[neighborIdx];
+                for (int i = 0; i < math.min(32, patternData.patternCount); i++)
+                {
+                    if ((newMask & (1u << i)) == 0) continue;
+                    var pat = patternData.patterns[i];
+                    if (!WFCBuilder.PatternsAreCompatible(pat, neighborPat, 0))
+                    {
+                        newMask &= ~(1u << i);
+                    }
+                }
+            }
+            // East neighbor
+            if (TryGetCollapsedNeighbor(new int2(pos.x + 1, pos.y), out var eCell))
+            {
+                int neighborIdx = eCell.selectedPattern;
+                var neighborPat = patternData.patterns[neighborIdx];
+                for (int i = 0; i < math.min(32, patternData.patternCount); i++)
+                {
+                    if ((newMask & (1u << i)) == 0) continue;
+                    var pat = patternData.patterns[i];
+                    if (!WFCBuilder.PatternsAreCompatible(pat, neighborPat, 1))
+                    {
+                        newMask &= ~(1u << i);
+                    }
+                }
+            }
+            // South neighbor
+            if (TryGetCollapsedNeighbor(new int2(pos.x, pos.y - 1), out var sCell))
+            {
+                int neighborIdx = sCell.selectedPattern;
+                var neighborPat = patternData.patterns[neighborIdx];
+                for (int i = 0; i < math.min(32, patternData.patternCount); i++)
+                {
+                    if ((newMask & (1u << i)) == 0) continue;
+                    var pat = patternData.patterns[i];
+                    if (!WFCBuilder.PatternsAreCompatible(pat, neighborPat, 2))
+                    {
+                        newMask &= ~(1u << i);
+                    }
+                }
+            }
+            // West neighbor
+            if (TryGetCollapsedNeighbor(new int2(pos.x - 1, pos.y), out var wCell))
+            {
+                int neighborIdx = wCell.selectedPattern;
+                var neighborPat = patternData.patterns[neighborIdx];
+                for (int i = 0; i < math.min(32, patternData.patternCount); i++)
+                {
+                    if ((newMask & (1u << i)) == 0) continue;
+                    var pat = patternData.patterns[i];
+                    if (!WFCBuilder.PatternsAreCompatible(pat, neighborPat, 3))
+                    {
+                        newMask &= ~(1u << i);
+                    }
+                }
+            }
+            
+            // Apply pruned mask
+            cell.possiblePatternsMask = newMask;
+            cell.patternCount = WFCCellHelpers.CountPossiblePatterns(newMask);
+            
+            allCells.Dispose();
         }
         
         /// <summary>

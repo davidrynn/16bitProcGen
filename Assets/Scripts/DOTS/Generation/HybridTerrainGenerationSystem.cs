@@ -102,14 +102,16 @@ namespace DOTS.Terrain.Generation
         private void ResetAllEntitiesToNeedGeneration()
         {
             int resetCount = 0;
-            
-            Entities
-                .WithAll<TerrainData>()
-                .ForEach((Entity entity, ref TerrainData terrain) =>
-                {
-                    terrain.needsGeneration = true;
-                    resetCount++;
-                }).WithoutBurst().Run();
+            var query = GetEntityQuery(ComponentType.ReadOnly<TerrainData>());
+            using var entities = query.ToEntityArray(Allocator.Temp);
+
+            foreach (var entity in entities)
+            {
+                var terrain = EntityManager.GetComponentData<TerrainData>(entity);
+                terrain.needsGeneration = true;
+                EntityManager.SetComponentData(entity, terrain);
+                resetCount++;
+            }
                 
             if (resetCount > 0)
             {
@@ -127,69 +129,71 @@ namespace DOTS.Terrain.Generation
             // Count entities that need generation
             int entitiesNeedingGeneration = 0;
             int totalEntities = 0;
+
+            var query = GetEntityQuery(ComponentType.ReadWrite<TerrainData>());
+            using var entities = query.ToEntityArray(Allocator.Temp);
             
-            Entities
-                .WithAll<TerrainData>()
-                .ForEach((Entity entity, ref TerrainData terrain) =>
+            totalEntities = entities.Length;
+
+            foreach (var entity in entities)
+            {
+                var terrain = EntityManager.GetComponentData<TerrainData>(entity);
+
+                if (terrain.needsGeneration)
                 {
-                    totalEntities++;
-                    if (terrain.needsGeneration)
+                    entitiesNeedingGeneration++;
+                }
+
+                bool entityModified = false;
+
+                if (terrain.needsGeneration && chunksProcessedThisFrame < settings?.maxChunksPerFrame)
+                {
+                    DebugLog($"Processing entity {entity.Index} - resolution: {terrain.resolution}, position: {terrain.chunkPosition}", true);
+
+                    if (GenerateNoiseWithComputeShader(ref terrain))
                     {
-                        entitiesNeedingGeneration++;
+                        ProcessNoiseResults(ref terrain);
+                        ApplyGameLogic(ref terrain);
+
+                        terrain.needsGeneration = false;
+                        chunksProcessedThisFrame++;
+                        totalChunksProcessed++;
+                        entityModified = true;
+
+                        DebugLog($"Generated terrain for entity {entity.Index}");
                     }
-                }).WithoutBurst().Run();
-            
+                    else
+                    {
+                        DebugWarning($"Failed to generate terrain for entity {entity.Index}");
+                    }
+                }
+                else if (terrain.needsMeshUpdate)
+                {
+                    DebugLog($"Mesh update needed for entity {entity.Index} - rebuilding mesh", true);
+                    if (terrain.heightData.IsCreated)
+                    {
+                        ref var heightData = ref terrain.heightData.Value;
+                        var heights = new float[heightData.heights.Length];
+                        for (int i = 0; i < heights.Length; i++)
+                        {
+                            heights[i] = heightData.heights[i];
+                        }
+                        GenerateTerrainMesh(terrain, heights, terrain.resolution);
+                    }
+                    terrain.needsMeshUpdate = false;
+                    entityModified = true;
+                }
+
+                if (entityModified)
+                {
+                    EntityManager.SetComponentData(entity, terrain);
+                }
+            }
+
             if (totalEntities > 0 && settings?.enableDebugLogs == true)
             {
                 DebugLog($"Found {totalEntities} terrain entities, {entitiesNeedingGeneration} need generation", true);
             }
-            
-            Entities
-                .WithAll<TerrainData>()
-                .ForEach((Entity entity, ref TerrainData terrain) =>
-                {
-                    // Check if this terrain needs generation
-                    if (terrain.needsGeneration && chunksProcessedThisFrame < settings?.maxChunksPerFrame)
-                    {
-                        DebugLog($"Processing entity {entity.Index} - resolution: {terrain.resolution}, position: {terrain.chunkPosition}", true);
-                        
-                        // Step 1: Generate noise with Compute Shader
-                        if (GenerateNoiseWithComputeShader(ref terrain))
-                        {
-                            // Step 2: Process results with DOTS Jobs
-                            ProcessNoiseResults(ref terrain);
-                            
-                            // Step 3: Apply game logic
-                            ApplyGameLogic(ref terrain);
-                            
-                            // Mark as processed
-                            terrain.needsGeneration = false;
-                            chunksProcessedThisFrame++;
-                            totalChunksProcessed++;
-                            
-                            DebugLog($"Generated terrain for entity {entity.Index}");
-                        }
-                        else
-                        {
-                            DebugWarning($"Failed to generate terrain for entity {entity.Index}");
-                        }
-                    }
-                    // If mesh update is needed (e.g., after modification), rebuild mesh
-                    else if (terrain.needsMeshUpdate)
-                    {
-                        DebugLog($"Mesh update needed for entity {entity.Index} - rebuilding mesh", true);
-                        if (terrain.heightData.IsCreated)
-                        {
-                            // Read heights from blob asset
-                            ref var heightData = ref terrain.heightData.Value;
-                            var heights = new float[heightData.heights.Length];
-                            for (int i = 0; i < heights.Length; i++)
-                                heights[i] = heightData.heights[i];
-                            GenerateTerrainMesh(terrain, heights, terrain.resolution);
-                        }
-                        terrain.needsMeshUpdate = false;
-                    }
-                }).WithoutBurst().Run();
             
             lastGenerationTime = UnityEngine.Time.realtimeSinceStartup - startTime;
         }
@@ -411,10 +415,8 @@ namespace DOTS.Terrain.Generation
                 
                 terrain.averageHeight = totalHeight / heightData.heights.Length;
                 
-                // Update world position Y coordinate based on average height
-                terrain.worldPosition.y = terrain.averageHeight;
                 
-                DebugLog($"Applied game logic: Average height = {terrain.averageHeight:F3}, World position = {terrain.worldPosition}", true);
+                DebugLog($"Applied game logic: Average height = {terrain.averageHeight:F3}", true);
             }
         }
         

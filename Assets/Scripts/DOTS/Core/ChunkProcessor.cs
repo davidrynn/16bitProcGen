@@ -6,30 +6,25 @@ using TerrainData = DOTS.Terrain.TerrainData;
 /// <summary>
 /// DOTS System for managing terrain chunks
 /// </summary>
-public partial class ChunkProcessor : SystemBase
+public partial struct ChunkProcessor : ISystem
 {
-    protected override void OnCreate() 
+    public void OnCreate(ref SystemState state)
     {
-        // Minimal initialization
+        state.RequireForUpdate<TerrainData>();
     }
-    
-    protected override void OnUpdate() 
+
+    public void OnUpdate(ref SystemState state)
     {
-        // Minimal update - just validate entities exist
-        Entities
-            .WithAll<DOTS.Terrain.TerrainData>()
-            .ForEach((Entity entity, in DOTS.Terrain.TerrainData terrain) =>
+        foreach (var (terrain, entity) in SystemAPI.Query<RefRO<TerrainData>>().WithEntityAccess())
+        {
+            if (terrain.ValueRO.resolution <= 0)
             {
-                // Basic validation only
-                if (terrain.resolution <= 0)
-                {
-                    Debug.LogWarning($"Invalid resolution for entity {entity}");
-                }
-            }).WithoutBurst().Run();
+                Debug.LogWarning($"Invalid resolution for entity {entity}");
+            }
+        }
     }
-    
-    protected override void OnDestroy() 
+
+    public void OnDestroy(ref SystemState state)
     {
-        // Cleanup
     }
 } 

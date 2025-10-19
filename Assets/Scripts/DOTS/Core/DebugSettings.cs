@@ -18,6 +18,10 @@ namespace DOTS.Terrain.Core
         // Test system control
         public static bool EnableTestSystems = false;
         
+        // WFC Random Seed Control
+        public static bool UseFixedWFCSeed = true;
+        public static int FixedWFCSeed = 12345;
+        
         /// <summary>
         /// Logs a debug message only if debug logging is enabled
         /// </summary>

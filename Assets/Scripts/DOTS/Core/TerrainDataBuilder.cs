@@ -21,13 +21,6 @@ namespace DOTS.Terrain
         /// <returns>Fully initialized TerrainData</returns>
         public static TerrainData CreateTerrainData(int2 chunkPosition, int resolution, float worldScale)
         {
-            // Calculate world position from chunk position
-            float3 worldPosition = new float3(
-                chunkPosition.x * worldScale,
-                0f, // Y position will be set based on average height after generation
-                chunkPosition.y * worldScale
-            );
-            
             var terrainData = new TerrainData
             {
                 chunkPosition = chunkPosition,
@@ -36,12 +29,7 @@ namespace DOTS.Terrain
                 heightData = CreateHeightData(resolution),
                 modifications = CreateModificationData(),
                 needsGeneration = true,
-                needsModification = false,
-                
-                // NEW: Initialize transform fields
-                worldPosition = worldPosition,
-                rotation = quaternion.identity, // Default rotation
-                scale = new float3(worldScale, 1f, worldScale) // Scale based on world scale
+                needsModification = false
             };
 
             return terrainData;
