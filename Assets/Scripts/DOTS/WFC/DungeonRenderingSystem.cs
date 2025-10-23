@@ -45,9 +45,9 @@ namespace DOTS.Terrain.WFC
 
         // Map of collapsed cell patterns for neighbor-aware orientation (key = packed int2)
         private Dictionary<long, int> cellPatternMap = new Dictionary<long, int>();
+    private Dictionary<long, WFCCell> cellLookup = new Dictionary<long, WFCCell>();
         
-        // Track whether we've successfully bound to the authoring registry
-        private bool usingAuthoringRegistry = false;
+        // Registry is required; bind prefabs each update when available
         
         protected override void OnCreate()
         {
@@ -84,12 +84,8 @@ namespace DOTS.Terrain.WFC
                 cornerPrefab = registry.cornerPrefab
             };
 
-            DOTS.Terrain.Core.DebugSettings.LogRendering(
-                $"DungeonRenderingSystem (Macro-only): Prefabs => roomFloor={(prefabs.floorPrefab!=Entity.Null)}, roomEdge={(prefabs.wallPrefab!=Entity.Null)}, corridor={(prefabs.corridorPrefab!=Entity.Null)}, corner={(prefabs.cornerPrefab!=Entity.Null)}, door={(prefabs.doorPrefab!=Entity.Null)}");
-
             // Ensure prefab tags are present
             TagPrefabsAsPrefab(prefabs);
-            usingAuthoringRegistry = true;
         }
         
         protected override void OnUpdate()
@@ -99,40 +95,28 @@ namespace DOTS.Terrain.WFC
             // Create command buffer for this frame
             ecb = new EntityCommandBuffer(Allocator.TempJob);
 
-            // Early diagnostics
-            bool hasRegistrySingleton = SystemAPI.HasSingleton<DOTS.Terrain.WFC.Authoring.DungeonPrefabRegistry>();
-            DOTS.Terrain.Core.DebugSettings.LogRendering($"DungeonRenderingSystem (Macro-only): OnUpdate enter, usingAuthoringRegistry={usingAuthoringRegistry}, hasRegistrySingleton={hasRegistrySingleton}", true);
-
-            // Macro-only: Late-bind registry if not yet bound; require macro fields
-            if (!usingAuthoringRegistry)
+            // Require registry; bind prefabs per update when available
+            if (!SystemAPI.HasSingleton<DOTS.Terrain.WFC.Authoring.DungeonPrefabRegistry>())
             {
-                if (!SystemAPI.HasSingleton<DOTS.Terrain.WFC.Authoring.DungeonPrefabRegistry>())
-                {
-                    // Keep waiting until registry is available
-                    DOTS.Terrain.Core.DebugSettings.LogRendering("DungeonRenderingSystem (Macro-only): Registry singleton not found. Waiting.", true);
-                    ecb.Dispose();
-                    return;
-                }
-                var registry = SystemAPI.GetSingleton<DOTS.Terrain.WFC.Authoring.DungeonPrefabRegistry>();
-                if (registry.roomFloorPrefab == Entity.Null || registry.roomEdgePrefab == Entity.Null)
-                {
-                    DOTS.Terrain.Core.DebugSettings.LogError("DungeonRenderingSystem (Macro-only): roomFloorPrefab or roomEdgePrefab is not assigned in DungeonPrefabRegistry.");
-                    ecb.Dispose();
-                    return;
-                }
-                prefabs = new DungeonPrefabs
-                {
-                    floorPrefab = registry.roomFloorPrefab,
-                    wallPrefab = registry.roomEdgePrefab,
-                    doorPrefab = registry.doorPrefab,
-                    corridorPrefab = registry.corridorPrefab,
-                    cornerPrefab = registry.cornerPrefab
-                };
-                TagPrefabsAsPrefab(prefabs);
-                usingAuthoringRegistry = true;
-                DOTS.Terrain.Core.DebugSettings.LogRendering(
-                    $"DungeonRenderingSystem (Macro-only): Bound DungeonPrefabRegistry (FBX). Prefabs => roomFloor={(prefabs.floorPrefab!=Entity.Null)}, roomEdge={(prefabs.wallPrefab!=Entity.Null)}, corridor={(prefabs.corridorPrefab!=Entity.Null)}, corner={(prefabs.cornerPrefab!=Entity.Null)}, door={(prefabs.doorPrefab!=Entity.Null)}");
+                ecb.Dispose();
+                return;
             }
+            var registryNow = SystemAPI.GetSingleton<DOTS.Terrain.WFC.Authoring.DungeonPrefabRegistry>();
+            if (registryNow.roomFloorPrefab == Entity.Null || registryNow.roomEdgePrefab == Entity.Null)
+            {
+                DOTS.Terrain.Core.DebugSettings.LogError("DungeonRenderingSystem (Macro-only): roomFloorPrefab or roomEdgePrefab is not assigned in DungeonPrefabRegistry.");
+                ecb.Dispose();
+                return;
+            }
+            prefabs = new DungeonPrefabs
+            {
+                floorPrefab = registryNow.roomFloorPrefab,
+                wallPrefab = registryNow.roomEdgePrefab,
+                doorPrefab = registryNow.doorPrefab,
+                corridorPrefab = registryNow.corridorPrefab,
+                cornerPrefab = registryNow.cornerPrefab
+            };
+            TagPrefabsAsPrefab(prefabs);
             
             // If rendering is complete, just dispose and return
             if (renderingComplete)
@@ -144,18 +128,23 @@ namespace DOTS.Terrain.WFC
             // Check if dungeon generation is requested
             bool dungeonGenerationRequested = false;
             int requestCount = 0;
-            Entities
-                .WithAll<DungeonGenerationRequest>()
-                .ForEach((in DungeonGenerationRequest request) =>
+            var requestQuery = GetEntityQuery(ComponentType.ReadOnly<DungeonGenerationRequest>());
+            using (var requests = requestQuery.ToComponentDataArray<DungeonGenerationRequest>(Allocator.Temp))
+            {
+                requestCount = requests.Length;
+                for (int i = 0; i < requests.Length && !dungeonGenerationRequested; i++)
                 {
-                    requestCount++;
-                    if (request.isActive)
+                    if (requests[i].isActive)
                     {
                         dungeonGenerationRequested = true;
                     }
-                }).WithoutBurst().Run();
+                }
+            }
                 
-            DOTS.Terrain.Core.DebugSettings.LogRendering($"DungeonRenderingSystem (Macro-only): Requests={requestCount}, active={dungeonGenerationRequested}", true);
+            if (DOTS.Terrain.Core.DebugSettings.EnableRenderingDebug)
+            {
+                DOTS.Terrain.Core.DebugSettings.LogRendering($"DungeonRenderingSystem (Macro-only): Requests={requestCount}, active={dungeonGenerationRequested}");
+            }
                 
             if (!dungeonGenerationRequested)
             {
@@ -178,7 +167,10 @@ namespace DOTS.Terrain.WFC
             }
                 
             var wfcComponent = SystemAPI.GetSingleton<WFCComponent>();
-            DOTS.Terrain.Core.DebugSettings.LogRendering($"DungeonRenderingSystem (Macro-only): WFC state isCollapsed={wfcComponent.isCollapsed}, isGenerating={wfcComponent.isGenerating}, iterations={wfcComponent.iterations}", true);
+            if (DOTS.Terrain.Core.DebugSettings.EnableRenderingDebug)
+            {
+                DOTS.Terrain.Core.DebugSettings.LogRendering($"DungeonRenderingSystem (Macro-only): WFC state isCollapsed={wfcComponent.isCollapsed}, isGenerating={wfcComponent.isGenerating}, iterations={wfcComponent.iterations}");
+            }
             
             // Only process if WFC is complete
             if (!wfcComponent.isCollapsed)
@@ -187,40 +179,97 @@ namespace DOTS.Terrain.WFC
                 ecb.Dispose();
                 return;
             }
+
+            using var cellEntities = wfcCellsQuery.ToEntityArray(Allocator.Temp);
+            using var cellComponents = wfcCellsQuery.ToComponentDataArray<WFCCell>(Allocator.Temp);
             
             // Build a map of collapsed cell patterns for neighbor-aware wall orientation
+            // Build type-safe map of cell -> pattern TYPE
             cellPatternMap.Clear();
+            cellLookup.Clear();
             int collapsedCount = 0;
-            Entities
-                .WithAll<WFCCell>()
-                .ForEach((in WFCCell cell) =>
+            ref var blobPatterns = ref wfcComponent.patterns.Value.patterns;
+            int patternsLength = blobPatterns.Length;
+            var patternTypes = new NativeArray<int>(patternsLength, Allocator.Temp);
+            for (int i = 0; i < patternsLength; i++)
+            {
+                patternTypes[i] = blobPatterns[i].type;
+            }
+            for (int i = 0; i < cellComponents.Length; i++)
+            {
+                var cell = cellComponents[i];
+                if (!cell.collapsed)
                 {
-                    if (cell.collapsed)
-                    {
-                        cellPatternMap[MakeKey(cell.position)] = cell.selectedPattern;
-                        collapsedCount++;
-                    }
-                }).WithoutBurst().Run();
-            DOTS.Terrain.Core.DebugSettings.LogRendering($"DungeonRenderingSystem (Macro-only): Collapsed cells counted={collapsedCount}", true);
+                    continue;
+                }
+
+                if (cell.selectedPattern < 0 || cell.selectedPattern >= patternsLength)
+                {
+                    continue;
+                }
+
+                int patType = patternTypes[cell.selectedPattern];
+                cellPatternMap[MakeKey(cell.position)] = patType;
+                cellLookup[MakeKey(cell.position)] = cell;
+                collapsedCount++;
+            }
+            patternTypes.Dispose();
+            if (DOTS.Terrain.Core.DebugSettings.EnableRenderingDebug)
+            {
+                DOTS.Terrain.Core.DebugSettings.LogRendering($"DungeonRenderingSystem (Macro-only): Collapsed cells counted={collapsedCount}");
+            }
 
             // Process cells that need visualization
             int processedCells = 0;
             int totalCells = 0;
-            Entities
-                .WithAll<WFCCell>()
-                .ForEach((Entity entity, ref WFCCell cell) =>
+            int collapsedCells = 0;
+            int visualizedCells = 0;
+            int collapsedNotVisualized = 0;
+            int sampleCount = 0;
+            
+            for (int i = 0; i < cellComponents.Length; i++)
+            {
+                var entity = cellEntities[i];
+                var cell = cellComponents[i];
+
+                totalCells++;
+                if (cell.collapsed)
                 {
-                    totalCells++;
-                    if (cell.collapsed && !cell.visualized)
-                    {
-                        DOTS.Terrain.Core.DebugSettings.LogRendering($"DungeonRenderingSystem (Macro-only): Spawning element for cell ({cell.position.x},{cell.position.y}) pattern={cell.selectedPattern}", true);
-                        SpawnDungeonElement(ref cell);
-                        cell.visualized = true;
-                        processedCells++;
-                    }
-                }).WithoutBurst().Run();
+                    collapsedCells++;
+                }
+
+                if (cell.visualized)
+                {
+                    visualizedCells++;
+                }
+
+                if (sampleCount < 5)
+                {
+                    DOTS.Terrain.Core.DebugSettings.LogRendering($"DungeonRenderingSystem (Macro-only): Sample cell at ({cell.position.x},{cell.position.y}) - collapsed: {cell.collapsed}, visualized: {cell.visualized}, pattern: {cell.selectedPattern}");
+                    sampleCount++;
+                }
+
+                if (cell.collapsed && !cell.visualized)
+                {
+                    collapsedNotVisualized++;
+                    DOTS.Terrain.Core.DebugSettings.LogRendering($"DungeonRenderingSystem (Macro-only): Spawning element for cell ({cell.position.x},{cell.position.y}) pattern={cell.selectedPattern}", true);
+                    SpawnDungeonElement(ref cell);
+                    cell.visualized = true;
+                    processedCells++;
+                    EntityManager.SetComponentData(entity, cell);
+                    cellLookup[MakeKey(cell.position)] = cell;
+                }
+                else if (cell.visualized)
+                {
+                    // No changes, skip writeback
+                }
+            }
                 
-            DOTS.Terrain.Core.DebugSettings.LogRendering($"DungeonRenderingSystem (Macro-only): Processed {processedCells}/{totalCells} cells for rendering", true);
+            if (DOTS.Terrain.Core.DebugSettings.EnableRenderingDebug)
+            {
+                DOTS.Terrain.Core.DebugSettings.LogRendering($"DungeonRenderingSystem (Macro-only): Processed {processedCells}/{totalCells} cells for rendering");
+                DOTS.Terrain.Core.DebugSettings.LogRendering($"DungeonRenderingSystem (Macro-only): Cell state breakdown - Total: {totalCells}, Collapsed: {collapsedCells}, Visualized: {visualizedCells}, CollapsedNotVisualized: {collapsedNotVisualized}");
+            }
             
             // Check if all cells are now visualized
             if (processedCells == 0 && totalCells > 0)
@@ -252,10 +301,28 @@ namespace DOTS.Terrain.WFC
             Entity prefabToSpawn = Entity.Null;
             quaternion rotation = quaternion.identity;
 
-            // Look up selected pattern to derive type and edges
+            // Validate pattern index before array access
             var wfc = SystemAPI.GetSingleton<WFCComponent>();
-            ref var patterns = ref wfc.patterns.Value.patterns;
-            var pat = patterns[cell.selectedPattern];
+            ref var blobPatterns = ref wfc.patterns.Value.patterns;
+            
+            if (cell.selectedPattern < 0 || cell.selectedPattern >= blobPatterns.Length)
+            {
+                DOTS.Terrain.Core.DebugSettings.LogRendering($"DungeonRenderingSystem: Invalid pattern {cell.selectedPattern} for cell at {cell.position}, skipping spawn (valid range: 0-{blobPatterns.Length - 1})");
+                DOTS.Terrain.Core.DebugSettings.LogRendering($"DungeonRenderingSystem: Cell state - collapsed: {cell.collapsed}, visualized: {cell.visualized}");
+                return; // Skip this cell instead of crashing
+            }
+
+            // Look up selected pattern to derive type and edges
+            var pat = blobPatterns[cell.selectedPattern];
+
+            // Validate WFC constraints with neighbors
+            ValidateWFCConstraints(ref cell, pat, ref blobPatterns);
+
+            // Log pattern and rotation for model alignment testing
+            if (DOTS.Terrain.Core.DebugSettings.EnableRenderingDebug)
+            {
+                DOTS.Terrain.Core.DebugSettings.LogRendering($"MODEL ALIGNMENT TEST: Cell at ({cell.position.x},{cell.position.y}) - Pattern: {pat.type} sockets={GetSocketString(pat)} selectedPattern={cell.selectedPattern}");
+            }
 
             // Select prefab by domain type
             switch ((DungeonPatternType)pat.type)
@@ -271,6 +338,7 @@ namespace DOTS.Terrain.WFC
 
                 case DungeonPatternType.Door:
                     prefabToSpawn = prefabs.doorPrefab;
+                    rotation = DetermineDeadEndRotation(pat);
                     break;
 
                 case DungeonPatternType.Corridor:
@@ -351,9 +419,9 @@ namespace DOTS.Terrain.WFC
         private bool IsWallAt(int2 pos)
         {
             if (cellPatternMap == null || cellPatternMap.Count == 0) return false;
-            if (cellPatternMap.TryGetValue(MakeKey(pos), out var pattern))
+            if (cellPatternMap.TryGetValue(MakeKey(pos), out var storedType))
             {
-                return pattern == 1; // 1 = Wall
+                return (DungeonPatternType)storedType == DungeonPatternType.Wall;
             }
             return false;
         }
@@ -421,6 +489,20 @@ namespace DOTS.Terrain.WFC
             return quaternion.identity;
         }
 
+        private static quaternion DetermineDeadEndRotation(WFCPattern pat)
+        {
+            // DeadEnd has one open edge ('F'), three closed ('W')
+            // Rotate to face the open edge
+            if (pat.north == (byte)'F') return quaternion.identity;                 // 0°   - Opens North
+            if (pat.east == (byte)'F') return quaternion.Euler(0, math.radians(90f), 0);  // 90°  - Opens East
+            if (pat.south == (byte)'F') return quaternion.Euler(0, math.radians(180f), 0); // 180° - Opens South
+            if (pat.west == (byte)'F') return quaternion.Euler(0, math.radians(270f), 0);  // 270° - Opens West
+            
+            // Fallback (should never occur for valid DeadEnd patterns)
+            DOTS.Terrain.Core.DebugSettings.LogWarning($"DetermineDeadEndRotation: No open edge found for pattern {pat.patternId}");
+            return quaternion.identity;
+        }
+
         private void TagPrefabsAsPrefab(DungeonPrefabs createdPrefabs)
         {
             void EnsurePrefab(Entity e)
@@ -436,6 +518,77 @@ namespace DOTS.Terrain.WFC
             EnsurePrefab(createdPrefabs.doorPrefab);
             EnsurePrefab(createdPrefabs.corridorPrefab);
             EnsurePrefab(createdPrefabs.cornerPrefab);
+        }
+
+        /// <summary>
+        /// Validates WFC constraints between a cell and its neighbors
+        /// </summary>
+        private void ValidateWFCConstraints(ref WFCCell cell, WFCPattern pattern, ref BlobArray<WFCPattern> blobPatterns)
+        {
+            if (!DOTS.Terrain.Core.DebugSettings.EnableRenderingDebug) return;
+
+            int2 pos = cell.position;
+
+            // Check each neighbor direction
+            CheckNeighborConstraint(pos, pattern, ref blobPatterns, new int2(0, 1), "North", pattern.north, "South");
+            CheckNeighborConstraint(pos, pattern, ref blobPatterns, new int2(1, 0), "East", pattern.east, "West");
+            CheckNeighborConstraint(pos, pattern, ref blobPatterns, new int2(0, -1), "South", pattern.south, "North");
+            CheckNeighborConstraint(pos, pattern, ref blobPatterns, new int2(-1, 0), "West", pattern.west, "East");
+        }
+
+        /// <summary>
+        /// Checks constraint between a cell and one of its neighbors
+        /// </summary>
+        private void CheckNeighborConstraint(int2 pos, WFCPattern pattern, ref BlobArray<WFCPattern> blobPatterns, int2 offset, string direction, byte thisSocket, string neighborSocketName)
+        {
+            int2 neighborPos = pos + offset;
+
+            if (!cellLookup.TryGetValue(MakeKey(neighborPos), out var neighbor))
+            {
+                return;
+            }
+            if (!neighbor.collapsed || neighbor.selectedPattern < 0 || neighbor.selectedPattern >= blobPatterns.Length)
+                return;
+
+            var neighborPattern = blobPatterns[neighbor.selectedPattern];
+            byte neighborSocket = GetNeighborSocket(neighborPattern, neighborSocketName);
+
+            // Check constraint violation
+            if (thisSocket == (byte)'F' && neighborSocket == (byte)'W')
+            {
+                DOTS.Terrain.Core.DebugSettings.LogRendering($"WFC CONSTRAINT VIOLATION: Cell at {pos} has {direction} open (F) but neighbor at {neighborPos} has {neighborSocketName} closed (W)");
+                DOTS.Terrain.Core.DebugSettings.LogRendering($"  - This pattern: {pattern.type} sockets={GetSocketString(pattern)}");
+                DOTS.Terrain.Core.DebugSettings.LogRendering($"  - Neighbor pattern: {neighborPattern.type} sockets={GetSocketString(neighborPattern)}");
+            }
+            else if (thisSocket == (byte)'W' && neighborSocket == (byte)'F')
+            {
+                DOTS.Terrain.Core.DebugSettings.LogRendering($"WFC CONSTRAINT VIOLATION: Cell at {pos} has {direction} closed (W) but neighbor at {neighborPos} has {neighborSocketName} open (F)");
+                DOTS.Terrain.Core.DebugSettings.LogRendering($"  - This pattern: {pattern.type} sockets={GetSocketString(pattern)}");
+                DOTS.Terrain.Core.DebugSettings.LogRendering($"  - Neighbor pattern: {neighborPattern.type} sockets={GetSocketString(neighborPattern)}");
+            }
+        }
+
+        /// <summary>
+        /// Gets the socket value for a specific direction from a pattern
+        /// </summary>
+        private byte GetNeighborSocket(WFCPattern pattern, string socketName)
+        {
+            switch (socketName)
+            {
+                case "North": return pattern.north;
+                case "East": return pattern.east;
+                case "South": return pattern.south;
+                case "West": return pattern.west;
+                default: return (byte)'?';
+            }
+        }
+
+        /// <summary>
+        /// Gets a readable string representation of pattern sockets
+        /// </summary>
+        private string GetSocketString(WFCPattern pattern)
+        {
+            return $"{(char)pattern.north}{(char)pattern.east}{(char)pattern.south}{(char)pattern.west}";
         }
     }
 } 

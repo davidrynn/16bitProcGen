@@ -85,3 +85,4 @@
 **File:** `Scripts/DOTS/WFC/HybridWFCSystem.cs:383, 402, 421`
 - **Watchpoint:** Collapse logging statements
 - **Variables:** `cell.position, selectedPattern, collapse reason`
+

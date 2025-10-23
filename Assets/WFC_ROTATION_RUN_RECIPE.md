@@ -39,3 +39,4 @@
 - **Collapse Pattern:** Cells collapse to specific pattern indices
 - **Rotation Application:** Corners show 0°, 90°, 180°, 270° rotations
 - **Visual Result:** 5×5 grid with visible tile rotations
+

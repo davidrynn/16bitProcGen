@@ -1,5 +1,7 @@
 using Unity.Entities;
+using Unity.Mathematics;
 using UnityEngine;
+using Unity.Physics;
 
 namespace DOTS.Player.Authoring
 {
@@ -26,12 +28,38 @@ namespace DOTS.Player.Authoring
         [Header("Camera")]
         public Camera playerCamera;
 
+        private void Awake()
+        {
+            // Ensure Rigidbody exists - Unity's physics baking system will convert this to DOTS physics components
+            UnityEngine.Rigidbody rb = GetComponent<UnityEngine.Rigidbody>();
+            if (rb == null)
+            {
+                Debug.Log("No Rigidbody found, adding one");
+                rb = gameObject.AddComponent<UnityEngine.Rigidbody>();
+                rb.mass = 70f;
+                rb.linearDamping = 0.05f;
+                rb.angularDamping = 0.05f;
+                rb.constraints = UnityEngine.RigidbodyConstraints.FreezeRotation; // Prevent player from tipping over
+            }
+            
+            // Ensure Collider exists - required for physics interactions
+            if (GetComponent<UnityEngine.Collider>() == null)
+            {
+                Debug.Log("No Collider found, adding one");
+                var capsule = gameObject.AddComponent<UnityEngine.CapsuleCollider>();
+                capsule.height = 2f;
+                capsule.radius = 0.5f;
+                capsule.center = new Vector3(0, 1, 0);
+            }
+        }
+
         private class PlayerAuthoringBaker : Baker<PlayerAuthoring>
         {
             public override void Bake(PlayerAuthoring authoring)
             {
                 var entity = GetEntity(TransformUsageFlags.Dynamic);
 
+                // Add movement configuration
                 AddComponent(entity, new PlayerMovementConfig
                 {
                     GroundSpeed = authoring.groundSpeed,
@@ -45,8 +73,15 @@ namespace DOTS.Player.Authoring
                     GroundProbeDistance = Mathf.Max(0.1f, authoring.groundProbeDistance)
                 });
 
-                AddComponent<PlayerInputComponent>(entity);
+                // Add input component
+                AddComponent(entity, new PlayerInputComponent
+                {
+                    Move = float2.zero,
+                    Look = float2.zero,
+                    JumpPressed = false
+                });
 
+                // Add movement state
                 AddComponent(entity, new PlayerMovementState
                 {
                     Mode = PlayerMovementMode.Ground,
@@ -54,8 +89,14 @@ namespace DOTS.Player.Authoring
                     FallTime = 0f
                 });
 
-                AddComponent<PlayerViewComponent>(entity);
+                // Add view component
+                AddComponent(entity, new PlayerViewComponent
+                {
+                    YawDegrees = 0f,
+                    PitchDegrees = 0f
+                });
 
+                // Link camera if provided
                 if (authoring.playerCamera != null)
                 {
                     var cameraEntity = GetEntity(authoring.playerCamera.gameObject, TransformUsageFlags.Dynamic);
@@ -64,6 +105,9 @@ namespace DOTS.Player.Authoring
                         CameraEntity = cameraEntity
                     });
                 }
+                
+                // Physics components (PhysicsVelocity, PhysicsMass, PhysicsCollider, etc.) 
+                // are automatically added by Unity's RigidbodyBaker from the Rigidbody component
             }
         }
     }

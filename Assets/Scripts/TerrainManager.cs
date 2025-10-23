@@ -2,6 +2,8 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using Unity.Entities;
+using Unity.Collections;
 
 public class TerrainManager : MonoBehaviour
 {
@@ -308,8 +310,46 @@ public class TerrainManager : MonoBehaviour
     {
         if (playerTransform == null)
         {
-            playerTransform = FindFirstObjectByType<PlayerController>()?.transform;
-            return;
+            // Try to find DOTS player entity first, then fallback to any GameObject named "Player"
+            var dotsWorld = Unity.Entities.World.DefaultGameObjectInjectionWorld;
+            if (dotsWorld != null)
+            {
+                var entityManager = dotsWorld.EntityManager;
+                var playerQuery = entityManager.CreateEntityQuery(typeof(DOTS.Player.PlayerMovementConfig));
+                var playerEntities = playerQuery.ToEntityArray(Unity.Collections.Allocator.Temp);
+                
+                if (playerEntities.Length > 0)
+                {
+                    // Get the transform from the DOTS player entity
+                    if (entityManager.HasComponent<Unity.Transforms.LocalTransform>(playerEntities[0]))
+                    {
+                        var transform = entityManager.GetComponentData<Unity.Transforms.LocalTransform>(playerEntities[0]);
+                        // Create a temporary GameObject to hold the position for LOD calculations
+                        if (playerTransform == null)
+                        {
+                            GameObject tempPlayer = new GameObject("TempPlayerForLOD");
+                            playerTransform = tempPlayer.transform;
+                        }
+                        playerTransform.position = transform.Position;
+                    }
+                }
+                playerEntities.Dispose();
+            }
+            
+            // Fallback: find any GameObject named "Player"
+            if (playerTransform == null)
+            {
+                GameObject playerObj = GameObject.Find("Player");
+                if (playerObj != null)
+                {
+                    playerTransform = playerObj.transform;
+                }
+            }
+            
+            if (playerTransform == null)
+            {
+                return;
+            }
         }
 
         foreach (var chunk in chunks.Values)

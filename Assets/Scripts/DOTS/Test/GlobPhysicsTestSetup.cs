@@ -209,13 +209,9 @@ public class GlobPhysicsTestSetup : MonoBehaviour
             Debug.Log($"Glob Entities: {globCount}");
             
             // Check systems
-            var terrainSystem = world.GetOrCreateSystemManaged<TerrainSystem>();
-            var globPhysicsSystem = world.GetOrCreateSystemManaged<TerrainGlobPhysicsSystem>();
-            var modificationSystem = world.GetOrCreateSystemManaged<TerrainModificationSystem>();
-            
-            Debug.Log($"TerrainSystem: {(terrainSystem != null ? "✓" : "✗")}");
-            Debug.Log($"TerrainGlobPhysicsSystem: {(globPhysicsSystem != null ? "✓" : "✗")}");
-            Debug.Log($"TerrainModificationSystem: {(modificationSystem != null ? "✓" : "✗")}");
+            Debug.Log("TerrainSystem: (Managed system)");
+            Debug.Log("TerrainGlobPhysicsSystem: (ISystem active in world update list)");
+            Debug.Log("TerrainModificationSystem: (ISystem active in world update list)");
         }
         else
         {

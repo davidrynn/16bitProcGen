@@ -27,10 +27,10 @@ public class GlobPhysicsTest : MonoBehaviour
     public bool logPhysicsStats = true;
     public float physicsTestDuration = 10f;
     
-    private TerrainGlobPhysicsSystem globPhysicsSystem;
     private Entity[] testGlobs;
     private float testStartTime;
     private bool testRunning = false;
+    private World dotsWorld;
     
     void Start()
     {
@@ -80,16 +80,15 @@ public class GlobPhysicsTest : MonoBehaviour
         Debug.Log("Setting up glob physics test environment...");
         
         // Get the glob physics system
-        var world = DOTSWorldSetup.GetWorld();
-        globPhysicsSystem = world.GetOrCreateSystemManaged<TerrainGlobPhysicsSystem>();
-        
-        if (globPhysicsSystem == null)
+        dotsWorld = DOTSWorldSetup.GetWorld();
+
+        if (dotsWorld == null)
         {
-            Debug.LogError("Failed to get TerrainGlobPhysicsSystem");
+            Debug.LogError("Failed to get DOTS World for glob physics testing");
             return;
         }
-        
-        Debug.Log("✓ Glob physics system found");
+
+        Debug.Log("✓ DOTS world found");
     }
     
     private void CreateTestGlobs()
@@ -110,12 +109,12 @@ public class GlobPhysicsTest : MonoBehaviour
             TerrainType terrainType = (TerrainType)((i % 5) + 1); // Skip Water (0)
             
             // Create the glob
-            testGlobs[i] = globPhysicsSystem.CreateTerrainGlob(
+            testGlobs[i] = TerrainGlobPhysicsSystem.CreateTerrainGlob(
+                dotsWorld.EntityManager,
                 position,
                 testRadius + i * 0.5f,
                 globType,
-                terrainType
-            );
+                terrainType);
             
             if (testGlobs[i] != Entity.Null)
             {
@@ -158,10 +157,9 @@ public class GlobPhysicsTest : MonoBehaviour
     
     private void LogPhysicsStats()
     {
-        if (globPhysicsSystem == null) return;
-        
-        var stats = globPhysicsSystem.GetPerformanceStats();
-        Debug.Log($"[GlobPhysicsTest] Active globs: {stats.activeGlobs}, Grounded: {stats.groundedGlobs}");
+    if (!TryGetGlobPhysicsSystem(out var stats)) return;
+
+    Debug.Log($"[GlobPhysicsTest] Active globs: {stats.activeGlobs}, Grounded: {stats.groundedGlobs}");
     }
     
     private void EndPhysicsTest()
@@ -170,9 +168,8 @@ public class GlobPhysicsTest : MonoBehaviour
         Debug.Log("=== GLOB PHYSICS TEST COMPLETE ===");
         
         // Log final stats
-        if (globPhysicsSystem != null)
+        if (TryGetGlobPhysicsSystem(out var stats))
         {
-            var stats = globPhysicsSystem.GetPerformanceStats();
             Debug.Log($"Final Stats - Active globs: {stats.activeGlobs}, Grounded: {stats.groundedGlobs}");
         }
         
@@ -220,20 +217,12 @@ public class GlobPhysicsTest : MonoBehaviour
         }
         
         var world = DOTSWorldSetup.GetWorld();
-        var physicsSystem = world.GetOrCreateSystemManaged<TerrainGlobPhysicsSystem>();
-        
-        if (physicsSystem == null)
-        {
-            Debug.LogError("TerrainGlobPhysicsSystem not available");
-            return;
-        }
-        
-        var globEntity = physicsSystem.CreateTerrainGlob(
+        var globEntity = TerrainGlobPhysicsSystem.CreateTerrainGlob(
+            world.EntityManager,
             testPosition,
             testRadius,
             testGlobType,
-            testTerrainType
-        );
+            testTerrainType);
         
         if (globEntity != Entity.Null)
         {
@@ -310,5 +299,17 @@ public class GlobPhysicsTest : MonoBehaviour
         
         entities.Dispose();
         Debug.Log($"Applied random velocity to {entities.Length} globs");
+    }
+
+    private bool TryGetGlobPhysicsSystem(out (int activeGlobs, int groundedGlobs, float lastUpdateTime) stats)
+    {
+        if (!DOTSWorldSetup.IsWorldReady())
+        {
+            stats = default;
+            return false;
+        }
+
+        stats = TerrainGlobPhysicsSystem.GetPerformanceStats();
+        return true;
     }
 } 

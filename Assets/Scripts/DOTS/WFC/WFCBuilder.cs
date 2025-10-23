@@ -121,10 +121,10 @@ namespace DOTS.Terrain.WFC
             }
 
             // Room floor: open all sides
-            AddRotated(DungeonPatternType.Floor, (byte)'F', (byte)'F', (byte)'F', (byte)'F', 1.0f);
+//            AddRotated(DungeonPatternType.Floor, (byte)'F', (byte)'F', (byte)'F', (byte)'F', 1.0f);
 
             // Room edge: one closed face, three open
-            AddRotated(DungeonPatternType.Wall, (byte)'W', (byte)'F', (byte)'F', (byte)'F', 1.0f);
+//            AddRotated(DungeonPatternType.Wall, (byte)'W', (byte)'F', (byte)'F', (byte)'F', 1.0f);
 
             // Corridor straight: open N/S, closed E/W
             AddRotated(DungeonPatternType.Corridor, (byte)'F', (byte)'W', (byte)'F', (byte)'W', 1.0f);

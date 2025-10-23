@@ -1,9 +1,11 @@
 using Unity.Burst;
+using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;
 using Unity.Physics;
 using Unity.Physics.Systems;
 using Unity.Transforms;
+using UnityEngine;
 
 namespace DOTS.Player.Systems
 {
@@ -35,7 +37,7 @@ namespace DOTS.Player.Systems
             float deltaTime = SystemAPI.Time.DeltaTime;
 
             foreach (var (config, input, movementState, transform, velocity) in
-                     SystemAPI.Query<RefRO<PlayerMovementConfig>, RefRW<PlayerInputComponent>, RefRW<PlayerMovementState>, RefRO<LocalTransform>, RefRW<PhysicsVelocity>>())
+                     SystemAPI.Query<RefRO<PlayerMovementConfig>, RefRW<PlayerInputComponent>, RefRW<PlayerMovementState>, RefRW<LocalTransform>, RefRW<PhysicsVelocity>>())
             {
                 float2 moveInput = input.ValueRO.Move;
                 if (math.lengthsq(moveInput) > 1f)
