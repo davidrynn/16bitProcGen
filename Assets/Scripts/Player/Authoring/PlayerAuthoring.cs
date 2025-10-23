@@ -37,8 +37,8 @@ namespace DOTS.Player.Authoring
                 Debug.Log("No Rigidbody found, adding one");
                 rb = gameObject.AddComponent<UnityEngine.Rigidbody>();
                 rb.mass = 70f;
-                rb.linearDamping = 0.05f;
-                rb.angularDamping = 0.05f;
+                rb.linearDamping = 0f;
+                rb.angularDamping = 0f;
                 rb.constraints = UnityEngine.RigidbodyConstraints.FreezeRotation; // Prevent player from tipping over
             }
             
