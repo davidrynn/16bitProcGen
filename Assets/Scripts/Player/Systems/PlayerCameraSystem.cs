@@ -24,8 +24,8 @@ namespace DOTS.Player.Systems
         public void OnUpdate(ref SystemState state)
         {
             // Query for players with camera links
-            foreach (var (view, transform, cameraLink) in
-                     SystemAPI.Query<RefRO<PlayerViewComponent>, RefRO<LocalTransform>, RefRO<PlayerCameraLink>>())
+            foreach (var (view, transform, cameraLink, entity) in
+                     SystemAPI.Query<RefRO<PlayerViewComponent>, RefRO<LocalTransform>, RefRO<PlayerCameraLink>>().WithEntityAccess())
             {
                 if (cameraLink.ValueRO.CameraEntity == Entity.Null)
                 {
@@ -37,8 +37,28 @@ namespace DOTS.Player.Systems
                     continue;
                 }
 
-                // Calculate camera world position and rotation
-                float3 cameraOffset = new float3(0f, 1.6f, 0f); // Eye height
+                float3 cameraOffset = new float3(0f, 1.6f, 0f);
+                if (SystemAPI.HasComponent<PlayerCameraSettings>(entity))
+                {
+                    cameraOffset = SystemAPI.GetComponent<PlayerCameraSettings>(entity).Offset;
+                }
+
+                float cameraScale = 1f;
+                if (SystemAPI.HasComponent<LocalTransform>(cameraLink.ValueRO.CameraEntity))
+                {
+                    var existingCameraTransform = SystemAPI.GetComponent<LocalTransform>(cameraLink.ValueRO.CameraEntity);
+                    if (math.lengthsq(cameraOffset) < math.EPSILON)
+                    {
+                        cameraOffset = existingCameraTransform.Position - transform.ValueRO.Position;
+                    }
+                    cameraScale = existingCameraTransform.Scale;
+                }
+
+                if (math.lengthsq(cameraOffset) < math.EPSILON)
+                {
+                    cameraOffset = new float3(0f, 1.6f, 0f);
+                }
+
                 float3 cameraPosition = transform.ValueRO.Position + cameraOffset;
                 
                 // Combine player yaw rotation with camera pitch rotation
@@ -50,7 +70,7 @@ namespace DOTS.Player.Systems
                 if (SystemAPI.HasComponent<LocalTransform>(cameraLink.ValueRO.CameraEntity))
                 {
                     var cameraTransform = SystemAPI.GetComponentRW<LocalTransform>(cameraLink.ValueRO.CameraEntity);
-                    cameraTransform.ValueRW = LocalTransform.FromPositionRotation(cameraPosition, combinedRotation);
+                    cameraTransform.ValueRW = LocalTransform.FromPositionRotationScale(cameraPosition, combinedRotation, cameraScale);
                 }
 
                 // CRITICAL: Update the managed Camera GameObject transform directly

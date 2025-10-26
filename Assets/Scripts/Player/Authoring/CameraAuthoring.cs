@@ -17,11 +17,15 @@ namespace DOTS.Player.Authoring
                 // Get the entity for this camera with Dynamic transform usage
                 // This ensures it has a LocalTransform component that can be modified at runtime
                 var entity = GetEntity(TransformUsageFlags.Dynamic);
-                
+
                 // LocalTransform is automatically added by Unity when using TransformUsageFlags.Dynamic
-                // The Camera component is also automatically added if present on the GameObject
+                // Register the managed Camera component so runtime systems can drive the GameObject
+                var camera = authoring.GetComponent<Camera>();
+                if (camera != null)
+                {
+                    AddComponentObject(entity, camera);
+                }
             }
         }
     }
 }
-

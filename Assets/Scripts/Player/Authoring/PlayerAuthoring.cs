@@ -2,6 +2,7 @@ using Unity.Entities;
 using Unity.Mathematics;
 using UnityEngine;
 using Unity.Physics;
+using DOTS.Player;
 
 namespace DOTS.Player.Authoring
 {
@@ -96,6 +97,8 @@ namespace DOTS.Player.Authoring
                     PitchDegrees = 0f
                 });
 
+                float3 cameraOffset = new float3(0f, 1.6f, 0f);
+
                 // Link camera if provided
                 if (authoring.playerCamera != null)
                 {
@@ -104,7 +107,14 @@ namespace DOTS.Player.Authoring
                     {
                         CameraEntity = cameraEntity
                     });
+
+                    cameraOffset = (float3)(authoring.playerCamera.transform.position - authoring.transform.position);
                 }
+
+                AddComponent(entity, new PlayerCameraSettings
+                {
+                    Offset = cameraOffset
+                });
                 
                 // Physics components (PhysicsVelocity, PhysicsMass, PhysicsCollider, etc.) 
                 // are automatically added by Unity's RigidbodyBaker from the Rigidbody component

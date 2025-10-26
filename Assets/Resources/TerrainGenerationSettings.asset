@@ -9,18 +9,18 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 253493ffbe2a8534bad403c7caff2c59, type: 3}
+  m_Script: {fileID: 11500000, guid: 4c99a2b33553d49d087bb888ba73d193, type: 3}
   m_Name: TerrainGenerationSettings
   m_EditorClassIdentifier: 
   maxChunksPerFrame: 4
   defaultBufferSize: 1048576
   noiseScale: 0.02
-  heightMultiplier: 10
+  heightMultiplier: 100
   biomeScale: 1
   noiseOffset: {x: 0, y: 0}
-  enableDebugLogs: 1
+  enableDebugLogs: 0
   enableVerboseLogs: 0
-  logHeightValues: 1
+  logHeightValues: 0
   waterThreshold: 10
   sandThreshold: 20
   grassThreshold: 35

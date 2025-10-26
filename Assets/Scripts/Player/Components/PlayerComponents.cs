@@ -48,4 +48,9 @@ namespace DOTS.Player
     {
         public Entity CameraEntity;
     }
+
+    public struct PlayerCameraSettings : IComponentData
+    {
+        public float3 Offset;
+    }
 }
