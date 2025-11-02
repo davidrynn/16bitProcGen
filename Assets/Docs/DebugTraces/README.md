@@ -1,0 +1,1 @@
+# Debug Traces - October 2025\n\nThis folder contains point-in-time debug traces from WFC rotation testing.\nThese are historical artifacts and can be deleted after review.\n\n- RUN_TRACE_5x5.md - WFC 5x5 grid test trace\n- ConsoleLogs.txt - Console output dump\n\nCreated: October 2025\nArchive after: December 2025

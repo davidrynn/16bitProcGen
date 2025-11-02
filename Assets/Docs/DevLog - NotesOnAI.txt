@@ -1,0 +1,19 @@
+DevLog - Crafting Game - heavy exploration, stylized
+low poly, survival, base building, crafting, exploration, adventure, quests, NPCs, animals, farming, fishing, cooking, multiplayer
+
+NotesOnAI
+Originally used AI -ChatGPT[CPT] to create a unity project.
+Then decided I wanted to try OpenGL - asked CPT about pros and cons. Plus and minuses to each but recommended Unity. When I mentioned reasons like how I wanted to try C++ and that we didn't need unity overhead, said OpenGL in agreement.
+Didn't tell me that it would still be better with Unity in terms of efficiency because of built in frameworks.
+After working for a bit in OpenGL and making good progress I had issues importing a model and noticed how easy it was to do in Unity.
+Asked again about Unity and CPT was opinionated about Unity being better for efficiency since it's built with some frameworks. Went back to Unity.
+Gained some knowledge of C++ which was nice. But not strong knowledge since I was reliant on CPT.
+ eventually was told about cursor which is more agentic. Tried it - it went crazy in terms of just doing everything. I was impressed but similar issues that AI already has - it goes too far without really understanding the prompt or it goes much further than prompt asks for - "Go mow the lawn" - it mows, the lawn, takes out the trash, trims the hedges, KILLS THE NEIGHBOR, rakes the leaves, brings in the mail. Does all this stuff you don't ask for but appreciate and adds processes you don't ask for like KILLING THE NEIGHBORS.
+
+9/7 Up to working with cursor and WFC. Felt like I had it working but was using procedural models - meshes for walls and floors to build a dungeon. It was a mess but something was happening so I was happy. Once I imported actual models it all went to hell. Keep prompting, keep copying logs and pasting for review, Cursor keeps making huge changes to no avail.
+Finally I noticed that enum it was using had legacy models/prefabs it was working with. I manually removed them and asked Cursor to remove the rest and scan through the code to fix references. It did but ADDED THE LEGACY ENUMS back as "fall back". I removed them again, updated the code and all of a sudden things started working. Re-enforces that, at this point, really the "agentic" mode is not viable for complex issues - need to go small steps at a time.
+
+11/1 I keep getting blocked by one thing or another on AI coding. Last time it was WFC, this time it's getting the camera to work correctly with DOTs, or any movement for that matter - character movement, etc. Once I'm blocked I go to playing video games or whatever
+The windows or rendering in Unity don't necessarily work too great with DOTs - I see the entity moves but it's not rendered. Likewise, the camera is even more difficult. There seems to be an issue with standard camera and it getting instantiated within DOTs which goes in a subscene, and through "authoring" it goes from a GameObject [GO] to an Entity. On top of that I keep making the mistake of updating my workflow to the latest and greatest which the AI does not have context for.
+Considering using mix of WFC or constraints and noise for terrain. AI says to go to a voxel design, but of course earlier I was under the impression that was not necessary.
+Also possibly should just make a non-procedural terrain to experiment game design.

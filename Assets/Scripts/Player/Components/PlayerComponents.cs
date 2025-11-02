@@ -47,6 +47,8 @@ namespace DOTS.Player
     public struct PlayerCameraLink : IComponentData
     {
         public Entity CameraEntity;
+        public Entity FollowAnchor;  // Entity with Transform to follow
+        public Entity LookAnchor;     // Entity with Transform to look at
     }
 
     public struct PlayerCameraSettings : IComponentData

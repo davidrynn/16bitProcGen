@@ -105,7 +105,9 @@ namespace DOTS.Player.Authoring
                     var cameraEntity = GetEntity(authoring.playerCamera.gameObject, TransformUsageFlags.Dynamic);
                     AddComponent(entity, new PlayerCameraLink
                     {
-                        CameraEntity = cameraEntity
+                        CameraEntity = cameraEntity,
+                        FollowAnchor = entity,  // Use player entity as follow anchor
+                        LookAnchor = entity     // Use player entity as look anchor
                     });
 
                     cameraOffset = (float3)(authoring.playerCamera.transform.position - authoring.transform.position);

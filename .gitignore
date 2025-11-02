@@ -441,9 +441,18 @@ Unity.Transforms.Hybrid.csproj
 *.mat
 *.unity
 *.prefab
-*.md
 !README.md
 !CHANGELOG.md
 *.ttf
-*.txt
 *.asset
+*.diff
+consolelogs.txt
+# Unity Scene Dependencies (auto-generated cache)
+/Assets/SceneDependencyCache/
+
+# Unity Scene Template Assets (auto-generated)
+/Assets/SceneTemplateAssets/
+
+# Unity TextMesh Pro (package - should be imported via Package Manager)
+# Contains 1000+ shader/resource files that shouldn't be in repo
+/Assets/TextMesh Pro/

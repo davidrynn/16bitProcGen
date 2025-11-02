@@ -1,0 +1,39 @@
+TestReports_SPEC_Implementation/
+│
+├── README.md                          (Main index - start here!)
+│
+├── CHANGE_REVIEW.md                   (Detailed code change review)
+├── IMPLEMENTATION_SUMMARY.md          (High-level status summary)
+├── CORRECTION_SUMMARY.md              (RNG fix documentation)
+├── TEST_EXECUTION_GUIDE.md            (Manual test instructions)
+├── SUBSCENE_SETUP_GUIDE.md            ⚠️ (Fix rotation issue - IMPORTANT!)
+│
+└── logs/
+    ├── README.md                      (Log capture instructions)
+    ├── Run1.txt                       (First test run - 263 KB)
+    ├── Run2.txt                       (Second test run - 264 KB)
+    └── Determinism_Comparison.md      (TC2 verification report)
+
+
+FILE DESCRIPTIONS:
+==================
+
+Main Documentation (Root Level):
+---------------------------------
+README.md                    - Directory index, test results summary, next steps
+CHANGE_REVIEW.md            - Complete review of all code modifications with rationale
+IMPLEMENTATION_SUMMARY.md   - Quick status overview, files modified, checklist
+CORRECTION_SUMMARY.md       - Documents the RNG bug fix (why UnityEngine.Random failed)
+TEST_EXECUTION_GUIDE.md     - Step-by-step guide for running TEST_PLAN.md cases
+SUBSCENE_SETUP_GUIDE.md     ⚠️ How to enable proper DOTS rendering (REQUIRED for TC3-TC5)
+
+Logs Subdirectory:
+------------------
+README.md                    - Instructions for capturing console logs
+Run1.txt                     - Full console output from first test execution
+Run2.txt                     - Full console output from second test execution
+Determinism_Comparison.md    - Side-by-side comparison proving TC2 passed
+
+TOTAL FILES: 9 markdown/text documents
+TOTAL SIZE: ~540 KB (mostly console logs)
+
