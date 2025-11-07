@@ -4,6 +4,7 @@ using Unity.Mathematics;
 using Unity.Physics;
 using Unity.Physics.Systems;
 using Unity.Transforms;
+using DOTS.Player.Components;
 
 namespace DOTS.Player.Systems
 {

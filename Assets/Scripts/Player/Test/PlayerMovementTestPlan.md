@@ -22,11 +22,10 @@ The player movement system consists of:
    - Proper lighting
    - Debugger for monitoring
 
-### Option 2: Manual Setup
-1. Create empty GameObject
-2. Add `PlayerTestSetup` script
-3. Right-click component → "Setup Test Environment"
-4. Press Play
+### Option 2: Manual Setup (Using Bootstrap)
+1. Open an empty scene
+2. The `PlayerEntityBootstrap` system will automatically create the player and camera on Play
+3. No additional setup needed - everything is code-driven
 
 ## Test Cases
 
@@ -126,18 +125,15 @@ The player movement system consists of:
 
 ### Console Logs
 The system should log:
-- "=== SETTING UP PLAYER TEST ENVIRONMENT ==="
-- "Player entity found: [EntityID]"
-- System status updates from debugger
+- "[PlayerBootstrap] Player entity created at..."
+- "[PlayerBootstrap] Created Main Camera GameObject"
+- System status updates from player systems
 
-### Debugger GUI
-The PlayerMovementDebugger shows:
-- Player entity ID
-- Input data (Move, Look, Jump)
-- Movement state (Mode, Grounded, FallTime)
-- View data (Yaw, Pitch)
-- Transform data (Position, Rotation)
-- Physics data (Linear, Angular velocity)
+### Debug Information
+To monitor player state, check:
+- Entity Inspector (Window > Entities > Hierarchy) - Shows all player components
+- Systems Window (Window > Entities > Systems) - Shows system status
+- Console logs from player systems
 
 ### Systems Window
 Check that these systems are running:
@@ -172,9 +168,9 @@ Check that these systems are running:
 - Ensure LocalTransform components exist
 
 ### Debug Commands
-- Right-click PlayerTestSetup → "Setup Test Environment"
-- Right-click PlayerMovementDebugger → "Force Debug Update"
-- Check Systems window for system status
+- Check Systems window (Window > Entities > Systems) for system status
+- Use Entity Inspector (Window > Entities > Hierarchy) to view player entity components
+- Check Console for system logs and errors
 
 ## Performance Expectations
 - 60+ FPS with smooth movement

@@ -6,6 +6,7 @@ using Unity.Physics;
 using Unity.Physics.Systems;
 using Unity.Transforms;
 using UnityEngine;
+using DOTS.Player.Components;
 
 namespace DOTS.Player.Systems
 {
@@ -32,21 +33,37 @@ namespace DOTS.Player.Systems
         /// Applies horizontal motion, air steering, and jump impulses based on the player's current input and movement state.
         /// </summary>
         /// <param name="state">The execution context for this system tick.</param>
+        private static int _frameCount = 0;
+        private static bool _hasLoggedMovementOnce = false;
+
         public void OnUpdate(ref SystemState state)
         {
             float deltaTime = SystemAPI.Time.DeltaTime;
+            _frameCount++;
 
-            foreach (var (config, input, movementState, transform, velocity) in
-                     SystemAPI.Query<RefRO<PlayerMovementConfig>, RefRW<PlayerInputComponent>, RefRW<PlayerMovementState>, RefRW<LocalTransform>, RefRW<PhysicsVelocity>>())
+            int entityCount = 0;
+            foreach (var (config, input, movementState, view, transform, velocity, entity) in
+                     SystemAPI.Query<RefRO<PlayerMovementConfig>, RefRW<PlayerInputComponent>, RefRW<PlayerMovementState>, RefRO<PlayerViewComponent>, RefRW<LocalTransform>, RefRW<PhysicsVelocity>>().WithEntityAccess())
             {
+                entityCount++;
                 float2 moveInput = input.ValueRO.Move;
+                
+                // Debug: Log first movement to see which entity is moving
+                if (math.lengthsq(moveInput) > 0.01f && !_hasLoggedMovementOnce)
+                {
+                    Debug.Log($"[PlayerMovement] Entity {entity.Index} is moving! Input: {moveInput}, Position: {transform.ValueRO.Position}, Velocity: {velocity.ValueRO.Linear}");
+                    _hasLoggedMovementOnce = true;
+                }
                 if (math.lengthsq(moveInput) > 1f)
                 {
                     moveInput = math.normalize(moveInput);
                 }
 
-                float3 forward = math.normalizesafe(math.mul(transform.ValueRO.Rotation, new float3(0f, 0f, 1f)), new float3(0f, 0f, 1f));
-                float3 right = math.normalizesafe(math.mul(transform.ValueRO.Rotation, new float3(1f, 0f, 0f)), new float3(1f, 0f, 0f));
+                // Calculate camera-relative movement using yaw from PlayerViewComponent
+                // This ensures movement is relative to where the camera is looking, not world axes
+                float yawRadians = math.radians(view.ValueRO.YawDegrees);
+                float3 forward = new float3(math.sin(yawRadians), 0f, math.cos(yawRadians));
+                float3 right = new float3(math.cos(yawRadians), 0f, -math.sin(yawRadians));
                 float3 desiredHorizontal = right * moveInput.x + forward * moveInput.y;
 
                 float3 currentVelocity = velocity.ValueRO.Linear;
@@ -82,7 +99,15 @@ namespace DOTS.Player.Systems
                     input.ValueRW.JumpPressed = false;
                 }
 
+// write the updated velocity back to physics
                 velocity.ValueRW.Linear = currentVelocity;
+                velocity.ValueRW.Angular = float3.zero;
+            }
+            
+            // Debug: Warn if multiple player entities found
+            if (entityCount > 1 && _frameCount % 60 == 0) // Log every 60 frames
+            {
+                Debug.LogWarning($"[PlayerMovement] WARNING: Found {entityCount} player entities! This causes conflicts. Only one should exist.");
             }
         }
     }

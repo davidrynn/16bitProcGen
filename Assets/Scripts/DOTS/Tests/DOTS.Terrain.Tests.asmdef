@@ -1,0 +1,32 @@
+{
+    "name": "DOTS.Terrain.Tests",
+    "rootNamespace": "DOTS.Terrain.Tests",
+    "references": [
+        "Core",
+        "UnityEngine.TestRunner",
+        "UnityEditor.TestRunner",
+        "DOTS.Terrain",
+        "Unity.Entities",
+        "Unity.Entities.Hybrid",
+        "Unity.Transforms",
+        "Unity.Mathematics",
+        "Unity.Collections",
+        "Unity.Burst",
+        "Unity.Physics",
+        "Unity.Physics.Authoring"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": true,
+    "overrideReferences": true,
+    "precompiledReferences": [
+        "nunit.framework.dll"
+    ],
+    "autoReferenced": false,
+    "defineConstraints": [
+        "UNITY_INCLUDE_TESTS"
+    ],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
+

@@ -136,25 +136,24 @@ This document describes all major test scripts in the DOTS terrain system, what 
 
 ---
 
-### 5. **ComputeShaderSetupTest.cs**
+### 5. **ComputeShaderTests.cs** (Automated Tests)
 **What it tests:**
 - Phase 2.1: Compute Shader Setup validation
 - Shader loading, kernel validation, and thread group calculations
 
 **Why it works:**
-- Comprehensive validation of the compute shader infrastructure
+- Comprehensive validation of the compute shader infrastructure using automated NUnit tests
 - Tests shader resources, kernel availability, and performance metrics
 - Ensures the compute pipeline is ready for terrain generation
 
-**How to set up:**
-1. **Create an empty GameObject** in your scene
-2. **Add the ComputeShaderSetupTest script** to the GameObject
-3. **Configure the settings** in the Inspector:
-   - Check "Run Tests On Start" to automatically run tests when you press Play
-   - Check "Log Results" for detailed console output during testing
-4. **Press Play** to run the tests automatically
-5. **Alternative**: Right-click on the ComputeShaderSetupTest component header and select "Run Compute Shader Setup Tests" for manual execution
-6. **Review results**: Open the Console window (Window > General > Console) to see detailed validation results and performance metrics
+**How to run:**
+1. **Open Unity Test Runner** (Window > General > Test Runner)
+2. **Switch to PlayMode tab**
+3. **Find** `DOTS.Terrain.Tests > ComputeShaderTests`
+4. **Run all tests** or select individual test methods
+5. **Review results** in the Test Runner window
+
+**Note:** This replaces the old MonoBehaviour-based `ComputeShaderSetupTest.cs`. The automated tests provide the same validation but are integrated into the test framework.
 
 **Expected Results:**
 - All compute shaders loaded successfully

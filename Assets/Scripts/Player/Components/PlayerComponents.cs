@@ -1,7 +1,7 @@
 using Unity.Entities;
 using Unity.Mathematics;
 
-namespace DOTS.Player
+namespace DOTS.Player.Components
 {
     public enum PlayerMovementMode : byte
     {

@@ -2,6 +2,7 @@ using Unity.Burst;
 using Unity.Entities;
 using Unity.Mathematics;
 using Unity.Transforms;
+using DOTS.Player.Components;
 
 namespace DOTS.Player.Systems
 {

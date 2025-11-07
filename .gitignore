@@ -50,6 +50,11 @@ Generated\ Files/
 TestResult.xml
 nunit-*.xml
 
+# Unity Test Runner results (various naming conventions)
+**/TestResults*.xml
+TestResults*.xml
+**/*TestResult*.xml
+
 # Build Results of an ATL Project
 [Dd]ebugPS/
 [Rr]eleasePS/
@@ -437,6 +442,11 @@ Unity.Serialization.Editor.csproj
 Unity.Transforms.csproj
 Unity.Transforms.Hybrid.csproj
 
+# Unity-generated .csproj files (root level - auto-generated, should not be committed)
+/*.csproj
+DOTS.*.csproj
+Player.*.csproj
+
 # Unity-specific files to ignore
 *.mat
 *.unity
@@ -447,6 +457,9 @@ Unity.Transforms.Hybrid.csproj
 *.asset
 *.diff
 consolelogs.txt
+ConsoleLogs.txt
+**/ConsoleLogs.txt
+**/consolelogs.txt
 # Unity Scene Dependencies (auto-generated cache)
 /Assets/SceneDependencyCache/
 

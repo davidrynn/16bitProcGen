@@ -315,7 +315,7 @@ public class TerrainManager : MonoBehaviour
             if (dotsWorld != null)
             {
                 var entityManager = dotsWorld.EntityManager;
-                var playerQuery = entityManager.CreateEntityQuery(typeof(DOTS.Player.PlayerMovementConfig));
+                var playerQuery = entityManager.CreateEntityQuery(typeof(DOTS.Player.Components.PlayerMovementConfig));
                 var playerEntities = playerQuery.ToEntityArray(Unity.Collections.Allocator.Temp);
                 
                 if (playerEntities.Length > 0)

@@ -3,6 +3,7 @@ using Unity.Entities;
 using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using DOTS.Player.Components;
 
 namespace DOTS.Player.Systems
 {
@@ -15,14 +16,11 @@ namespace DOTS.Player.Systems
     public partial struct PlayerInputSystem : ISystem
     {
         private bool _cursorLocked;
-        private bool _hasLoggedOnce;
 
         public void OnCreate(ref SystemState state)
         {
             state.RequireForUpdate<PlayerInputComponent>();
             _cursorLocked = false;
-            _hasLoggedOnce = false;
-            UnityEngine.Debug.Log("[PlayerInput] System created");
         }
 
         public void OnUpdate(ref SystemState state)
@@ -68,12 +66,6 @@ namespace DOTS.Player.Systems
                 input.ValueRW.Move = move;
                 input.ValueRW.Look = lookDelta;
                 input.ValueRW.JumpPressed = input.ValueRO.JumpPressed || jumpPressed;
-                
-                if (!_hasLoggedOnce)
-                {
-                    UnityEngine.Debug.Log($"[PlayerInput] Input captured: move={move}, look={lookDelta}, jump={jumpPressed}");
-                    _hasLoggedOnce = true;
-                }
             }
         }
 

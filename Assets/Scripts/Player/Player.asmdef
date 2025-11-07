@@ -1,0 +1,27 @@
+{
+    "name": "Player",
+    "rootNamespace": "DOTS.Player",
+    "references": [
+        "DOTS.Player.Components",
+        "Unity.Entities",
+        "Unity.Transforms",
+        "Unity.Mathematics",
+        "Unity.Burst",
+        "Unity.Collections",
+        "Unity.Entities.Hybrid",
+        "Unity.Physics",
+        "Unity.Physics.Authoring",
+        "Unity.InputSystem",
+        "Unity.Cinemachine"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": true,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
+

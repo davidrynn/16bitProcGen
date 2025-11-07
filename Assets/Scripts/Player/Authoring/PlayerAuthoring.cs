@@ -2,7 +2,7 @@ using Unity.Entities;
 using Unity.Mathematics;
 using UnityEngine;
 using Unity.Physics;
-using DOTS.Player;
+using DOTS.Player.Components;
 
 namespace DOTS.Player.Authoring
 {

@@ -59,6 +59,14 @@ It establishes behavioral and technical standards for all AI-assisted edits, ens
   - Sets up persistent managers (if needed)
 - **No MonoBehaviour gameplay logic** beyond bootstrap
 
+**Example Implementation:** See `Assets/Scripts/Player/Bootstrap/PlayerCameraBootstrap.cs`
+- Spawns player entity with `PlayerTag`, `LocalTransform`, `LocalToWorld`
+- Spawns camera entity with `MainCameraTag`, `LocalTransform`, `LocalToWorld`
+- Systems (like `CameraFollowSystem`) automatically start working when their required components exist
+- Zero scene setup required beyond attaching the bootstrap script to a GameObject
+
+**Setup Guide:** See `Assets/Scripts/Player/Bootstrap/BOOTSTRAP_GUIDE.md` for complete instructions on creating pure-code DOTS scenes.
+
 #### 3.1.3 Selective Baking for Heavy/Static Assets Only
 **Use baking for assets you'll instantiate at runtime, NOT for world layout.**
 
@@ -309,6 +317,15 @@ Each proposed edit must include:
 ## 7. DOTS-First Workflow Summary
 
 ### 7.1 Scene Setup (Edit Mode)
+
+**Minimal Pure-Code Setup (Player/Camera Example):**
+```
+MainScene/
+└── Bootstrap GameObject
+    └── PlayerCameraBootstrap.cs (spawns player + camera entities at runtime)
+```
+
+**Extended Setup (For Procedural Generation with Prefabs):**
 ```
 MainScene/
 ├── Bootstrap (MonoBehaviour)
@@ -324,6 +341,8 @@ Assets_SubScene/ (for baking only)
 ```
 
 **No hand-placed gameplay entities. No layout. Just configuration.**
+
+**See `Assets/Scripts/Player/Bootstrap/` for working examples and setup guides.**
 
 ### 7.2 Runtime (Play Mode)
 1. **Bootstrap.Start()** creates spawn request entities

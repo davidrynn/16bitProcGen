@@ -1,6 +1,9 @@
 using Unity.Cinemachine;
 using Unity.Entities;
 using UnityEngine;
+using DOTS.Player.Components;
+
+[assembly: RegisterGenericComponentType(typeof(Unity.Cinemachine.CinemachineCamera))]
 
 namespace DOTS.Player.Systems
 {
