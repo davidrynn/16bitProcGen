@@ -33,7 +33,6 @@ namespace DOTS.Player.Bootstrap
             // Check if player already exists (in case of scene reload)
             if (!SystemAPI.QueryBuilder().WithAll<PlayerTag>().Build().IsEmpty)
             {
-                Debug.Log("[PlayerBootstrap] Player entity already exists, skipping spawn");
                 _hasSpawned = true;
                 state.Enabled = false;
                 return;
@@ -178,23 +177,25 @@ namespace DOTS.Player.Bootstrap
                 
                 entityManager.AddComponentData(entity, new PlayerCameraSettings
                 {
-                    Offset = new float3(0f, 1.6f, 0f) // Camera at eye level
+                    FirstPersonOffset = new float3(0f, 1.6f, 0f),        // Camera at eye level
+                    ThirdPersonPivotOffset = new float3(0f, 1.5f, 0f),   // Shoulder height pivot
+                    ThirdPersonDistance = 3.5f,
+                    IsThirdPerson = false
                 });
 
-                Debug.Log($"[PlayerBootstrap] Player entity created with camera link to entity {cameraEntity}");
             }
             else
             {
                 entityManager.AddComponentData(entity, new PlayerCameraSettings
                 {
-                    Offset = new float3(0f, 1.6f, 0f)
+                    FirstPersonOffset = new float3(0f, 1.6f, 0f),
+                    ThirdPersonPivotOffset = new float3(0f, 1.5f, 0f),
+                    ThirdPersonDistance = 3.5f,
+                    IsThirdPerson = false
                 });
 
                 Debug.LogWarning("[PlayerBootstrap] Failed to create camera entity - camera system may not work");
             }
-
-            Debug.Log($"[PlayerBootstrap] Player entity created at {new float3(0, 2, 0)} with all components (Pure ECS)");
-            Debug.Log("[PlayerBootstrap] Components added: PlayerMovementConfig, PlayerInputComponent, PlayerMovementState, PlayerViewComponent, LocalTransform, PhysicsVelocity, PhysicsMass, PhysicsCollider, PlayerTag");
 
             // Create visual representation (minimal hybrid - GameObject sync)
             CreatePlayerVisual(entity, new float3(0, 2, 0));
@@ -224,7 +225,6 @@ namespace DOTS.Player.Bootstrap
             var sync = visual.AddComponent<PlayerVisualSync>();
             sync.targetEntity = playerEntity;
 
-            Debug.Log("[PlayerBootstrap] Created player visual GameObject (synced to ECS entity)");
         }
 
         private void CreateGroundPlane(ref SystemState state)
@@ -274,8 +274,6 @@ namespace DOTS.Player.Bootstrap
             // Mark as static (no physics mass needed)
             entityManager.AddComponent<PhysicsWorldIndex>(groundEntity);
 
-            Debug.Log($"[PlayerBootstrap] Ground plane entity created at {groundPosition} with size {groundSize}");
-
             // Create visual representation
             CreateGroundVisual(groundPosition, groundSize);
         }
@@ -297,7 +295,6 @@ namespace DOTS.Player.Bootstrap
             // Remove GameObject collider - physics handled by ECS
             Object.Destroy(ground.GetComponent<UnityEngine.Collider>());
 
-            Debug.Log("[PlayerBootstrap] Created ground visual GameObject");
         }
 
         private Entity CreateMainCameraAndEntity(ref SystemState state)
@@ -308,7 +305,6 @@ namespace DOTS.Player.Bootstrap
             var existingCamera = Camera.main;
             if (existingCamera != null)
             {
-                Debug.Log("[PlayerBootstrap] Main camera already exists, checking for entity");
                 // If camera exists, we might not have its entity, so we'll still create one
                 // This handles the case where camera exists but wasn't baked
             }
@@ -356,8 +352,6 @@ namespace DOTS.Player.Bootstrap
             // CRITICAL: Link the Camera GameObject to the entity so PlayerCameraSystem can update it
             entityManager.AddComponentObject(cameraEntity, camera);
 
-            Debug.Log($"[PlayerBootstrap] Created Main Camera GameObject and entity {cameraEntity}");
-            
             return cameraEntity;
         }
     }

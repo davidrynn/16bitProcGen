@@ -138,7 +138,13 @@ namespace DOTS.Player.Bootstrap
             entityManager.AddComponentData(entity, new PhysicsDamping { Linear = 0f, Angular = 0f });
             entityManager.AddComponentData(entity, new PhysicsGravityFactor { Value = 1f });
             entityManager.AddComponent<PlayerTag>(entity);
-            entityManager.AddComponentData(entity, new PlayerCameraSettings { Offset = new float3(0f, 1.6f, 0f) });
+            entityManager.AddComponentData(entity, new PlayerCameraSettings { 
+                // if (this.IsThirdPerson){
+                //     // TODO: Implement third person offset
+                // } else {
+                    FirstPersonOffset = new float3(0f, 1.6f, 0f) 
+                // }
+            });
 
             // ===== PURE ECS RENDERING =====
             // NOTE: Requires Entities.Graphics package to be installed

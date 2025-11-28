@@ -115,7 +115,7 @@ namespace DOTS.Player.Authoring
 
                 AddComponent(entity, new PlayerCameraSettings
                 {
-                    Offset = cameraOffset
+                    FirstPersonOffset = cameraOffset
                 });
                 
                 // Physics components (PhysicsVelocity, PhysicsMass, PhysicsCollider, etc.) 

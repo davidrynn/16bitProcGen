@@ -18,8 +18,6 @@ public partial class TerrainGenerationSystem : SystemBase
     
     protected override void OnCreate()
     {
-        Debug.Log("[DOTS] TerrainGenerationSystem: Initializing...");
-        
         // Get compute shader manager
         computeManager = ComputeShaderManager.Instance;
         if (computeManager == null)
@@ -34,8 +32,6 @@ public partial class TerrainGenerationSystem : SystemBase
         );
         
         RequireForUpdate<TerrainData>();
-        
-        Debug.Log("[DOTS] TerrainGenerationSystem: Initialization complete");
     }
     
     protected override void OnUpdate()
@@ -69,8 +65,6 @@ public partial class TerrainGenerationSystem : SystemBase
     /// </summary>
     private void GenerateTerrainForEntity(Entity entity, ref DOTS.Terrain.TerrainData terrainData)
     {
-        Debug.Log($"[DOTS] Generating terrain for entity {entity} at {terrainData.chunkPosition}");
-        
         try
         {
             // Step 1: Create height data blob
@@ -84,8 +78,6 @@ public partial class TerrainGenerationSystem : SystemBase
             
             // Step 4: Mark as generated
             terrainData.needsGeneration = false;
-            
-            Debug.Log($"[DOTS] Successfully generated terrain for entity {entity}");
         }
         catch (System.Exception e)
         {
@@ -141,19 +133,7 @@ public partial class TerrainGenerationSystem : SystemBase
         
         // Create output buffer - must match RWStructuredBuffer<float> in compute shader
         var heightBuffer = new ComputeBuffer(totalSize, sizeof(float), ComputeBufferType.Structured);
-
-        // Initialize buffer to zero
-        var zeroArray = new float[totalSize];
-        heightBuffer.SetData(zeroArray);
-        
-        Debug.Log($"[DOTS] Created buffer with size: {totalSize}, stride: {sizeof(float)}");
-        
         var tempArray = new float[totalSize];
-
-        // Debug: Check initial buffer contents
-        var initialHeights = new float[totalSize];
-        heightBuffer.GetData(initialHeights);
-        Debug.Log($"[DOTS] Initial buffer contents - First 5 values: {initialHeights[0]}, {initialHeights[1]}, {initialHeights[2]}, {initialHeights[3]}, {initialHeights[4]}");
         
         try
         {
@@ -178,13 +158,8 @@ public partial class TerrainGenerationSystem : SystemBase
                 return new NativeArray<float>(0, Allocator.Temp);
             }
             
-            Debug.Log($"[DOTS] Found kernel index: {kernelIndex}");
-            
             // Set buffers FIRST (order matters in Unity compute shaders)
             computeShader.SetBuffer(kernelIndex, "heights", heightBuffer);
-            
-            // Debug: Verify buffer binding
-            Debug.Log($"[DOTS] Buffer bound to kernel {kernelIndex}: {heightBuffer != null}");
             
             // Check if compute shader is valid
             if (!computeShader.HasKernel("GenerateNoise"))
@@ -192,8 +167,6 @@ public partial class TerrainGenerationSystem : SystemBase
                 Debug.LogError("[DOTS] GenerateNoise kernel not found in compute shader!");
                 return new NativeArray<float>(0, Allocator.Temp);
             }
-            
-            Debug.Log($"[DOTS] GenerateNoise kernel found and valid");
             
             // Set compute shader data
             computeShader.SetVector("chunk_position", new Vector4(chunkData.position.x, chunkData.position.y, chunkData.position.z, 0));
@@ -205,44 +178,18 @@ public partial class TerrainGenerationSystem : SystemBase
             computeShader.SetFloat("chunk_heightMultiplier", chunkData.heightMultiplier);
             computeShader.SetVector("chunk_noiseOffset", new Vector4(chunkData.noiseOffset.x, chunkData.noiseOffset.y, 0, 0));
             
-            // Debug: Log the parameters being sent to compute shader
-            Debug.Log($"[DOTS] Compute shader params - Position: {chunkData.position}, Resolution: {chunkData.resolution}, " +
-                     $"WorldScale: {chunkData.worldScale}, Time: {chunkData.time}, BiomeScale: {chunkData.biomeScale}, " +
-                     $"HeightMultiplier: {chunkData.heightMultiplier}");
-            
             // Calculate thread groups
             int threadGroupsX = Mathf.CeilToInt(resolution / 8f);
             int threadGroupsY = Mathf.CeilToInt(resolution / 8f);
             
-            Debug.Log($"[DOTS] Dispatching compute shader with kernel {kernelIndex}, thread groups: {threadGroupsX}x{threadGroupsY}");
-            
             // Dispatch compute shader
             computeShader.Dispatch(kernelIndex, threadGroupsX, threadGroupsY, 1);
             
-            Debug.Log($"[DOTS] Compute shader dispatch completed");
-            
             // Read back results directly
             heightBuffer.GetData(tempArray);
-            
-            // Debug: Check if buffer was actually written to
-            Debug.Log($"[DOTS] Buffer size: {heightBuffer.count}, Stride: {heightBuffer.stride}");
-            
-            // Debug: Check if the buffer was actually modified
-            bool hasNonZeroValues = false;
-            for (int i = 0; i < Mathf.Min(10, tempArray.Length); i++)
-            {
-                if (tempArray[i] != 0)
-                {
-                    hasNonZeroValues = true;
-                    break;
-                }
-            }
-            Debug.Log($"[DOTS] Buffer has non-zero values: {hasNonZeroValues}"); // Add this line to use the variable
               
             // Cleanup
             heightBuffer.Release();
-            
-            Debug.Log($"[DOTS] Generated {totalSize} height values for terrain at {terrainData.chunkPosition}");
         }
         catch (System.Exception e)
         {
@@ -265,8 +212,6 @@ public partial class TerrainGenerationSystem : SystemBase
         
         var heights = new NativeArray<float>(totalSize, Allocator.Temp);
         
-        Debug.Log($"[DOTS] Generating {totalSize} hardcoded test heights");
-        
         // Generate a simple pattern: height increases from left to right and bottom to top
         for (int z = 0; z < resolution; z++)
         {
@@ -283,11 +228,6 @@ public partial class TerrainGenerationSystem : SystemBase
                 heights[index] = height;
             }
         }
-        
-        // Debug: Check first few values
-        Debug.Log($"[DOTS] Hardcoded test - First 5 height values: {heights[0]}, {heights[1]}, {heights[2]}, {heights[3]}, {heights[4]}");
-        Debug.Log($"[DOTS] Hardcoded test - Last 5 height values: {heights[totalSize-5]}, {heights[totalSize-4]}, {heights[totalSize-3]}, {heights[totalSize-2]}, {heights[totalSize-1]}");
-        
         return heights;
     }
     
@@ -339,6 +279,5 @@ public partial class TerrainGenerationSystem : SystemBase
     
     protected override void OnDestroy()
     {
-        Debug.Log("[DOTS] TerrainGenerationSystem: Destroyed");
     }
 }

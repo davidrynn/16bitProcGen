@@ -38,11 +38,20 @@ namespace DOTS.Player.Systems
                     continue;
                 }
 
-                float3 cameraOffset = new float3(0f, 1.6f, 0f);
+                var cameraSettings = new PlayerCameraSettings
+                {
+                    FirstPersonOffset = new float3(0f, 1.6f, 0f),
+                    ThirdPersonPivotOffset = new float3(0f, 1.5f, 0f),
+                    ThirdPersonDistance = 3.5f,
+                    IsThirdPerson = false
+                };
+
                 if (SystemAPI.HasComponent<PlayerCameraSettings>(entity))
                 {
-                    cameraOffset = SystemAPI.GetComponent<PlayerCameraSettings>(entity).Offset;
+                    cameraSettings = SystemAPI.GetComponent<PlayerCameraSettings>(entity);
                 }
+
+                float3 cameraOffset = cameraSettings.FirstPersonOffset;
 
                 float cameraScale = 1f;
                 if (SystemAPI.HasComponent<LocalTransform>(cameraLink.ValueRO.CameraEntity))
@@ -55,12 +64,21 @@ namespace DOTS.Player.Systems
                     cameraScale = existingCameraTransform.Scale;
                 }
 
-                if (math.lengthsq(cameraOffset) < math.EPSILON)
+                float3 cameraPosition;
+                if (cameraSettings.IsThirdPerson)
                 {
-                    cameraOffset = new float3(0f, 1.6f, 0f);
+                    // TODO: Implement dedicated third-person placement (orbit distance, collision handling, etc.).
+                    cameraPosition = transform.ValueRO.Position + cameraSettings.FirstPersonOffset;
                 }
+                else
+                {
+                    if (math.lengthsq(cameraOffset) < math.EPSILON)
+                    {
+                        cameraOffset = new float3(0f, 1.6f, 0f);
+                    }
 
-                float3 cameraPosition = transform.ValueRO.Position + cameraOffset;
+                    cameraPosition = transform.ValueRO.Position + cameraOffset;
+                }
                 
                 // Combine player yaw rotation with camera pitch rotation
                 quaternion playerRotation = quaternion.AxisAngle(math.up(), math.radians(view.ValueRO.YawDegrees));

@@ -4,8 +4,6 @@ using Unity.Collections;
 using Unity.Jobs;
 using Unity.Burst;
 using UnityEngine;
-using System.Linq; // ADD THIS LINE
-
 namespace DOTS.Terrain.Generation
 {
     /// <summary>
@@ -35,14 +33,11 @@ namespace DOTS.Terrain.Generation
         
         protected override void OnCreate()
         {
-            Debug.Log("HybridTerrainGenerationSystem: Initializing...");
-            
             // Load settings
             settings = TerrainGenerationSettings.Default;
             if (settings != null)
             {
                 settings.ValidateSettings();
-                Debug.Log("HybridTerrainGenerationSystem: Settings loaded successfully");
             }
             else
             {
@@ -53,8 +48,6 @@ namespace DOTS.Terrain.Generation
             lastGenerationTime = 0f;
             chunksProcessedThisFrame = 0;
             totalChunksProcessed = 0;
-            
-            Debug.Log("HybridTerrainGenerationSystem: Initialization complete");
         }
         
         protected override void OnUpdate()
@@ -65,7 +58,6 @@ namespace DOTS.Terrain.Generation
                 try
                 {
                     computeManager = ComputeShaderManager.Instance;
-                    DebugLog("Found ComputeShaderManager singleton");
                 }
                 catch (System.Exception e)
                 {
@@ -82,7 +74,6 @@ namespace DOTS.Terrain.Generation
             // TEMPORARY: Force regeneration with spacebar for testing
             if (Input.GetKeyDown(KeyCode.Space))
             {
-                DebugLog("Spacebar pressed - forcing regeneration of all entities");
                 ResetAllEntitiesToNeedGeneration();
             }
             
@@ -113,10 +104,7 @@ namespace DOTS.Terrain.Generation
                 resetCount++;
             }
                 
-            if (resetCount > 0)
-            {
-                Debug.Log($"HybridTerrainGenerationSystem: Reset {resetCount} entities to need generation");
-            }
+            // Intentionally silent unless troubleshooting
         }
         
         /// <summary>
@@ -148,8 +136,6 @@ namespace DOTS.Terrain.Generation
 
                 if (terrain.needsGeneration && chunksProcessedThisFrame < settings?.maxChunksPerFrame)
                 {
-                    DebugLog($"Processing entity {entity.Index} - resolution: {terrain.resolution}, position: {terrain.chunkPosition}", true);
-
                     if (GenerateNoiseWithComputeShader(ref terrain))
                     {
                         ProcessNoiseResults(ref terrain);
@@ -159,8 +145,6 @@ namespace DOTS.Terrain.Generation
                         chunksProcessedThisFrame++;
                         totalChunksProcessed++;
                         entityModified = true;
-
-                        DebugLog($"Generated terrain for entity {entity.Index}");
                     }
                     else
                     {
@@ -169,7 +153,6 @@ namespace DOTS.Terrain.Generation
                 }
                 else if (terrain.needsMeshUpdate)
                 {
-                    DebugLog($"Mesh update needed for entity {entity.Index} - rebuilding mesh", true);
                     if (terrain.heightData.IsCreated)
                     {
                         ref var heightData = ref terrain.heightData.Value;
@@ -189,11 +172,6 @@ namespace DOTS.Terrain.Generation
                     EntityManager.SetComponentData(entity, terrain);
                 }
             }
-
-            if (totalEntities > 0 && settings?.enableDebugLogs == true)
-            {
-                DebugLog($"Found {totalEntities} terrain entities, {entitiesNeedingGeneration} need generation", true);
-            }
             
             lastGenerationTime = UnityEngine.Time.realtimeSinceStartup - startTime;
         }
@@ -205,11 +183,7 @@ namespace DOTS.Terrain.Generation
         /// <returns>True if generation was successful</returns>
         private bool GenerateNoiseWithComputeShader(ref TerrainData terrain)
         {
-            DebugLog($"GenerateNoiseWithComputeShader called for terrain at {terrain.chunkPosition}", true);
-            
             // Use compute shader for noise generation
-            DebugLog("Using compute shader for noise generation", true);
-            
             if (computeManager?.NoiseShader == null)
             {
                 DebugError("Noise shader not available");
@@ -264,8 +238,6 @@ namespace DOTS.Terrain.Generation
                 // Calculate thread groups (8x8 threads per group)
                 int threadGroupsX = Mathf.CeilToInt(resolution / 8f);
                 int threadGroupsY = Mathf.CeilToInt(resolution / 8f);
-
-                DebugLog($"Dispatching compute shader with kernel {kernelId}, thread groups: {threadGroupsX}x{threadGroupsY}", true);
                 
                 // Dispatch compute shader
                 computeManager.NoiseShader.Dispatch(kernelId, threadGroupsX, threadGroupsY, 1);
@@ -275,11 +247,6 @@ namespace DOTS.Terrain.Generation
                 heightBuffer.GetData(heights);
 
                 // DEBUG: Check height values
-                if (settings?.logHeightValues == true)
-                {
-                    DebugLog($"Height values - First: {heights[0]:F2}, Last: {heights[totalSize-1]:F2}, Sample: {heights[totalSize/2]:F2}");
-                }
-
                 // Create height data blob
                 var builder = new BlobBuilder(Allocator.Temp);
                 ref var root = ref builder.ConstructRoot<TerrainHeightData>();
@@ -306,7 +273,6 @@ namespace DOTS.Terrain.Generation
                 builder.Dispose();
                 heightBuffer.Release();
 
-                DebugLog($"Generated {totalSize} height values for terrain at {terrain.chunkPosition}");
                 GenerateTerrainMesh(terrain, heights, resolution);
                 return true;
             }
@@ -324,8 +290,6 @@ namespace DOTS.Terrain.Generation
         {
             int resolution = terrain.resolution;
             int totalSize = resolution * resolution;
-            
-            Debug.Log($"HybridTerrainGenerationSystem: Generating {totalSize} hardcoded test heights");
             
             try
             {
@@ -365,10 +329,6 @@ namespace DOTS.Terrain.Generation
                 // Cleanup
                 builder.Dispose();
 
-                // Debug: Check first few values
-                Debug.Log($"HybridTerrainGenerationSystem: Hardcoded test - First 5 height values: {heightArray[0]}, {heightArray[1]}, {heightArray[2]}, {heightArray[3]}, {heightArray[4]}");
-                Debug.Log($"HybridTerrainGenerationSystem: Hardcoded test - Last 5 height values: {heightArray[totalSize-5]}, {heightArray[totalSize-4]}, {heightArray[totalSize-3]}, {heightArray[totalSize-2]}, {heightArray[totalSize-1]}");
-                
                 return true;
             }
             catch (System.Exception e)
@@ -416,7 +376,6 @@ namespace DOTS.Terrain.Generation
                 terrain.averageHeight = totalHeight / heightData.heights.Length;
                 
                 
-                DebugLog($"Applied game logic: Average height = {terrain.averageHeight:F3}", true);
             }
         }
         
@@ -426,10 +385,6 @@ namespace DOTS.Terrain.Generation
         private void UpdatePerformanceMetrics()
         {
             // Only log performance if debug is enabled
-            if (settings?.enableDebugLogs == true)
-            {
-                DebugLog($"Performance: Last Gen: {lastGenerationTime:F3}s, Chunks This Frame: {chunksProcessedThisFrame}, Total Chunks: {totalChunksProcessed}", true);
-            }
         }
         
         /// <summary>
@@ -448,7 +403,6 @@ namespace DOTS.Terrain.Generation
                 structureBuffer = new ComputeBuffer(bufferSize, sizeof(float));
                 
                 buffersInitialized = true;
-                Debug.Log("HybridTerrainGenerationSystem: Buffers initialized successfully");
             }
             catch (System.Exception e)
             {
@@ -511,7 +465,7 @@ namespace DOTS.Terrain.Generation
             terrainData.needsGeneration = true;
             SystemAPI.SetComponent(entity, terrainData);
             
-            Debug.Log($"HybridTerrainGenerationSystem: Forced generation for entity {entity.Index}");
+            // Intentionally silent unless troubleshooting
         }
 
         private void GenerateTerrainMesh(TerrainData terrain, float[] heights, int resolution)
@@ -543,9 +497,6 @@ namespace DOTS.Terrain.Generation
                 if (heights[i] < minH) minH = heights[i];
                 if (heights[i] > maxH) maxH = heights[i];
             }
-            float range = Mathf.Max(0.0001f, maxH - minH);
-            DebugLog($"[MeshGen] Min height: {minH}, Max height: {maxH}, Range: {range}");
-
             // Calculate vertex spacing to match the compute shader coordinate system
             float vertexStep = terrain.worldScale / (float)(resolution - 1);
 
@@ -594,25 +545,11 @@ namespace DOTS.Terrain.Generation
         /// <summary>
         /// Debug log wrapper that respects the debug toggle
         /// </summary>
-        private void DebugLog(string message, bool verbose = false)
-        {
-            if (settings?.enableDebugLogs == true && (!verbose || settings?.enableVerboseLogs == true))
-            {
-                Debug.Log($"[HybridSystem] {message}");
-            }
-        }
-        
-        /// <summary>
-        /// Debug error log wrapper
-        /// </summary>
         private void DebugError(string message)
         {
             Debug.LogError($"[HybridSystem] {message}");
         }
         
-        /// <summary>
-        /// Debug warning log wrapper
-        /// </summary>
         private void DebugWarning(string message)
         {
             Debug.LogWarning($"[HybridSystem] {message}");

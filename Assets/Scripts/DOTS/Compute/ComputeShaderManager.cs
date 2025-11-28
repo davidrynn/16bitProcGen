@@ -32,8 +32,6 @@ public class ComputeShaderManager
     
     // Settings
     private int threadGroupSize = 8;
-    private bool enableDebugLogging = true;
-    
     // Performance monitoring
     private float lastNoiseGenerationTime;
     private float lastErosionTime;
@@ -64,9 +62,6 @@ public class ComputeShaderManager
     /// </summary>
     private void InitializeComputeShaders()
     {
-        if (enableDebugLogging)
-            Debug.Log("[DOTS] Initializing Compute Shaders...");
-        
         // Load Compute Shaders from Resources
         noiseShader = Resources.Load<ComputeShader>("Shaders/TerrainNoise");
         erosionShader = Resources.Load<ComputeShader>("Shaders/TerrainErosion");
@@ -76,23 +71,8 @@ public class ComputeShaderManager
         wfcShader = Resources.Load<ComputeShader>("Shaders/WFCGeneration");
         structureShader = Resources.Load<ComputeShader>("Shaders/StructureGeneration");
         
-        // Log loading results
-        if (enableDebugLogging)
-        {
-            Debug.Log($"[DOTS] TerrainNoise shader loaded: {noiseShader != null}");
-            Debug.Log($"[DOTS] TerrainErosion shader loaded: {erosionShader != null}");
-            Debug.Log($"[DOTS] WeatherEffects shader loaded: {weatherShader != null}");
-            Debug.Log($"[DOTS] TerrainModification shader loaded: {modificationShader != null}");
-            Debug.Log($"[DOTS] TerrainGlobRemoval shader loaded: {terrainGlobRemovalShader != null}");
-            Debug.Log($"[DOTS] WFCGeneration shader loaded: {wfcShader != null}");
-            Debug.Log($"[DOTS] StructureGeneration shader loaded: {structureShader != null}");
-        }
-        
         // Get kernel IDs
         InitializeKernels();
-        
-        if (enableDebugLogging)
-            Debug.Log("[DOTS] Compute Shader initialization complete");
     }
     
     /// <summary>
@@ -108,8 +88,6 @@ public class ComputeShaderManager
                 biomeNoiseKernel = noiseShader.FindKernel("GenerateBiomeNoise");
                 structureNoiseKernel = noiseShader.FindKernel("GenerateStructureNoise");
                 
-                if (enableDebugLogging)
-                    Debug.Log($"[DOTS] Noise shader kernels: {noiseKernel}, {biomeNoiseKernel}, {structureNoiseKernel}");
             }
             catch (System.Exception e)
             {
@@ -122,8 +100,6 @@ public class ComputeShaderManager
             try
             {
                 erosionKernel = erosionShader.FindKernel("ApplyErosion");
-                if (enableDebugLogging)
-                    Debug.Log($"[DOTS] Erosion shader kernel: {erosionKernel}");
             }
             catch (System.Exception e)
             {
@@ -136,8 +112,6 @@ public class ComputeShaderManager
             try
             {
                 weatherKernel = weatherShader.FindKernel("ApplyWeatherEffects");
-                if (enableDebugLogging)
-                    Debug.Log($"[DOTS] Weather shader kernel: {weatherKernel}");
             }
             catch (System.Exception e)
             {
@@ -150,8 +124,6 @@ public class ComputeShaderManager
             try
             {
                 modificationKernel = modificationShader.FindKernel("ApplyModification");
-                if (enableDebugLogging)
-                    Debug.Log($"[DOTS] Modification shader kernel: {modificationKernel}");
             }
             catch (System.Exception e)
             {
@@ -164,8 +136,6 @@ public class ComputeShaderManager
             try
             {
                 wfcKernel = wfcShader.FindKernel("PropagateConstraints");
-                if (enableDebugLogging)
-                    Debug.Log($"[DOTS] WFC shader kernel: {wfcKernel}");
             }
             catch (System.Exception e)
             {
@@ -178,8 +148,6 @@ public class ComputeShaderManager
             try
             {
                 structureKernel = structureShader.FindKernel("GenerateStructure");
-                if (enableDebugLogging)
-                    Debug.Log($"[DOTS] Structure shader kernel: {structureKernel}");
             }
             catch (System.Exception e)
             {
