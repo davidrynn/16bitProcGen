@@ -1,3 +1,4 @@
+using System;
 using NUnit.Framework;
 using Unity.Entities;
 using Unity.Mathematics;
@@ -11,6 +12,10 @@ namespace DOTS.Terrain.Tests
     /// Automated tests for terrain modification system
     /// Tests the PlayerModificationComponent used for player-driven terrain modifications
     /// </summary>
+    /// <summary>
+    /// Legacy heightmap modification tests; superseded by the SDF + Surface Nets pipeline and retained only until the new flow fully replaces it.
+    /// </summary>
+    [Obsolete("Legacy heightmap modification tests; replace with SDF Surface Nets editing tests when ready.")]
     [TestFixture]
     public class ModificationSystemTests
     {

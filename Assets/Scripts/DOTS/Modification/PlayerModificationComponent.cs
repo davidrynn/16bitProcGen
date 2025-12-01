@@ -1,7 +1,9 @@
+using System;
 using Unity.Entities;
 using Unity.Mathematics;
 
 // Enum for different glob removal types
+[Obsolete("Legacy heightmap-based glob removal; migrate to SDF edit buffers when available.")]
 public enum GlobRemovalType
 {
     Small = 0,   // 1x1 size
@@ -9,6 +11,10 @@ public enum GlobRemovalType
     Large = 2    // 3x3 size
 }
 
+/// <summary>
+/// Legacy heightmap modifier passed to the old terrain pipeline; superseded by the SDF edit data planned in TERRAIN_ECS_NEXT_STEPS_SPEC.
+/// </summary>
+[Obsolete("Legacy heightmap modification component; replace with SDF edit buffers and systems.")]
 public struct PlayerModificationComponent : IComponentData
 {
     // Basic modification parameters
