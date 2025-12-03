@@ -67,10 +67,12 @@ namespace DOTS.Terrain.Bootstrap
 
         private void SpawnChunkGrid(EntityManager entityManager)
         {
-            var resolution = new int3(chunkResolution, chunkResolution, chunkResolution);
-            for (int x = 0; x < gridSize.x; x++)
+            var safeGrid = new int2(math.max(1, gridSize.x), math.max(1, gridSize.y));
+            var safeResolution = math.max(1, chunkResolution);
+            var resolution = new int3(safeResolution, safeResolution, safeResolution);
+            for (int x = 0; x < safeGrid.x; x++)
             {
-                for (int z = 0; z < gridSize.y; z++)
+                for (int z = 0; z < safeGrid.y; z++)
                 {
                     var entity = entityManager.CreateEntity(
                         typeof(ChunkComponent),

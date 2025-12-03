@@ -6,6 +6,7 @@ using DOTS.Terrain.SDF;
 namespace DOTS.Terrain.Meshing
 {
     [BurstCompile]
+    [UpdateInGroup(typeof(SimulationSystemGroup))]
     public partial struct TerrainChunkMeshBuildSystem : ISystem
     {
         public void OnCreate(ref SystemState state)
@@ -37,6 +38,11 @@ namespace DOTS.Terrain.Meshing
                 else
                 {
                     entityManager.AddComponentData(entity, new TerrainChunkMeshData { Mesh = meshBlob });
+                }
+
+                if (!entityManager.HasComponent<TerrainChunkNeedsRenderUpload>(entity))
+                {
+                    entityManager.AddComponent<TerrainChunkNeedsRenderUpload>(entity);
                 }
 
                 if (entityManager.HasComponent<TerrainChunkNeedsMeshBuild>(entity))

@@ -47,7 +47,8 @@ namespace DOTS.Terrain.Meshing
 
                 if (!state.EntityManager.HasComponent<MaterialMeshInfo>(entity))
                 {
-                    ecb.AddComponent(entity, default(MaterialMeshInfo)); // Placeholder material hookup until RenderMeshArray wiring is in place.
+                    // Upload system overwrites this placeholder once a RenderMeshArray is assigned.
+                    ecb.AddComponent(entity, default(MaterialMeshInfo));
                 }
             }
 

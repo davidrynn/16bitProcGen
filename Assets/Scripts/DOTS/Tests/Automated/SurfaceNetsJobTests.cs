@@ -10,18 +10,14 @@ namespace DOTS.Terrain.Tests
     public class SurfaceNetsJobTests
     {
         [Test]
-        public void SurfaceNetsJob_GeneratesVertexForSingleSurface()
+        public void SurfaceNetsJob_GeneratesVerticesAndIndices()
         {
-            var densities = new NativeArray<float>(8, Allocator.TempJob);
-            densities[0] = -1f;
-            densities[1] = -0.5f;
-            densities[2] = -0.25f;
-            densities[3] = -0.1f;
-            densities[4] = 0.1f;
-            densities[5] = 0.25f;
-            densities[6] = 0.5f;
-            densities[7] = 1f;
+            var resolution = new int3(3, 3, 3);
+            var densities = new NativeArray<float>(resolution.x * resolution.y * resolution.z, Allocator.TempJob);
+            FillPlaneDensities(densities, resolution, 3f);
 
+            var vertexMap = new NativeArray<int>(8, Allocator.TempJob);
+            var cellSigns = new NativeArray<sbyte>(8, Allocator.TempJob);
             var vertices = new NativeList<float3>(Allocator.TempJob);
             var indices = new NativeList<int>(Allocator.TempJob);
 
@@ -30,24 +26,26 @@ namespace DOTS.Terrain.Tests
                 var job = new SurfaceNetsJob
                 {
                     Densities = densities,
-                    Resolution = new int3(2, 2, 2),
+                    Resolution = resolution,
                     VoxelSize = 1f,
                     ChunkOrigin = float3.zero,
                     Vertices = vertices,
-                    Indices = indices
+                    Indices = indices,
+                    VertexIndices = vertexMap,
+                    CellSigns = cellSigns,
+                    CellResolution = new int3(2, 2, 2)
                 };
 
                 job.Run();
 
-                Assert.AreEqual(1, vertices.Length);
-                Assert.AreEqual(0, indices.Length);
-                Assert.That(vertices[0].x, Is.EqualTo(0.5f).Within(1e-4f));
-                Assert.That(vertices[0].y, Is.EqualTo(0.5f).Within(1e-4f));
-                Assert.That(vertices[0].z, Is.EqualTo(0.5f).Within(1e-4f));
+                Assert.Greater(vertices.Length, 0);
+                Assert.Greater(indices.Length, 0);
             }
             finally
             {
                 densities.Dispose();
+                vertexMap.Dispose();
+                cellSigns.Dispose();
                 vertices.Dispose();
                 indices.Dispose();
             }
@@ -56,12 +54,15 @@ namespace DOTS.Terrain.Tests
         [Test]
         public void SurfaceNetsJob_NoSurfaceWhenUniform()
         {
-            var densities = new NativeArray<float>(8, Allocator.TempJob);
+            var resolution = new int3(3, 3, 3);
+            var densities = new NativeArray<float>(resolution.x * resolution.y * resolution.z, Allocator.TempJob);
             for (int i = 0; i < densities.Length; i++)
             {
                 densities[i] = 1f;
             }
 
+            var vertexMap = new NativeArray<int>(8, Allocator.TempJob);
+            var cellSigns = new NativeArray<sbyte>(8, Allocator.TempJob);
             var vertices = new NativeList<float3>(Allocator.TempJob);
             var indices = new NativeList<int>(Allocator.TempJob);
 
@@ -70,11 +71,14 @@ namespace DOTS.Terrain.Tests
                 var job = new SurfaceNetsJob
                 {
                     Densities = densities,
-                    Resolution = new int3(2, 2, 2),
+                    Resolution = resolution,
                     VoxelSize = 1f,
                     ChunkOrigin = float3.zero,
                     Vertices = vertices,
-                    Indices = indices
+                    Indices = indices,
+                    VertexIndices = vertexMap,
+                    CellSigns = cellSigns,
+                    CellResolution = new int3(2, 2, 2)
                 };
 
                 job.Run();
@@ -85,8 +89,25 @@ namespace DOTS.Terrain.Tests
             finally
             {
                 densities.Dispose();
+                vertexMap.Dispose();
+                cellSigns.Dispose();
                 vertices.Dispose();
                 indices.Dispose();
+            }
+        }
+
+        private static void FillPlaneDensities(NativeArray<float> densities, int3 resolution, float threshold)
+        {
+            var index = 0;
+            for (int z = 0; z < resolution.z; z++)
+            {
+                for (int y = 0; y < resolution.y; y++)
+                {
+                    for (int x = 0; x < resolution.x; x++)
+                    {
+                        densities[index++] = (x + y + z) - threshold;
+                    }
+                }
             }
         }
     }

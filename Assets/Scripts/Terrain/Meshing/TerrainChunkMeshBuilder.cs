@@ -25,6 +25,21 @@ namespace DOTS.Terrain.Meshing
                     densities[i] = density.Data.Value.Values[i];
                 }
 
+                var cellResolution = new int3(
+                    math.max(grid.Resolution.x - 1, 0),
+                    math.max(grid.Resolution.y - 1, 0),
+                    math.max(grid.Resolution.z - 1, 0));
+
+                var cellCount = cellResolution.x * cellResolution.y * cellResolution.z;
+                NativeArray<int> vertexIndices = default;
+                NativeArray<sbyte> cellSigns = default;
+
+                if (cellCount > 0)
+                {
+                    vertexIndices = new NativeArray<int>(cellCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+                    cellSigns = new NativeArray<sbyte>(cellCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+                }
+
                 // Each invocation allocates fresh vertex/index lists to collect job output.
                 var vertices = new NativeList<float3>(Allocator.TempJob);
                 var indices = new NativeList<int>(Allocator.TempJob);
@@ -37,7 +52,10 @@ namespace DOTS.Terrain.Meshing
                         VoxelSize = grid.VoxelSize,
                         ChunkOrigin = bounds.WorldOrigin,
                         Vertices = vertices,
-                        Indices = indices
+                        Indices = indices,
+                        VertexIndices = vertexIndices,
+                        CellSigns = cellSigns,
+                        CellResolution = cellResolution
                     };
 
                     job.Run();
@@ -63,6 +81,16 @@ namespace DOTS.Terrain.Meshing
                 }
                 finally
                 {
+                    if (vertexIndices.IsCreated)
+                    {
+                        vertexIndices.Dispose();
+                    }
+
+                    if (cellSigns.IsCreated)
+                    {
+                        cellSigns.Dispose();
+                    }
+
                     vertices.Dispose();
                     indices.Dispose();
                 }
