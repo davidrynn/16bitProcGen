@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using DOTS.Terrain.Rendering;
 using DOTS.Terrain.SDF;
 using Unity.Collections;
@@ -29,69 +30,85 @@ namespace DOTS.Terrain.Meshing
             var entityManager = state.EntityManager;
             var material = settings.ChunkMaterial;
 
-            var entities = new NativeList<Entity>(Allocator.Temp);
-            var meshes = new NativeList<BlobAssetReference<TerrainChunkMeshBlob>>(Allocator.Temp);
+            var uploadItems = new List<UploadItem>();
 
             foreach (var (meshData, entity) in SystemAPI
                          .Query<RefRO<TerrainChunkMeshData>>()
                          .WithAll<TerrainChunkNeedsRenderUpload>()
                          .WithEntityAccess())
             {
-                entities.Add(entity);
-                meshes.Add(meshData.ValueRO.Mesh);
+                var mesh = entityManager.HasComponent<Mesh>(entity)
+                    ? entityManager.GetComponentObject<Mesh>(entity)
+                    : null;
+
+                var needsMeshComponent = mesh == null;
+                if (needsMeshComponent)
+                {
+                    mesh = CreateMeshInstance(entity);
+                }
+
+                uploadItems.Add(new UploadItem
+                {
+                    Entity = entity,
+                    Blob = meshData.ValueRO.Mesh,
+                    Mesh = mesh,
+                    NeedsMeshComponent = needsMeshComponent
+                });
             }
 
-            var ecb = new EntityCommandBuffer(Allocator.Temp);
-
-            for (int i = 0; i < entities.Length; i++)
+            if (uploadItems.Count == 0)
             {
-                var entity = entities[i];
-                var blob = meshes[i];
+                return;
+            }
 
+            foreach (var item in uploadItems)
+            {
+                if (item.NeedsMeshComponent)
+                {
+                    entityManager.AddComponentObject(item.Entity, item.Mesh);
+                }
+            }
+
+            foreach (var item in uploadItems)
+            {
+                var blob = item.Blob;
                 if (!blob.IsCreated || blob.Value.Vertices.Length == 0 || blob.Value.Indices.Length == 0)
                 {
-                    ecb.RemoveComponent<TerrainChunkNeedsRenderUpload>(entity);
+                    if (entityManager.HasComponent<TerrainChunkNeedsRenderUpload>(item.Entity))
+                    {
+                        entityManager.RemoveComponent<TerrainChunkNeedsRenderUpload>(item.Entity);
+                    }
+
                     continue;
                 }
 
-                var unityMesh = GetOrCreateMesh(entityManager, entity);
-                UploadMesh(blob, unityMesh);
-                EnsureRenderMeshArray(entityManager, entity, unityMesh, material);
+                UploadMesh(blob, item.Mesh);
+                EnsureRenderMeshArray(entityManager, item.Entity, item.Mesh, material);
 
                 var materialMeshInfo = MaterialMeshInfo.FromRenderMeshArrayIndices(0, 0);
-                if (entityManager.HasComponent<MaterialMeshInfo>(entity))
+                if (entityManager.HasComponent<MaterialMeshInfo>(item.Entity))
                 {
-                    ecb.SetComponent(entity, materialMeshInfo);
+                    entityManager.SetComponentData(item.Entity, materialMeshInfo);
                 }
                 else
                 {
-                    ecb.AddComponent(entity, materialMeshInfo);
+                    entityManager.AddComponentData(item.Entity, materialMeshInfo);
                 }
 
-                ecb.RemoveComponent<TerrainChunkNeedsRenderUpload>(entity);
+                if (entityManager.HasComponent<TerrainChunkNeedsRenderUpload>(item.Entity))
+                {
+                    entityManager.RemoveComponent<TerrainChunkNeedsRenderUpload>(item.Entity);
+                }
             }
-
-            ecb.Playback(entityManager);
-            ecb.Dispose();
-            entities.Dispose();
-            meshes.Dispose();
         }
 
-        private static Mesh GetOrCreateMesh(EntityManager entityManager, Entity entity)
+        private static Mesh CreateMeshInstance(Entity entity)
         {
-            if (entityManager.HasComponent<Mesh>(entity))
-            {
-                return entityManager.GetComponentObject<Mesh>(entity);
-            }
-
-            var mesh = new Mesh
+            return new Mesh
             {
                 name = $"TerrainChunk_{entity.Index}",
                 indexFormat = IndexFormat.UInt32
             };
-
-            entityManager.AddComponentObject(entity, mesh);
-            return mesh;
         }
 
         private static void UploadMesh(BlobAssetReference<TerrainChunkMeshBlob> blob, Mesh mesh)
@@ -142,6 +159,14 @@ namespace DOTS.Terrain.Meshing
             {
                 entityManager.AddSharedComponentManaged(entity, renderMeshArray);
             }
+        }
+
+        private struct UploadItem
+        {
+            public Entity Entity;
+            public BlobAssetReference<TerrainChunkMeshBlob> Blob;
+            public Mesh Mesh;
+            public bool NeedsMeshComponent;
         }
     }
 }

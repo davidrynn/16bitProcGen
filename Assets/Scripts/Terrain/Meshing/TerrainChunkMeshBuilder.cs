@@ -50,7 +50,6 @@ namespace DOTS.Terrain.Meshing
                         Densities = densities,
                         Resolution = grid.Resolution,
                         VoxelSize = grid.VoxelSize,
-                        ChunkOrigin = bounds.WorldOrigin,
                         Vertices = vertices,
                         Indices = indices,
                         VertexIndices = vertexIndices,

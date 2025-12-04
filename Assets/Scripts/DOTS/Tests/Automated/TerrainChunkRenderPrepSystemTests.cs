@@ -47,6 +47,8 @@ namespace DOTS.Terrain.Tests
 
             var entity = entityManager.CreateEntity();
             entityManager.AddComponentData(entity, new TerrainChunkMeshData { Mesh = blob });
+            var origin = new float3(10f, 5f, -2f);
+            entityManager.AddComponentData(entity, new TerrainChunkBounds { WorldOrigin = origin });
 
             simGroup.Update();
 
@@ -57,6 +59,11 @@ namespace DOTS.Terrain.Tests
             var renderBounds = entityManager.GetComponentData<RenderBounds>(entity);
             Assert.AreEqual(new float3(0f, 1f, 1.5f), renderBounds.Value.Center);
             Assert.AreEqual(new float3(1f, 1f, 1.5f), renderBounds.Value.Extents);
+
+            var localTransform = entityManager.GetComponentData<LocalTransform>(entity);
+            Assert.AreEqual(origin, localTransform.Position);
+            Assert.AreEqual(1f, localTransform.Scale);
+            Assert.AreEqual(quaternion.identity.value, localTransform.Rotation.value);
 
             var meshData = entityManager.GetComponentData<TerrainChunkMeshData>(entity);
             meshData.Dispose();

@@ -14,7 +14,7 @@ namespace DOTS.Terrain.Tests
         {
             var resolution = new int3(3, 3, 3);
             var densities = new NativeArray<float>(resolution.x * resolution.y * resolution.z, Allocator.TempJob);
-            FillPlaneDensities(densities, resolution, 3f);
+            FillPlaneDensities(densities, resolution);
 
             var vertexMap = new NativeArray<int>(8, Allocator.TempJob);
             var cellSigns = new NativeArray<sbyte>(8, Allocator.TempJob);
@@ -28,7 +28,6 @@ namespace DOTS.Terrain.Tests
                     Densities = densities,
                     Resolution = resolution,
                     VoxelSize = 1f,
-                    ChunkOrigin = float3.zero,
                     Vertices = vertices,
                     Indices = indices,
                     VertexIndices = vertexMap,
@@ -73,7 +72,6 @@ namespace DOTS.Terrain.Tests
                     Densities = densities,
                     Resolution = resolution,
                     VoxelSize = 1f,
-                    ChunkOrigin = float3.zero,
                     Vertices = vertices,
                     Indices = indices,
                     VertexIndices = vertexMap,
@@ -96,7 +94,7 @@ namespace DOTS.Terrain.Tests
             }
         }
 
-        private static void FillPlaneDensities(NativeArray<float> densities, int3 resolution, float threshold)
+        private static void FillPlaneDensities(NativeArray<float> densities, int3 resolution)
         {
             var index = 0;
             for (int z = 0; z < resolution.z; z++)
@@ -105,7 +103,7 @@ namespace DOTS.Terrain.Tests
                 {
                     for (int x = 0; x < resolution.x; x++)
                     {
-                        densities[index++] = (x + y + z) - threshold;
+                        densities[index++] = x - 0.5f;
                     }
                 }
             }

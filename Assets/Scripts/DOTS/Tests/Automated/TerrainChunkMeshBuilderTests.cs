@@ -15,7 +15,7 @@ namespace DOTS.Terrain.Tests
         public void BuildMeshBlob_GeneratesGeometryWhenSurfaceExists()
         {
             var resolution = new int3(3, 3, 3);
-            var density = CreateDensityBlob(resolution, (x, y, z) => (x + y + z) - 3f);
+            var density = CreateDensityBlob(resolution, (x, y, z) => x - 0.5f);
             try
             {
                 var grid = TerrainChunkGridInfo.Create(resolution, 1f);

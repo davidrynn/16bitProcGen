@@ -11,8 +11,6 @@ namespace DOTS.Terrain.Meshing
         [ReadOnly] public NativeArray<float> Densities;
         public int3 Resolution;
         public float VoxelSize;
-        public float3 ChunkOrigin;
-
         public NativeList<float3> Vertices;
         public NativeList<int> Indices;
 
@@ -98,23 +96,25 @@ namespace DOTS.Terrain.Meshing
                 minDensity = math.min(minDensity, density);
                 maxDensity = math.max(maxDensity, density);
 
-                var worldPos = ChunkOrigin + (new float3(samplePos) * VoxelSize);
+                var worldPos = new float3(samplePos) * VoxelSize;
                 var weight = 1f / (math.abs(density) + 1e-5f);
 
                 weightedPosition += worldPos * weight;
                 totalWeight += weight;
             }
 
-            SetCellSign(cellX, cellY, cellZ, densitySum >= 0f ? (sbyte)1 : (sbyte)(-1));
-
-            if (minDensity >= 0f || maxDensity <= 0f)
+            var hasSurface = minDensity < 0f && maxDensity > 0f;
+            if (!hasSurface)
             {
+                SetCellSign(cellX, cellY, cellZ, densitySum >= 0f ? (sbyte)1 : (sbyte)(-1));
                 return;
             }
 
+            SetCellSign(cellX, cellY, cellZ, 0);
+
             var vertex = totalWeight > 0f
                 ? weightedPosition / totalWeight
-                : ChunkOrigin + (new float3(cellX, cellY, cellZ) + 0.5f) * VoxelSize;
+                : (new float3(cellX, cellY, cellZ) + 0.5f) * VoxelSize;
 
             int newIndex = Vertices.Length;
             Vertices.Add(vertex);

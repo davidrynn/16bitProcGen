@@ -21,7 +21,7 @@ namespace DOTS.Terrain.Meshing
         {
             var ecb = new EntityCommandBuffer(Allocator.Temp);
 
-            foreach (var (meshData, entity) in SystemAPI.Query<RefRO<TerrainChunkMeshData>>().WithEntityAccess())
+            foreach (var (meshData, bounds, entity) in SystemAPI.Query<RefRO<TerrainChunkMeshData>, RefRO<TerrainChunkBounds>>().WithEntityAccess())
             {
                 var mesh = meshData.ValueRO.Mesh;
                 if (!mesh.IsCreated || mesh.Value.Vertices.Length == 0)
@@ -40,9 +40,14 @@ namespace DOTS.Terrain.Meshing
                     ecb.AddComponent(entity, renderBounds);
                 }
 
-                if (!state.EntityManager.HasComponent<LocalTransform>(entity))
+                var localTransform = LocalTransform.FromPositionRotationScale(bounds.ValueRO.WorldOrigin, quaternion.identity, 1f);
+                if (state.EntityManager.HasComponent<LocalTransform>(entity))
                 {
-                    ecb.AddComponent(entity, LocalTransform.Identity); // Identity keeps chunks at origin until transform data is authored.
+                    ecb.SetComponent(entity, localTransform);
+                }
+                else
+                {
+                    ecb.AddComponent(entity, localTransform);
                 }
 
                 if (!state.EntityManager.HasComponent<MaterialMeshInfo>(entity))
