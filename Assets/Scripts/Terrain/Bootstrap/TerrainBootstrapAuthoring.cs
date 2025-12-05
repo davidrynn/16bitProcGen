@@ -78,7 +78,7 @@ namespace DOTS.Terrain.Bootstrap
                         typeof(ChunkComponent),
                         typeof(TerrainChunkGridInfo),
                         typeof(TerrainChunkBounds),
-                        typeof(TerrainChunkNeedsMeshBuild));
+                        typeof(TerrainChunkNeedsDensityRebuild));
 
                     entityManager.SetComponentData(entity, new ChunkComponent
                     {

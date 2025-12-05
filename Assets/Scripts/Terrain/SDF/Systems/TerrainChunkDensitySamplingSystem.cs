@@ -17,7 +17,9 @@ namespace DOTS.Terrain.SDF
             chunkQuery = state.GetEntityQuery(
                 ComponentType.ReadOnly<TerrainChunk>(),
                 ComponentType.ReadOnly<TerrainChunkGridInfo>(),
-                ComponentType.ReadOnly<TerrainChunkBounds>());
+                ComponentType.ReadOnly<TerrainChunkBounds>(),
+                ComponentType.ReadOnly<TerrainChunkNeedsDensityRebuild>());
+            state.RequireForUpdate<TerrainChunkNeedsDensityRebuild>();
         }
 
         public void OnUpdate(ref SystemState state)
@@ -88,6 +90,16 @@ namespace DOTS.Terrain.SDF
                     else
                     {
                         entityManager.AddComponentData(entity, TerrainChunkDensity.FromBlob(blob));
+                    }
+
+                    if (entityManager.HasComponent<TerrainChunkNeedsDensityRebuild>(entity))
+                    {
+                        entityManager.RemoveComponent<TerrainChunkNeedsDensityRebuild>(entity);
+                    }
+
+                    if (!entityManager.HasComponent<TerrainChunkNeedsMeshBuild>(entity))
+                    {
+                        entityManager.AddComponent<TerrainChunkNeedsMeshBuild>(entity);
                     }
                 }
             }
