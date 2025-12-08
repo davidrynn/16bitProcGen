@@ -489,7 +489,7 @@ DOTS.Player.Bootstrap.EntityVisualSync:LateUpdate () (at Assets/Scripts/Player/B
 
 [TEST] PlayerEntity queried: Index=102, Version=1
 UnityEngine.Debug:Log (object)
-DOTS.Player.Tests.Bootstrap.PlayerCameraBootstrap_WithVisualsTests/<EntityVisualSync_SyncsPositionWithEntity>d__22:MoveNext () (at Assets/Scripts/Player/Bootstrap/Tests/PlayerCameraBootstrap_WithVisualsTests.cs:318)
+DOTS.Player.Tests.Bootstrap.PlayerEntityBootstrapTests/<PlayerVisualSync_SyncsPositionWithEntity>d__24:MoveNext () (at Assets/Scripts/Player/Bootstrap/Tests/PlayerCameraBootstrapTests.cs:351)
 UnityEngine.SetupCoroutine:InvokeMoveNext (System.Collections.IEnumerator,intptr)
 
 [TEST] EntityVisualSync.entity: Index=102, Version=1

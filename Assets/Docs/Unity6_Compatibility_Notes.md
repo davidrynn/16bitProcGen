@@ -58,7 +58,7 @@ Assets/Scripts/Player/
 ?   ??? PlayerCameraBootstrap_WithVisuals.cs
 ?   ??? DOTS.Player.Bootstrap.asmdef
 ?   ??? Tests/
-?       ??? PlayerCameraBootstrap_WithVisualsTests.cs
+?       ??? PlayerCameraBootstrapTests.cs
 ?       ??? DOTS.Player.Bootstrap.Tests.asmdef
 ```
 

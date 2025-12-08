@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Text;
 using NUnit.Framework;
 using Unity.Collections;
 using Unity.Entities;
@@ -17,9 +18,6 @@ namespace DOTS.Player.Tests.Bootstrap
     {
         private World testWorld;
         private EntityManager entityManager;
-        private InitializationSystemGroup initializationGroup;
-        private SimulationSystemGroup simulationGroup;
-        private PresentationSystemGroup presentationGroup;
 
         [SetUp]
         public void SetUp()
@@ -29,10 +27,6 @@ namespace DOTS.Player.Tests.Bootstrap
             DefaultWorldInitialization.Initialize("Test World", false);
             testWorld = World.DefaultGameObjectInjectionWorld;
             entityManager = testWorld.EntityManager;
-
-            initializationGroup = testWorld.GetExistingSystemManaged<InitializationSystemGroup>();
-            simulationGroup = testWorld.GetExistingSystemManaged<SimulationSystemGroup>();
-            presentationGroup = testWorld.GetExistingSystemManaged<PresentationSystemGroup>();
 
             UpdateWorldOnce();
         }
@@ -118,34 +112,37 @@ namespace DOTS.Player.Tests.Bootstrap
         [UnityTest]
         public IEnumerator PlayerEntity_HasCorrectPhysicsProperties()
         {
-            yield return null;
-            using var query = entityManager.CreateEntityQuery(typeof(PlayerTag));
-            var playerEntity = query.GetSingletonEntity();
+            InitializeWorldWithoutSimulation("Physics Properties Test World", out var physicsWorld, out var physicsManager);
 
-            var gravityFactor = entityManager.GetComponentData<PhysicsGravityFactor>(playerEntity);
-            Assert.AreEqual(1f, gravityFactor.Value, 0.01f, "Gravity factor should be 1.0");
-
-            var velocity = entityManager.GetComponentData<PhysicsVelocity>(playerEntity);
-            float gravityY = -9.81f;
-            var physicsStepQuery = entityManager.CreateEntityQuery(typeof(Unity.Physics.PhysicsStep));
-            if (!physicsStepQuery.IsEmpty)
+            using (var query = physicsManager.CreateEntityQuery(typeof(PlayerTag)))
             {
-                gravityY = physicsStepQuery.GetSingleton<Unity.Physics.PhysicsStep>().Gravity.y;
+                var playerEntity = query.GetSingletonEntity();
+
+                var gravityFactor = physicsManager.GetComponentData<PhysicsGravityFactor>(playerEntity);
+                Assert.AreEqual(1f, gravityFactor.Value, 0.01f, "Gravity factor should be 1.0");
+
+                var physicsSnapshot = CaptureBootstrapPhysicsSnapshot(physicsWorld);
+                Assert.Greater(physicsSnapshot.FixedTimeStep, 0f, "Fixed timestep should be positive");
+
+                var velocity = physicsManager.GetComponentData<PhysicsVelocity>(playerEntity);
+                Assert.AreEqual(float3.zero, velocity.Linear, "Velocity should be zero immediately after bootstrap");
+                Assert.AreEqual(float3.zero, velocity.Angular, "Angular velocity should be zero immediately after bootstrap");
+
+                AdvanceSimulationOneStep(physicsWorld);
+
+                var updatedVelocity = physicsManager.GetComponentData<PhysicsVelocity>(playerEntity);
+                float expectedVerticalVelocity = physicsSnapshot.Gravity.y * physicsSnapshot.FixedTimeStep;
+
+                Assert.AreEqual(expectedVerticalVelocity, updatedVelocity.Linear.y, 0.01f, "Single simulation step should apply one gravity integration");
+                Assert.AreEqual(velocity.Linear.x, updatedVelocity.Linear.x, 0.001f, "Horizontal X velocity should remain constant");
+                Assert.AreEqual(velocity.Linear.z, updatedVelocity.Linear.z, 0.001f, "Horizontal Z velocity should remain constant");
+                Assert.AreEqual(float3.zero, updatedVelocity.Angular, "Angular velocity should remain zero after first step");
             }
 
-            float fixedTimestep = testWorld.Time.DeltaTime;
-            var fixedStepGroup = testWorld.GetExistingSystemManaged<FixedStepSimulationSystemGroup>();
-            if (fixedStepGroup != null && fixedStepGroup.Timestep > 0f)
-            {
-                fixedTimestep = fixedStepGroup.Timestep;
-            }
+            CleanupDefaultWorld();
+            RestoreStandardTestWorld();
 
-            float expectedVerticalVelocity = gravityY * fixedTimestep;
-
-            Assert.AreEqual(0f, velocity.Linear.x, 0.001f, "Initial X velocity should be zero");
-            Assert.AreEqual(expectedVerticalVelocity, velocity.Linear.y, 0.05f, "Initial Y velocity should match gravity step");
-            Assert.AreEqual(0f, velocity.Linear.z, 0.001f, "Initial Z velocity should be zero");
-            Assert.AreEqual(float3.zero, velocity.Angular, "Initial angular velocity should be zero");
+            yield break;
         }
 
         #endregion
@@ -282,21 +279,7 @@ namespace DOTS.Player.Tests.Bootstrap
         [UnityTest]
         public IEnumerator PlayerEntity_SpawnHeightMatchesBootstrapConfiguration()
         {
-            // Dispose the world prepared by SetUp so we can observe the spawn position prior to the first physics step.
-            DestroyBootstrapVisuals();
-            if (testWorld != null && testWorld.IsCreated)
-            {
-                ScriptBehaviourUpdateOrder.RemoveWorldFromCurrentPlayerLoop(testWorld);
-                testWorld.Dispose();
-            }
-            World.DefaultGameObjectInjectionWorld = null;
-
-            // Re-initialize without running Simulation/Presentation groups so gravity has not been applied yet.
-            DefaultWorldInitialization.Initialize("Spawn Test World", false);
-            var spawnWorld = World.DefaultGameObjectInjectionWorld;
-            var spawnManager = spawnWorld.EntityManager;
-            var spawnInitializationGroup = spawnWorld.GetExistingSystemManaged<InitializationSystemGroup>();
-            spawnInitializationGroup.Update();
+            InitializeWorldWithoutSimulation("Spawn Test World", out var spawnWorld, out var spawnManager);
 
             using (var query = spawnManager.CreateEntityQuery(typeof(PlayerTag)))
             {
@@ -309,22 +292,43 @@ namespace DOTS.Player.Tests.Bootstrap
                 Assert.AreEqual(0f, transform.Position.z, 0.001f, "Spawn Z should be zero");
             }
 
-            // Clean up the temporary world.
-            DestroyBootstrapVisuals();
-            ScriptBehaviourUpdateOrder.RemoveWorldFromCurrentPlayerLoop(spawnWorld);
-            spawnWorld.Dispose();
-            World.DefaultGameObjectInjectionWorld = null;
-
-            // Recreate the standard test world so subsequent tests see the expected state.
-            DefaultWorldInitialization.Initialize("Test World", false);
-            testWorld = World.DefaultGameObjectInjectionWorld;
-            entityManager = testWorld.EntityManager;
-            initializationGroup = testWorld.GetExistingSystemManaged<InitializationSystemGroup>();
-            simulationGroup = testWorld.GetExistingSystemManaged<SimulationSystemGroup>();
-            presentationGroup = testWorld.GetExistingSystemManaged<PresentationSystemGroup>();
-            UpdateWorldOnce();
+            CleanupDefaultWorld();
+            RestoreStandardTestWorld();
 
             yield break;
+        }
+
+        [UnityTest]
+        public IEnumerator PlayerEntity_InitialVelocityRemainsZeroBeforeSimulation()
+        {
+            InitializeWorldWithoutSimulation("Velocity Test World", out var spawnWorld, out var spawnManager);
+
+            using (var query = spawnManager.CreateEntityQuery(typeof(PlayerTag)))
+            {
+                Assert.AreEqual(1, query.CalculateEntityCount(), "Player should exist immediately after bootstrap");
+                var playerEntity = query.GetSingletonEntity();
+                var velocity = spawnManager.GetComponentData<PhysicsVelocity>(playerEntity);
+
+                Assert.AreEqual(0f, velocity.Linear.x, 0.0001f, "Initial X velocity should be zero before physics");
+                Assert.AreEqual(0f, velocity.Linear.y, 0.0001f, "Initial Y velocity should remain zero before physics updates");
+                Assert.AreEqual(0f, velocity.Linear.z, 0.0001f, "Initial Z velocity should be zero before physics");
+            }
+
+            CleanupDefaultWorld();
+            RestoreStandardTestWorld();
+
+            yield break;
+        }
+
+        [UnityTest]
+        public IEnumerator PlayerEntity_PhysicsVelocityTimelineDiagnostics()
+        {
+            InitializeWorldWithoutSimulation("Physics Timeline Diagnostics World", out var timelineWorld, out var timelineManager);
+
+            yield return SamplePhysicsVelocityTimeline(timelineWorld, timelineManager, "BootstrapOnly", 3);
+
+            CleanupDefaultWorld();
+            RestoreStandardTestWorld();
         }
 
         [UnityTest]
@@ -361,14 +365,15 @@ namespace DOTS.Player.Tests.Bootstrap
             transform.Position = newPosition;
             entityManager.SetComponentData(playerEntity, transform);
 
-            // Allow transform systems and MonoBehaviour sync to run.
+            // Allow transform systems and MonoBehaviour sync to run after LateUpdate.
             yield return null;
-            yield return null;
-            yield return null;
+            yield return new WaitForEndOfFrame();
 
+            var updatedTransform = entityManager.GetComponentData<LocalTransform>(playerEntity);
             Vector3 actualPosition = playerVisual.transform.position;
-            Assert.AreEqual((Vector3)newPosition, actualPosition,
-                $"Visual GameObject position should sync with entity. Expected: {newPosition}, Actual: {actualPosition}");
+            float positionDelta = Vector3.Distance(actualPosition, (Vector3)updatedTransform.Position);
+            Assert.LessOrEqual(positionDelta, 0.001f,
+                $"Visual GameObject position should match entity transform within tolerance. Entity: {updatedTransform.Position}, Visual: {actualPosition}, Delta: {positionDelta}");
         }
 
         [UnityTest]
@@ -386,19 +391,32 @@ namespace DOTS.Player.Tests.Bootstrap
             var playerEntity = query.GetSingletonEntity();
             Assert.AreEqual(playerEntity, sync.targetEntity, "PlayerVisualSync should reference the player entity");
 
-            var newRotation = quaternion.RotateY(math.PI / 2);
+            const float yawDegrees = 135f;
+            const float pitchDegrees = -10f; // stored on PlayerViewComponent for camera usage
+
+            var view = entityManager.GetComponentData<PlayerViewComponent>(playerEntity);
+            view.YawDegrees = yawDegrees;
+            view.PitchDegrees = pitchDegrees;
+            entityManager.SetComponentData(playerEntity, view);
+
+            var newRotation = quaternion.AxisAngle(math.up(), math.radians(yawDegrees));
             var transform = entityManager.GetComponentData<LocalTransform>(playerEntity);
             transform.Rotation = newRotation;
             entityManager.SetComponentData(playerEntity, transform);
 
             yield return null;
-            yield return null;
-            yield return null;
+            yield return new WaitForEndOfFrame();
 
+            var updatedTransform = entityManager.GetComponentData<LocalTransform>(playerEntity);
             var actualRotation = playerVisual.transform.rotation;
-            float diff = math.length(newRotation.value - ((quaternion)actualRotation).value);
+            float diff = math.length(updatedTransform.Rotation.value - ((quaternion)actualRotation).value);
             Assert.IsTrue(diff < 0.001f,
-                $"Visual GameObject rotation should sync with entity. Expected: {newRotation}, Actual: {actualRotation}, Diff: {diff}");
+                $"Visual GameObject rotation should sync with entity. Entity: {updatedTransform.Rotation}, Visual: {actualRotation}, Diff: {diff}");
+
+            var entityForward = math.mul(updatedTransform.Rotation, math.forward());
+            var visualForward = playerVisual.transform.forward;
+            Assert.Less(Vector3.Distance((Vector3)entityForward, visualForward), 0.001f,
+                "Visual forward vector should match entity forward vector");
         }
 
         [UnityTest]
@@ -459,9 +477,40 @@ namespace DOTS.Player.Tests.Bootstrap
 
         private void UpdateWorldOnce()
         {
-            initializationGroup.Update();
-            simulationGroup.Update();
-            presentationGroup.Update();
+            RunSystemOnce<PlayerEntityBootstrap>();
+        }
+
+        private void AdvanceSimulationOneStep()
+        {
+            AdvanceSimulationOneStep(testWorld);
+        }
+
+        private static void AdvanceSimulationOneStep(World world)
+        {
+            if (world == null || !world.IsCreated)
+            {
+                return;
+            }
+
+            var simulation = world.GetExistingSystemManaged<SimulationSystemGroup>();
+            var presentation = world.GetExistingSystemManaged<PresentationSystemGroup>();
+
+            simulation?.Update();
+            presentation?.Update();
+        }
+
+        private void RunSystemOnce<T>() where T : unmanaged, ISystem
+        {
+            if (testWorld == null || !testWorld.IsCreated)
+            {
+                return;
+            }
+
+            var handle = testWorld.GetExistingSystem<T>();
+            if (handle != SystemHandle.Null)
+            {
+                handle.Update(testWorld.Unmanaged);
+            }
         }
 
         private static void DestroyBootstrapVisuals()
@@ -480,6 +529,45 @@ namespace DOTS.Player.Tests.Bootstrap
             }
         }
 
+        private PlayerBootstrapPhysicsSnapshot CaptureBootstrapPhysicsSnapshot(World worldOverride = null)
+        {
+            World world = worldOverride;
+            if (world == null || !world.IsCreated)
+            {
+                if (testWorld != null && testWorld.IsCreated)
+                {
+                    world = testWorld;
+                }
+                else
+                {
+                    world = World.DefaultGameObjectInjectionWorld;
+                }
+            }
+
+            Assert.IsNotNull(world, "World should exist when capturing bootstrap physics snapshot");
+            return PlayerBootstrapPhysicsUtility.Capture(world, nameof(PlayerEntityBootstrapTests));
+        }
+
+        private void InitializeWorldWithoutSimulation(string worldName, out World world, out EntityManager manager)
+        {
+            CleanupDefaultWorld();
+
+            DefaultWorldInitialization.Initialize(worldName, false);
+            world = World.DefaultGameObjectInjectionWorld;
+            manager = world.EntityManager;
+            var initGroup = world.GetExistingSystemManaged<InitializationSystemGroup>();
+            initGroup.Update();
+            ScriptBehaviourUpdateOrder.RemoveWorldFromCurrentPlayerLoop(world);
+        }
+
+        private void RestoreStandardTestWorld()
+        {
+            DefaultWorldInitialization.Initialize("Test World", false);
+            testWorld = World.DefaultGameObjectInjectionWorld;
+            entityManager = testWorld.EntityManager;
+            UpdateWorldOnce();
+        }
+
         private Entity? GetGroundEntity()
         {
             using var entities = entityManager.GetAllEntities(Allocator.Temp);
@@ -491,6 +579,31 @@ namespace DOTS.Player.Tests.Bootstrap
                 }
             }
             return null;
+        }
+
+        private IEnumerator SamplePhysicsVelocityTimeline(World world, EntityManager manager, string label, int frames)
+        {
+            using var query = manager.CreateEntityQuery(typeof(PlayerTag));
+            var playerEntity = query.GetSingletonEntity();
+            var sb = new System.Text.StringBuilder();
+            sb.Append($"[PlayerPhysicsTimeline::{label}] ");
+
+            void AppendSample(int frameIndex)
+            {
+                var velocity = manager.GetComponentData<PhysicsVelocity>(playerEntity);
+                sb.Append($"frame{frameIndex}=\u0394y:{velocity.Linear.y:F4} ");
+            }
+
+            AppendSample(0);
+
+            for (int i = 1; i <= frames; i++)
+            {
+                AdvanceSimulationOneStep(world);
+                yield return null;
+                AppendSample(i);
+            }
+
+            Debug.Log(sb.ToString());
         }
 
         #endregion

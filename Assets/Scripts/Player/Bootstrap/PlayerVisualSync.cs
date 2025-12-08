@@ -8,50 +8,73 @@ namespace DOTS.Player.Bootstrap
     /// Minimal hybrid approach: Syncs GameObject visual to ECS entity transform.
     /// This is a thin "view layer" - all game logic remains in pure ECS systems.
     /// </summary>
+    [DefaultExecutionOrder(1000)]
     public class PlayerVisualSync : MonoBehaviour
     {
         [Tooltip("The ECS entity this visual represents")]
         public Entity targetEntity;
 
-        private bool _hasLoggedFirstSync;
+        private EntityManager _entityManager;
+        private bool _entityManagerValid;
 
         private void LateUpdate()
         {
-            var world = World.DefaultGameObjectInjectionWorld;
-            
-            if (world == null)
+            if (!TryResolveEntityManager(out var entityManager))
             {
                 return;
             }
-            
+
             if (targetEntity == Entity.Null)
             {
                 return;
             }
-            
-            if (!world.EntityManager.Exists(targetEntity))
+
+            if (!entityManager.Exists(targetEntity))
             {
-                // Entity was destroyed - destroy visual too
                 Destroy(gameObject);
                 return;
             }
-            
-            if (!world.EntityManager.HasComponent<LocalTransform>(targetEntity))
+
+            if (!entityManager.HasComponent<LocalTransform>(targetEntity))
             {
                 return;
             }
-            
-            // Sync GameObject transform with ECS entity transform
-            var transform = world.EntityManager.GetComponentData<LocalTransform>(targetEntity);
-            this.transform.position = new Vector3(transform.Position.x, transform.Position.y, transform.Position.z);
-            this.transform.rotation = new Quaternion(transform.Rotation.value.x, transform.Rotation.value.y, transform.Rotation.value.z, transform.Rotation.value.w);
-            this.transform.localScale = new Vector3(transform.Scale, transform.Scale, transform.Scale);
-            
-            if (!_hasLoggedFirstSync)
+
+            var entityTransform = entityManager.GetComponentData<LocalTransform>(targetEntity);
+            var worldPosition = (Vector3)entityTransform.Position;
+            var worldRotation = new Quaternion(entityTransform.Rotation.value.x, entityTransform.Rotation.value.y, entityTransform.Rotation.value.z, entityTransform.Rotation.value.w);
+
+            transform.SetPositionAndRotation(worldPosition, worldRotation);
+
+            var uniformScale = entityTransform.Scale;
+            if (!Mathf.Approximately(transform.localScale.x, uniformScale) ||
+                !Mathf.Approximately(transform.localScale.y, uniformScale) ||
+                !Mathf.Approximately(transform.localScale.z, uniformScale))
             {
-                Debug.Log($"[PlayerVisualSync] First successful sync! Entity {targetEntity.Index} at {transform.Position}");
-                _hasLoggedFirstSync = true;
+                transform.localScale = new Vector3(uniformScale, uniformScale, uniformScale);
             }
+        }
+
+        private bool TryResolveEntityManager(out EntityManager entityManager)
+        {
+            if (_entityManagerValid && _entityManager.WorldUnmanaged.IsCreated)
+            {
+                entityManager = _entityManager;
+                return true;
+            }
+
+            var world = World.DefaultGameObjectInjectionWorld;
+            if (world == null)
+            {
+                entityManager = default;
+                _entityManagerValid = false;
+                return false;
+            }
+
+            _entityManager = world.EntityManager;
+            _entityManagerValid = true;
+            entityManager = _entityManager;
+            return true;
         }
     }
 }

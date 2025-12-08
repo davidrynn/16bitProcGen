@@ -37,7 +37,7 @@ namespace DOTS.Terrain.SDF
             using var chunks = chunkQuery.ToEntityArray(Allocator.Temp);
             if (chunks.Length > 0)
             {
-                TerrainChunkEditUtility.MarkChunksDirty(entityManager, chunks);
+                TerrainChunkEditUtility.MarkChunksDirty(entityManager, chunks, center, BrushRadius);
             }
 #endif
         }

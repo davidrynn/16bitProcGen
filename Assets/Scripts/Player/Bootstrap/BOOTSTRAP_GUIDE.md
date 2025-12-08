@@ -20,10 +20,11 @@
 1. **Create or open a scene**
 2. **Create Empty GameObject** in Hierarchy
 3. **Add Component** → `PlayerCameraBootstrap_WithVisuals`
-4. **Press Play** ▶️
+4. **Verify** `Time.fixedDeltaTime` is set (defaults to 0.0167s / 60Hz)
+5. **Press Play** ▶️
 
 **You'll see:**
-- 🟦 Blue cube (player) on green ground
+- 🟦 Blue capsule (player) on green ground
 - 📷 Camera following from behind
 - **WASD** - Move player
 - **Space** - Jump
