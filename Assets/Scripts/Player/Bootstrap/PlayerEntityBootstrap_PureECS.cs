@@ -29,6 +29,7 @@ namespace DOTS.Player.Bootstrap
     /// 
     /// DISABLED BY DEFAULT - Only enable when ready to use Entities.Graphics
     /// </summary>
+    [DisableAutoCreation]
     [UpdateInGroup(typeof(InitializationSystemGroup))]
     public partial struct PlayerEntityBootstrap_PureECS : ISystem
     {

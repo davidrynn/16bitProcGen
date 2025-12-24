@@ -14,6 +14,7 @@ namespace DOTS.Terrain.WFC
     /// </summary>
     [UpdateInGroup(typeof(SimulationSystemGroup))]
     [UpdateAfter(typeof(DungeonRenderingSystem))]
+    [DisableAutoCreation]
     public partial class DungeonVisualizationSystem : SystemBase
     {
         private GameObject visualizationParent;

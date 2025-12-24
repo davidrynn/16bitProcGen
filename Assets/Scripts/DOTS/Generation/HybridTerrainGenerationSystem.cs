@@ -12,6 +12,7 @@ namespace DOTS.Terrain.Generation
     /// </summary>
     [UpdateInGroup(typeof(SimulationSystemGroup))]
     [UpdateAfter(typeof(TerrainSystem))]
+    [DisableAutoCreation]
     public partial class HybridTerrainGenerationSystem : SystemBase
     {
         // Compute Shader Manager reference

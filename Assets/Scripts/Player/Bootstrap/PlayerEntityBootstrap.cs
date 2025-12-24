@@ -11,6 +11,7 @@ namespace DOTS.Player.Bootstrap
     /// Pure ECS approach: Creates player entity entirely from code without GameObject authoring.
     /// Runs once at startup to spawn the player with all required components.
     /// </summary>
+    [DisableAutoCreation]
     [UpdateInGroup(typeof(InitializationSystemGroup))]
     public partial struct PlayerEntityBootstrap : ISystem
     {

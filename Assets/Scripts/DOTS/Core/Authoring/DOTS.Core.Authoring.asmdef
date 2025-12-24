@@ -5,6 +5,7 @@
         "Core",
         "DOTS.Terrain",
         "DOTS.Player.Bootstrap",
+        "Unity.Collections",
         "Unity.Entities"
     ],
     "includePlatforms": [],
