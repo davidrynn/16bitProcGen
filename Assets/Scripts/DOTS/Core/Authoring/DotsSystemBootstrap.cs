@@ -1,3 +1,5 @@
+using DOTS.Player.Bootstrap;
+using DOTS.Terrain.WFC;
 using Unity.Entities;
 using UnityEngine;
 
