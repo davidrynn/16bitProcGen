@@ -5,6 +5,7 @@ using DOTS.Terrain.SDF;
 
 namespace DOTS.Terrain.Meshing
 {
+    [DisableAutoCreation]
     [BurstCompile]
     [UpdateInGroup(typeof(SimulationSystemGroup))]
     public partial struct TerrainChunkMeshBuildSystem : ISystem

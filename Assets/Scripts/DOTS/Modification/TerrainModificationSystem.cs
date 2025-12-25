@@ -8,6 +8,7 @@ using DOTS.Terrain;
 using DOTS.Terrain.Modification;
 using TerrainData = DOTS.Terrain.TerrainData;
 
+[DisableAutoCreation]
 public partial struct TerrainModificationSystem : ISystem
 {
     // Note: Managed fields are not allowed in struct systems

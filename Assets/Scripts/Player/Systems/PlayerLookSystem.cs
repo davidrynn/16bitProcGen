@@ -10,6 +10,7 @@ namespace DOTS.Player.Systems
     /// Processes mouse look input and updates player yaw/pitch.
     /// Runs in SimulationSystemGroup BEFORE movement so the rotation is ready for movement calculations.
     /// </summary>
+    [DisableAutoCreation]
     [BurstCompile]
     [UpdateInGroup(typeof(SimulationSystemGroup), OrderFirst = true)]
     public partial struct PlayerLookSystem : ISystem
@@ -45,4 +46,3 @@ namespace DOTS.Player.Systems
         }
     }
 }
-

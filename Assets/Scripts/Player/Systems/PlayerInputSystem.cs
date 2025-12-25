@@ -11,6 +11,7 @@ namespace DOTS.Player.Systems
     /// Captures player input from keyboard/mouse and manages cursor lock state.
     /// Runs in InitializationSystemGroup to ensure input is ready before simulation.
     /// </summary>
+    [DisableAutoCreation]
     [BurstCompile]
     [UpdateInGroup(typeof(InitializationSystemGroup))]
     public partial struct PlayerInputSystem : ISystem

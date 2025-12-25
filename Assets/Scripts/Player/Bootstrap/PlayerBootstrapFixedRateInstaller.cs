@@ -6,6 +6,7 @@ namespace DOTS.Player.Bootstrap
     /// Ensures the simulation and fixed-step system groups tick with a predictable timestep so
     /// initial physics integration applies gravity exactly once per outer frame. Runs once at initialization.
     /// </summary>
+    [DisableAutoCreation]
     [UpdateInGroup(typeof(InitializationSystemGroup), OrderFirst = true)]
     public partial struct PlayerBootstrapFixedRateInstaller : ISystem
     {

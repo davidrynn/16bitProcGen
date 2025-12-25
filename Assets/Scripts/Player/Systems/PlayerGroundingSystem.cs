@@ -14,6 +14,7 @@ namespace DOTS.Player.Systems
     /// <remarks>
     /// Runs ahead of <see cref="PlayerMovementSystem"/> so that movement logic can rely on updated grounded state information.
     /// </remarks>
+    [DisableAutoCreation]
     [BurstCompile]
     [UpdateInGroup(typeof(PhysicsSystemGroup))]
     [UpdateBefore(typeof(PlayerMovementSystem))]

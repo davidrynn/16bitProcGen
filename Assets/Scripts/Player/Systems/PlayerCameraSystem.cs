@@ -11,6 +11,7 @@ namespace DOTS.Player.Systems
     /// Runs in PresentationSystemGroup after all physics/movement to minimize jitter.
     /// Note: Cannot use [BurstCompile] because we access managed UnityEngine.Camera component.
     /// </summary>
+    [DisableAutoCreation]
     [UpdateInGroup(typeof(PresentationSystemGroup), OrderLast = true)]
     public partial struct PlayerCameraSystem : ISystem
     {

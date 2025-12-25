@@ -6,6 +6,7 @@ using Unity.Mathematics;
 
 namespace DOTS.Terrain.SDF
 {
+    [DisableAutoCreation]
     [BurstCompile]
     public partial struct TerrainChunkDensitySamplingSystem : ISystem
     {

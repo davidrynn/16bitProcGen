@@ -10,6 +10,7 @@ namespace DOTS.Terrain.Modification
     /// System that handles physics behavior for terrain globs
     /// Manages gravity, bouncing, rolling, and collision detection
     /// </summary>
+    [DisableAutoCreation]
     [UpdateInGroup(typeof(SimulationSystemGroup))]
     [UpdateAfter(typeof(TerrainModificationSystem))]
     public partial struct TerrainGlobPhysicsSystem : ISystem

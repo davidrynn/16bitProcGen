@@ -9,6 +9,7 @@ namespace DOTS.Terrain.SDF
     /// Debug-focused input bridge that pushes additive/subtractive SDF edits via simple mouse/keyboard shortcuts.
     /// Left click (or Q) subtracts; right click (or E) adds.
     /// </summary>
+    [DisableAutoCreation]
     [UpdateInGroup(typeof(SimulationSystemGroup))]
     public partial struct TerrainEditInputSystem : ISystem
     {
