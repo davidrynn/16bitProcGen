@@ -16,6 +16,7 @@ namespace DOTS.Player.Systems
     /// <remarks>
     /// Runs before <see cref="PhysicsSimulationGroup"/> so the updated velocities feed into the current physics step.
     /// </remarks>
+    [DisableAutoCreation]
     [BurstCompile]
     [UpdateInGroup(typeof(PhysicsSystemGroup))]
     [UpdateBefore(typeof(PhysicsSimulationGroup))]

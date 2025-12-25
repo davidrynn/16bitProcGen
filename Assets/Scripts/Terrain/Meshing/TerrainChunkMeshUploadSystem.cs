@@ -10,6 +10,7 @@ using UnityEngine.Rendering;
 
 namespace DOTS.Terrain.Meshing
 {
+    [DisableAutoCreation]
     [UpdateInGroup(typeof(SimulationSystemGroup))]
     [UpdateAfter(typeof(TerrainChunkMeshBuildSystem))]
     public partial struct TerrainChunkMeshUploadSystem : ISystem

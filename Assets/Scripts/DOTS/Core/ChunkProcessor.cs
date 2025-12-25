@@ -6,6 +6,7 @@ using TerrainData = DOTS.Terrain.TerrainData;
 /// <summary>
 /// DOTS System for managing terrain chunks
 /// </summary>
+[DisableAutoCreation]
 public partial struct ChunkProcessor : ISystem
 {
     public void OnCreate(ref SystemState state)

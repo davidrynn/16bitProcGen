@@ -10,6 +10,7 @@ namespace DOTS.Player.Systems
     /// <summary>
     /// Binds authored Cinemachine virtual cameras to the DOTS player anchors so follow/aim targets stay in sync.
     /// </summary>
+    [DisableAutoCreation]
     [UpdateInGroup(typeof(PresentationSystemGroup))]
     public partial struct PlayerCinemachineCameraSystem : ISystem
     {

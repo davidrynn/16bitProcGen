@@ -18,6 +18,7 @@ namespace DOTS.Player.Bootstrap
     /// This system is kept for reference but not active.
     /// </summary>
 #if SIMPLE_PLAYER_MOVEMENT_ENABLED  // Disabled by default - use production PlayerMovementSystem
+    [DisableAutoCreation]
     [BurstCompile]
     [UpdateInGroup(typeof(FixedStepSimulationSystemGroup), OrderFirst = true)]
     public partial struct SimplePlayerMovementSystem : ISystem

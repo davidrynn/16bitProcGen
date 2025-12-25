@@ -7,7 +7,8 @@ using Unity.Mathematics;
 using Unity.Transforms;
 using DOTS.Player.Components;
 
-[BurstCompile]
+    [DisableAutoCreation]
+    [BurstCompile]
 [UpdateInGroup(typeof(SimulationSystemGroup))]
 [UpdateBefore(typeof(TransformSystemGroup))]
 public partial struct CameraFollowSystem : ISystem
