@@ -11,6 +11,7 @@ using TerrainData = DOTS.Terrain.TerrainData;
 /// System responsible for generating terrain using compute shaders
 /// Handles the integration between DOTS entities and compute shaders
 /// </summary>
+[DisableAutoCreation]
 public partial class TerrainGenerationSystem : SystemBase
 {
     private ComputeShaderManager computeManager;

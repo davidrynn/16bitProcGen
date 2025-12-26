@@ -29,6 +29,7 @@ public class ProjectFeatureConfig : ScriptableObject
     public bool EnableSimplePlayerMovementSystem = false;
 
     [Header("Terrain Core Systems")]
+    public bool EnableTerrainCleanupSystem = true;
     public bool EnableChunkProcessor = true;
     public bool EnableTerrainModificationSystem = true;
     public bool EnableTerrainGlobPhysicsSystem = true;
@@ -41,4 +42,10 @@ public class ProjectFeatureConfig : ScriptableObject
     public bool EnableTerrainChunkMeshBuildSystem = true;
     public bool EnableTerrainChunkRenderPrepSystem = true;
     public bool EnableTerrainChunkMeshUploadSystem = true;
+
+    [Header("Dungeon Systems")]
+    public bool EnableDungeonRenderingSystem = true;
+
+    [Header("Weather Systems")]
+    public bool EnableHybridWeatherSystem = true;
 }

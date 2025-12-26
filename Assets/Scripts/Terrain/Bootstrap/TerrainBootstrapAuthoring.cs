@@ -106,7 +106,7 @@ namespace DOTS.Terrain.Bootstrap
                 camera.transform.rotation = Quaternion.Euler(25f, 45f, 0f);
             }
 
-            if (FindObjectOfType<Light>() == null)
+            if (FindFirstObjectByType<Light>() == null)
             {
                 var lightGO = new GameObject("Terrain Bootstrap Light");
                 var light = lightGO.AddComponent<Light>();

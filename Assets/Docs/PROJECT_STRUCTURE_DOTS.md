@@ -33,6 +33,71 @@ Assets/
 
 ---
 
+## System Bootstrap Pattern
+
+The project uses a centralized bootstrap system (`DotsSystemBootstrap`) to conditionally enable DOTS systems marked with `[DisableAutoCreation]` based on `ProjectFeatureConfig` settings.
+
+### Assembly Reference Requirements
+
+**Important**: Unity's assembly definition references are **not transitive**. When the bootstrap creates a system via `world.CreateSystem<SomeSystem>()`, the bootstrap's assembly must directly reference all Unity packages and assemblies that `SomeSystem` uses, even if those packages are already referenced by the system's own assembly.
+
+For example, if `TerrainGlobPhysicsSystem` uses `Unity.Transforms.LocalTransform`, and `DOTS.Core.Authoring` (the bootstrap assembly) creates that system, then `DOTS.Core.Authoring.asmdef` must include `"Unity.Transforms"` in its references, even though `DOTS.Terrain.asmdef` also references it.
+
+Similarly, when creating player systems that use `PlayerInputComponent` or `PlayerMovementConfig`, the bootstrap assembly must reference `"DOTS.Player.Components"` directly.
+
+### Current Pattern
+
+- `DotsSystemBootstrap` (in `DOTS.Core.Authoring` assembly) reads `ProjectFeatureConfig` and conditionally creates systems
+- The bootstrap assembly accumulates Unity package and assembly references as systems are added
+- This is an **intentional design choice** for centralized, configurable system registration
+
+### When Adding New Systems
+
+1. Add the system class with `[DisableAutoCreation]` attribute
+2. Add conditional creation logic to `DotsSystemBootstrap.cs`
+3. Add any required Unity package or assembly references to `DOTS.Core.Authoring.asmdef` if the new system introduces new dependencies
+
+### Systems Managed by Bootstrap
+
+The following systems are controlled by `DotsSystemBootstrap` via `ProjectFeatureConfig`:
+
+#### Terrain Systems (gated by `EnableTerrainSystem`)
+- `TerrainSystem` - Core terrain validation system
+- `TerrainCleanupSystem` - Blob asset cleanup (gated by `EnableTerrainCleanupSystem`)
+- `TerrainGenerationSystem` - Terrain generation using compute shaders
+- `ChunkProcessor` - Chunk processing (gated by `EnableChunkProcessor`)
+- `TerrainModificationSystem` - Terrain modification (gated by `EnableTerrainModificationSystem`)
+- `TerrainGlobPhysicsSystem` - Terrain glob physics (gated by `EnableTerrainGlobPhysicsSystem`)
+- `TerrainChunkDensitySamplingSystem` - SDF density sampling (gated by `EnableTerrainChunkDensitySamplingSystem`)
+- `TerrainEditInputSystem` - Terrain edit input (gated by `EnableTerrainEditInputSystem`)
+- `TerrainChunkMeshBuildSystem` - Mesh building (gated by `EnableTerrainChunkMeshBuildSystem`)
+- `TerrainChunkRenderPrepSystem` - Render preparation (gated by `EnableTerrainChunkRenderPrepSystem`)
+- `TerrainChunkMeshUploadSystem` - Mesh upload (gated by `EnableTerrainChunkMeshUploadSystem`)
+
+#### Player Systems (gated by `EnablePlayerSystem`)
+- `PlayerBootstrapFixedRateInstaller` - Fixed rate installer (gated by `EnablePlayerBootstrapFixedRateInstaller`)
+- `PlayerEntityBootstrap` - Entity bootstrap (gated by `EnablePlayerEntityBootstrap`)
+- `PlayerEntityBootstrap_PureECS` - Pure ECS bootstrap (gated by `EnablePlayerEntityBootstrapPureEcs`)
+- `PlayerInputSystem` - Player input (gated by `EnablePlayerInputSystem`)
+- `PlayerLookSystem` - Player look (gated by `EnablePlayerLookSystem`)
+- `PlayerMovementSystem` - Player movement (gated by `EnablePlayerMovementSystem`)
+- `PlayerGroundingSystem` - Player grounding (gated by `EnablePlayerGroundingSystem`)
+- `PlayerCameraSystem` - Player camera (gated by `EnablePlayerCameraSystem`)
+- `PlayerCinemachineCameraSystem` - Cinemachine camera (gated by `EnablePlayerCinemachineCameraSystem`)
+- `CameraFollowSystem` - Camera follow (gated by `EnableCameraFollowSystem`)
+- `SimplePlayerMovementSystem` - Simple movement (gated by `EnableSimplePlayerMovementSystem`, conditional compile)
+
+#### Dungeon Systems (gated by `EnableDungeonSystem`)
+- `DungeonRenderingSystem` - Dungeon rendering (gated by `EnableDungeonRenderingSystem`)
+- `DungeonVisualizationSystem` - Dungeon visualization
+
+#### Weather Systems (gated by `EnableWeatherSystem`)
+- `WeatherSystem` - Weather effects system
+
+**Note**: All systems listed above have `[DisableAutoCreation]` to prevent Unity's automatic system discovery. They are only created when explicitly enabled via the bootstrap and config.
+
+---
+
 ## DOTS-First Principles
 - **All runtime logic in ECS systems/components**
 - **MonoBehaviours only for authoring, bootstrapping, or hybrid visualization**
@@ -49,4 +114,4 @@ Assets/
 
 ---
 
-_Last updated: 2025-12-23_
+_Last updated: 2025-12-23 (Added system list documentation)_

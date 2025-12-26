@@ -14,6 +14,7 @@ namespace DOTS.Terrain.Weather
     /// </summary>
     [UpdateInGroup(typeof(SimulationSystemGroup))]
     [UpdateAfter(typeof(WeatherSystem))]
+    [DisableAutoCreation]
     public partial class HybridWeatherSystem : SystemBase
     {
         // Compute Shader Manager reference

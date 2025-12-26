@@ -27,6 +27,7 @@ namespace DOTS.Terrain.WFC
     /// </summary>
     [UpdateInGroup(typeof(SimulationSystemGroup))]
     [UpdateAfter(typeof(HybridWFCSystem))]
+    [DisableAutoCreation]
     public partial class DungeonRenderingSystem : SystemBase
     {
         private EntityQuery wfcCellsQuery;

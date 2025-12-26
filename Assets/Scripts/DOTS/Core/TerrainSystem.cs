@@ -5,6 +5,7 @@ using DOTS.Terrain;
 /// <summary>
 /// Simplified DOTS system for terrain validation
 /// </summary>
+[DisableAutoCreation]
 public partial class TerrainSystem : SystemBase
 {
     protected override void OnCreate() 

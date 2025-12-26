@@ -13,6 +13,7 @@ namespace DOTS.Terrain.Weather
     /// </summary>
     [UpdateInGroup(typeof(SimulationSystemGroup))]
     [UpdateAfter(typeof(DOTS.Terrain.Generation.HybridTerrainGenerationSystem))]
+    [DisableAutoCreation]
     public partial class WeatherSystem : SystemBase
     {
         // Weather settings

@@ -15,6 +15,7 @@ namespace DOTS.Terrain.WFC
     /// </summary>
     [UpdateInGroup(typeof(SimulationSystemGroup))]
     [UpdateAfter(typeof(DOTS.Terrain.Generation.HybridTerrainGenerationSystem))]
+    [DisableAutoCreation]
     public partial class HybridWFCSystem : SystemBase
     {
         private ComputeShaderManager computeManager;

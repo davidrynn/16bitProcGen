@@ -5,8 +5,12 @@
         "Core",
         "DOTS.Terrain",
         "DOTS.Player.Bootstrap",
+        "DOTS.Player.Components",
+        "Player",
         "Unity.Collections",
-        "Unity.Entities"
+        "Unity.Entities",
+        "Unity.Physics",
+        "Unity.Transforms"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

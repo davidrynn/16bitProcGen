@@ -1,12 +1,14 @@
 using DOTS.Player.Bootstrap;
 using DOTS.Player.Systems;
+using DOTS.Terrain;
 using DOTS.Terrain.Meshing;
 using DOTS.Terrain.Modification;
 using DOTS.Terrain.SDF;
 using DOTS.Terrain.WFC;
+using DOTS.Terrain.Weather;
 using Unity.Entities;
 using UnityEngine;
-
+ 
 public class DotsSystemBootstrap : MonoBehaviour
 {
     public ProjectFeatureConfig config;
@@ -23,6 +25,15 @@ public class DotsSystemBootstrap : MonoBehaviour
 
         if (config.EnableTerrainSystem)
         {
+            world.CreateSystem<TerrainSystem>();
+            Debug.Log("[DOTS Bootstrap] TerrainSystem enabled via config.");
+
+            if (config.EnableTerrainCleanupSystem)
+            {
+                world.CreateSystem<TerrainCleanupSystem>();
+                Debug.Log("[DOTS Bootstrap] TerrainCleanupSystem enabled via config.");
+            }
+
             world.CreateSystem<TerrainGenerationSystem>();
             Debug.Log("[DOTS Bootstrap] TerrainGenerationSystem enabled via config.");
 
@@ -148,8 +159,26 @@ public class DotsSystemBootstrap : MonoBehaviour
 
         if (config.EnableDungeonSystem)
         {
+            if (config.EnableDungeonRenderingSystem)
+            {
+                world.CreateSystem<DungeonRenderingSystem>();
+                Debug.Log("[DOTS Bootstrap] DungeonRenderingSystem enabled via config.");
+            }
+
             world.CreateSystem<DungeonVisualizationSystem>();
             Debug.Log("[DOTS Bootstrap] DungeonVisualizationSystem enabled via config.");
+        }
+
+        if (config.EnableWeatherSystem)
+        {
+            world.CreateSystem<WeatherSystem>();
+            Debug.Log("[DOTS Bootstrap] WeatherSystem enabled via config.");
+
+            if (config.EnableHybridWeatherSystem)
+            {
+                world.CreateSystem<HybridWeatherSystem>();
+                Debug.Log("[DOTS Bootstrap] HybridWeatherSystem enabled via config.");
+            }
         }
     }
 }

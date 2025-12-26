@@ -4,14 +4,14 @@ public class GameManager : MonoBehaviour
 {
     private TerrainManager terrainManager;
     private BiomeManager biomeManager;
-    private WeatherSystem weatherSystem;
+    private LegacyWeatherSystem weatherSystem;
 
     void Start()
     {
         // Find systems
         biomeManager = FindAnyObjectByType<BiomeManager>();
         terrainManager = FindAnyObjectByType<TerrainManager>();
-        weatherSystem = FindAnyObjectByType<WeatherSystem>();
+        weatherSystem = FindAnyObjectByType<LegacyWeatherSystem>();
 
         // Initialize terrain manager with biome manager
         if (terrainManager != null && biomeManager != null)

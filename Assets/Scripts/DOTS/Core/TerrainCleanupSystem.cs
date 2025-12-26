@@ -10,6 +10,7 @@ namespace DOTS.Terrain
     /// </summary>
     [UpdateInGroup(typeof(SimulationSystemGroup))]
     [UpdateAfter(typeof(TerrainSystem))]
+    [DisableAutoCreation]
     public partial class TerrainCleanupSystem : SystemBase
     {
         private EntityQuery terrainQuery;

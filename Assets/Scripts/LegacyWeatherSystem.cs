@@ -21,9 +21,9 @@ public struct WeatherEffect
     public float intensity;
 }
 
-public class WeatherSystem : MonoBehaviour
+public class LegacyWeatherSystem : MonoBehaviour
 {
-    public static WeatherSystem Instance { get; private set; }
+    public static LegacyWeatherSystem Instance { get; private set; }
 
     [Header("Weather Settings")]
     public float weatherChangeInterval = 30f; // Seconds between weather changes
