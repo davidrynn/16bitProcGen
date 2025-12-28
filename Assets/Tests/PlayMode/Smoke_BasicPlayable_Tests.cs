@@ -50,7 +50,19 @@ namespace Tests.PlayMode
             {
                 var cleanupScene = SceneManager.CreateScene("Smoke_BasicPlayable_Cleanup");
                 SceneManager.SetActiveScene(cleanupScene);
-                yield return SceneManager.UnloadSceneAsync(loadedScene);
+                var unloadLoadedSceneOp = SceneManager.UnloadSceneAsync(loadedScene);
+                if (unloadLoadedSceneOp != null)
+                {
+                    yield return unloadLoadedSceneOp;
+                }
+
+                // Ensure the temporary cleanup scene does not remain loaded after the test.
+                // Unity will keep at least one scene loaded; unloading the active scene is safe here.
+                var unloadCleanupSceneOp = SceneManager.UnloadSceneAsync(cleanupScene);
+                if (unloadCleanupSceneOp != null)
+                {
+                    yield return unloadCleanupSceneOp;
+                }
             }
         }
 
