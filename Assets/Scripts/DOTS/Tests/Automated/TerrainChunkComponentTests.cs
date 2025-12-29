@@ -2,9 +2,9 @@ using NUnit.Framework;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;
-using DOTS.Terrain.SDF;
+using DOTS.Terrain;
 
-using TerrainChunkComponent = DOTS.Terrain.SDF.TerrainChunk;
+using TerrainChunkComponent = DOTS.Terrain.TerrainChunk;
 
 namespace DOTS.Terrain.Tests
 {

@@ -1,6 +1,6 @@
 using Unity.Entities;
 
-namespace DOTS.Terrain.SDF
+namespace DOTS.Terrain
 {
     public struct SDFTerrainFieldSettings : IComponentData
     {

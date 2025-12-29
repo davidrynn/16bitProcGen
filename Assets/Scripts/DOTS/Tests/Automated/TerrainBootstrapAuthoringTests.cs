@@ -1,11 +1,11 @@
 using DOTS.Terrain.Bootstrap;
-using DOTS.Terrain.SDF;
+using DOTS.Terrain;
 using NUnit.Framework;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;
 using UnityEngine;
-using ChunkComponent = DOTS.Terrain.SDF.TerrainChunk;
+using ChunkComponent = DOTS.Terrain.TerrainChunk;
 
 namespace DOTS.Terrain.Tests
 {

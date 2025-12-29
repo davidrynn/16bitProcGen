@@ -3,7 +3,7 @@ using Unity.Entities;
 using Unity.Mathematics;
 using UnityEngine;
 
-namespace DOTS.Terrain.SDF
+namespace DOTS.Terrain
 {
     /// <summary>
     /// Debug-focused input bridge that pushes additive/subtractive SDF edits via simple mouse/keyboard shortcuts.

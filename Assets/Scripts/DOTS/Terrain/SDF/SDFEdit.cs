@@ -1,7 +1,7 @@
 using Unity.Entities;
 using Unity.Mathematics;
 
-namespace DOTS.Terrain.SDF
+namespace DOTS.Terrain
 {
     public static class SDFEditOperation
     {

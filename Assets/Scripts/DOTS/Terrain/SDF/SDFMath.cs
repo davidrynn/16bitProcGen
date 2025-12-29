@@ -1,7 +1,7 @@
 using Unity.Burst;
 using Unity.Mathematics;
 
-namespace DOTS.Terrain.SDF
+namespace DOTS.Terrain
 {
     /// <summary>
     /// Burst-safe collection of signed distance helpers used by the SDF terrain backend.

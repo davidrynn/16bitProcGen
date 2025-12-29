@@ -2,7 +2,7 @@ using Unity.Burst;
 using Unity.Collections;
 using Unity.Mathematics;
 
-namespace DOTS.Terrain.SDF
+namespace DOTS.Terrain
 {
     /// <summary>
     /// Burst-friendly terrain sampler that evaluates the ground SDF and applies runtime edits.

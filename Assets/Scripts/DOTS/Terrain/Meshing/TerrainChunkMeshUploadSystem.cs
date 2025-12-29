@@ -1,10 +1,12 @@
 using System.Collections.Generic;
 using DOTS.Terrain.Rendering;
-using DOTS.Terrain.SDF;
+using DOTS.Terrain;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;
+#if UNITY_ENTITIES_GRAPHICS
 using Unity.Rendering;
+#endif
 using UnityEngine;
 using UnityEngine.Rendering;
 
@@ -84,6 +86,7 @@ namespace DOTS.Terrain.Meshing
                 }
 
                 UploadMesh(blob, item.Mesh);
+#if UNITY_ENTITIES_GRAPHICS
                 EnsureRenderMeshArray(entityManager, item.Entity, item.Mesh, material);
 
                 var materialMeshInfo = MaterialMeshInfo.FromRenderMeshArrayIndices(0, 0);
@@ -95,6 +98,7 @@ namespace DOTS.Terrain.Meshing
                 {
                     entityManager.AddComponentData(item.Entity, materialMeshInfo);
                 }
+#endif
 
                 if (entityManager.HasComponent<TerrainChunkNeedsRenderUpload>(item.Entity))
                 {
@@ -150,6 +154,7 @@ namespace DOTS.Terrain.Meshing
 
         private static void EnsureRenderMeshArray(EntityManager entityManager, Entity entity, Mesh mesh, Material material)
         {
+#if UNITY_ENTITIES_GRAPHICS
             var renderMeshArray = new RenderMeshArray(new[] { material }, new[] { mesh });
 
             if (entityManager.HasComponent<RenderMeshArray>(entity))
@@ -160,6 +165,7 @@ namespace DOTS.Terrain.Meshing
             {
                 entityManager.AddSharedComponentManaged(entity, renderMeshArray);
             }
+#endif
         }
 
         private struct UploadItem

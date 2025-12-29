@@ -1,10 +1,12 @@
 using DOTS.Terrain.Meshing;
 using DOTS.Terrain.Rendering;
-using DOTS.Terrain.SDF;
+using DOTS.Terrain;
 using NUnit.Framework;
 using Unity.Entities;
 using Unity.Mathematics;
+#if UNITY_ENTITIES_GRAPHICS
 using Unity.Rendering;
+#endif
 using UnityEngine;
 using UnityEngine.Rendering;
 
@@ -25,6 +27,7 @@ namespace DOTS.Terrain.Tests
             TerrainChunkRenderSettingsProvider.ResetCache();
         }
 
+#if UNITY_ENTITIES_GRAPHICS
         [Test]
         public void MeshUploadSystem_AttachesMeshAndRenderComponents()
         {
@@ -67,6 +70,7 @@ namespace DOTS.Terrain.Tests
             Object.DestroyImmediate(renderMeshArray.MaterialReferences[0].Value);
             Object.DestroyImmediate(settings);
         }
+#endif
 
         private static BlobAssetReference<TerrainChunkMeshBlob> CreateMeshBlob()
         {

@@ -9,6 +9,7 @@
         "DOTS.Core.Authoring",
         "UnityEngine.TestRunner",
         "UnityEditor.TestRunner",
+        "Unity.Collections",
         "Unity.Entities"
     ],
     "includePlatforms": [],

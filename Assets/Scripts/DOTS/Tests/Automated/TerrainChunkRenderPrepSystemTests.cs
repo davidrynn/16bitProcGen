@@ -1,10 +1,12 @@
 using DOTS.Terrain.Meshing;
-using DOTS.Terrain.SDF;
+using DOTS.Terrain;
 using NUnit.Framework;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;
+#if UNITY_ENTITIES_GRAPHICS
 using Unity.Rendering;
+#endif
 using Unity.Transforms;
 
 namespace DOTS.Terrain.Tests
@@ -12,6 +14,7 @@ namespace DOTS.Terrain.Tests
     [TestFixture]
     public class TerrainChunkRenderPrepSystemTests
     {
+#if UNITY_ENTITIES_GRAPHICS
         [Test]
         public void ComputeBounds_ReturnsCenterAndExtents()
         {
@@ -28,7 +31,9 @@ namespace DOTS.Terrain.Tests
 
             blob.Dispose();
         }
+#endif
 
+#if UNITY_ENTITIES_GRAPHICS
         [Test]
         public void RenderPrepSystem_AddsRequiredComponents()
         {
@@ -68,6 +73,7 @@ namespace DOTS.Terrain.Tests
             var meshData = entityManager.GetComponentData<TerrainChunkMeshData>(entity);
             meshData.Dispose();
         }
+#endif
 
         private static BlobAssetReference<TerrainChunkMeshBlob> CreateMeshBlob(float3[] vertices)
         {

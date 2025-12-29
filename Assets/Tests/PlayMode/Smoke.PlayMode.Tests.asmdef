@@ -9,6 +9,7 @@
         "Unity.Mathematics",
         "Unity.Collections",
         "DOTS.Player.Components",
+        "DOTS.Terrain",
         "Assembly-CSharp"
     ],
     "includePlatforms": [],

@@ -8,6 +8,17 @@ using DOTS.Terrain;
 using DOTS.Terrain.Modification;
 using TerrainData = DOTS.Terrain.TerrainData;
 
+/// <summary>
+/// [LEGACY] System for terrain modifications (glob removal) using the legacy TerrainData component.
+/// 
+/// ⚠️ LEGACY SYSTEM: This system operates on DOTS.Terrain.TerrainData component for terrain glob removal/physics.
+/// The current active terrain system uses SDF (Signed Distance Fields) with edit systems in DOTS.Terrain namespace:
+/// - TerrainEditInputSystem (input handling for SDF edits)
+/// - TerrainChunkEditUtility (SDF edit utilities)
+/// - SDFEdit buffer for additive/subtractive terrain edits
+/// 
+/// This system is maintained for backward compatibility with existing tests and legacy glob physics code.
+/// </summary>
 [DisableAutoCreation]
 public partial struct TerrainModificationSystem : ISystem
 {

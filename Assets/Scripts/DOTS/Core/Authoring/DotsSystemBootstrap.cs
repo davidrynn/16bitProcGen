@@ -1,9 +1,9 @@
 using DOTS.Player.Bootstrap;
 using DOTS.Player.Systems;
 using DOTS.Terrain;
+using DOTS.Terrain.Generation;
 using DOTS.Terrain.Meshing;
 using DOTS.Terrain.Modification;
-using DOTS.Terrain.SDF;
 using DOTS.Terrain.WFC;
 using DOTS.Terrain.Weather;
 using Unity.Entities;
@@ -28,14 +28,20 @@ public class DotsSystemBootstrap : MonoBehaviour
             world.CreateSystem<TerrainSystem>();
             Debug.Log("[DOTS Bootstrap] TerrainSystem enabled via config.");
 
+            if (config.EnableHybridTerrainGenerationSystem)
+            {
+                world.CreateSystem<HybridTerrainGenerationSystem>();
+                Debug.Log("[DOTS Bootstrap] HybridTerrainGenerationSystem enabled via config.");
+            }
+
+            world.CreateSystem<TerrainGenerationSystem>();
+            Debug.Log("[DOTS Bootstrap] TerrainGenerationSystem enabled via config.");
+
             if (config.EnableTerrainCleanupSystem)
             {
                 world.CreateSystem<TerrainCleanupSystem>();
                 Debug.Log("[DOTS Bootstrap] TerrainCleanupSystem enabled via config.");
             }
-
-            world.CreateSystem<TerrainGenerationSystem>();
-            Debug.Log("[DOTS Bootstrap] TerrainGenerationSystem enabled via config.");
 
             if (config.EnableChunkProcessor)
             {

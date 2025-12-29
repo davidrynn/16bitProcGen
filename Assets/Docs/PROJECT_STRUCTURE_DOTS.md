@@ -61,18 +61,29 @@ Similarly, when creating player systems that use `PlayerInputComponent` or `Play
 
 The following systems are controlled by `DotsSystemBootstrap` via `ProjectFeatureConfig`:
 
-#### Terrain Systems (gated by `EnableTerrainSystem`)
-- `TerrainSystem` - Core terrain validation system
-- `TerrainCleanupSystem` - Blob asset cleanup (gated by `EnableTerrainCleanupSystem`)
-- `TerrainGenerationSystem` - Terrain generation using compute shaders
-- `ChunkProcessor` - Chunk processing (gated by `EnableChunkProcessor`)
-- `TerrainModificationSystem` - Terrain modification (gated by `EnableTerrainModificationSystem`)
-- `TerrainGlobPhysicsSystem` - Terrain glob physics (gated by `EnableTerrainGlobPhysicsSystem`)
+#### Terrain Systems
+
+**Current Active System: SDF (Signed Distance Fields) Terrain Pipeline**
+The project uses an SDF-based terrain system as the primary terrain generation approach. This system uses components in the `DOTS.Terrain` namespace and Surface Nets meshing.
+
+**Active SDF Systems:**
 - `TerrainChunkDensitySamplingSystem` - SDF density sampling (gated by `EnableTerrainChunkDensitySamplingSystem`)
-- `TerrainEditInputSystem` - Terrain edit input (gated by `EnableTerrainEditInputSystem`)
-- `TerrainChunkMeshBuildSystem` - Mesh building (gated by `EnableTerrainChunkMeshBuildSystem`)
+- `TerrainEditInputSystem` - Terrain edit input for SDF edits (gated by `EnableTerrainEditInputSystem`)
+- `TerrainChunkMeshBuildSystem` - Surface Nets mesh building (gated by `EnableTerrainChunkMeshBuildSystem`)
 - `TerrainChunkRenderPrepSystem` - Render preparation (gated by `EnableTerrainChunkRenderPrepSystem`)
 - `TerrainChunkMeshUploadSystem` - Mesh upload (gated by `EnableTerrainChunkMeshUploadSystem`)
+
+**Legacy Terrain Systems (⚠️ Deprecated):**
+These systems use the legacy `DOTS.Terrain.TerrainData` component and are maintained for backward compatibility only. New development should use the SDF terrain pipeline.
+- `TerrainSystem` - [LEGACY] Core terrain validation system for legacy TerrainData component
+- `HybridTerrainGenerationSystem` - [LEGACY] Terrain generation using compute shaders with legacy TerrainData (gated by `EnableHybridTerrainGenerationSystem`)
+- `TerrainGenerationSystem` - [LEGACY] Legacy terrain generation system (currently disabled internally)
+- `TerrainModificationSystem` - [LEGACY] Terrain modification for legacy TerrainData component (gated by `EnableTerrainModificationSystem`)
+- `TerrainCleanupSystem` - Blob asset cleanup (gated by `EnableTerrainCleanupSystem`)
+- `ChunkProcessor` - Chunk processing (gated by `EnableChunkProcessor`)
+- `TerrainGlobPhysicsSystem` - Terrain glob physics (gated by `EnableTerrainGlobPhysicsSystem`)
+
+**For new terrain development:** Use `TerrainBootstrapAuthoring` or create entities with SDF components (`DOTS.Terrain.TerrainChunk`, `TerrainChunkGridInfo`, `TerrainChunkBounds`, etc.). See `Assets/Docs/SDF_SurfaceNets_ECS_Overview.md` for details.
 
 #### Player Systems (gated by `EnablePlayerSystem`)
 - `PlayerBootstrapFixedRateInstaller` - Fixed rate installer (gated by `EnablePlayerBootstrapFixedRateInstaller`)
@@ -114,4 +125,4 @@ The following systems are controlled by `DotsSystemBootstrap` via `ProjectFeatur
 
 ---
 
-_Last updated: 2025-12-23 (Added system list documentation)_
+_Last updated: 2025-12-23 (Clarified SDF as current terrain system, marked legacy systems)_

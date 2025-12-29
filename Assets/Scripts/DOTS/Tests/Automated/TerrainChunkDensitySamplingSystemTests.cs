@@ -1,7 +1,7 @@
 using NUnit.Framework;
 using Unity.Collections;
 using Unity.Mathematics;
-using DOTS.Terrain.SDF;
+using DOTS.Terrain;
 using Unity.Jobs;
 
 namespace DOTS.Terrain.Tests

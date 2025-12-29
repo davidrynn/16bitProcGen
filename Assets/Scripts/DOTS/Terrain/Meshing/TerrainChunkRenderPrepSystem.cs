@@ -2,9 +2,11 @@ using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;
+#if UNITY_ENTITIES_GRAPHICS
 using Unity.Rendering;
+#endif
 using Unity.Transforms;
-using DOTS.Terrain.SDF;
+using DOTS.Terrain;
 
 namespace DOTS.Terrain.Meshing
 {
@@ -20,6 +22,7 @@ namespace DOTS.Terrain.Meshing
 
         public void OnUpdate(ref SystemState state)
         {
+#if UNITY_ENTITIES_GRAPHICS
             var ecb = new EntityCommandBuffer(Allocator.Temp);
 
             foreach (var (meshData, bounds, entity) in SystemAPI.Query<RefRO<TerrainChunkMeshData>, RefRO<TerrainChunkBounds>>().WithEntityAccess())
@@ -60,15 +63,17 @@ namespace DOTS.Terrain.Meshing
 
             ecb.Playback(state.EntityManager);
             ecb.Dispose();
+#endif
         }
 
-        public static Unity.Mathematics.AABB ComputeBounds(BlobAssetReference<TerrainChunkMeshBlob> mesh)
+#if UNITY_ENTITIES_GRAPHICS
+        public static AABB ComputeBounds(BlobAssetReference<TerrainChunkMeshBlob> mesh)
         {
             ref var vertices = ref mesh.Value.Vertices;
             var vertexCount = vertices.Length;
             if (vertexCount == 0)
             {
-                return new Unity.Mathematics.AABB { Center = float3.zero, Extents = float3.zero };
+                return new AABB { Center = float3.zero, Extents = float3.zero };
             }
 
             var min = vertices[0];
@@ -84,7 +89,8 @@ namespace DOTS.Terrain.Meshing
 
             var center = (min + max) * 0.5f;
             var extents = (max - min) * 0.5f;
-            return new Unity.Mathematics.AABB { Center = center, Extents = extents };
+            return new AABB { Center = center, Extents = extents };
         }
+#endif
     }
 }

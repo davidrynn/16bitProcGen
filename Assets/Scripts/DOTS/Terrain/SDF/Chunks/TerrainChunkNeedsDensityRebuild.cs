@@ -1,6 +1,6 @@
 using Unity.Entities;
 
-namespace DOTS.Terrain.SDF
+namespace DOTS.Terrain
 {
     /// <summary>
     /// Tag component set on chunks that require their density field to be rebuilt.

@@ -3,7 +3,13 @@ using UnityEngine;
 using DOTS.Terrain;
 
 /// <summary>
-/// Simplified DOTS system for terrain validation
+/// [LEGACY] Simplified DOTS system for terrain validation of the legacy TerrainData component.
+/// 
+/// ⚠️ LEGACY SYSTEM: This system operates on DOTS.Terrain.TerrainData component.
+/// The current active terrain system uses SDF (Signed Distance Fields) with systems in DOTS.Terrain namespace:
+/// - TerrainChunkDensitySamplingSystem, TerrainChunkMeshBuildSystem, etc.
+/// 
+/// This system is maintained for backward compatibility with existing tests and legacy code.
 /// </summary>
 [DisableAutoCreation]
 public partial class TerrainSystem : SystemBase

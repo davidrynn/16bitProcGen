@@ -4,7 +4,7 @@ using Unity.Entities;
 using Unity.Jobs;
 using Unity.Mathematics;
 
-namespace DOTS.Terrain.SDF
+namespace DOTS.Terrain
 {
     [DisableAutoCreation]
     [BurstCompile]

@@ -2,7 +2,7 @@ using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;
 
-namespace DOTS.Terrain.SDF
+namespace DOTS.Terrain
 {
     /// <summary>
     /// Helper utilities for terrain chunk editing workflows.

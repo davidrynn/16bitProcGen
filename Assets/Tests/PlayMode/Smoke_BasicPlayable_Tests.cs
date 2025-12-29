@@ -1,7 +1,7 @@
 using System;
 using System.Collections;
 using DOTS.Player.Components;
-using DOTS.Terrain.SDF;
+using DOTS.Terrain;
 using NUnit.Framework;
 using Unity.Entities;
 using Unity.Mathematics;
@@ -68,9 +68,9 @@ namespace Tests.PlayMode
 
             var world = World.DefaultGameObjectInjectionWorld;
             Assert.IsNotNull(world, "Default DOTS world was unexpectedly null.");
+            Assert.IsTrue(world.IsCreated, "World was not created.");
 
             var entityManager = world.EntityManager;
-            Assert.IsTrue(entityManager.IsCreated, "EntityManager was not created for the Default world.");
 
             using var playerQuery = entityManager.CreateEntityQuery(ComponentType.ReadOnly<PlayerTag>());
             using var cameraQuery = entityManager.CreateEntityQuery(ComponentType.ReadOnly<MainCameraTag>());

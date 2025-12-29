@@ -1,8 +1,8 @@
-using DOTS.Terrain.SDF;
+using DOTS.Terrain;
 using Unity.Entities;
 using Unity.Mathematics;
 using UnityEngine;
-using ChunkComponent = DOTS.Terrain.SDF.TerrainChunk;
+using ChunkComponent = DOTS.Terrain.TerrainChunk;
 
 namespace DOTS.Terrain.Bootstrap
 {

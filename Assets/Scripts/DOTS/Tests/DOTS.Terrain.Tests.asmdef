@@ -6,6 +6,7 @@
         "UnityEngine.TestRunner",
         "UnityEditor.TestRunner",
         "DOTS.Terrain",
+        "DOTS.Terrain.Bootstrap",
         "Unity.Entities",
         "Unity.Entities.Hybrid",
         "Unity.Entities.Graphics",

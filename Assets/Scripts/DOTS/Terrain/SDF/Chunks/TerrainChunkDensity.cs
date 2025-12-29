@@ -1,7 +1,7 @@
 using Unity.Collections;
 using Unity.Entities;
 
-namespace DOTS.Terrain.SDF
+namespace DOTS.Terrain
 {
     public struct TerrainChunkDensity : IComponentData
     {

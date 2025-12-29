@@ -4,11 +4,21 @@ using Unity.Collections;
 using Unity.Jobs;
 using Unity.Burst;
 using UnityEngine;
+using DOTS.Terrain.Core;
 namespace DOTS.Terrain.Generation
 {
     /// <summary>
-    /// Hybrid system that coordinates between DOTS entities and Compute Shaders
-    /// Handles terrain generation using GPU acceleration with DOTS data management
+    /// [LEGACY] Hybrid system that coordinates between DOTS entities and Compute Shaders for the legacy TerrainData component.
+    /// Handles terrain generation using GPU acceleration with DOTS data management.
+    /// 
+    /// ⚠️ LEGACY SYSTEM: This system operates on DOTS.Terrain.TerrainData component.
+    /// The current active terrain system uses SDF (Signed Distance Fields) with systems in DOTS.Terrain namespace:
+    /// - TerrainChunkDensitySamplingSystem (SDF density sampling)
+    /// - TerrainChunkMeshBuildSystem (Surface Nets meshing)
+    /// - TerrainChunkRenderPrepSystem, TerrainChunkMeshUploadSystem
+    /// 
+    /// This system contains debug code (e.g., spacebar regeneration) and is maintained for backward compatibility.
+    /// For new terrain generation, use the SDF terrain pipeline instead.
     /// </summary>
     [UpdateInGroup(typeof(SimulationSystemGroup))]
     [UpdateAfter(typeof(TerrainSystem))]
@@ -274,7 +284,10 @@ namespace DOTS.Terrain.Generation
                 builder.Dispose();
                 heightBuffer.Release();
 
+                // Generate visual mesh using shaders (URP/Lit or Standard fallback)
+                DebugLog($"About to generate mesh for chunk {terrain.chunkPosition} with {heights.Length} height values");
                 GenerateTerrainMesh(terrain, heights, resolution);
+                DebugLog($"Mesh generation completed for chunk {terrain.chunkPosition}");
                 return true;
             }
             catch (System.Exception e)
@@ -469,91 +482,142 @@ namespace DOTS.Terrain.Generation
             // Intentionally silent unless troubleshooting
         }
 
+        /// <summary>
+        /// Generates a visual mesh GameObject for terrain using shaders (URP/Lit or Standard fallback)
+        /// </summary>
         private void GenerateTerrainMesh(TerrainData terrain, float[] heights, int resolution)
         {
-            // Create a new GameObject for the mesh
-            var meshGO = new GameObject($"DOTS_TerrainMesh_{terrain.chunkPosition.x}_{terrain.chunkPosition.y}");
-            meshGO.transform.position = new Vector3(terrain.chunkPosition.x * terrain.worldScale, 0, terrain.chunkPosition.y * terrain.worldScale);
-
-            var meshFilter = meshGO.AddComponent<MeshFilter>();
-            var meshRenderer = meshGO.AddComponent<MeshRenderer>();
-            var mesh = new Mesh();
-            mesh.name = $"TerrainMesh_{terrain.chunkPosition.x}_{terrain.chunkPosition.y}";
-
-            // Find a suitable shader
-            Shader shader = Shader.Find("Universal Render Pipeline/Lit");
-            if (shader == null) shader = Shader.Find("Standard");
-            var mat = new Material(shader) { color = Color.green };
-            meshRenderer.material = mat;
-
-            // Generate vertices and triangles
-            Vector3[] vertices = new Vector3[resolution * resolution];
-            int[] triangles = new int[(resolution - 1) * (resolution - 1) * 6];
-            Vector2[] uvs = new Vector2[vertices.Length];
-
-            // Find min/max for normalization
-            float minH = float.MaxValue, maxH = float.MinValue;
-            for (int i = 0; i < heights.Length; i++)
+            try
             {
-                if (heights[i] < minH) minH = heights[i];
-                if (heights[i] > maxH) maxH = heights[i];
-            }
-            // Calculate vertex spacing to match the compute shader coordinate system
-            float vertexStep = terrain.worldScale / (float)(resolution - 1);
+                DebugLog($"GenerateTerrainMesh: Starting for chunk {terrain.chunkPosition}, resolution {resolution}, heights length {heights.Length}");
+                
+                // Create a new GameObject for the mesh
+                var meshGO = new GameObject($"DOTS_TerrainMesh_{terrain.chunkPosition.x}_{terrain.chunkPosition.y}");
+                var meshPosition = new Vector3(terrain.chunkPosition.x * terrain.worldScale, 0, terrain.chunkPosition.y * terrain.worldScale);
+                meshGO.transform.position = meshPosition;
+                
+                DebugLog($"GenerateTerrainMesh: Created GameObject at position {meshPosition}", true);
 
-            // Generate vertices with the same coordinate system as the compute shader
-            for (int z = 0; z < resolution; z++)
-            {
-                for (int x = 0; x < resolution; x++)
+                var meshFilter = meshGO.AddComponent<MeshFilter>();
+                var meshRenderer = meshGO.AddComponent<MeshRenderer>();
+                var mesh = new Mesh();
+                mesh.name = $"TerrainMesh_{terrain.chunkPosition.x}_{terrain.chunkPosition.y}";
+
+                // Find a suitable shader - using URP/Lit (modern) or Standard (fallback)
+                // Note: We're using shaders, not basic rendering, for proper lighting and materials
+                Shader shader = Shader.Find("Universal Render Pipeline/Lit");
+                string shaderName = "Universal Render Pipeline/Lit";
+                
+                if (shader == null) 
                 {
-                    int index = z * resolution + x;
-                    
-                    // Use raw height directly - no normalization or mesh height scaling
-                    float y = heights[index];
-                    
-                    // Use the same vertex spacing as the compute shader
-                    float vertexX = x * vertexStep;
-                    float vertexZ = z * vertexStep;
-                    vertices[index] = new Vector3(vertexX, y, vertexZ);
-                    uvs[index] = new Vector2((float)x / (resolution - 1), (float)z / (resolution - 1));
+                    shader = Shader.Find("Standard");
+                    shaderName = "Standard";
+                    DebugWarning($"URP/Lit shader not found, using Standard shader fallback for chunk {terrain.chunkPosition}");
                 }
-            }
-
-            int tri = 0;
-            for (int z = 0; z < resolution - 1; z++)
-            {
-                for (int x = 0; x < resolution - 1; x++)
+                
+                if (shader == null)
                 {
-                    int i = z * resolution + x;
-                    triangles[tri++] = i;
-                    triangles[tri++] = i + resolution;
-                    triangles[tri++] = i + 1;
-                    triangles[tri++] = i + 1;
-                    triangles[tri++] = i + resolution;
-                    triangles[tri++] = i + resolution + 1;
+                    DebugError($"No shader found! Mesh will not render for chunk {terrain.chunkPosition}");
+                    UnityEngine.Object.Destroy(meshGO);
+                    return;
                 }
+                
+                var mat = new Material(shader) { color = Color.green };
+                meshRenderer.material = mat;
+                DebugLog($"GenerateTerrainMesh: Created material with shader '{shaderName}'", true);
+
+                // Generate vertices and triangles
+                Vector3[] vertices = new Vector3[resolution * resolution];
+                int[] triangles = new int[(resolution - 1) * (resolution - 1) * 6];
+                Vector2[] uvs = new Vector2[vertices.Length];
+
+                // Find min/max for normalization
+                float minH = float.MaxValue, maxH = float.MinValue;
+                for (int i = 0; i < heights.Length; i++)
+                {
+                    if (heights[i] < minH) minH = heights[i];
+                    if (heights[i] > maxH) maxH = heights[i];
+                }
+                // Calculate vertex spacing to match the compute shader coordinate system
+                float vertexStep = terrain.worldScale / (float)(resolution - 1);
+
+                // Generate vertices with the same coordinate system as the compute shader
+                for (int z = 0; z < resolution; z++)
+                {
+                    for (int x = 0; x < resolution; x++)
+                    {
+                        int index = z * resolution + x;
+                        
+                        // Use raw height directly - no normalization or mesh height scaling
+                        float y = heights[index];
+                        
+                        // Use the same vertex spacing as the compute shader
+                        float vertexX = x * vertexStep;
+                        float vertexZ = z * vertexStep;
+                        vertices[index] = new Vector3(vertexX, y, vertexZ);
+                        uvs[index] = new Vector2((float)x / (resolution - 1), (float)z / (resolution - 1));
+                    }
+                }
+
+                int tri = 0;
+                for (int z = 0; z < resolution - 1; z++)
+                {
+                    for (int x = 0; x < resolution - 1; x++)
+                    {
+                        int i = z * resolution + x;
+                        triangles[tri++] = i;
+                        triangles[tri++] = i + resolution;
+                        triangles[tri++] = i + 1;
+                        triangles[tri++] = i + 1;
+                        triangles[tri++] = i + resolution;
+                        triangles[tri++] = i + resolution + 1;
+                    }
+                }
+
+                mesh.vertices = vertices;
+                mesh.triangles = triangles;
+                mesh.uv = uvs;
+                mesh.RecalculateNormals();
+                mesh.RecalculateBounds();
+
+                meshFilter.mesh = mesh;
+                
+                DebugLog($"GenerateTerrainMesh: Successfully created mesh with {vertices.Length} vertices, {triangles.Length/3} triangles for chunk {terrain.chunkPosition}");
+                DebugLog($"GenerateTerrainMesh: Height range: min={minH:F2}, max={maxH:F2}", true);
             }
-
-            mesh.vertices = vertices;
-            mesh.triangles = triangles;
-            mesh.uv = uvs;
-            mesh.RecalculateNormals();
-            mesh.RecalculateBounds();
-
-            meshFilter.mesh = mesh;
+            catch (System.Exception e)
+            {
+                DebugError($"GenerateTerrainMesh failed for chunk {terrain.chunkPosition}: {e.Message}\n{e.StackTrace}");
+            }
         }
 
         /// <summary>
-        /// Debug log wrapper that respects the debug toggle
+        /// Debug log wrapper that respects the debug toggle from DebugSettings and TerrainGenerationSettings
         /// </summary>
+        private void DebugLog(string message, bool verbose = false)
+        {
+            // Use DebugSettings for terrain-specific logging (respects EnableTerrainDebug flag)
+            // Also check settings.enableDebugLogs for additional control
+            bool shouldLog = DebugSettings.EnableTerrainDebug || 
+                           (settings?.enableDebugLogs ?? false) ||
+                           (verbose && (settings?.enableVerboseLogs ?? false));
+            
+            if (shouldLog)
+            {
+                DebugSettings.LogTerrain($"HybridTerrainGenerationSystem: {message}", true);
+            }
+        }
+        
         private void DebugError(string message)
         {
-            Debug.LogError($"[HybridSystem] {message}");
+            // Errors always shown via DebugSettings
+            DebugSettings.LogError($"HybridTerrainGenerationSystem: {message}");
         }
         
         private void DebugWarning(string message)
         {
-            Debug.LogWarning($"[HybridSystem] {message}");
+            // Warnings always shown via DebugSettings
+            DebugSettings.LogWarning($"HybridTerrainGenerationSystem: {message}");
         }
     }
 } 

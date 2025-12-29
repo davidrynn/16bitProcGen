@@ -1,22 +1,17 @@
 {
-    "name": "DOTS.Terrain",
-    "rootNamespace": "",
+    "name": "DOTS.Terrain.Bootstrap",
+    "rootNamespace": "DOTS.Terrain.Bootstrap",
     "references": [
-        "Core",
+        "DOTS.Terrain",
         "Unity.Entities",
         "Unity.Entities.Hybrid",
-        "Unity.Entities.Graphics",
         "Unity.Transforms",
         "Unity.Mathematics",
-        "Unity.Mathematics.Extensions",
-        "Unity.Collections",
-        "Unity.Burst",
-        "Unity.Physics",
-        "Unity.Physics.Authoring"
+        "Unity.Collections"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],
-    "allowUnsafeCode": true,
+    "allowUnsafeCode": false,
     "overrideReferences": false,
     "precompiledReferences": [],
     "autoReferenced": true,

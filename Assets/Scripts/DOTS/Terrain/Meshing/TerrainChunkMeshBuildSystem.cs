@@ -1,7 +1,7 @@
 using Unity.Burst;
 using Unity.Entities;
 using Unity.Mathematics;
-using DOTS.Terrain.SDF;
+using DOTS.Terrain;
 
 namespace DOTS.Terrain.Meshing
 {
