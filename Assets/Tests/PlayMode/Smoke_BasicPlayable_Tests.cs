@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using DOTS.Player.Bootstrap;
 using DOTS.Player.Components;
 using DOTS.Terrain;
 using NUnit.Framework;
@@ -17,7 +18,7 @@ namespace Tests.PlayMode
 {
     public class Smoke_BasicPlayable_Tests
     {
-        private const string ScenePath = "Assets/Tests/Scenes/Smoke_BasicPlayable.unity";
+        private const string ScenePath = "Assets/Scenes/Tests/Smoke_BasicPlayable.unity";        
         private const string SceneName = "Smoke_BasicPlayable";
         private const float TimeoutSeconds = 10f;
         private const int MovementFrames = 12;
@@ -72,15 +73,52 @@ namespace Tests.PlayMode
 
             var entityManager = world.EntityManager;
 
+            // DIAGNOSTIC: Check if PlayerEntityBootstrap system exists
+            var playerBootstrapHandle = world.GetExistingSystem<PlayerEntityBootstrap>();
+            if (playerBootstrapHandle == SystemHandle.Null)
+            {
+                Debug.LogError("[Smoke Test] PlayerEntityBootstrap system not found in world!");
+                Debug.LogError("[Smoke Test] Check DotsSystemBootstrap configuration - system may not be created.");
+                Assert.Fail("PlayerEntityBootstrap system not found. Check DotsSystemBootstrap configuration.");
+            }
+            else
+            {
+                Debug.Log($"[Smoke Test] PlayerEntityBootstrap system found: {playerBootstrapHandle}");
+            }
+
+            // DIAGNOSTIC: Try to manually run InitializationSystemGroup to ensure systems execute
+            var initGroup = world.GetExistingSystemManaged<InitializationSystemGroup>();
+            if (initGroup != null)
+            {
+                Debug.Log("[Smoke Test] Manually running InitializationSystemGroup to ensure PlayerEntityBootstrap executes...");
+                initGroup.Update();
+            }
+            else
+            {
+                Debug.LogWarning("[Smoke Test] InitializationSystemGroup not found - systems may not execute automatically.");
+            }
+
+            // Give it a frame to process
+            yield return null;
+
             using var playerQuery = entityManager.CreateEntityQuery(ComponentType.ReadOnly<PlayerTag>());
             using var cameraQuery = entityManager.CreateEntityQuery(ComponentType.ReadOnly<MainCameraTag>());
             using var terrainQuery = entityManager.CreateEntityQuery(ComponentType.ReadOnly<TerrainChunk>());
             using var fieldSettingsQuery = entityManager.CreateEntityQuery(ComponentType.ReadOnly<SDFTerrainFieldSettings>());
 
+            // DIAGNOSTIC: Check current state before waiting
+            var initialPlayerCount = playerQuery.CalculateEntityCount();
+            Debug.Log($"[Smoke Test] Initial player entity count: {initialPlayerCount}");
+
             yield return WaitForCondition(
                 () => !playerQuery.IsEmptyIgnoreFilter,
                 TimeoutSeconds,
-                "Player entity not found (PlayerTag). Ensure PlayerEntityBootstrap is enabled via DotsSystemBootstrap.");
+                $"Player entity not found (PlayerTag). Initial count was {initialPlayerCount}. Ensure PlayerEntityBootstrap is enabled via DotsSystemBootstrap.");
+
+            // DIAGNOSTIC: Verify player was actually created
+            var finalPlayerCount = playerQuery.CalculateEntityCount();
+            Debug.Log($"[Smoke Test] Final player entity count: {finalPlayerCount}");
+            Assert.AreEqual(1, finalPlayerCount, $"Expected exactly 1 player entity, but found {finalPlayerCount}");
 
             yield return WaitForCondition(
                 () => !cameraQuery.IsEmptyIgnoreFilter,
@@ -98,6 +136,13 @@ namespace Tests.PlayMode
                 "SDF terrain field settings not found (SDFTerrainFieldSettings). Ensure TerrainBootstrapAuthoring runs at startup.");
 
             var playerEntity = playerQuery.GetSingletonEntity();
+            
+            // DIAGNOSTIC: Log player entity details
+            Debug.Log($"[Smoke Test] Player entity found: {playerEntity}");
+            Debug.Log($"[Smoke Test] Player has LocalTransform: {entityManager.HasComponent<LocalTransform>(playerEntity)}");
+            Debug.Log($"[Smoke Test] Player has PlayerInputComponent: {entityManager.HasComponent<PlayerInputComponent>(playerEntity)}");
+            Debug.Log($"[Smoke Test] Player has PlayerMovementState: {entityManager.HasComponent<PlayerMovementState>(playerEntity)}");
+            
             Assert.IsTrue(entityManager.HasComponent<PlayerInputComponent>(playerEntity),
                 "Player entity missing PlayerInputComponent. Movement input cannot be injected.");
             Assert.IsTrue(entityManager.HasComponent<PlayerMovementState>(playerEntity),
@@ -107,6 +152,7 @@ namespace Tests.PlayMode
 
             var initialTransform = entityManager.GetComponentData<LocalTransform>(playerEntity);
             var initialPosition = initialTransform.Position;
+            Debug.Log($"[Smoke Test] Initial player position: {initialPosition}");
 
             for (var i = 0; i < MovementFrames; i++)
             {
@@ -119,6 +165,8 @@ namespace Tests.PlayMode
             var finalPosition = entityManager.GetComponentData<LocalTransform>(playerEntity).Position;
             var delta = finalPosition - initialPosition;
             var planarDelta = new float2(delta.x, delta.z);
+            Debug.Log($"[Smoke Test] Final player position: {finalPosition}, Delta: {delta}, Planar Delta: {planarDelta}, Length: {math.length(planarDelta)}");
+            
             Assert.Greater(math.length(planarDelta), MovementEpsilon,
                 $"Player did not move enough. Delta XZ: {planarDelta}. Ensure PlayerMovementSystem and PlayerGroundingSystem are enabled.");
         }

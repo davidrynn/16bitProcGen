@@ -163,8 +163,12 @@ namespace DOTS.Player.Bootstrap
             // Add player tag for identification
             entityManager.AddComponent<PlayerTag>(entity);
 
+            // Get player position and view for camera setup
+            var playerPosition = new float3(0, 2, 0); // Start 2 units above ground
+            var playerView = entityManager.GetComponentData<PlayerViewComponent>(entity);
+
             // Create camera entity and link it to player
-            Entity cameraEntity = CreateMainCameraAndEntity(ref state);
+            Entity cameraEntity = CreateMainCameraAndEntity(ref state, entity, playerPosition, playerView);
             
             if (cameraEntity != Entity.Null)
             {
@@ -298,7 +302,7 @@ namespace DOTS.Player.Bootstrap
 
         }
 
-        private Entity CreateMainCameraAndEntity(ref SystemState state)
+        private Entity CreateMainCameraAndEntity(ref SystemState state, Entity playerEntity, float3 playerPosition, PlayerViewComponent playerView)
         {
             var entityManager = state.EntityManager;
             
@@ -310,6 +314,25 @@ namespace DOTS.Player.Bootstrap
                 // This handles the case where camera exists but wasn't baked
             }
 
+            // Get camera settings (use default values that match PlayerCameraSettings)
+            var cameraSettings = new PlayerCameraSettings
+            {
+                FirstPersonOffset = new float3(0f, 1.6f, 0f),        // Camera at eye level
+                ThirdPersonPivotOffset = new float3(0f, 1.5f, 0f),   // Shoulder height pivot
+                ThirdPersonDistance = 3.5f,
+                IsThirdPerson = false
+            };
+            
+            // Calculate camera position: player position + first person offset
+            // This matches the logic in PlayerCameraSystem
+            float3 cameraPosition = playerPosition + cameraSettings.FirstPersonOffset;
+            
+            // Calculate camera rotation from player view (same formula as PlayerCameraSystem)
+            // Combine player yaw rotation with camera pitch rotation
+            quaternion playerRotation = quaternion.AxisAngle(math.up(), math.radians(playerView.YawDegrees));
+            quaternion pitchRotation = quaternion.AxisAngle(math.right(), math.radians(playerView.PitchDegrees));
+            quaternion combinedRotation = math.mul(playerRotation, pitchRotation);
+
             // Create Unity Camera GameObject (required for rendering)
             var cameraGO = new GameObject("Main Camera (ECS Player)");
             var camera = cameraGO.AddComponent<Camera>();
@@ -318,11 +341,9 @@ namespace DOTS.Player.Bootstrap
             camera.nearClipPlane = 0.3f;
             camera.farClipPlane = 1000f;
 
-            // Position camera behind player
-            var cameraPos = new Vector3(0, 3, -5);
-            var lookAtPos = new Vector3(0, 2, 0);
-            cameraGO.transform.position = cameraPos;
-            cameraGO.transform.LookAt(lookAtPos); // Look at player spawn
+            // Set position and rotation based on calculated values
+            cameraGO.transform.position = (Vector3)cameraPosition;
+            cameraGO.transform.rotation = (Quaternion)combinedRotation;
 
             // Add AudioListener (required for 3D audio)
             cameraGO.AddComponent<AudioListener>();
@@ -335,19 +356,17 @@ namespace DOTS.Player.Bootstrap
             entityManager.AddComponent<MainCameraTag>(cameraEntity);
             
             // Add LocalTransform for the camera entity
-            var cameraPosFloat3 = (float3)cameraPos;
-            var cameraRot = (quaternion)cameraGO.transform.rotation;
             entityManager.AddComponentData(cameraEntity, new LocalTransform
             {
-                Position = cameraPosFloat3,
-                Rotation = cameraRot,
+                Position = cameraPosition,
+                Rotation = combinedRotation,
                 Scale = 1f
             });
             
             // Add LocalToWorld
             entityManager.AddComponentData(cameraEntity, new LocalToWorld
             {
-                Value = float4x4.TRS(cameraPosFloat3, cameraRot, new float3(1f))
+                Value = float4x4.TRS(cameraPosition, combinedRotation, new float3(1f))
             });
             
             // CRITICAL: Link the Camera GameObject to the entity so PlayerCameraSystem can update it

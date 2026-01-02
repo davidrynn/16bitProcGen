@@ -8,7 +8,9 @@
         "Unity.Transforms",
         "Unity.Mathematics",
         "Unity.Collections",
+        "Unity.Physics",
         "DOTS.Player.Components",
+        "DOTS.Player.Bootstrap",
         "DOTS.Terrain",
         "Assembly-CSharp"
     ],
