@@ -6,6 +6,8 @@ using DOTS.Terrain;
 using NUnit.Framework;
 using Unity.Entities;
 using Unity.Mathematics;
+using Unity.Physics;
+using Unity.Physics.Systems;
 using Unity.Transforms;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -84,6 +86,8 @@ namespace Tests.PlayMode
             else
             {
                 Debug.Log($"[Smoke Test] PlayerEntityBootstrap system found: {playerBootstrapHandle}");
+                // Manually run the bootstrap since it has [DisableAutoCreation] and isn't in a group
+                 playerBootstrapHandle.Update(world.Unmanaged);
             }
 
             // DIAGNOSTIC: Try to manually run InitializationSystemGroup to ensure systems execute
@@ -154,21 +158,79 @@ namespace Tests.PlayMode
             var initialPosition = initialTransform.Position;
             Debug.Log($"[Smoke Test] Initial player position: {initialPosition}");
 
-            for (var i = 0; i < MovementFrames; i++)
+            // DIAGNOSTIC: Check grounding state and physics world
+            LogGroundingAndPhysicsDiagnostics(entityManager, playerEntity, terrainQuery);
+
+            // Wait for player to move enough, injecting input each frame
+            yield return WaitForMovement(
+                entityManager,
+                playerEntity,
+                initialPosition,
+                MovementEpsilon,
+                TimeoutSeconds,
+                $"Player did not move enough within {TimeoutSeconds}s. Ensure PlayerMovementSystem and PlayerGroundingSystem are enabled.");
+        }
+
+        private static IEnumerator WaitForMovement(
+            EntityManager entityManager,
+            Entity playerEntity,
+            float3 initialPosition,
+            float movementThreshold,
+            float timeoutSeconds,
+            string timeoutMessage)
+        {
+            var startTime = Time.realtimeSinceStartup;
+            int frameCount = 0;
+            bool hasLoggedGroundedOnce = false;
+            
+            while (Time.realtimeSinceStartup - startTime < timeoutSeconds)
             {
+                frameCount++;
+                
+                // Inject movement input each frame
                 var input = entityManager.GetComponentData<PlayerInputComponent>(playerEntity);
                 input.Move = new float2(0f, 1f);
                 entityManager.SetComponentData(playerEntity, input);
+
                 yield return null;
+
+                // Periodic grounding state check (every 30 frames)
+                if (frameCount % 30 == 0 || (!hasLoggedGroundedOnce && entityManager.HasComponent<PlayerMovementState>(playerEntity)))
+                {
+                    var movementState = entityManager.GetComponentData<PlayerMovementState>(playerEntity);
+                    if (movementState.IsGrounded && !hasLoggedGroundedOnce)
+                    {
+                        Debug.Log($"[Smoke Test] Player became grounded at frame {frameCount}");
+                        hasLoggedGroundedOnce = true;
+                    }
+                    else if (frameCount % 30 == 0)
+                    {
+                        Debug.Log($"[Smoke Test] Frame {frameCount}: IsGrounded={movementState.IsGrounded}, Mode={movementState.Mode}");
+                    }
+                }
+
+                // Check if we've moved enough
+                var currentPosition = entityManager.GetComponentData<LocalTransform>(playerEntity).Position;
+                var delta = currentPosition - initialPosition;
+                var planarDelta = new float2(delta.x, delta.z);
+                var distance = math.length(planarDelta);
+
+                if (distance > movementThreshold)
+                {
+                    Debug.Log($"[Smoke Test] Player moved successfully at frame {frameCount}. Final position: {currentPosition}, Delta: {delta}, Planar Delta: {planarDelta}, Distance: {distance}");
+                    yield break;
+                }
             }
 
+            // Log final state on timeout
             var finalPosition = entityManager.GetComponentData<LocalTransform>(playerEntity).Position;
-            var delta = finalPosition - initialPosition;
-            var planarDelta = new float2(delta.x, delta.z);
-            Debug.Log($"[Smoke Test] Final player position: {finalPosition}, Delta: {delta}, Planar Delta: {planarDelta}, Length: {math.length(planarDelta)}");
-            
-            Assert.Greater(math.length(planarDelta), MovementEpsilon,
-                $"Player did not move enough. Delta XZ: {planarDelta}. Ensure PlayerMovementSystem and PlayerGroundingSystem are enabled.");
+            var finalDelta = finalPosition - initialPosition;
+            var finalPlanarDelta = new float2(finalDelta.x, finalDelta.z);
+            var finalMovementState = entityManager.GetComponentData<PlayerMovementState>(playerEntity);
+            Debug.LogError($"[Smoke Test] Movement timeout after {frameCount} frames. Final position: {finalPosition}, Delta: {finalDelta}, Planar Delta: {finalPlanarDelta}, Distance: {math.length(finalPlanarDelta)}");
+            Debug.LogError($"[Smoke Test] Final grounding state: IsGrounded={finalMovementState.IsGrounded}, Mode={finalMovementState.Mode}, FallTime={finalMovementState.FallTime}");
+
+            Assert.Fail(timeoutMessage);
         }
 
         private static IEnumerator WaitForCondition(Func<bool> condition, float timeoutSeconds, string timeoutMessage)
@@ -185,6 +247,82 @@ namespace Tests.PlayMode
             }
 
             Assert.Fail(timeoutMessage);
+        }
+
+        private static void LogGroundingAndPhysicsDiagnostics(EntityManager entityManager, Entity playerEntity, EntityQuery terrainQuery)
+        {
+            // Check player grounding state
+            if (entityManager.HasComponent<PlayerMovementState>(playerEntity))
+            {
+                var movementState = entityManager.GetComponentData<PlayerMovementState>(playerEntity);
+                Debug.Log($"[Smoke Test] Player IsGrounded: {movementState.IsGrounded}, Mode: {movementState.Mode}, FallTime: {movementState.FallTime}");
+            }
+            else
+            {
+                Debug.LogWarning("[Smoke Test] Player missing PlayerMovementState component!");
+            }
+
+            // Check player physics velocity
+            if (entityManager.HasComponent<PhysicsVelocity>(playerEntity))
+            {
+                var velocity = entityManager.GetComponentData<PhysicsVelocity>(playerEntity);
+                Debug.Log($"[Smoke Test] Player PhysicsVelocity: Linear={velocity.Linear}, Angular={velocity.Angular}");
+            }
+            else
+            {
+                Debug.LogWarning("[Smoke Test] Player missing PhysicsVelocity - physics may not be active!");
+            }
+
+            // Check terrain chunks for physics colliders
+            var terrainCount = terrainQuery.CalculateEntityCount();
+            Debug.Log($"[Smoke Test] Terrain chunk count: {terrainCount}");
+
+            if (terrainCount > 0)
+            {
+                var terrainEntities = terrainQuery.ToEntityArray(Unity.Collections.Allocator.Temp);
+                int withCollider = 0;
+                int withPhysicsShape = 0;
+                foreach (var terrainEntity in terrainEntities)
+                {
+                    if (entityManager.HasComponent<PhysicsCollider>(terrainEntity))
+                        withCollider++;
+                    // Check for any physics-related components
+                    if (entityManager.HasComponent<PhysicsWorldIndex>(terrainEntity))
+                        withPhysicsShape++;
+                }
+                Debug.Log($"[Smoke Test] Terrain chunks with PhysicsCollider: {withCollider}/{terrainCount}");
+                Debug.Log($"[Smoke Test] Terrain chunks with PhysicsWorldIndex: {withPhysicsShape}/{terrainCount}");
+                terrainEntities.Dispose();
+            }
+
+            // Check physics world state
+            var world = World.DefaultGameObjectInjectionWorld;
+            if (world != null)
+            {
+                // Check if PhysicsSystemGroup exists (indicates physics is set up)
+                var physicsSystemGroup = world.GetExistingSystemManaged<PhysicsSystemGroup>();
+                if (physicsSystemGroup != null)
+                {
+                    Debug.Log("[Smoke Test] PhysicsSystemGroup exists - physics simulation is configured");
+                }
+                else
+                {
+                    Debug.LogWarning("[Smoke Test] PhysicsSystemGroup not found - physics may not be running!");
+                }
+
+                // Try to get PhysicsWorldSingleton
+                using var physicsQuery = entityManager.CreateEntityQuery(ComponentType.ReadOnly<PhysicsWorldSingleton>());
+                if (!physicsQuery.IsEmptyIgnoreFilter)
+                {
+                    var physicsSingleton = physicsQuery.GetSingleton<PhysicsWorldSingleton>();
+                    var physicsWorld = physicsSingleton.PhysicsWorld;
+                    Debug.Log($"[Smoke Test] PhysicsWorld NumBodies: {physicsWorld.NumBodies}, NumStaticBodies: {physicsWorld.NumStaticBodies}, NumDynamicBodies: {physicsWorld.NumDynamicBodies}");
+                }
+                else
+                {
+                    Debug.LogWarning("[Smoke Test] PhysicsWorldSingleton not found - physics simulation may not be running!");
+                }
+            }
         }
     }
 }
