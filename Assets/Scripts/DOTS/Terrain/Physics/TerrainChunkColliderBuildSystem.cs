@@ -40,7 +40,7 @@ namespace DOTS.Terrain
                 int removedCount = 0;
                 bool budgetReached = false;
                 foreach (var (_, entity) in SystemAPI
-                             .Query<RefRO<TerrainChunkColliderData>>()
+                             .Query<RefRO<PhysicsCollider>>()
                              .WithAll<TerrainChunk>()
                              .WithEntityAccess())
                 {
@@ -50,24 +50,6 @@ namespace DOTS.Terrain
                     {
                         budgetReached = true;
                         break;
-                    }
-                }
-
-                if (!budgetReached)
-                {
-                    foreach (var (_, entity) in SystemAPI
-                                 .Query<RefRO<PhysicsCollider>>()
-                                 .WithAll<TerrainChunk>()
-                                 .WithNone<TerrainChunkColliderData>()
-                                 .WithEntityAccess())
-                    {
-                        RemoveCollider(entityManager, entity);
-                        removedCount++;
-                        if (removedCount >= MaxDisableRemovalsPerFrame)
-                        {
-                            budgetReached = true;
-                            break;
-                        }
                     }
                 }
 
