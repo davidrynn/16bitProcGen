@@ -90,6 +90,18 @@ public class DotsSystemBootstrap : MonoBehaviour
                 world.CreateSystem<TerrainChunkMeshUploadSystem>();
                 Debug.Log("[DOTS Bootstrap] TerrainChunkMeshUploadSystem enabled via config.");
             }
+
+            if (config.EnableTerrainColliderSettingsBootstrapSystem)
+            {
+                world.CreateSystem<TerrainColliderSettingsBootstrapSystem>();
+                Debug.Log("[DOTS Bootstrap] TerrainColliderSettingsBootstrapSystem enabled via config.");
+            }
+
+            if (config.EnableTerrainChunkColliderBuildSystem)
+            {
+                world.CreateSystem<TerrainChunkColliderBuildSystem>();
+                Debug.Log("[DOTS Bootstrap] TerrainChunkColliderBuildSystem enabled via config.");
+            }
         }
 
         if (config.EnablePlayerSystem)

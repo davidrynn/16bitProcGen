@@ -46,6 +46,11 @@ namespace DOTS.Terrain.Meshing
                     entityManager.AddComponent<TerrainChunkNeedsRenderUpload>(entity);
                 }
 
+                if (!entityManager.HasComponent<TerrainChunkNeedsColliderBuild>(entity))
+                {
+                    entityManager.AddComponent<TerrainChunkNeedsColliderBuild>(entity);
+                }
+
                 if (entityManager.HasComponent<TerrainChunkNeedsMeshBuild>(entity))
                 {
                     entityManager.RemoveComponent<TerrainChunkNeedsMeshBuild>(entity);

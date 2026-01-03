@@ -1,0 +1,199 @@
+using System.Collections;
+using NUnit.Framework;
+using Unity.Entities;
+using Unity.Physics;
+using Unity.Physics.Systems;
+using UnityEngine;
+using UnityEngine.TestTools;
+
+namespace DOTS.Terrain.Tests
+{
+    [TestFixture]
+    public class TerrainPhysicsPlayModeTests
+    {
+        private World previousWorld;
+        private World testWorld;
+        private EntityManager entityManager;
+        private InitializationSystemGroup initGroup;
+        private SimulationSystemGroup simulationGroup;
+        private FixedStepSimulationSystemGroup fixedStepGroup;
+        private PhysicsSystemGroup physicsGroup;
+        private BuildPhysicsWorld buildPhysicsWorld;
+        private StepPhysicsWorld stepPhysicsWorld;
+        private ExportPhysicsWorld exportPhysicsWorld;
+        private double elapsedTime;
+        private const float FixedDeltaTime = 1f / 60f;
+
+        [SetUp]
+        public void SetUp()
+        {
+            previousWorld = World.DefaultGameObjectInjectionWorld;
+            testWorld = new World("Terrain Physics PlayMode Tests");
+            World.DefaultGameObjectInjectionWorld = testWorld;
+            entityManager = testWorld.EntityManager;
+
+            initGroup = testWorld.GetOrCreateSystemManaged<InitializationSystemGroup>();
+            simulationGroup = testWorld.GetOrCreateSystemManaged<SimulationSystemGroup>();
+            fixedStepGroup = testWorld.GetOrCreateSystemManaged<FixedStepSimulationSystemGroup>();
+            fixedStepGroup.Timestep = FixedDeltaTime;
+
+            physicsGroup = testWorld.GetOrCreateSystemManaged<PhysicsSystemGroup>();
+            fixedStepGroup.AddSystemToUpdateList(physicsGroup);
+
+            buildPhysicsWorld = testWorld.GetOrCreateSystemManaged<BuildPhysicsWorld>();
+            stepPhysicsWorld = testWorld.GetOrCreateSystemManaged<StepPhysicsWorld>();
+            exportPhysicsWorld = testWorld.GetOrCreateSystemManaged<ExportPhysicsWorld>();
+
+            initGroup.Enabled = true;
+            simulationGroup.Enabled = true;
+            fixedStepGroup.Enabled = true;
+            physicsGroup.Enabled = true;
+            buildPhysicsWorld.Enabled = true;
+            stepPhysicsWorld.Enabled = true;
+            exportPhysicsWorld.Enabled = true;
+
+            physicsGroup.AddSystemToUpdateList(buildPhysicsWorld);
+            physicsGroup.AddSystemToUpdateList(stepPhysicsWorld);
+            physicsGroup.AddSystemToUpdateList(exportPhysicsWorld);
+
+            TrySortSystems(physicsGroup);
+            TrySortSystems(fixedStepGroup);
+
+            using (var physicsStepQuery = entityManager.CreateEntityQuery(ComponentType.ReadOnly<PhysicsStep>()))
+            {
+                if (physicsStepQuery.IsEmpty)
+                {
+                    var physicsStepEntity = entityManager.CreateEntity(typeof(PhysicsStep));
+                    entityManager.SetComponentData(physicsStepEntity, PhysicsStep.Default);
+                }
+            }
+
+            elapsedTime = 0d;
+        }
+
+        [TearDown]
+        public void TearDown()
+        {
+            if (testWorld != null && testWorld.IsCreated)
+            {
+                testWorld.Dispose();
+            }
+
+            World.DefaultGameObjectInjectionWorld = previousWorld;
+        }
+
+        [UnityTest]
+        public IEnumerator PhysicsWorldSingleton_BecomesValidAfterFixedStep()
+        {
+            bool hasPhysicsWorld = false;
+            using var query = entityManager.CreateEntityQuery(typeof(PhysicsWorldSingleton));
+            for (int i = 0; i < 3; i++)
+            {
+                TickWorldOnce();
+                if (!query.IsEmpty)
+                {
+                    hasPhysicsWorld = true;
+                    break;
+                }
+            }
+
+            if (!hasPhysicsWorld)
+            {
+                LogMissingPhysicsWorldDiagnostics();
+            }
+
+            Assert.IsTrue(hasPhysicsWorld, "PhysicsWorldSingleton should exist after fixed-step tick");
+            yield return null;
+        }
+
+        private void TickWorldOnce()
+        {
+            AdvanceTime();
+            initGroup.Update();
+            simulationGroup.Update();
+            fixedStepGroup.Update();
+        }
+
+        private void AdvanceTime()
+        {
+            elapsedTime += FixedDeltaTime;
+            testWorld.SetTime(new TimeData(elapsedTime, FixedDeltaTime));
+        }
+
+        private void LogMissingPhysicsWorldDiagnostics()
+        {
+            var systemList = testWorld.Systems;
+            Debug.LogWarning($"[TerrainPhysicsPlayModeTests] Diagnostics: fixedStepGroup created={fixedStepGroup != null && fixedStepGroup.World == testWorld} enabled={fixedStepGroup?.Enabled ?? false} timestep={fixedStepGroup?.Timestep ?? 0f} deltaTime={testWorld.Time.DeltaTime}");
+            Debug.LogWarning($"[TerrainPhysicsPlayModeTests] Diagnostics: physicsGroup created={physicsGroup != null && physicsGroup.World == testWorld} enabled={physicsGroup?.Enabled ?? false}");
+            Debug.LogWarning($"[TerrainPhysicsPlayModeTests] Diagnostics: buildPhysicsWorld created={buildPhysicsWorld != null && buildPhysicsWorld.World == testWorld} enabled={buildPhysicsWorld?.Enabled ?? false}");
+            Debug.LogWarning($"[TerrainPhysicsPlayModeTests] Diagnostics: stepPhysicsWorld created={stepPhysicsWorld != null && stepPhysicsWorld.World == testWorld} enabled={stepPhysicsWorld?.Enabled ?? false}");
+            Debug.LogWarning($"[TerrainPhysicsPlayModeTests] Diagnostics: exportPhysicsWorld created={exportPhysicsWorld != null && exportPhysicsWorld.World == testWorld} enabled={exportPhysicsWorld?.Enabled ?? false}");
+            LogUpdateListDiagnostics();
+            Debug.LogWarning($"[TerrainPhysicsPlayModeTests] PhysicsWorldSingleton missing after tick. Systems count: {systemList.Count}");
+            foreach (var system in systemList)
+            {
+                Debug.LogWarning($"[TerrainPhysicsPlayModeTests] System: {system.GetType().Name}");
+            }
+        }
+
+        private static void TrySortSystems(ComponentSystemGroup group)
+        {
+            if (group == null)
+            {
+                return;
+            }
+
+            var sortMethod = group.GetType().GetMethod("SortSystems", System.Type.EmptyTypes);
+            sortMethod?.Invoke(group, null);
+        }
+
+        private void LogUpdateListDiagnostics()
+        {
+            var fixedStepContainsPhysics = TryContainsSystem(fixedStepGroup, physicsGroup);
+            var physicsContainsBuild = TryContainsSystem(physicsGroup, buildPhysicsWorld);
+            var physicsContainsStep = TryContainsSystem(physicsGroup, stepPhysicsWorld);
+            var physicsContainsExport = TryContainsSystem(physicsGroup, exportPhysicsWorld);
+
+            Debug.LogWarning($"[TerrainPhysicsPlayModeTests] Diagnostics: fixedStepGroup contains PhysicsSystemGroup={fixedStepContainsPhysics}");
+            Debug.LogWarning($"[TerrainPhysicsPlayModeTests] Diagnostics: physicsGroup contains Build/Step/Export={physicsContainsBuild}/{physicsContainsStep}/{physicsContainsExport}");
+        }
+
+        private static string TryContainsSystem(ComponentSystemGroup group, ComponentSystemBase system)
+        {
+            if (group == null || system == null)
+            {
+                return "unknown";
+            }
+
+            var getUpdateListMethod = group.GetType().GetMethod("GetUpdateList", System.Type.EmptyTypes);
+            if (getUpdateListMethod == null)
+            {
+                return "unavailable";
+            }
+
+            try
+            {
+                var updateList = getUpdateListMethod.Invoke(group, null);
+                if (updateList == null)
+                {
+                    return "unknown";
+                }
+
+                var listType = updateList.GetType();
+                var containsMethod = listType.GetMethod("Contains");
+                if (containsMethod == null)
+                {
+                    return "unknown";
+                }
+
+                var contains = containsMethod.Invoke(updateList, new object[] { system });
+                return contains is bool value ? value.ToString() : "unknown";
+            }
+            catch (System.Exception exception)
+            {
+                Debug.LogWarning($"[TerrainPhysicsPlayModeTests] Diagnostics: unable to inspect update list ({exception.GetType().Name})");
+                return "error";
+            }
+        }
+    }
+}
