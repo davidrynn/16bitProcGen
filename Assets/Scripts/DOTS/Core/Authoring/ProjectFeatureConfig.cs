@@ -43,6 +43,8 @@ public class ProjectFeatureConfig : ScriptableObject
     public bool EnableTerrainChunkMeshBuildSystem = true;
     public bool EnableTerrainChunkRenderPrepSystem = true;
     public bool EnableTerrainChunkMeshUploadSystem = true;
+    public bool EnableTerrainChunkColliderBuildSystem = false;
+    public bool EnableTerrainColliderSettingsBootstrapSystem = true;
 
     [Header("Dungeon Systems")]
     public bool EnableDungeonRenderingSystem = true;

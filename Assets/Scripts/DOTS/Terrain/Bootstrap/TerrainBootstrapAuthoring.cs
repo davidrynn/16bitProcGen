@@ -1,6 +1,7 @@
 using DOTS.Terrain;
 using Unity.Entities;
 using Unity.Mathematics;
+using Unity.Transforms;
 using UnityEngine;
 using ChunkComponent = DOTS.Terrain.TerrainChunk;
 
@@ -92,6 +93,8 @@ namespace DOTS.Terrain.Bootstrap
                     {
                         WorldOrigin = origin
                     });
+
+                    entityManager.AddComponentData(entity, LocalTransform.FromPosition(origin));
                 }
             }
         }
