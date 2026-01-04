@@ -1,8 +1,10 @@
 using System.Collections;
 using NUnit.Framework;
 using Unity.Entities;
+using Unity.Mathematics;
 using Unity.Physics;
 using Unity.Physics.Systems;
+using Unity.Transforms;
 using UnityEngine;
 using UnityEngine.TestTools;
 
@@ -83,26 +85,66 @@ namespace DOTS.Terrain.Tests
         }
 
         [UnityTest]
-        public IEnumerator PhysicsWorldSingleton_BecomesValidAfterFixedStep()
+        public IEnumerator RaycastHitsStaticBoxCollider()
         {
-            bool hasPhysicsWorld = false;
-            using var query = entityManager.CreateEntityQuery(typeof(PhysicsWorldSingleton));
-            for (int i = 0; i < 3; i++)
+            var collider = BoxCollider.Create(new BoxGeometry
             {
-                TickWorldOnce();
-                if (!query.IsEmpty)
+                Center = float3.zero,
+                Size = new float3(1f, 1f, 1f),
+                Orientation = quaternion.identity,
+                BevelRadius = 0f
+            }, CollisionFilter.Default);
+
+            var colliderEntity = entityManager.CreateEntity(typeof(LocalTransform), typeof(PhysicsCollider));
+            entityManager.SetComponentData(colliderEntity, LocalTransform.FromPosition(float3.zero));
+            entityManager.SetComponentData(colliderEntity, new PhysicsCollider { Value = collider });
+
+            try
+            {
+                bool hasPhysicsWorld = false;
+                using var query = entityManager.CreateEntityQuery(typeof(PhysicsWorldSingleton));
+                for (int i = 0; i < 3; i++)
                 {
-                    hasPhysicsWorld = true;
-                    break;
+                    TickWorldOnce();
+                    if (!query.IsEmpty)
+                    {
+                        hasPhysicsWorld = true;
+                        break;
+                    }
                 }
-            }
 
-            if (!hasPhysicsWorld)
+                if (!hasPhysicsWorld)
+                {
+                    LogMissingPhysicsWorldDiagnostics();
+                }
+
+                Assert.IsTrue(hasPhysicsWorld, "PhysicsWorldSingleton should exist after fixed-step tick");
+
+                var physicsWorldSingleton = query.GetSingleton<PhysicsWorldSingleton>();
+                var rayInput = new RaycastInput
+                {
+                    Start = new float3(0f, 10f, 0f),
+                    End = new float3(0f, -10f, 0f),
+                    Filter = CollisionFilter.Default
+                };
+
+                bool hit = physicsWorldSingleton.PhysicsWorld.CastRay(rayInput);
+
+                Assert.IsTrue(hit, "Expected raycast to hit the static box collider.");
+            }
+            finally
             {
-                LogMissingPhysicsWorldDiagnostics();
+                entityManager.DestroyEntity(colliderEntity);
+                collider.Dispose();
             }
 
-            Assert.IsTrue(hasPhysicsWorld, "PhysicsWorldSingleton should exist after fixed-step tick");
+            yield return null;
+        }
+
+        [UnityTest]
+        [Ignore("TODO: Wire up terrain collider pipeline (SDF -> mesh -> collider) and assert raycast hits.")]
+        public IEnumerator TerrainChunkColliderPipeline_CreatesColliderAndRaycastHits()
+        {
             yield return null;
         }
 
