@@ -100,9 +100,8 @@ namespace DOTS.Terrain.Tests
                     BevelRadius = 0f
                 }, CollisionFilter.Default);
 
-                colliderEntity = entityManager.CreateEntity(typeof(LocalTransform), typeof(LocalToWorld), typeof(PhysicsCollider), typeof(PhysicsWorldIndex));
+                colliderEntity = entityManager.CreateEntity(typeof(LocalTransform), typeof(PhysicsCollider), typeof(PhysicsWorldIndex));
                 entityManager.SetComponentData(colliderEntity, LocalTransform.FromPosition(float3.zero));
-                entityManager.SetComponentData(colliderEntity, LocalToWorld.FromTRS(float3.zero, quaternion.identity, new float3(1f, 1f, 1f)));
                 entityManager.SetComponentData(colliderEntity, new PhysicsCollider { Value = collider });
 
                 bool hasPhysicsWorld = false;
@@ -153,9 +152,41 @@ namespace DOTS.Terrain.Tests
         }
 
         [UnityTest]
-        [Ignore("TODO: Wire up terrain collider pipeline (SDF -> mesh -> collider) and assert raycast hits.")]
         public IEnumerator TerrainChunkColliderPipeline_CreatesColliderAndRaycastHits()
         {
+            EnsureTerrainPipelineSystems();
+            EnsureSdfFieldSettings();
+            EnsureTerrainColliderSettings();
+
+            var chunkEntity = CreateTerrainChunkEntity(new int3(16, 16, 16), 1f, float3.zero);
+
+            bool ready = TickUntil(120, () =>
+            {
+                return HasPhysicsWorldSingleton()
+                       && entityManager.HasComponent<PhysicsCollider>(chunkEntity)
+                       && entityManager.HasComponent<TerrainChunkColliderData>(chunkEntity);
+            });
+
+            if (!ready)
+            {
+                LogTerrainPipelineDiagnostics(chunkEntity, "Timed out waiting for terrain collider + PhysicsWorldSingleton.");
+                Assert.Fail("Terrain collider pipeline did not complete within timeout.");
+            }
+
+            TickWorldOnce();
+
+            using var physicsWorldQuery = entityManager.CreateEntityQuery(ComponentType.ReadOnly<PhysicsWorldSingleton>());
+            var physicsWorldSingleton = physicsWorldQuery.GetSingleton<PhysicsWorldSingleton>();
+            var rayInput = new RaycastInput
+            {
+                Start = new float3(0f, 10f, 0f),
+                End = new float3(0f, -10f, 0f),
+                Filter = CollisionFilter.Default
+            };
+
+            bool hit = physicsWorldSingleton.PhysicsWorld.CastRay(rayInput);
+
+            Assert.IsTrue(hit, "Expected raycast to hit the generated terrain collider.");
             yield return null;
         }
 
@@ -171,6 +202,124 @@ namespace DOTS.Terrain.Tests
         {
             elapsedTime += FixedDeltaTime;
             testWorld.SetTime(new TimeData(elapsedTime, FixedDeltaTime));
+        }
+
+        private void EnsureTerrainPipelineSystems()
+        {
+            var densitySystem = testWorld.CreateSystem<TerrainChunkDensitySamplingSystem>();
+            var meshSystem = testWorld.CreateSystem<DOTS.Terrain.Meshing.TerrainChunkMeshBuildSystem>();
+            var colliderSystem = testWorld.CreateSystem<TerrainChunkColliderBuildSystem>();
+
+            simulationGroup.AddSystemToUpdateList(densitySystem);
+            simulationGroup.AddSystemToUpdateList(meshSystem);
+            simulationGroup.AddSystemToUpdateList(colliderSystem);
+
+            TrySortSystems(simulationGroup);
+        }
+
+        private void EnsureSdfFieldSettings()
+        {
+            using var query = entityManager.CreateEntityQuery(ComponentType.ReadOnly<SDFTerrainFieldSettings>());
+            if (!query.IsEmpty)
+            {
+                return;
+            }
+
+            var entity = entityManager.CreateEntity(typeof(SDFTerrainFieldSettings));
+            entityManager.SetComponentData(entity, new SDFTerrainFieldSettings
+            {
+                BaseHeight = 4f,
+                Amplitude = 0f,
+                Frequency = 0f,
+                NoiseValue = 0f
+            });
+        }
+
+        private void EnsureTerrainColliderSettings()
+        {
+            using var query = entityManager.CreateEntityQuery(ComponentType.ReadOnly<TerrainColliderSettings>());
+            if (query.IsEmpty)
+            {
+                var entity = entityManager.CreateEntity(typeof(TerrainColliderSettings));
+                entityManager.SetComponentData(entity, new TerrainColliderSettings { Enabled = true });
+            }
+            else
+            {
+                var entity = query.GetSingletonEntity();
+                entityManager.SetComponentData(entity, new TerrainColliderSettings { Enabled = true });
+            }
+        }
+
+        private Entity CreateTerrainChunkEntity(int3 resolution, float voxelSize, float3 worldOrigin)
+        {
+            var entity = entityManager.CreateEntity(
+                typeof(TerrainChunk),
+                typeof(TerrainChunkGridInfo),
+                typeof(TerrainChunkBounds),
+                typeof(TerrainChunkNeedsDensityRebuild),
+                typeof(LocalTransform),
+                typeof(PhysicsWorldIndex));
+
+            entityManager.SetComponentData(entity, new TerrainChunk { ChunkCoord = int3.zero });
+            entityManager.SetComponentData(entity, TerrainChunkGridInfo.Create(resolution, voxelSize));
+            entityManager.SetComponentData(entity, new TerrainChunkBounds { WorldOrigin = worldOrigin });
+            entityManager.SetComponentData(entity, LocalTransform.FromPosition(worldOrigin));
+
+            return entity;
+        }
+
+        private bool HasPhysicsWorldSingleton()
+        {
+            using var query = entityManager.CreateEntityQuery(ComponentType.ReadOnly<PhysicsWorldSingleton>());
+            return !query.IsEmpty;
+        }
+
+        private bool TickUntil(int maxFrames, System.Func<bool> condition)
+        {
+            for (int i = 0; i < maxFrames; i++)
+            {
+                TickWorldOnce();
+                if (condition())
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private void LogTerrainPipelineDiagnostics(Entity chunkEntity, string reason)
+        {
+            Debug.LogWarning($"[TerrainPhysicsPlayModeTests] Terrain pipeline diagnostics: {reason}");
+            Debug.LogWarning($"[TerrainPhysicsPlayModeTests] Singleton: PhysicsWorldSingleton={HasPhysicsWorldSingleton()}");
+            using var physicsStepQuery = entityManager.CreateEntityQuery(ComponentType.ReadOnly<PhysicsStep>());
+            using var colliderSettingsQuery = entityManager.CreateEntityQuery(ComponentType.ReadOnly<TerrainColliderSettings>());
+            using var sdfSettingsQuery = entityManager.CreateEntityQuery(ComponentType.ReadOnly<SDFTerrainFieldSettings>());
+            Debug.LogWarning($"[TerrainPhysicsPlayModeTests] Singleton: PhysicsStep={physicsStepQuery.IsEmpty == false}");
+            Debug.LogWarning($"[TerrainPhysicsPlayModeTests] Singleton: TerrainColliderSettings={colliderSettingsQuery.IsEmpty == false}");
+            Debug.LogWarning($"[TerrainPhysicsPlayModeTests] Singleton: SDFTerrainFieldSettings={sdfSettingsQuery.IsEmpty == false}");
+
+            if (chunkEntity != Entity.Null && entityManager.Exists(chunkEntity))
+            {
+                Debug.LogWarning($"[TerrainPhysicsPlayModeTests] Chunk components: NeedsDensityRebuild={entityManager.HasComponent<TerrainChunkNeedsDensityRebuild>(chunkEntity)}");
+                Debug.LogWarning($"[TerrainPhysicsPlayModeTests] Chunk components: Density={entityManager.HasComponent<TerrainChunkDensity>(chunkEntity)}");
+                Debug.LogWarning($"[TerrainPhysicsPlayModeTests] Chunk components: NeedsMeshBuild={entityManager.HasComponent<TerrainChunkNeedsMeshBuild>(chunkEntity)}");
+                Debug.LogWarning($"[TerrainPhysicsPlayModeTests] Chunk components: MeshData={entityManager.HasComponent<TerrainChunkMeshData>(chunkEntity)}");
+                Debug.LogWarning($"[TerrainPhysicsPlayModeTests] Chunk components: NeedsColliderBuild={entityManager.HasComponent<TerrainChunkNeedsColliderBuild>(chunkEntity)}");
+                Debug.LogWarning($"[TerrainPhysicsPlayModeTests] Chunk components: ColliderData={entityManager.HasComponent<TerrainChunkColliderData>(chunkEntity)}");
+                Debug.LogWarning($"[TerrainPhysicsPlayModeTests] Chunk components: PhysicsCollider={entityManager.HasComponent<PhysicsCollider>(chunkEntity)}");
+            }
+            else
+            {
+                Debug.LogWarning("[TerrainPhysicsPlayModeTests] Chunk entity missing or destroyed.");
+            }
+
+            var systemList = testWorld.Systems;
+            Debug.LogWarning($"[TerrainPhysicsPlayModeTests] Systems in world: {systemList.Count}");
+            foreach (var system in systemList)
+            {
+                Debug.LogWarning($"[TerrainPhysicsPlayModeTests] System: {system.GetType().Name}");
+            }
         }
 
         private void LogMissingPhysicsWorldDiagnostics()
