@@ -107,33 +107,38 @@ namespace DOTS.Terrain
             }
         }
 
-        private static BlobAssetReference<Collider> BuildMeshCollider(BlobAssetReference<TerrainChunkMeshBlob> mesh, CollisionFilter filter)
+        private static BlobAssetReference<Unity.Physics.Collider> BuildMeshCollider(BlobAssetReference<TerrainChunkMeshBlob> mesh, CollisionFilter filter)
         {
             var vertexCount = mesh.Value.Vertices.Length;
             var indexCount = mesh.Value.Indices.Length;
+            var triangleCount = indexCount / 3;
 
             var vertices = new NativeArray<float3>(vertexCount, Allocator.Temp);
-            var indices = new NativeArray<int>(indexCount, Allocator.Temp);
+            var triangles = new NativeArray<int3>(triangleCount, Allocator.Temp);
 
             for (int i = 0; i < vertexCount; i++)
             {
                 vertices[i] = mesh.Value.Vertices[i];
             }
 
-            for (int i = 0; i < indexCount; i++)
+            for (int i = 0; i < triangleCount; i++)
             {
-                indices[i] = mesh.Value.Indices[i];
+                int baseIndex = i * 3;
+                triangles[i] = new int3(
+                    mesh.Value.Indices[baseIndex],
+                    mesh.Value.Indices[baseIndex + 1],
+                    mesh.Value.Indices[baseIndex + 2]);
             }
 
-            var collider = MeshCollider.Create(vertices, indices, filter, Material.Default);
+            var collider = Unity.Physics.MeshCollider.Create(vertices, triangles, filter, Unity.Physics.Material.Default);
 
             vertices.Dispose();
-            indices.Dispose();
+            triangles.Dispose();
 
             return collider;
         }
 
-        private static void ApplyCollider(EntityManager entityManager, Entity entity, BlobAssetReference<Collider> newCollider)
+        private static void ApplyCollider(EntityManager entityManager, Entity entity, BlobAssetReference<Unity.Physics.Collider> newCollider)
         {
             var hadColliderData = entityManager.HasComponent<TerrainChunkColliderData>(entity);
             TerrainChunkColliderData oldData = default;
