@@ -87,21 +87,24 @@ namespace DOTS.Terrain.Tests
         [UnityTest]
         public IEnumerator RaycastHitsStaticBoxCollider()
         {
-            var collider = BoxCollider.Create(new BoxGeometry
-            {
-                Center = float3.zero,
-                Size = new float3(1f, 1f, 1f),
-                Orientation = quaternion.identity,
-                BevelRadius = 0f
-            }, CollisionFilter.Default);
-
-            var colliderEntity = entityManager.CreateEntity(typeof(LocalTransform), typeof(LocalToWorld), typeof(PhysicsCollider));
-            entityManager.SetComponentData(colliderEntity, LocalTransform.FromPosition(float3.zero));
-            entityManager.SetComponentData(colliderEntity, LocalToWorld.FromTRS(float3.zero, quaternion.identity, new float3(1f, 1f, 1f)));
-            entityManager.SetComponentData(colliderEntity, new PhysicsCollider { Value = collider });
+            var collider = BlobAssetReference<Collider>.Null;
+            Entity colliderEntity = Entity.Null;
 
             try
             {
+                collider = BoxCollider.Create(new BoxGeometry
+                {
+                    Center = float3.zero,
+                    Size = new float3(1f, 1f, 1f),
+                    Orientation = quaternion.identity,
+                    BevelRadius = 0f
+                }, CollisionFilter.Default);
+
+                colliderEntity = entityManager.CreateEntity(typeof(LocalTransform), typeof(LocalToWorld), typeof(PhysicsCollider), typeof(PhysicsWorldIndex));
+                entityManager.SetComponentData(colliderEntity, LocalTransform.FromPosition(float3.zero));
+                entityManager.SetComponentData(colliderEntity, LocalToWorld.FromTRS(float3.zero, quaternion.identity, new float3(1f, 1f, 1f)));
+                entityManager.SetComponentData(colliderEntity, new PhysicsCollider { Value = collider });
+
                 bool hasPhysicsWorld = false;
                 using var query = entityManager.CreateEntityQuery(typeof(PhysicsWorldSingleton));
                 for (int i = 0; i < 3; i++)
@@ -135,7 +138,7 @@ namespace DOTS.Terrain.Tests
             }
             finally
             {
-                if (entityManager.Exists(colliderEntity))
+                if (colliderEntity != Entity.Null && entityManager.Exists(colliderEntity))
                 {
                     entityManager.DestroyEntity(colliderEntity);
                 }
