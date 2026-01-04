@@ -222,6 +222,8 @@ namespace DOTS.Terrain.Tests
                     {
                         entityManager.RemoveComponent<PhysicsCollider>(chunkEntity);
                     }
+
+                    entityManager.DestroyEntity(chunkEntity);
                 }
             }
             yield return null;
