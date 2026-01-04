@@ -23,6 +23,7 @@ namespace DOTS.Terrain.Tests
         private BuildPhysicsWorld buildPhysicsWorld;
         private StepPhysicsWorld stepPhysicsWorld;
         private ExportPhysicsWorld exportPhysicsWorld;
+        private bool pipelineSystemsInstalled;
         private double elapsedTime;
         private const float FixedDeltaTime = 1f / 60f;
 
@@ -212,6 +213,7 @@ namespace DOTS.Terrain.Tests
                         {
                             colliderData.Dispose();
                         }
+                        colliderData = default;
                         entityManager.SetComponentData(chunkEntity, colliderData);
                         entityManager.RemoveComponent<TerrainChunkColliderData>(chunkEntity);
                     }
@@ -241,15 +243,21 @@ namespace DOTS.Terrain.Tests
 
         private void EnsureTerrainPipelineSystems()
         {
-            var densitySystem = testWorld.GetOrCreateSystemManaged<TerrainChunkDensitySamplingSystem>();
-            var meshSystem = testWorld.GetOrCreateSystemManaged<DOTS.Terrain.Meshing.TerrainChunkMeshBuildSystem>();
-            var colliderSystem = testWorld.GetOrCreateSystemManaged<TerrainChunkColliderBuildSystem>();
+            if (pipelineSystemsInstalled)
+            {
+                return;
+            }
 
-            simulationGroup.AddSystemToUpdateList(densitySystem);
-            simulationGroup.AddSystemToUpdateList(meshSystem);
-            simulationGroup.AddSystemToUpdateList(colliderSystem);
+            var densitySystemHandle = testWorld.CreateSystem<TerrainChunkDensitySamplingSystem>();
+            var meshSystemHandle = testWorld.CreateSystem<DOTS.Terrain.Meshing.TerrainChunkMeshBuildSystem>();
+            var colliderSystemHandle = testWorld.CreateSystem<TerrainChunkColliderBuildSystem>();
+
+            simulationGroup.AddSystemToUpdateList(densitySystemHandle);
+            simulationGroup.AddSystemToUpdateList(meshSystemHandle);
+            simulationGroup.AddSystemToUpdateList(colliderSystemHandle);
 
             TrySortSystems(simulationGroup);
+            pipelineSystemsInstalled = true;
         }
 
         private void EnsureSdfFieldSettings()
