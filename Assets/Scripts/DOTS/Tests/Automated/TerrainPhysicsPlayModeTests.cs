@@ -72,6 +72,7 @@ namespace DOTS.Terrain.Tests
             }
 
             elapsedTime = 0d;
+            pipelineSystemsInstalled = false;
         }
 
         [TearDown]
