@@ -95,8 +95,9 @@ namespace DOTS.Terrain.Tests
                 BevelRadius = 0f
             }, CollisionFilter.Default);
 
-            var colliderEntity = entityManager.CreateEntity(typeof(LocalTransform), typeof(PhysicsCollider));
+            var colliderEntity = entityManager.CreateEntity(typeof(LocalTransform), typeof(LocalToWorld), typeof(PhysicsCollider));
             entityManager.SetComponentData(colliderEntity, LocalTransform.FromPosition(float3.zero));
+            entityManager.SetComponentData(colliderEntity, LocalToWorld.FromTRS(float3.zero, quaternion.identity, new float3(1f, 1f, 1f)));
             entityManager.SetComponentData(colliderEntity, new PhysicsCollider { Value = collider });
 
             try
@@ -134,8 +135,15 @@ namespace DOTS.Terrain.Tests
             }
             finally
             {
-                entityManager.DestroyEntity(colliderEntity);
-                collider.Dispose();
+                if (entityManager.Exists(colliderEntity))
+                {
+                    entityManager.DestroyEntity(colliderEntity);
+                }
+
+                if (collider.IsCreated)
+                {
+                    collider.Dispose();
+                }
             }
 
             yield return null;
