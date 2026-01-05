@@ -1,5 +1,6 @@
 using System.Collections;
 using NUnit.Framework;
+using Unity.Core;
 using Unity.Entities;
 using Unity.Mathematics;
 using Unity.Physics;
@@ -20,9 +21,6 @@ namespace DOTS.Terrain.Tests
         private SimulationSystemGroup simulationGroup;
         private FixedStepSimulationSystemGroup fixedStepGroup;
         private PhysicsSystemGroup physicsGroup;
-        private BuildPhysicsWorld buildPhysicsWorld;
-        private StepPhysicsWorld stepPhysicsWorld;
-        private ExportPhysicsWorld exportPhysicsWorld;
         private bool pipelineSystemsInstalled;
         private double elapsedTime;
         private const float FixedDeltaTime = 1f / 60f;
@@ -31,36 +29,18 @@ namespace DOTS.Terrain.Tests
         public void SetUp()
         {
             previousWorld = World.DefaultGameObjectInjectionWorld;
-            testWorld = new World("Terrain Physics PlayMode Tests");
-            World.DefaultGameObjectInjectionWorld = testWorld;
+
+            // Use default initialization which properly bootstraps all physics systems
+            DefaultWorldInitialization.Initialize("Terrain Physics PlayMode Tests", false);
+            testWorld = World.DefaultGameObjectInjectionWorld;
             entityManager = testWorld.EntityManager;
 
-            initGroup = testWorld.GetOrCreateSystemManaged<InitializationSystemGroup>();
-            simulationGroup = testWorld.GetOrCreateSystemManaged<SimulationSystemGroup>();
-            fixedStepGroup = testWorld.GetOrCreateSystemManaged<FixedStepSimulationSystemGroup>();
+            initGroup = testWorld.GetExistingSystemManaged<InitializationSystemGroup>();
+            simulationGroup = testWorld.GetExistingSystemManaged<SimulationSystemGroup>();
+            fixedStepGroup = testWorld.GetExistingSystemManaged<FixedStepSimulationSystemGroup>();
             fixedStepGroup.Timestep = FixedDeltaTime;
 
-            physicsGroup = testWorld.GetOrCreateSystemManaged<PhysicsSystemGroup>();
-            fixedStepGroup.AddSystemToUpdateList(physicsGroup);
-
-            buildPhysicsWorld = testWorld.GetOrCreateSystemManaged<BuildPhysicsWorld>();
-            stepPhysicsWorld = testWorld.GetOrCreateSystemManaged<StepPhysicsWorld>();
-            exportPhysicsWorld = testWorld.GetOrCreateSystemManaged<ExportPhysicsWorld>();
-
-            initGroup.Enabled = true;
-            simulationGroup.Enabled = true;
-            fixedStepGroup.Enabled = true;
-            physicsGroup.Enabled = true;
-            buildPhysicsWorld.Enabled = true;
-            stepPhysicsWorld.Enabled = true;
-            exportPhysicsWorld.Enabled = true;
-
-            physicsGroup.AddSystemToUpdateList(buildPhysicsWorld);
-            physicsGroup.AddSystemToUpdateList(stepPhysicsWorld);
-            physicsGroup.AddSystemToUpdateList(exportPhysicsWorld);
-
-            TrySortSystems(physicsGroup);
-            TrySortSystems(fixedStepGroup);
+            physicsGroup = testWorld.GetExistingSystemManaged<PhysicsSystemGroup>();
 
             using (var physicsStepQuery = entityManager.CreateEntityQuery(ComponentType.ReadOnly<PhysicsStep>()))
             {
@@ -80,6 +60,7 @@ namespace DOTS.Terrain.Tests
         {
             if (testWorld != null && testWorld.IsCreated)
             {
+                ScriptBehaviourUpdateOrder.RemoveWorldFromCurrentPlayerLoop(testWorld);
                 testWorld.Dispose();
             }
 
@@ -89,12 +70,12 @@ namespace DOTS.Terrain.Tests
         [UnityTest]
         public IEnumerator RaycastHitsStaticBoxCollider()
         {
-            var collider = BlobAssetReference<Collider>.Null;
+            var collider = BlobAssetReference<Unity.Physics.Collider>.Null;
             Entity colliderEntity = Entity.Null;
 
             try
             {
-                collider = BoxCollider.Create(new BoxGeometry
+                collider = Unity.Physics.BoxCollider.Create(new BoxGeometry
                 {
                     Center = float3.zero,
                     Size = new float3(1f, 1f, 1f),
@@ -378,9 +359,6 @@ namespace DOTS.Terrain.Tests
             var systemList = testWorld.Systems;
             Debug.LogWarning($"[TerrainPhysicsPlayModeTests] Diagnostics: fixedStepGroup created={fixedStepGroup != null && fixedStepGroup.World == testWorld} enabled={fixedStepGroup?.Enabled ?? false} timestep={fixedStepGroup?.Timestep ?? 0f} deltaTime={testWorld.Time.DeltaTime}");
             Debug.LogWarning($"[TerrainPhysicsPlayModeTests] Diagnostics: physicsGroup created={physicsGroup != null && physicsGroup.World == testWorld} enabled={physicsGroup?.Enabled ?? false}");
-            Debug.LogWarning($"[TerrainPhysicsPlayModeTests] Diagnostics: buildPhysicsWorld created={buildPhysicsWorld != null && buildPhysicsWorld.World == testWorld} enabled={buildPhysicsWorld?.Enabled ?? false}");
-            Debug.LogWarning($"[TerrainPhysicsPlayModeTests] Diagnostics: stepPhysicsWorld created={stepPhysicsWorld != null && stepPhysicsWorld.World == testWorld} enabled={stepPhysicsWorld?.Enabled ?? false}");
-            Debug.LogWarning($"[TerrainPhysicsPlayModeTests] Diagnostics: exportPhysicsWorld created={exportPhysicsWorld != null && exportPhysicsWorld.World == testWorld} enabled={exportPhysicsWorld?.Enabled ?? false}");
             LogUpdateListDiagnostics();
             Debug.LogWarning($"[TerrainPhysicsPlayModeTests] PhysicsWorldSingleton missing after tick. Systems count: {systemList.Count}");
             foreach (var system in systemList)
@@ -403,12 +381,8 @@ namespace DOTS.Terrain.Tests
         private void LogUpdateListDiagnostics()
         {
             var fixedStepContainsPhysics = TryContainsSystem(fixedStepGroup, physicsGroup);
-            var physicsContainsBuild = TryContainsSystem(physicsGroup, buildPhysicsWorld);
-            var physicsContainsStep = TryContainsSystem(physicsGroup, stepPhysicsWorld);
-            var physicsContainsExport = TryContainsSystem(physicsGroup, exportPhysicsWorld);
 
             Debug.LogWarning($"[TerrainPhysicsPlayModeTests] Diagnostics: fixedStepGroup contains PhysicsSystemGroup={fixedStepContainsPhysics}");
-            Debug.LogWarning($"[TerrainPhysicsPlayModeTests] Diagnostics: physicsGroup contains Build/Step/Export={physicsContainsBuild}/{physicsContainsStep}/{physicsContainsExport}");
         }
 
         private static string TryContainsSystem(ComponentSystemGroup group, ComponentSystemBase system)
