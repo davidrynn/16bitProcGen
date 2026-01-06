@@ -61,34 +61,42 @@ public class DotsSystemBootstrap : MonoBehaviour
                 Debug.Log("[DOTS Bootstrap] TerrainGlobPhysicsSystem enabled via config.");
             }
 
+            // Systems with [DisableAutoCreation] must be manually added to a system group to run
+            var simGroup = world.GetExistingSystemManaged<SimulationSystemGroup>();
+
             if (config.EnableTerrainChunkDensitySamplingSystem)
             {
-                world.CreateSystem<TerrainChunkDensitySamplingSystem>();
-                Debug.Log("[DOTS Bootstrap] TerrainChunkDensitySamplingSystem enabled via config.");
+                var densitySamplingHandle = world.CreateSystem<TerrainChunkDensitySamplingSystem>();
+                simGroup.AddSystemToUpdateList(densitySamplingHandle);
+                Debug.Log("[DOTS Bootstrap] TerrainChunkDensitySamplingSystem enabled and added to SimulationSystemGroup.");
             }
 
             if (config.EnableTerrainEditInputSystem)
             {
-                world.CreateSystem<TerrainEditInputSystem>();
-                Debug.Log("[DOTS Bootstrap] TerrainEditInputSystem enabled via config.");
+                var editInputHandle = world.CreateSystem<TerrainEditInputSystem>();
+                simGroup.AddSystemToUpdateList(editInputHandle);
+                Debug.Log("[DOTS Bootstrap] TerrainEditInputSystem enabled and added to SimulationSystemGroup.");
             }
 
             if (config.EnableTerrainChunkMeshBuildSystem)
             {
-                world.CreateSystem<TerrainChunkMeshBuildSystem>();
-                Debug.Log("[DOTS Bootstrap] TerrainChunkMeshBuildSystem enabled via config.");
+                var meshBuildHandle = world.CreateSystem<TerrainChunkMeshBuildSystem>();
+                simGroup.AddSystemToUpdateList(meshBuildHandle);
+                Debug.Log("[DOTS Bootstrap] TerrainChunkMeshBuildSystem enabled and added to SimulationSystemGroup.");
             }
 
             if (config.EnableTerrainChunkRenderPrepSystem)
             {
-                world.CreateSystem<TerrainChunkRenderPrepSystem>();
-                Debug.Log("[DOTS Bootstrap] TerrainChunkRenderPrepSystem enabled via config.");
+                var renderPrepHandle = world.CreateSystem<TerrainChunkRenderPrepSystem>();
+                simGroup.AddSystemToUpdateList(renderPrepHandle);
+                Debug.Log("[DOTS Bootstrap] TerrainChunkRenderPrepSystem enabled and added to SimulationSystemGroup.");
             }
 
             if (config.EnableTerrainChunkMeshUploadSystem)
             {
-                world.CreateSystem<TerrainChunkMeshUploadSystem>();
-                Debug.Log("[DOTS Bootstrap] TerrainChunkMeshUploadSystem enabled via config.");
+                var meshUploadHandle = world.CreateSystem<TerrainChunkMeshUploadSystem>();
+                simGroup.AddSystemToUpdateList(meshUploadHandle);
+                Debug.Log("[DOTS Bootstrap] TerrainChunkMeshUploadSystem enabled and added to SimulationSystemGroup.");
             }
 
             if (config.EnableTerrainColliderSettingsBootstrapSystem)
@@ -99,23 +107,28 @@ public class DotsSystemBootstrap : MonoBehaviour
 
             if (config.EnableTerrainChunkColliderBuildSystem)
             {
-                world.CreateSystem<TerrainChunkColliderBuildSystem>();
-                Debug.Log("[DOTS Bootstrap] TerrainChunkColliderBuildSystem enabled via config.");
+                var handle = world.CreateSystem<TerrainChunkColliderBuildSystem>();
+                simGroup.AddSystemToUpdateList(handle);
+                Debug.Log("[DOTS Bootstrap] TerrainChunkColliderBuildSystem enabled and added to SimulationSystemGroup.");
             }
         }
 
         if (config.EnablePlayerSystem)
         {
+            var initGroup = world.GetExistingSystemManaged<InitializationSystemGroup>();
+            
             if (config.EnablePlayerBootstrapFixedRateInstaller)
             {
-                world.CreateSystem<PlayerBootstrapFixedRateInstaller>();
-                Debug.Log("[DOTS Bootstrap] PlayerBootstrapFixedRateInstaller enabled via config.");
+                var handle = world.CreateSystem<PlayerBootstrapFixedRateInstaller>();
+                initGroup.AddSystemToUpdateList(handle);
+                Debug.Log("[DOTS Bootstrap] PlayerBootstrapFixedRateInstaller enabled and added to InitializationSystemGroup.");
             }
 
             if (config.EnablePlayerEntityBootstrap)
             {
-                world.CreateSystem<PlayerEntityBootstrap>();
-                Debug.Log("[DOTS Bootstrap] PlayerEntityBootstrap enabled via config.");
+                var handle = world.CreateSystem<PlayerEntityBootstrap>();
+                initGroup.AddSystemToUpdateList(handle);
+                Debug.Log("[DOTS Bootstrap] PlayerEntityBootstrap enabled and added to InitializationSystemGroup.");
             }
 
             if (config.EnablePlayerEntityBootstrapPureEcs)

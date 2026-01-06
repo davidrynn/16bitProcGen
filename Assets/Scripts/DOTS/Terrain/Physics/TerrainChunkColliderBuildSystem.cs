@@ -27,6 +27,7 @@ namespace DOTS.Terrain
         public void OnUpdate(ref SystemState state)
         {
             var entityManager = state.EntityManager;
+            var ecb = new EntityCommandBuffer(Allocator.Temp);
             int builtCount = 0;
             bool collidersEnabled = true;
 
@@ -38,26 +39,27 @@ namespace DOTS.Terrain
             if (!collidersEnabled)
             {
                 int removedCount = 0;
-                bool budgetReached = false;
                 foreach (var (_, entity) in SystemAPI
                              .Query<RefRO<PhysicsCollider>>()
                              .WithAll<TerrainChunk>()
                              .WithEntityAccess())
                 {
-                    RemoveCollider(entityManager, entity);
+                    RemoveCollider(entityManager, ecb, entity);
                     removedCount++;
                     if (removedCount >= MaxDisableRemovalsPerFrame)
                     {
-                        budgetReached = true;
                         break;
                     }
                 }
 
+                ecb.Playback(entityManager);
+                ecb.Dispose();
                 return;
             }
 
             if (pendingColliderQuery.IsEmpty)
             {
+                ecb.Dispose();
                 return;
             }
 
@@ -75,7 +77,7 @@ namespace DOTS.Terrain
                 var mesh = meshData.ValueRO.Mesh;
                 if (!mesh.IsCreated || mesh.Value.Vertices.Length == 0 || mesh.Value.Indices.Length == 0)
                 {
-                    RemoveCollider(entityManager, entity);
+                    RemoveCollider(entityManager, ecb, entity);
                     continue;
                 }
 
@@ -84,7 +86,7 @@ namespace DOTS.Terrain
                 if (indexCount % 3 != 0 || !IndicesWithinBounds(mesh, vertexCount))
                 {
                     LogInvalidMesh(chunk.ValueRO.ChunkCoord, entity, indexCount, vertexCount);
-                    RemoveCollider(entityManager, entity);
+                    RemoveCollider(entityManager, ecb, entity);
                     continue;
                 }
 
@@ -98,13 +100,16 @@ namespace DOTS.Terrain
                 var newCollider = BuildMeshCollider(mesh, filter);
                 if (!newCollider.IsCreated)
                 {
-                    RemoveCollider(entityManager, entity);
+                    RemoveCollider(entityManager, ecb, entity);
                     continue;
                 }
 
-                ApplyCollider(entityManager, entity, newCollider);
+                ApplyCollider(entityManager, ecb, entity, newCollider);
                 builtCount++;
             }
+
+            ecb.Playback(entityManager);
+            ecb.Dispose();
         }
 
         private static BlobAssetReference<Unity.Physics.Collider> BuildMeshCollider(BlobAssetReference<TerrainChunkMeshBlob> mesh, CollisionFilter filter)
@@ -138,7 +143,7 @@ namespace DOTS.Terrain
             return collider;
         }
 
-        private static void ApplyCollider(EntityManager entityManager, Entity entity, BlobAssetReference<Unity.Physics.Collider> newCollider)
+        private static void ApplyCollider(EntityManager entityManager, EntityCommandBuffer ecb, Entity entity, BlobAssetReference<Unity.Physics.Collider> newCollider)
         {
             var hadColliderData = entityManager.HasComponent<TerrainChunkColliderData>(entity);
             TerrainChunkColliderData oldData = default;
@@ -150,40 +155,39 @@ namespace DOTS.Terrain
             var colliderComponent = new PhysicsCollider { Value = newCollider };
             if (entityManager.HasComponent<PhysicsCollider>(entity))
             {
-                entityManager.SetComponentData(entity, colliderComponent);
+                ecb.SetComponent(entity, colliderComponent);
             }
             else
             {
-                entityManager.AddComponentData(entity, colliderComponent);
+                ecb.AddComponent(entity, colliderComponent);
             }
 
             var newData = new TerrainChunkColliderData { Collider = newCollider };
             if (hadColliderData)
             {
-                entityManager.SetComponentData(entity, newData);
+                ecb.SetComponent(entity, newData);
             }
             else
             {
-                entityManager.AddComponentData(entity, newData);
+                ecb.AddComponent(entity, newData);
             }
 
             if (oldData.IsCreated)
             {
                 oldData.Dispose();
-                entityManager.SetComponentData(entity, oldData);
             }
 
             if (entityManager.HasComponent<TerrainChunkNeedsColliderBuild>(entity))
             {
-                entityManager.RemoveComponent<TerrainChunkNeedsColliderBuild>(entity);
+                ecb.RemoveComponent<TerrainChunkNeedsColliderBuild>(entity);
             }
         }
 
-        private static void RemoveCollider(EntityManager entityManager, Entity entity)
+        private static void RemoveCollider(EntityManager entityManager, EntityCommandBuffer ecb, Entity entity)
         {
             if (entityManager.HasComponent<PhysicsCollider>(entity))
             {
-                entityManager.RemoveComponent<PhysicsCollider>(entity);
+                ecb.RemoveComponent<PhysicsCollider>(entity);
             }
 
             if (entityManager.HasComponent<TerrainChunkColliderData>(entity))
@@ -193,12 +197,11 @@ namespace DOTS.Terrain
                 {
                     data.Dispose();
                 }
-                entityManager.SetComponentData(entity, data);
             }
 
             if (entityManager.HasComponent<TerrainChunkNeedsColliderBuild>(entity))
             {
-                entityManager.RemoveComponent<TerrainChunkNeedsColliderBuild>(entity);
+                ecb.RemoveComponent<TerrainChunkNeedsColliderBuild>(entity);
             }
         }
 

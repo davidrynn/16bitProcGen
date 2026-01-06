@@ -18,6 +18,8 @@ namespace DOTS.Terrain.Meshing
         public void OnUpdate(ref SystemState state)
         {
             var entityManager = state.EntityManager;
+            var ecb = new EntityCommandBuffer(Unity.Collections.Allocator.Temp);
+            
             foreach (var (density, grid, bounds, entity) in SystemAPI
                          .Query<RefRW<TerrainChunkDensity>, RefRO<TerrainChunkGridInfo>, RefRO<TerrainChunkBounds>>()
                          .WithAll<TerrainChunkNeedsMeshBuild>()
@@ -34,28 +36,31 @@ namespace DOTS.Terrain.Meshing
                 {
                     var existing = entityManager.GetComponentData<TerrainChunkMeshData>(entity);
                     existing.Dispose();
-                    entityManager.SetComponentData(entity, new TerrainChunkMeshData { Mesh = meshBlob });
+                    ecb.SetComponent(entity, new TerrainChunkMeshData { Mesh = meshBlob });
                 }
                 else
                 {
-                    entityManager.AddComponentData(entity, new TerrainChunkMeshData { Mesh = meshBlob });
+                    ecb.AddComponent(entity, new TerrainChunkMeshData { Mesh = meshBlob });
                 }
 
                 if (!entityManager.HasComponent<TerrainChunkNeedsRenderUpload>(entity))
                 {
-                    entityManager.AddComponent<TerrainChunkNeedsRenderUpload>(entity);
+                    ecb.AddComponent<TerrainChunkNeedsRenderUpload>(entity);
                 }
 
                 if (!entityManager.HasComponent<TerrainChunkNeedsColliderBuild>(entity))
                 {
-                    entityManager.AddComponent<TerrainChunkNeedsColliderBuild>(entity);
+                    ecb.AddComponent<TerrainChunkNeedsColliderBuild>(entity);
                 }
 
                 if (entityManager.HasComponent<TerrainChunkNeedsMeshBuild>(entity))
                 {
-                    entityManager.RemoveComponent<TerrainChunkNeedsMeshBuild>(entity);
+                    ecb.RemoveComponent<TerrainChunkNeedsMeshBuild>(entity);
                 }
             }
+            
+            ecb.Playback(entityManager);
+            ecb.Dispose();
         }
     }
 }

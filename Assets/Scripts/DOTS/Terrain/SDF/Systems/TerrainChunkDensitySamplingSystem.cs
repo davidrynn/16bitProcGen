@@ -3,28 +3,36 @@ using Unity.Collections;
 using Unity.Entities;
 using Unity.Jobs;
 using Unity.Mathematics;
+using UnityEngine;
 
 namespace DOTS.Terrain
 {
     [DisableAutoCreation]
-    [BurstCompile]
+    [UpdateInGroup(typeof(SimulationSystemGroup))]
     public partial struct TerrainChunkDensitySamplingSystem : ISystem
     {
         private EntityQuery chunkQuery;
 
         public void OnCreate(ref SystemState state)
         {
-            state.RequireForUpdate<SDFTerrainFieldSettings>();
+            // Don't use RequireForUpdate - it prevents OnUpdate from running if requirements aren't met immediately
+            // We'll check manually in OnUpdate instead
             chunkQuery = state.GetEntityQuery(
                 ComponentType.ReadOnly<TerrainChunk>(),
                 ComponentType.ReadOnly<TerrainChunkGridInfo>(),
                 ComponentType.ReadOnly<TerrainChunkBounds>(),
                 ComponentType.ReadOnly<TerrainChunkNeedsDensityRebuild>());
-            state.RequireForUpdate<TerrainChunkNeedsDensityRebuild>();
         }
 
         public void OnUpdate(ref SystemState state)
         {
+            // Check requirements manually - this allows OnUpdate to run and log diagnostic info
+            if (!SystemAPI.HasSingleton<SDFTerrainFieldSettings>())
+            {
+                UnityEngine.Debug.LogWarning("[TerrainChunkDensitySamplingSystem] SDFTerrainFieldSettings singleton not found. Waiting for TerrainBootstrapAuthoring...");
+                return;
+            }
+
             if (chunkQuery.IsEmpty)
             {
                 return;
@@ -40,6 +48,7 @@ namespace DOTS.Terrain
             };
 
             var edits = CopyEditsToTempArray(ref state);
+            var ecb = new EntityCommandBuffer(Allocator.Temp);
 
             try
             {
@@ -86,23 +95,25 @@ namespace DOTS.Terrain
                     {
                         var existing = entityManager.GetComponentData<TerrainChunkDensity>(entity);
                         existing.Dispose();
-                        entityManager.SetComponentData(entity, TerrainChunkDensity.FromBlob(blob));
+                        ecb.SetComponent(entity, TerrainChunkDensity.FromBlob(blob));
                     }
                     else
                     {
-                        entityManager.AddComponentData(entity, TerrainChunkDensity.FromBlob(blob));
+                        ecb.AddComponent(entity, TerrainChunkDensity.FromBlob(blob));
                     }
 
                     if (entityManager.HasComponent<TerrainChunkNeedsDensityRebuild>(entity))
                     {
-                        entityManager.RemoveComponent<TerrainChunkNeedsDensityRebuild>(entity);
+                        ecb.RemoveComponent<TerrainChunkNeedsDensityRebuild>(entity);
                     }
 
                     if (!entityManager.HasComponent<TerrainChunkNeedsMeshBuild>(entity))
                     {
-                        entityManager.AddComponent<TerrainChunkNeedsMeshBuild>(entity);
+                        ecb.AddComponent<TerrainChunkNeedsMeshBuild>(entity);
                     }
                 }
+                
+                ecb.Playback(entityManager);
             }
             finally
             {
@@ -110,6 +121,7 @@ namespace DOTS.Terrain
                 {
                     edits.Dispose();
                 }
+                ecb.Dispose();
             }
         }
 
@@ -122,7 +134,8 @@ namespace DOTS.Terrain
                 return edits;
             }
 
-            return default;
+            // Return an empty but valid array instead of default (which is uninitialized)
+            return new NativeArray<SDFEdit>(0, Allocator.TempJob);
         }
     }
 
