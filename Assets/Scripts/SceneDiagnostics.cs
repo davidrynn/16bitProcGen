@@ -7,6 +7,7 @@ using Unity.Transforms;
 using UnityEngine;
 using DOTS.Player.Components;
 using Unity.Rendering;
+using DOTS.Terrain.Rendering;
 
 /// <summary>
 /// Comprehensive diagnostic helper for basic scene setup.
@@ -309,6 +310,9 @@ public class SceneDiagnostics : MonoBehaviour
                         var boundsType = System.Type.GetType("DOTS.Terrain.TerrainChunkBounds, DOTS.Terrain");
                         var densityType = System.Type.GetType("DOTS.Terrain.TerrainChunkDensity, DOTS.Terrain");
                         var meshDataType = System.Type.GetType("DOTS.Terrain.TerrainChunkMeshData, DOTS.Terrain");
+#if UNITY_ENTITIES_GRAPHICS
+                        var renderFilterSettingsType = System.Type.GetType("Unity.Entities.Graphics.RenderFilterSettings, Unity.Entities.Graphics");
+#endif
                         
                         int hasGridInfo = 0;
                         int hasBounds = 0;
@@ -316,6 +320,9 @@ public class SceneDiagnostics : MonoBehaviour
                         int hasMeshData = 0;
                         int hasRenderBounds = 0;
                         int hasMaterialMeshInfo = 0;
+                        int hasWorldRenderBounds = 0;
+                        int hasRenderFilterSettings = 0;
+                        int hasRenderMeshArray = 0;
                         int hasTransform = 0;
                         
                         using var entities = terrainChunkQuery.ToEntityArray(Unity.Collections.Allocator.Temp);
@@ -330,6 +337,11 @@ public class SceneDiagnostics : MonoBehaviour
                             if (meshDataType != null && entityManager.HasComponent(entity, meshDataType)) hasMeshData++;
                             if (entityManager.HasComponent<RenderBounds>(entity)) hasRenderBounds++;
                             if (entityManager.HasComponent<MaterialMeshInfo>(entity)) hasMaterialMeshInfo++;
+#if UNITY_ENTITIES_GRAPHICS
+                            if (entityManager.HasComponent<WorldRenderBounds>(entity)) hasWorldRenderBounds++;
+                            if (renderFilterSettingsType != null && entityManager.HasComponent(entity, renderFilterSettingsType)) hasRenderFilterSettings++;
+                            if (entityManager.HasComponent<RenderMeshArray>(entity)) hasRenderMeshArray++;
+#endif
                             if (entityManager.HasComponent<LocalTransform>(entity)) hasTransform++;
                         }
                         
@@ -340,6 +352,11 @@ public class SceneDiagnostics : MonoBehaviour
                         reportBuilder.AppendLine($"    TerrainChunkMeshData: {hasMeshData}/{terrainChunkCount}");
                         reportBuilder.AppendLine($"    RenderBounds: {hasRenderBounds}/{terrainChunkCount}");
                         reportBuilder.AppendLine($"    MaterialMeshInfo: {hasMaterialMeshInfo}/{terrainChunkCount}");
+#if UNITY_ENTITIES_GRAPHICS
+                        reportBuilder.AppendLine($"    WorldRenderBounds: {hasWorldRenderBounds}/{terrainChunkCount}");
+                        reportBuilder.AppendLine($"    RenderFilterSettings: {hasRenderFilterSettings}/{terrainChunkCount}");
+                        reportBuilder.AppendLine($"    RenderMeshArray: {hasRenderMeshArray}/{terrainChunkCount}");
+#endif
                         reportBuilder.AppendLine($"    LocalTransform: {hasTransform}/{terrainChunkCount}");
                         
                         // Sample chunk details (simplified - can't access component data via reflection easily)
@@ -385,6 +402,22 @@ public class SceneDiagnostics : MonoBehaviour
     private void CheckSDFTerrainSystems(World world)
     {
         reportBuilder.AppendLine("\n  --- SDF Terrain Systems ---");
+
+#if UNITY_ENTITIES_GRAPHICS
+        reportBuilder.AppendLine("  Entities Graphics: Enabled (UNITY_ENTITIES_GRAPHICS)");
+#else
+        reportBuilder.AppendLine("  Entities Graphics: Disabled (UNITY_ENTITIES_GRAPHICS not defined)");
+#endif
+
+        try
+        {
+            var settings = TerrainChunkRenderSettingsProvider.GetOrLoad();
+            reportBuilder.AppendLine($"  Render Settings: {(settings != null ? "Found" : "Missing")}, Material={(settings != null && settings.ChunkMaterial != null ? "Assigned" : "None")}");
+        }
+        catch
+        {
+            reportBuilder.AppendLine("  Render Settings: Error checking");
+        }
         
         int activeSystemCount = 0;
         

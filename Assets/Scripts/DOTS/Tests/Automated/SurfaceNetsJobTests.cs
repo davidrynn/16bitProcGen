@@ -32,7 +32,8 @@ namespace DOTS.Terrain.Tests
                     Indices = indices,
                     VertexIndices = vertexMap,
                     CellSigns = cellSigns,
-                    CellResolution = new int3(2, 2, 2)
+                    CellResolution = new int3(2, 2, 2),
+                    BaseCellResolution = new int3(2, 2, 2)
                 };
 
                 job.Run();
@@ -76,7 +77,8 @@ namespace DOTS.Terrain.Tests
                     Indices = indices,
                     VertexIndices = vertexMap,
                     CellSigns = cellSigns,
-                    CellResolution = new int3(2, 2, 2)
+                    CellResolution = new int3(2, 2, 2),
+                    BaseCellResolution = new int3(2, 2, 2)
                 };
 
                 job.Run();

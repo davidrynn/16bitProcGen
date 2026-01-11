@@ -71,6 +71,25 @@ namespace DOTS.Terrain.Bootstrap
             var safeGrid = new int2(math.max(1, gridSize.x), math.max(1, gridSize.y));
             var safeResolution = math.max(1, chunkResolution);
             var resolution = new int3(safeResolution, safeResolution, safeResolution);
+
+            // Chunks share border samples; the world-space span of a chunk is (resolution-1) * voxelSize.
+            // If chunkSpacing is set inconsistently (e.g. 16 when resolution=16 and voxelSize=1), it will create visible gaps.
+            var expectedStride = math.max(0, safeResolution - 1) * voxelSize;
+            var chunkStride = expectedStride;
+            if (chunkSpacing > 0f && math.abs(chunkSpacing - expectedStride) <= 1e-4f)
+            {
+                chunkStride = chunkSpacing;
+            }
+            else if (chunkSpacing > 0f && math.abs(chunkSpacing - expectedStride) > 1e-4f)
+            {
+                Debug.LogWarning($"[TerrainBootstrapAuthoring] chunkSpacing ({chunkSpacing}) does not match expected chunk stride ({expectedStride}) for resolution={safeResolution}, voxelSize={voxelSize}. Using {expectedStride} to avoid seams.");
+            }
+
+            // Center the chunk volume vertically around BaseHeight so the ground isosurface is
+            // inside the sampled density range even when BaseHeight is near 0.
+            var chunkVerticalSpan = math.max(0, safeResolution - 1) * voxelSize;
+            var originY = baseHeight - (chunkVerticalSpan * 0.5f);
+
             for (int x = 0; x < safeGrid.x; x++)
             {
                 for (int z = 0; z < safeGrid.y; z++)
@@ -88,7 +107,7 @@ namespace DOTS.Terrain.Bootstrap
 
                     entityManager.SetComponentData(entity, TerrainChunkGridInfo.Create(resolution, voxelSize));
 
-                    var origin = new float3(x * chunkSpacing, 0f, z * chunkSpacing);
+                    var origin = new float3(x * chunkStride, originY, z * chunkStride);
                     entityManager.SetComponentData(entity, new TerrainChunkBounds
                     {
                         WorldOrigin = origin

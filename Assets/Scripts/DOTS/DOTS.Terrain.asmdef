@@ -3,6 +3,7 @@
     "rootNamespace": "",
     "references": [
         "Core",
+        "DOTS.Player.Components",
         "Unity.Entities",
         "Unity.Entities.Hybrid",
         "Unity.Entities.Graphics",
@@ -21,7 +22,13 @@
     "precompiledReferences": [],
     "autoReferenced": true,
     "defineConstraints": [],
-    "versionDefines": [],
+    "versionDefines": [
+        {
+            "name": "com.unity.entities.graphics",
+            "expression": "1.0.0",
+            "define": "UNITY_ENTITIES_GRAPHICS"
+        }
+    ],
     "noEngineReferences": false
 }
 

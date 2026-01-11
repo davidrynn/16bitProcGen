@@ -20,12 +20,12 @@ namespace DOTS.Terrain.Meshing
             var entityManager = state.EntityManager;
             var ecb = new EntityCommandBuffer(Unity.Collections.Allocator.Temp);
             
-            foreach (var (density, grid, bounds, entity) in SystemAPI
-                         .Query<RefRW<TerrainChunkDensity>, RefRO<TerrainChunkGridInfo>, RefRO<TerrainChunkBounds>>()
+            foreach (var (density, grid, densityGrid, bounds, entity) in SystemAPI
+                         .Query<RefRW<TerrainChunkDensity>, RefRO<TerrainChunkGridInfo>, RefRO<TerrainChunkDensityGridInfo>, RefRO<TerrainChunkBounds>>()
                          .WithAll<TerrainChunkNeedsMeshBuild>()
                          .WithEntityAccess())
             {
-                var meshBlob = TerrainChunkMeshBuilder.BuildMeshBlob(ref density.ValueRW, grid.ValueRO, bounds.ValueRO);
+                var meshBlob = TerrainChunkMeshBuilder.BuildMeshBlob(ref density.ValueRW, grid.ValueRO, densityGrid.ValueRO, bounds.ValueRO);
 
                 if (!meshBlob.IsCreated)
                 {

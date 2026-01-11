@@ -36,8 +36,13 @@ public class ProjectFeatureConfig : ScriptableObject
     public bool EnableTerrainGlobPhysicsSystem = false;
 
     [Header("Terrain SDF Systems")]
-    public bool EnableTerrainChunkDensitySamplingSystem = false;
+    public bool EnableTerrainChunkDensitySamplingSystem = true;
     public bool EnableTerrainEditInputSystem = false;
+
+    [Header("Terrain Streaming")]
+    public bool EnableTerrainChunkStreamingSystem = true;
+    [Min(0)]
+    public int TerrainStreamingRadiusInChunks = 2;
 
     [Header("Terrain Meshing Systems")]
     public bool EnableTerrainChunkMeshBuildSystem = true;
@@ -47,8 +52,8 @@ public class ProjectFeatureConfig : ScriptableObject
     public bool EnableTerrainColliderSettingsBootstrapSystem = true;
 
     [Header("Dungeon Systems")]
-    public bool EnableDungeonRenderingSystem = true;
+    public bool EnableDungeonRenderingSystem = false;
 
     [Header("Weather Systems")]
-    public bool EnableHybridWeatherSystem = true;
+    public bool EnableHybridWeatherSystem = false;
 }

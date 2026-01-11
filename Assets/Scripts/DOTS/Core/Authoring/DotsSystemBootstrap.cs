@@ -4,6 +4,7 @@ using DOTS.Terrain;
 using DOTS.Terrain.Generation;
 using DOTS.Terrain.Meshing;
 using DOTS.Terrain.Modification;
+using DOTS.Terrain.Streaming;
 using DOTS.Terrain.WFC;
 using DOTS.Terrain.Weather;
 using Unity.Entities;
@@ -25,6 +26,8 @@ public class DotsSystemBootstrap : MonoBehaviour
 
         if (config.EnableTerrainSystem)
         {
+            EnsureConfigSingleton(world);
+
             world.CreateSystem<TerrainSystem>();
             Debug.Log("[DOTS Bootstrap] TerrainSystem enabled via config.");
 
@@ -69,6 +72,13 @@ public class DotsSystemBootstrap : MonoBehaviour
                 var densitySamplingHandle = world.CreateSystem<TerrainChunkDensitySamplingSystem>();
                 simGroup.AddSystemToUpdateList(densitySamplingHandle);
                 Debug.Log("[DOTS Bootstrap] TerrainChunkDensitySamplingSystem enabled and added to SimulationSystemGroup.");
+            }
+
+            if (config.EnableTerrainChunkStreamingSystem)
+            {
+                var handle = world.CreateSystem<TerrainChunkStreamingSystem>();
+                simGroup.AddSystemToUpdateList(handle);
+                Debug.Log("[DOTS Bootstrap] TerrainChunkStreamingSystem enabled and added to SimulationSystemGroup.");
             }
 
             if (config.EnableTerrainEditInputSystem)
@@ -211,5 +221,20 @@ public class DotsSystemBootstrap : MonoBehaviour
                 Debug.Log("[DOTS Bootstrap] HybridWeatherSystem enabled via config.");
             }
         }
+    }
+
+    private void EnsureConfigSingleton(World world)
+    {
+        var entityManager = world.EntityManager;
+        var query = entityManager.CreateEntityQuery(ComponentType.ReadOnly<ProjectFeatureConfigSingleton>());
+        if (query.CalculateEntityCount() == 0)
+        {
+            var entity = entityManager.CreateEntity(typeof(ProjectFeatureConfigSingleton));
+            entityManager.SetComponentData(entity, new ProjectFeatureConfigSingleton
+            {
+                TerrainStreamingRadiusInChunks = config != null ? config.TerrainStreamingRadiusInChunks : 0
+            });
+        }
+        query.Dispose();
     }
 }

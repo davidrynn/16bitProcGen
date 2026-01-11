@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using Unity.Entities;
 using Unity.Transforms;
 using UnityEngine;
@@ -21,22 +22,25 @@ namespace DOTS.Player.Bootstrap
         {
             if (!TryResolveEntityManager(out var entityManager))
             {
+                UnityEngine.Debug.LogWarning("EntityManager could not be resolved. Ensure that the DOTS world is initialized.");
                 return;
             }
 
             if (targetEntity == Entity.Null)
             {
+                UnityEngine.Debug.LogWarning("Target entity is not set. Destroying visual.");
                 return;
             }
 
             if (!entityManager.Exists(targetEntity))
             {
-                Destroy(gameObject);
+                UnityEngine.Debug.LogWarning("Target entity does not exist. Destroying visual.");
                 return;
             }
 
             if (!entityManager.HasComponent<LocalTransform>(targetEntity))
             {
+                UnityEngine.Debug.LogWarning("Target entity does not have a LocalTransform component. Cannot sync visual.");
                 return;
             }
 

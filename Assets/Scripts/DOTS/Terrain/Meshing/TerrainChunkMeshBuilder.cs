@@ -8,7 +8,7 @@ namespace DOTS.Terrain.Meshing
 {
     public static class TerrainChunkMeshBuilder
     {
-        public static BlobAssetReference<TerrainChunkMeshBlob> BuildMeshBlob(ref TerrainChunkDensity density, in TerrainChunkGridInfo grid, in TerrainChunkBounds bounds)
+        public static BlobAssetReference<TerrainChunkMeshBlob> BuildMeshBlob(ref TerrainChunkDensity density, in TerrainChunkGridInfo grid, in TerrainChunkDensityGridInfo densityGrid, in TerrainChunkBounds bounds)
         {
             var voxelCount = density.Length;
             if (voxelCount == 0)
@@ -25,10 +25,15 @@ namespace DOTS.Terrain.Meshing
                     densities[i] = density.Data.Value.Values[i];
                 }
 
-                var cellResolution = new int3(
+                var baseCellResolution = new int3(
                     math.max(grid.Resolution.x - 1, 0),
                     math.max(grid.Resolution.y - 1, 0),
                     math.max(grid.Resolution.z - 1, 0));
+
+                var cellResolution = new int3(
+                    math.max(densityGrid.Resolution.x - 1, 0),
+                    math.max(densityGrid.Resolution.y - 1, 0),
+                    math.max(densityGrid.Resolution.z - 1, 0));
 
                 var cellCount = cellResolution.x * cellResolution.y * cellResolution.z;
                 NativeArray<int> vertexIndices = default;
@@ -48,13 +53,14 @@ namespace DOTS.Terrain.Meshing
                     var job = new SurfaceNetsJob
                     {
                         Densities = densities,
-                        Resolution = grid.Resolution,
+                        Resolution = densityGrid.Resolution,
                         VoxelSize = grid.VoxelSize,
                         Vertices = vertices,
                         Indices = indices,
                         VertexIndices = vertexIndices,
                         CellSigns = cellSigns,
-                        CellResolution = cellResolution
+                        CellResolution = cellResolution,
+                        BaseCellResolution = baseCellResolution
                     };
 
                     job.Run();

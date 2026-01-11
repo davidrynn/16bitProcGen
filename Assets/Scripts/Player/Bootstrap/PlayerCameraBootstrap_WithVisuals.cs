@@ -15,7 +15,7 @@ namespace DOTS.Player.Bootstrap
     public class PlayerCameraBootstrap_WithVisuals : MonoBehaviour
     {
         [Header("Initial Positions")]
-        [SerializeField] private Vector3 playerStartPosition = new Vector3(0, 1, 0);
+        [SerializeField] private Vector3 playerStartPosition = new Vector3(0, 10, 0);
         [SerializeField] private Vector3 cameraStartPosition = new Vector3(0, 3, -4);
 
         [Header("Visual Representation")]

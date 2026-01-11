@@ -5,6 +5,7 @@ using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;
 #if UNITY_ENTITIES_GRAPHICS
+using Unity.Entities.Graphics;
 using Unity.Rendering;
 #endif
 using UnityEngine;
@@ -17,9 +18,12 @@ namespace DOTS.Terrain.Meshing
     [UpdateAfter(typeof(TerrainChunkMeshBuildSystem))]
     public partial struct TerrainChunkMeshUploadSystem : ISystem
     {
+        private static bool loggedMissingMaterial;
+
         public void OnCreate(ref SystemState state)
         {
             state.RequireForUpdate<TerrainChunkNeedsRenderUpload>();
+            loggedMissingMaterial = false;
         }
 
         public void OnUpdate(ref SystemState state)
@@ -27,6 +31,11 @@ namespace DOTS.Terrain.Meshing
             var settings = TerrainChunkRenderSettingsProvider.GetOrLoad();
             if (settings == null || settings.ChunkMaterial == null)
             {
+                if (!loggedMissingMaterial)
+                {
+                    loggedMissingMaterial = true;
+                    Debug.LogWarning("[DOTS Terrain] TerrainChunkMeshUploadSystem: No chunk material available (TerrainChunkRenderSettings missing or has no material). Chunks will not render until a material is assigned.");
+                }
                 return;
             }
 
@@ -87,17 +96,7 @@ namespace DOTS.Terrain.Meshing
 
                 UploadMesh(blob, item.Mesh);
 #if UNITY_ENTITIES_GRAPHICS
-                EnsureRenderMeshArray(entityManager, item.Entity, item.Mesh, material);
-
-                var materialMeshInfo = MaterialMeshInfo.FromRenderMeshArrayIndices(0, 0);
-                if (entityManager.HasComponent<MaterialMeshInfo>(item.Entity))
-                {
-                    entityManager.SetComponentData(item.Entity, materialMeshInfo);
-                }
-                else
-                {
-                    entityManager.AddComponentData(item.Entity, materialMeshInfo);
-                }
+                EnsureEntitiesGraphicsComponents(entityManager, item.Entity, item.Mesh, material);
 #endif
 
                 if (entityManager.HasComponent<TerrainChunkNeedsRenderUpload>(item.Entity))
@@ -152,18 +151,27 @@ namespace DOTS.Terrain.Meshing
             mesh.RecalculateBounds();
         }
 
-        private static void EnsureRenderMeshArray(EntityManager entityManager, Entity entity, Mesh mesh, Material material)
+        private static void EnsureEntitiesGraphicsComponents(EntityManager entityManager, Entity entity, Mesh mesh, Material material)
         {
 #if UNITY_ENTITIES_GRAPHICS
             var renderMeshArray = new RenderMeshArray(new[] { material }, new[] { mesh });
+            var materialMeshInfo = MaterialMeshInfo.FromRenderMeshArrayIndices(0, 0);
 
-            if (entityManager.HasComponent<RenderMeshArray>(entity))
+            // RenderMeshUtility.AddComponents adds the *minimum required* Entities Graphics components.
+            // Without these (WorldRenderBounds, RenderFilterSettings, PerInstanceCullingTag, etc.) the entity will never render.
+            if (!entityManager.HasComponent<RenderFilterSettings>(entity) || !entityManager.HasComponent<WorldRenderBounds>(entity))
             {
-                entityManager.SetSharedComponentManaged(entity, renderMeshArray);
+                var renderMeshDescription = new RenderMeshDescription(
+                    shadowCastingMode: ShadowCastingMode.On,
+                    receiveShadows: true);
+
+                RenderMeshUtility.AddComponents(entity, entityManager, renderMeshDescription, renderMeshArray, materialMeshInfo);
             }
             else
             {
-                entityManager.AddSharedComponentManaged(entity, renderMeshArray);
+                // Already renderable; just refresh the mesh/material bindings.
+                entityManager.SetSharedComponentManaged(entity, renderMeshArray);
+                entityManager.SetComponentData(entity, materialMeshInfo);
             }
 #endif
         }

@@ -68,10 +68,13 @@ The project uses an SDF-based terrain system as the primary terrain generation a
 
 **Active SDF Systems:**
 - `TerrainChunkDensitySamplingSystem` - SDF density sampling (gated by `EnableTerrainChunkDensitySamplingSystem`)
+- `TerrainChunkStreamingSystem` - Streams chunk entities around the player (gated by `EnableTerrainChunkStreamingSystem`; radius via `TerrainStreamingRadiusInChunks`)
 - `TerrainEditInputSystem` - Terrain edit input for SDF edits (gated by `EnableTerrainEditInputSystem`)
 - `TerrainChunkMeshBuildSystem` - Surface Nets mesh building (gated by `EnableTerrainChunkMeshBuildSystem`)
 - `TerrainChunkRenderPrepSystem` - Render preparation (gated by `EnableTerrainChunkRenderPrepSystem`)
 - `TerrainChunkMeshUploadSystem` - Mesh upload (gated by `EnableTerrainChunkMeshUploadSystem`)
+
+Note: Streaming radius is mirrored into an ECS singleton (`ProjectFeatureConfigSingleton`) by `DotsSystemBootstrap` so unmanaged systems can read it.
 
 **Legacy Terrain Systems (⚠️ Deprecated):**
 These systems use the legacy `DOTS.Terrain.TerrainData` component and are maintained for backward compatibility only. New development should use the SDF terrain pipeline.
@@ -125,4 +128,4 @@ These systems use the legacy `DOTS.Terrain.TerrainData` component and are mainta
 
 ---
 
-_Last updated: 2025-12-23 (Clarified SDF as current terrain system, marked legacy systems)_
+_Last updated: 2026-01-10 (Added terrain streaming system + config singleton mirror)_

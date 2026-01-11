@@ -16,6 +16,8 @@ namespace DOTS.Player.Bootstrap
     public partial struct PlayerEntityBootstrap : ISystem
     {
         private bool _hasSpawned;
+       // Player spawn configuration
+        private const float PlayerStartHeight = 5f; // Adjust this value to change spawn height
 
         public void OnCreate(ref SystemState state)
         {
@@ -236,7 +238,7 @@ namespace DOTS.Player.Bootstrap
         {
             var entityManager = state.EntityManager;
             var groundEntity = entityManager.CreateEntity();
-            entityManager.SetName(groundEntity, "Ground Plane (ECS)");
+            entityManager.SetName(groundEntity, "Ground Plane (ECS Physics Only)");
 
             // Transform
             var groundPosition = float3.zero;
@@ -278,9 +280,6 @@ namespace DOTS.Player.Bootstrap
 
             // Mark as static (no physics mass needed)
             entityManager.AddComponent<PhysicsWorldIndex>(groundEntity);
-
-            // Create visual representation
-            CreateGroundVisual(groundPosition, groundSize);
         }
 
         private void CreateGroundVisual(float3 position, float2 size)

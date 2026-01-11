@@ -17,6 +17,7 @@ namespace DOTS.Terrain.Meshing
         public NativeArray<int> VertexIndices;
         public NativeArray<sbyte> CellSigns;
         public int3 CellResolution;
+        public int3 BaseCellResolution;
 
         private static readonly int3[] CornerOffsets =
         {
@@ -148,11 +149,13 @@ namespace DOTS.Terrain.Meshing
                 return;
             }
 
+            // Allow stitching on +X by permitting x == BaseCellResolution.x - 1, which references the ghost cell at x+1.
+            var maxX = math.min(BaseCellResolution.x, CellResolution.x - 1);
             for (int z = 0; z < CellResolution.z; z++)
             {
                 for (int y = 0; y < CellResolution.y - 1; y++)
                 {
-                    for (int x = 0; x < CellResolution.x - 1; x++)
+                    for (int x = 0; x < maxX; x++)
                     {
                         var i0 = GetVertexIndex(x, y, z);
                         var i1 = GetVertexIndex(x + 1, y, z);
@@ -177,11 +180,14 @@ namespace DOTS.Terrain.Meshing
                 return;
             }
 
+            // Allow stitching on +X/+Z by permitting x/z at the last base cell (referencing the ghost cell at +1).
+            var maxX = math.min(BaseCellResolution.x, CellResolution.x - 1);
+            var maxZ = math.min(BaseCellResolution.z, CellResolution.z - 1);
             for (int y = 0; y < CellResolution.y; y++)
             {
-                for (int z = 0; z < CellResolution.z - 1; z++)
+                for (int z = 0; z < maxZ; z++)
                 {
-                    for (int x = 0; x < CellResolution.x - 1; x++)
+                    for (int x = 0; x < maxX; x++)
                     {
                         var i0 = GetVertexIndex(x, y, z);
                         var i1 = GetVertexIndex(x + 1, y, z);
@@ -206,9 +212,13 @@ namespace DOTS.Terrain.Meshing
                 return;
             }
 
-            for (int x = 0; x < CellResolution.x; x++)
+            // Don't emit the full overlap region on +X; stitching is handled by XY/XZ faces.
+            var maxX = math.min(BaseCellResolution.x, CellResolution.x);
+            var maxZ = math.min(BaseCellResolution.z, CellResolution.z - 1);
+
+            for (int x = 0; x < maxX; x++)
             {
-                for (int z = 0; z < CellResolution.z - 1; z++)
+                for (int z = 0; z < maxZ; z++)
                 {
                     for (int y = 0; y < CellResolution.y - 1; y++)
                     {
@@ -255,8 +265,8 @@ namespace DOTS.Terrain.Meshing
         private void EmitTriangle(int a, int b, int c)
         {
             Indices.Add(a);
-            Indices.Add(b);
             Indices.Add(c);
+            Indices.Add(b);
         }
 
         private void SetVertexIndex(int x, int y, int z, int vertexIndex)

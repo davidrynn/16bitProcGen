@@ -19,9 +19,10 @@ namespace DOTS.Terrain.Tests
             try
             {
                 var grid = TerrainChunkGridInfo.Create(resolution, 1f);
+                var densityGrid = new TerrainChunkDensityGridInfo { Resolution = resolution };
                 var bounds = new TerrainChunkBounds { WorldOrigin = float3.zero };
 
-                var blob = TerrainChunkMeshBuilder.BuildMeshBlob(ref density, in grid, in bounds);
+                var blob = TerrainChunkMeshBuilder.BuildMeshBlob(ref density, in grid, in densityGrid, in bounds);
 
                 Assert.IsTrue(blob.IsCreated);
                 Assert.Greater(blob.Value.Vertices.Length, 0);
@@ -41,9 +42,10 @@ namespace DOTS.Terrain.Tests
             try
             {
                 var grid = TerrainChunkGridInfo.Create(resolution, 1f);
+                var densityGrid = new TerrainChunkDensityGridInfo { Resolution = resolution };
                 var bounds = new TerrainChunkBounds { WorldOrigin = float3.zero };
 
-                var blob = TerrainChunkMeshBuilder.BuildMeshBlob(ref density, in grid, in bounds);
+                var blob = TerrainChunkMeshBuilder.BuildMeshBlob(ref density, in grid, in densityGrid, in bounds);
 
                 Assert.IsTrue(blob.IsCreated);
                 Assert.AreEqual(0, blob.Value.Vertices.Length);

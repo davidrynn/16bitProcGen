@@ -65,11 +65,24 @@ namespace DOTS.Terrain
                         continue;
                     }
 
-                    var densities = new NativeArray<float>(grid.VoxelCount, Allocator.TempJob);
+                    // Surface Nets needs one extra cell on +X/+Z to stitch chunk boundaries.
+                    // We provide this by sampling one extra layer of density samples on +X/+Z.
+                    var densityResolution = new int3(
+                        math.max(1, grid.Resolution.x + 1),
+                        math.max(1, grid.Resolution.y),
+                        math.max(1, grid.Resolution.z + 1));
+
+                    var densityCount = densityResolution.x * densityResolution.y * densityResolution.z;
+                    if (densityCount <= 0)
+                    {
+                        continue;
+                    }
+
+                    var densities = new NativeArray<float>(densityCount, Allocator.TempJob);
 
                     var job = new TerrainChunkDensitySamplingJob
                     {
-                        Resolution = grid.Resolution,
+                        Resolution = densityResolution,
                         VoxelSize = grid.VoxelSize,
                         ChunkOrigin = bounds.WorldOrigin,
                         Field = field,
@@ -100,6 +113,15 @@ namespace DOTS.Terrain
                     else
                     {
                         ecb.AddComponent(entity, TerrainChunkDensity.FromBlob(blob));
+                    }
+
+                    if (entityManager.HasComponent<TerrainChunkDensityGridInfo>(entity))
+                    {
+                        ecb.SetComponent(entity, new TerrainChunkDensityGridInfo { Resolution = densityResolution });
+                    }
+                    else
+                    {
+                        ecb.AddComponent(entity, new TerrainChunkDensityGridInfo { Resolution = densityResolution });
                     }
 
                     if (entityManager.HasComponent<TerrainChunkNeedsDensityRebuild>(entity))

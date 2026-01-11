@@ -54,7 +54,11 @@ namespace DOTS.Terrain
             var bounds = entityManager.GetComponentData<TerrainChunkBounds>(chunk);
             var grid = entityManager.GetComponentData<TerrainChunkGridInfo>(chunk);
             var resolution = grid.Resolution;
-            var size = new float3(resolution.x * grid.VoxelSize, resolution.y * grid.VoxelSize, resolution.z * grid.VoxelSize);
+            // Chunks share border samples; the world-space span is (resolution-1) * voxelSize.
+            var size = new float3(
+                math.max(0, resolution.x - 1) * grid.VoxelSize,
+                math.max(0, resolution.y - 1) * grid.VoxelSize,
+                math.max(0, resolution.z - 1) * grid.VoxelSize);
 
             min = bounds.WorldOrigin;
             max = bounds.WorldOrigin + size;
