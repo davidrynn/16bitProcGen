@@ -8,6 +8,7 @@ using DOTS.Terrain.Streaming;
 using DOTS.Terrain.WFC;
 using DOTS.Terrain.Weather;
 using Unity.Entities;
+using Unity.Physics.Systems;
 using UnityEngine;
  
 public class DotsSystemBootstrap : MonoBehaviour
@@ -17,6 +18,20 @@ public class DotsSystemBootstrap : MonoBehaviour
     void Awake()
     {
         var world = World.DefaultGameObjectInjectionWorld;
+
+        // Ensure a usable default world exists before touching EntityManager or creating systems
+        if (world == null || !world.IsCreated)
+        {
+            Debug.LogWarning("[DOTS Bootstrap] Default world missing. Initializing a default world before system creation.");
+            DefaultWorldInitialization.Initialize("Default World", false);
+            world = World.DefaultGameObjectInjectionWorld;
+        }
+
+        if (world == null || !world.IsCreated)
+        {
+            Debug.LogError("[DOTS Bootstrap] Failed to initialize default world. Aborting DOTS bootstrap.");
+            return;
+        }
 
         if (config == null)
         {
@@ -126,6 +141,9 @@ public class DotsSystemBootstrap : MonoBehaviour
         if (config.EnablePlayerSystem)
         {
             var initGroup = world.GetExistingSystemManaged<InitializationSystemGroup>();
+            var simGroup = world.GetExistingSystemManaged<SimulationSystemGroup>();
+            var physicsGroup = world.GetExistingSystemManaged<PhysicsSystemGroup>();
+            var presentationGroup = world.GetExistingSystemManaged<PresentationSystemGroup>();
             
             if (config.EnablePlayerBootstrapFixedRateInstaller)
             {
@@ -149,44 +167,51 @@ public class DotsSystemBootstrap : MonoBehaviour
 
             if (config.EnablePlayerInputSystem)
             {
-                world.CreateSystem<PlayerInputSystem>();
-                Debug.Log("[DOTS Bootstrap] PlayerInputSystem enabled via config.");
+                var handle = world.CreateSystem<PlayerInputSystem>();
+                initGroup.AddSystemToUpdateList(handle);
+                Debug.Log("[DOTS Bootstrap] PlayerInputSystem enabled and added to InitializationSystemGroup.");
             }
 
             if (config.EnablePlayerLookSystem)
             {
-                world.CreateSystem<PlayerLookSystem>();
-                Debug.Log("[DOTS Bootstrap] PlayerLookSystem enabled via config.");
+                var handle = world.CreateSystem<PlayerLookSystem>();
+                simGroup.AddSystemToUpdateList(handle);
+                Debug.Log("[DOTS Bootstrap] PlayerLookSystem enabled and added to SimulationSystemGroup.");
             }
 
             if (config.EnablePlayerMovementSystem)
             {
-                world.CreateSystem<PlayerMovementSystem>();
-                Debug.Log("[DOTS Bootstrap] PlayerMovementSystem enabled via config.");
+                var handle = world.CreateSystem<PlayerMovementSystem>();
+                physicsGroup.AddSystemToUpdateList(handle);
+                Debug.Log("[DOTS Bootstrap] PlayerMovementSystem enabled and added to PhysicsSystemGroup.");
             }
 
             if (config.EnablePlayerGroundingSystem)
             {
-                world.CreateSystem<PlayerGroundingSystem>();
-                Debug.Log("[DOTS Bootstrap] PlayerGroundingSystem enabled via config.");
+                var handle = world.CreateSystem<PlayerGroundingSystem>();
+                physicsGroup.AddSystemToUpdateList(handle);
+                Debug.Log("[DOTS Bootstrap] PlayerGroundingSystem enabled and added to PhysicsSystemGroup.");
             }
 
             if (config.EnablePlayerCameraSystem)
             {
-                world.CreateSystem<PlayerCameraSystem>();
-                Debug.Log("[DOTS Bootstrap] PlayerCameraSystem enabled via config.");
+                var handle = world.CreateSystem<PlayerCameraSystem>();
+                presentationGroup.AddSystemToUpdateList(handle);
+                Debug.Log("[DOTS Bootstrap] PlayerCameraSystem enabled and added to PresentationSystemGroup.");
             }
 
             if (config.EnablePlayerCinemachineCameraSystem)
             {
-                world.CreateSystem<PlayerCinemachineCameraSystem>();
-                Debug.Log("[DOTS Bootstrap] PlayerCinemachineCameraSystem enabled via config.");
+                var handle = world.CreateSystem<PlayerCinemachineCameraSystem>();
+                presentationGroup.AddSystemToUpdateList(handle);
+                Debug.Log("[DOTS Bootstrap] PlayerCinemachineCameraSystem enabled and added to PresentationSystemGroup.");
             }
 
             if (config.EnableCameraFollowSystem)
             {
-                world.CreateSystem<CameraFollowSystem>();
-                Debug.Log("[DOTS Bootstrap] CameraFollowSystem enabled via config.");
+                var handle = world.CreateSystem<CameraFollowSystem>();
+                simGroup.AddSystemToUpdateList(handle);
+                Debug.Log("[DOTS Bootstrap] CameraFollowSystem enabled and added to SimulationSystemGroup.");
             }
 
 #if SIMPLE_PLAYER_MOVEMENT_ENABLED
@@ -225,6 +250,12 @@ public class DotsSystemBootstrap : MonoBehaviour
 
     private void EnsureConfigSingleton(World world)
     {
+        if (world == null || !world.IsCreated)
+        {
+            Debug.LogWarning("[DOTS Bootstrap] Cannot create config singleton because the world is not available.");
+            return;
+        }
+
         var entityManager = world.EntityManager;
         var query = entityManager.CreateEntityQuery(ComponentType.ReadOnly<ProjectFeatureConfigSingleton>());
         if (query.CalculateEntityCount() == 0)

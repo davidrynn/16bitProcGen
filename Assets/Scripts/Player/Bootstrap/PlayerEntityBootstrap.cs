@@ -282,25 +282,6 @@ namespace DOTS.Player.Bootstrap
             entityManager.AddComponent<PhysicsWorldIndex>(groundEntity);
         }
 
-        private void CreateGroundVisual(float3 position, float2 size)
-        {
-            var ground = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            ground.name = "Ground Visual (ECS Synced)";
-            ground.transform.position = position;
-            ground.transform.localScale = new Vector3(size.x, 0.1f, size.y);
-
-            // Make it look like ground (greenish)
-            var renderer = ground.GetComponent<Renderer>();
-            if (renderer != null)
-            {
-                renderer.material.color = new Color(0.3f, 0.5f, 0.3f); // Green ground
-            }
-
-            // Remove GameObject collider - physics handled by ECS
-            Object.Destroy(ground.GetComponent<UnityEngine.Collider>());
-
-        }
-
         private Entity CreateMainCameraAndEntity(ref SystemState state, Entity playerEntity, float3 playerPosition, PlayerViewComponent playerView)
         {
             var entityManager = state.EntityManager;

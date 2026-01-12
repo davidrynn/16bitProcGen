@@ -65,11 +65,11 @@ namespace DOTS.Terrain
                         continue;
                     }
 
-                    // Surface Nets needs one extra cell on +X/+Z to stitch chunk boundaries.
-                    // We provide this by sampling one extra layer of density samples on +X/+Z.
+                    // Surface Nets needs one extra cell on +X/+Y/+Z to stitch chunk boundaries.
+                    // We provide this by sampling one extra layer of density samples on all axes.
                     var densityResolution = new int3(
                         math.max(1, grid.Resolution.x + 1),
-                        math.max(1, grid.Resolution.y),
+                        math.max(1, grid.Resolution.y + 1),
                         math.max(1, grid.Resolution.z + 1));
 
                     var densityCount = densityResolution.x * densityResolution.y * densityResolution.z;

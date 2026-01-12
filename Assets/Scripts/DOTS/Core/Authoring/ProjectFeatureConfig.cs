@@ -4,7 +4,7 @@ using UnityEngine;
 public class ProjectFeatureConfig : ScriptableObject
 {
     [Header("Feature Toggles")]
-    public bool EnablePlayerSystem = false;
+    public bool EnablePlayerSystem = true;
     public bool EnableTerrainSystem = true;
     public bool EnableDungeonSystem = false;
     public bool EnableWeatherSystem = false;
@@ -32,12 +32,12 @@ public class ProjectFeatureConfig : ScriptableObject
     public bool EnableHybridTerrainGenerationSystem = true;
     public bool EnableTerrainCleanupSystem = false;
     public bool EnableChunkProcessor = false;
-    public bool EnableTerrainModificationSystem = false;
-    public bool EnableTerrainGlobPhysicsSystem = false;
+    public bool EnableTerrainModificationSystem = true;
+    public bool EnableTerrainGlobPhysicsSystem = true;
 
     [Header("Terrain SDF Systems")]
     public bool EnableTerrainChunkDensitySamplingSystem = true;
-    public bool EnableTerrainEditInputSystem = false;
+    public bool EnableTerrainEditInputSystem = true;
 
     [Header("Terrain Streaming")]
     public bool EnableTerrainChunkStreamingSystem = true;
@@ -48,7 +48,7 @@ public class ProjectFeatureConfig : ScriptableObject
     public bool EnableTerrainChunkMeshBuildSystem = true;
     public bool EnableTerrainChunkRenderPrepSystem = true;
     public bool EnableTerrainChunkMeshUploadSystem = true;
-    public bool EnableTerrainChunkColliderBuildSystem = false;
+    public bool EnableTerrainChunkColliderBuildSystem = true;
     public bool EnableTerrainColliderSettingsBootstrapSystem = true;
 
     [Header("Dungeon Systems")]

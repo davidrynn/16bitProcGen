@@ -149,11 +149,12 @@ namespace DOTS.Terrain.Meshing
                 return;
             }
 
-            // Allow stitching on +X by permitting x == BaseCellResolution.x - 1, which references the ghost cell at x+1.
+            // Allow stitching on +X/+Y by permitting x/y at the last base cell (referencing the ghost cell at +1).
             var maxX = math.min(BaseCellResolution.x, CellResolution.x - 1);
+            var maxY = math.min(BaseCellResolution.y, CellResolution.y - 1);
             for (int z = 0; z < CellResolution.z; z++)
             {
-                for (int y = 0; y < CellResolution.y - 1; y++)
+                for (int y = 0; y < maxY; y++)
                 {
                     for (int x = 0; x < maxX; x++)
                     {
@@ -167,7 +168,10 @@ namespace DOTS.Terrain.Meshing
                                      + GetCellSign(x + 1, y + 1, z)
                                      + GetCellSign(x, y + 1, z);
 
-                        TryEmitQuad(i0, i1, i2, i3, signSum);
+                        // Use the sign of the neighboring +Z cell to break ties on blended slopes / seams.
+                        var neighborSign = GetCellSign(x, y, math.min(z + 1, CellResolution.z - 1));
+                        // For XY faces, enforce outward along -Z (matches prior orientation expectations).
+                        TryEmitQuad(i0, i1, i2, i3, signSum, neighborSign, new float3(0f, 0f, -1f));
                     }
                 }
             }
@@ -199,7 +203,8 @@ namespace DOTS.Terrain.Meshing
                                      + GetCellSign(x + 1, y, z + 1)
                                      + GetCellSign(x, y, z + 1);
 
-                        TryEmitQuad(i0, i1, i2, i3, signSum);
+                        var neighborSign = GetCellSign(x, math.min(y + 1, CellResolution.y - 1), z);
+                        TryEmitQuad(i0, i1, i2, i3, signSum, neighborSign, new float3(0f, 1f, 0f));
                     }
                 }
             }
@@ -213,14 +218,16 @@ namespace DOTS.Terrain.Meshing
             }
 
             // Don't emit the full overlap region on +X; stitching is handled by XY/XZ faces.
+            // Allow stitching on +Y/+Z by permitting y/z at the last base cell (referencing the ghost cell at +1).
             var maxX = math.min(BaseCellResolution.x, CellResolution.x);
+            var maxY = math.min(BaseCellResolution.y, CellResolution.y - 1);
             var maxZ = math.min(BaseCellResolution.z, CellResolution.z - 1);
 
             for (int x = 0; x < maxX; x++)
             {
                 for (int z = 0; z < maxZ; z++)
                 {
-                    for (int y = 0; y < CellResolution.y - 1; y++)
+                    for (int y = 0; y < maxY; y++)
                     {
                         var i0 = GetVertexIndex(x, y, z);
                         var i1 = GetVertexIndex(x, y + 1, z);
@@ -232,13 +239,14 @@ namespace DOTS.Terrain.Meshing
                                      + GetCellSign(x, y + 1, z + 1)
                                      + GetCellSign(x, y, z + 1);
 
-                        TryEmitQuad(i0, i1, i2, i3, signSum);
+                        var neighborSign = GetCellSign(math.min(x + 1, CellResolution.x - 1), y, z);
+                        TryEmitQuad(i0, i1, i2, i3, signSum, neighborSign, new float3(1f, 0f, 0f));
                     }
                 }
             }
         }
 
-        private void TryEmitQuad(int i0, int i1, int i2, int i3, int signSum)
+        private void TryEmitQuad(int i0, int i1, int i2, int i3, int signSum, int tieBreakSign, float3 faceAxis)
         {
             if (i0 < 0 || i1 < 0 || i2 < 0 || i3 < 0)
             {
@@ -250,7 +258,35 @@ namespace DOTS.Terrain.Meshing
                 return;
             }
 
-            if (signSum < 0)
+            var effectiveSign = signSum;
+            if (effectiveSign == 0)
+            {
+                effectiveSign = tieBreakSign;
+            }
+
+            if (effectiveSign == 0)
+            {
+                effectiveSign = 1; // deterministic fallback to avoid winding flip-flop
+            }
+
+            var flip = effectiveSign < 0;
+
+            if (i0 >= Vertices.Length || i1 >= Vertices.Length || i2 >= Vertices.Length || i3 >= Vertices.Length)
+            {
+                return;
+            }
+
+            var a = Vertices[i0];
+            var b = Vertices[flip ? i2 : i1];
+            var c = Vertices[flip ? i1 : i2];
+
+            var normal = math.cross(b - a, c - a);
+            if (math.dot(normal, faceAxis) > 0f)
+            {
+                flip = !flip; // enforce deterministic outward-facing orientation per axis
+            }
+
+            if (flip)
             {
                 EmitTriangle(i0, i2, i1);
                 EmitTriangle(i0, i3, i2);

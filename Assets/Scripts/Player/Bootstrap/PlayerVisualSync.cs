@@ -17,9 +17,15 @@ namespace DOTS.Player.Bootstrap
 
         private EntityManager _entityManager;
         private bool _entityManagerValid;
+        private bool _isDestroyed;
 
         private void LateUpdate()
         {
+            if (_isDestroyed)
+            {
+                return;
+            }
+
             if (!TryResolveEntityManager(out var entityManager))
             {
                 UnityEngine.Debug.LogWarning("EntityManager could not be resolved. Ensure that the DOTS world is initialized.");
@@ -28,19 +34,19 @@ namespace DOTS.Player.Bootstrap
 
             if (targetEntity == Entity.Null)
             {
-                UnityEngine.Debug.LogWarning("Target entity is not set. Destroying visual.");
+                DestroyVisual("Target entity is not set. Destroying visual.");
                 return;
             }
 
             if (!entityManager.Exists(targetEntity))
             {
-                UnityEngine.Debug.LogWarning("Target entity does not exist. Destroying visual.");
+                DestroyVisual("Target entity does not exist. Destroying visual.");
                 return;
             }
 
             if (!entityManager.HasComponent<LocalTransform>(targetEntity))
             {
-                UnityEngine.Debug.LogWarning("Target entity does not have a LocalTransform component. Cannot sync visual.");
+                DestroyVisual("Target entity does not have a LocalTransform component. Destroying visual.");
                 return;
             }
 
@@ -56,6 +62,26 @@ namespace DOTS.Player.Bootstrap
                 !Mathf.Approximately(transform.localScale.z, uniformScale))
             {
                 transform.localScale = new Vector3(uniformScale, uniformScale, uniformScale);
+            }
+        }
+
+        private void DestroyVisual(string reason)
+        {
+            if (_isDestroyed)
+            {
+                return;
+            }
+
+            UnityEngine.Debug.LogWarning(reason);
+            _isDestroyed = true;
+
+            // Disable to prevent another LateUpdate from running before destruction is processed.
+            enabled = false;
+
+            if (gameObject != null)
+            {
+                gameObject.SetActive(false);
+                Destroy(gameObject);
             }
         }
 

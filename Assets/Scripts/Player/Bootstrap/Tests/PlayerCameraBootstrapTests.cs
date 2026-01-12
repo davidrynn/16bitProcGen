@@ -248,15 +248,6 @@ namespace DOTS.Player.Tests.Bootstrap
         }
 
         [UnityTest]
-        public IEnumerator GroundVisual_Created()
-        {
-            yield return null;
-            var groundVisual = GameObject.Find("Ground Visual (ECS Synced)");
-            Assert.IsNotNull(groundVisual, "Ground visual GameObject should be created");
-            Assert.IsNull(groundVisual.GetComponent<UnityEngine.Collider>(), "Ground visual should not have a collider");
-        }
-
-        [UnityTest]
         public IEnumerator CameraGameObject_SyncsWithEntity()
         {
             yield return null;

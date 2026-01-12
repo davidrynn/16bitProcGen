@@ -1,13 +1,16 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Text;
+using System;
 using Unity.Entities;
 using Unity.Mathematics;
 using Unity.Transforms;
 using UnityEngine;
 using DOTS.Player.Components;
-using Unity.Rendering;
+using DOTS.Terrain;
 using DOTS.Terrain.Rendering;
+using Unity.Collections;
+using Unity.Rendering;
 
 /// <summary>
 /// Comprehensive diagnostic helper for basic scene setup.
@@ -47,6 +50,9 @@ public class SceneDiagnostics : MonoBehaviour
     
     [Tooltip("Check lighting setup")]
     public bool checkLighting = true;
+
+    [Tooltip("Include Surface Nets mesh stats and winding sampling (costly if many chunks)")]
+    public bool checkSurfaceNetsDebug = true;
     
     private float lastPeriodicCheck = 0f;
     private StringBuilder reportBuilder = new StringBuilder();
@@ -375,6 +381,13 @@ public class SceneDiagnostics : MonoBehaviour
                                 }
                             }
                         }
+
+                        if (checkSurfaceNetsDebug)
+                        {
+                            LogTerrainPipelinePending(entityManager);
+                            LogTerrainChunkMeshStats(entityManager);
+                            LogSurfaceNetsWindingSample(entityManager);
+                        }
                     }
                 }
                 else
@@ -503,7 +516,7 @@ public class SceneDiagnostics : MonoBehaviour
     private void CheckLegacyTerrain()
     {
         // Check for legacy GameObject-based terrain (warn if found)
-        var legacyChunks = Object.FindObjectsByType<global::TerrainChunk>(FindObjectsSortMode.None);
+        var legacyChunks = UnityEngine.Object.FindObjectsByType<global::TerrainChunk>(FindObjectsSortMode.None);
         if (legacyChunks.Length > 0)
         {
             reportBuilder.AppendLine($"\n  ⚠ LEGACY: Found {legacyChunks.Length} GameObject-based TerrainChunk component(s)");
@@ -529,7 +542,7 @@ public class SceneDiagnostics : MonoBehaviour
     {
         reportBuilder.AppendLine("\n--- LIGHTING SETUP ---");
         
-        var lights = Object.FindObjectsByType<Light>(FindObjectsSortMode.None);
+        var lights = UnityEngine.Object.FindObjectsByType<Light>(FindObjectsSortMode.None);
         reportBuilder.AppendLine($"Found {lights.Length} Light component(s)");
         
         if (lights.Length > 0)
@@ -578,6 +591,101 @@ public class SceneDiagnostics : MonoBehaviour
             
             GUILayout.EndArea();
         }
+    }
+
+    private void LogTerrainPipelinePending(EntityManager entityManager)
+    {
+        var densityType = System.Type.GetType("DOTS.Terrain.TerrainChunkNeedsDensityRebuild, DOTS.Terrain");
+        var meshType = System.Type.GetType("DOTS.Terrain.TerrainChunkNeedsMeshBuild, DOTS.Terrain");
+        var uploadType = System.Type.GetType("DOTS.Terrain.TerrainChunkNeedsRenderUpload, DOTS.Terrain");
+        var colliderType = System.Type.GetType("DOTS.Terrain.TerrainChunkNeedsColliderBuild, DOTS.Terrain");
+
+        int needsDensity = densityType != null ? entityManager.CreateEntityQuery(ComponentType.ReadOnly(densityType)).CalculateEntityCount() : -1;
+        int needsMesh = meshType != null ? entityManager.CreateEntityQuery(ComponentType.ReadOnly(meshType)).CalculateEntityCount() : -1;
+        int needsUpload = uploadType != null ? entityManager.CreateEntityQuery(ComponentType.ReadOnly(uploadType)).CalculateEntityCount() : -1;
+        int needsCollider = colliderType != null ? entityManager.CreateEntityQuery(ComponentType.ReadOnly(colliderType)).CalculateEntityCount() : -1;
+
+        reportBuilder.AppendLine("  Pipeline Pending:");
+        reportBuilder.AppendLine($"    NeedsDensityRebuild: {(needsDensity >= 0 ? needsDensity.ToString() : "N/A")}");
+        reportBuilder.AppendLine($"    NeedsMeshBuild: {(needsMesh >= 0 ? needsMesh.ToString() : "N/A")}");
+        reportBuilder.AppendLine($"    NeedsRenderUpload: {(needsUpload >= 0 ? needsUpload.ToString() : "N/A")}");
+        reportBuilder.AppendLine($"    NeedsColliderBuild: {(needsCollider >= 0 ? needsCollider.ToString() : "N/A")}");
+    }
+
+    private void LogTerrainChunkMeshStats(EntityManager entityManager)
+    {
+        var meshDataType = System.Type.GetType("DOTS.Terrain.TerrainChunkMeshData, DOTS.Terrain");
+        var boundsType = System.Type.GetType("DOTS.Terrain.TerrainChunkBounds, DOTS.Terrain");
+
+        if (meshDataType == null || boundsType == null)
+        {
+            reportBuilder.AppendLine("  Mesh Stats: Terrain types unavailable (DOTS.Terrain not referenced)");
+            return;
+        }
+
+        using var meshQuery = entityManager.CreateEntityQuery(ComponentType.ReadOnly(meshDataType));
+        var count = meshQuery.CalculateEntityCount();
+        if (count == 0)
+        {
+            reportBuilder.AppendLine("  Mesh Stats: No chunks with mesh data");
+            return;
+        }
+
+        reportBuilder.AppendLine($"  Mesh Stats: {count} chunk(s) have mesh data (detailed sampling disabled when using reflection)");
+    }
+
+    private void LogSurfaceNetsWindingSample(EntityManager entityManager, int maxChunks = 4, int maxTrianglesPerChunk = 256)
+    {
+        var diagType = Type.GetType("DOTS.Terrain.Meshing.SurfaceNetsDiagnostics, DOTS.Terrain");
+        var meshDataType = Type.GetType("DOTS.Terrain.TerrainChunkMeshData, DOTS.Terrain");
+
+        if (diagType == null || meshDataType == null)
+        {
+            reportBuilder.AppendLine("  Surface Nets Winding: Skipped (DOTS.Terrain not referenced)");
+            return;
+        }
+
+        using var meshQuery = entityManager.CreateEntityQuery(ComponentType.ReadOnly(meshDataType));
+        var count = meshQuery.CalculateEntityCount();
+        if (count == 0)
+        {
+            reportBuilder.AppendLine("  Surface Nets Winding: No mesh data");
+            return;
+        }
+
+        var method = diagType.GetMethod("TrySample", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static);
+        if (method == null)
+        {
+            reportBuilder.AppendLine("  Surface Nets Winding: Helper not found");
+            return;
+        }
+
+        var args = new object[] { entityManager, maxChunks, maxTrianglesPerChunk, 0, 0, 0 };
+        var ok = false;
+        try
+        {
+            ok = (bool)method.Invoke(null, args);
+        }
+        catch
+        {
+            reportBuilder.AppendLine("  Surface Nets Winding: Invocation failed");
+            return;
+        }
+
+        if (!ok)
+        {
+            reportBuilder.AppendLine("  Surface Nets Winding: No chunks sampled");
+            return;
+        }
+
+        var sampledChunks = (int)args[3];
+        var upward = (int)args[4];
+        var downward = (int)args[5];
+
+        reportBuilder.AppendLine("  Surface Nets Winding (sampled)");
+        reportBuilder.AppendLine($"    Chunks Sampled: {sampledChunks}");
+        reportBuilder.AppendLine($"    Upward Triangles: {upward}");
+        reportBuilder.AppendLine($"    Downward Triangles: {downward} (should be 0; investigate if >0)");
     }
 }
 
