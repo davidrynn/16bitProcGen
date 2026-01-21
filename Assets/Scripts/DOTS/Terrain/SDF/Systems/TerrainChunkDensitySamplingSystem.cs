@@ -94,6 +94,9 @@ namespace DOTS.Terrain
 
                     var builder = new BlobBuilder(Allocator.Temp);
                     ref var root = ref builder.ConstructRoot<TerrainChunkDensityBlob>();
+                    root.Resolution = densityResolution;
+                    root.WorldOrigin = bounds.WorldOrigin;
+                    root.VoxelSize = grid.VoxelSize;
                     var values = builder.Allocate(ref root.Values, densities.Length);
                     for (int i = 0; i < densities.Length; i++)
                     {
@@ -132,6 +135,14 @@ namespace DOTS.Terrain
                     if (!entityManager.HasComponent<TerrainChunkNeedsMeshBuild>(entity))
                     {
                         ecb.AddComponent<TerrainChunkNeedsMeshBuild>(entity);
+                    }
+
+                    // Update debug state if present
+                    if (entityManager.HasComponent<DOTS.Terrain.Debug.TerrainChunkDebugState>(entity))
+                    {
+                        var debugState = entityManager.GetComponentData<DOTS.Terrain.Debug.TerrainChunkDebugState>(entity);
+                        debugState.Stage = DOTS.Terrain.Debug.TerrainChunkDebugState.StageDensityReady;
+                        ecb.SetComponent(entity, debugState);
                     }
                 }
                 

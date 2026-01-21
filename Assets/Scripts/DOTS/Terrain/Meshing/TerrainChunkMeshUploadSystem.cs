@@ -103,6 +103,14 @@ namespace DOTS.Terrain.Meshing
                 {
                     entityManager.RemoveComponent<TerrainChunkNeedsRenderUpload>(item.Entity);
                 }
+
+                // Update debug state if present
+                if (entityManager.HasComponent<DOTS.Terrain.Debug.TerrainChunkDebugState>(item.Entity))
+                {
+                    var debugState = entityManager.GetComponentData<DOTS.Terrain.Debug.TerrainChunkDebugState>(item.Entity);
+                    debugState.Stage = DOTS.Terrain.Debug.TerrainChunkDebugState.StageUploaded;
+                    entityManager.SetComponentData(item.Entity, debugState);
+                }
             }
         }
 

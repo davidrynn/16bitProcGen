@@ -136,6 +136,13 @@ public class DotsSystemBootstrap : MonoBehaviour
                 simGroup.AddSystemToUpdateList(handle);
                 Debug.Log("[DOTS Bootstrap] TerrainChunkColliderBuildSystem enabled and added to SimulationSystemGroup.");
             }
+
+            if (config.EnableTerrainSeamValidatorSystem)
+            {
+                var handle = world.CreateSystem<DOTS.Terrain.Debug.TerrainSeamValidatorSystem>();
+                simGroup.AddSystemToUpdateList(handle);
+                Debug.Log("[DOTS Bootstrap] TerrainSeamValidatorSystem enabled and added to SimulationSystemGroup.");
+            }
         }
 
         if (config.EnablePlayerSystem)

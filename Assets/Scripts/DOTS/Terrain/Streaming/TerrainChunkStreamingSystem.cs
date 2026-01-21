@@ -24,6 +24,15 @@ namespace DOTS.Terrain.Streaming
 
         public void OnUpdate(ref SystemState state)
         {
+            // Check for debug config first
+            var debugEnabled = false;
+            var debugConfig = DOTS.Terrain.Debug.TerrainDebugConfig.Default;
+            if (SystemAPI.TryGetSingleton<DOTS.Terrain.Debug.TerrainDebugConfig>(out var cfg))
+            {
+                debugConfig = cfg;
+                debugEnabled = cfg.Enabled;
+            }
+
             var radius = 2;
             if (SystemAPI.TryGetSingleton<ProjectFeatureConfigSingleton>(out var config))
             {
@@ -36,6 +45,14 @@ namespace DOTS.Terrain.Streaming
             }
 
             var entityManager = state.EntityManager;
+
+            // If debug freeze streaming is active, skip normal player-based streaming
+            if (debugEnabled && debugConfig.FreezeStreaming)
+            {
+                // Use fixed center chunk from debug config
+                ProcessStreamingWindow(ref state, debugConfig.FixedCenterChunk, debugConfig.StreamingRadiusInChunks, debugEnabled);
+                return;
+            }
 
             if (playerQuery.IsEmpty)
             {
@@ -77,6 +94,40 @@ namespace DOTS.Terrain.Streaming
                 (int)math.floor(playerPos.x / chunkStride),
                 (int)math.floor(playerPos.z / chunkStride));
 
+            ProcessStreamingWindow(ref state, centerCoord, radius, debugEnabled);
+        }
+
+        private void ProcessStreamingWindow(ref SystemState state, int2 centerCoord, int radius, bool debugEnabled)
+        {
+            var entityManager = state.EntityManager;
+
+            if (chunkQuery.IsEmpty)
+            {
+                return;
+            }
+
+            using var existingEntities = chunkQuery.ToEntityArray(Allocator.Temp);
+            using var existingChunks = chunkQuery.ToComponentDataArray<TerrainChunk>(Allocator.Temp);
+
+            // Infer chunk stride from the first existing chunk.
+            var anyGridInfo = entityManager.GetComponentData<TerrainChunkGridInfo>(existingEntities[0]);
+            // Chunks share border samples; the world-space span of a chunk is (resolution-1) * voxelSize.
+            var chunkStride = math.max(0, anyGridInfo.Resolution.x - 1) * anyGridInfo.VoxelSize;
+            if (chunkStride <= 0f)
+            {
+                return;
+            }
+
+            // Center chunk volume vertically around BaseHeight so the SdGround isosurface stays in-range.
+            var baseHeight = 0f;
+            if (SystemAPI.TryGetSingleton<SDFTerrainFieldSettings>(out var fieldSettings))
+            {
+                baseHeight = fieldSettings.BaseHeight;
+            }
+
+            var chunkVerticalSpan = math.max(0, anyGridInfo.Resolution.y - 1) * anyGridInfo.VoxelSize;
+            var originY = baseHeight - (chunkVerticalSpan * 0.5f);
+
             var map = new NativeParallelHashMap<int2, Entity>(existingEntities.Length, Allocator.Temp);
             for (int i = 0; i < existingEntities.Length; i++)
             {
@@ -105,6 +156,12 @@ namespace DOTS.Terrain.Streaming
                     ecb.AddComponent(entity, new TerrainChunkBounds { WorldOrigin = origin });
                     ecb.AddComponent<TerrainChunkNeedsDensityRebuild>(entity);
                     ecb.AddComponent(entity, LocalTransform.FromPosition(origin));
+
+                    // Add debug state if debug enabled
+                    if (debugEnabled)
+                    {
+                        ecb.AddComponent(entity, DOTS.Terrain.Debug.TerrainChunkDebugState.Create(coord));
+                    }
                 }
             }
 

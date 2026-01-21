@@ -51,6 +51,9 @@ public class ProjectFeatureConfig : ScriptableObject
     public bool EnableTerrainChunkColliderBuildSystem = true;
     public bool EnableTerrainColliderSettingsBootstrapSystem = true;
 
+    [Header("Terrain Debug Systems")]
+    public bool EnableTerrainSeamValidatorSystem = false;
+
     [Header("Dungeon Systems")]
     public bool EnableDungeonRenderingSystem = false;
 
