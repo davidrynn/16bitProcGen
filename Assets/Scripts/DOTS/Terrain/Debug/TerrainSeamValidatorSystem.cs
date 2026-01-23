@@ -112,7 +112,7 @@ namespace DOTS.Terrain.Debug
             {
                 if (config.EnableSeamLogging)
                 {
-                    DebugSettings.LogSeamWarning($"[SeamValidator] Resolution mismatch: A{coordA} res={resA} vs B{coordB} res={resB}");
+                    DebugSettings.LogSeamWarning($"Resolution mismatch: A{coordA} res={resA} vs B{coordB} res={resB}");
                 }
                 return;
             }
@@ -173,7 +173,7 @@ namespace DOTS.Terrain.Debug
             if (countAboveEpsilon > 0 && config.EnableSeamLogging)
             {
                 var dirStr = direction == BorderDirection.East ? "East" : "North";
-                DebugSettings.LogSeamWarning($"[SEAM_MISMATCH] A{coordA} ↔ B{coordB} ({dirStr}) maxΔ={maxAbsDelta:F6} samples={countAboveEpsilon}/{sampleCount} above ε={config.SeamEpsilon}");
+                DebugSettings.LogSeamWarning($"SEAM_MISMATCH: A{coordA} ↔ B{coordB} ({dirStr}) maxΔ={maxAbsDelta:F6} samples={countAboveEpsilon}/{sampleCount} above ε={config.SeamEpsilon}");
             }
         }
 
