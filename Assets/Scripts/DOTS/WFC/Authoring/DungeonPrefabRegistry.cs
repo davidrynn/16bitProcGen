@@ -1,5 +1,6 @@
 using Unity.Entities;
 using UnityEngine;
+using DOTS.Terrain.Core;
 
 namespace DOTS.Terrain.WFC.Authoring
 {
@@ -56,7 +57,7 @@ namespace DOTS.Terrain.WFC.Authoring
                 // Log warning if required prefabs are missing
                 if (authoring.roomFloorPrefab == null || authoring.roomEdgePrefab == null)
                 {
-                    Debug.LogWarning("DungeonPrefabRegistryAuthoring: roomFloorPrefab and roomEdgePrefab are required but not assigned!", authoring);
+                    DebugSettings.LogWarning("DungeonPrefabRegistryAuthoring: roomFloorPrefab and roomEdgePrefab are required but not assigned!");
                 }
             }
         }

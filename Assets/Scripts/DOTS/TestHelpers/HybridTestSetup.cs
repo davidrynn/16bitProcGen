@@ -2,21 +2,19 @@ using UnityEngine;
 using Unity.Entities;
 using DOTS.Terrain.Generation;
 using DOTS.Terrain.Weather;
+using DOTS.Terrain.Core;
 
 namespace DOTS.Terrain.Test
 {
     /// <summary>
     /// Automatically sets up the required components for hybrid terrain generation testing
     /// Creates ComputeShaderManager and TerrainEntityManager if they don't exist
+    /// Uses global DebugSettings.EnableTestDebug for logging control
     /// </summary>
     public class HybridTestSetup : MonoBehaviour
     {
         [Header("Setup Settings")]
         [SerializeField] private bool setupOnStart = true;
-        [SerializeField] private bool logSetupProcess = true;
-        
-        [Header("Debug Settings")]
-        [SerializeField] private bool enableDebugLogs = false; // NEW: Debug toggle
         
         private void Start()
         {
@@ -32,44 +30,44 @@ namespace DOTS.Terrain.Test
         [ContextMenu("Setup Hybrid Test Environment")]
         public void SetupHybridTestEnvironment()
         {
-            DebugLog("=== SETTING UP HYBRID TEST ENVIRONMENT ===");
+            DebugSettings.LogTest("=== SETTING UP HYBRID TEST ENVIRONMENT ===");
             
             // Step 1: Setup ComputeShaderManager
             if (!SetupComputeShaderManager())
             {
-                DebugError("Failed to setup ComputeShaderManager");
+                DebugSettings.LogError("Failed to setup ComputeShaderManager");
                 return;
             }
             
             // Step 2: Setup TerrainEntityManager
             if (!SetupTerrainEntityManager())
             {
-                DebugError("Failed to setup TerrainEntityManager");
+                DebugSettings.LogError("Failed to setup TerrainEntityManager");
                 return;
             }
             
             // Step 3: Setup TerrainComputeBufferManager
             if (!SetupTerrainComputeBufferManager())
             {
-                DebugError("Failed to setup TerrainComputeBufferManager");
+                DebugSettings.LogError("Failed to setup TerrainComputeBufferManager");
                 return;
             }
             
             // Step 4: Setup Weather Systems
             if (!SetupWeatherSystems())
             {
-                DebugError("Failed to setup Weather Systems");
+                DebugSettings.LogError("Failed to setup Weather Systems");
                 return;
             }
             
-            // Step 4: Verify setup
+            // Step 5: Verify setup
             if (VerifySetup())
             {
-                DebugLog("✓ Hybrid test environment setup complete!");
+                DebugSettings.LogTest("✓ Hybrid test environment setup complete!");
             }
             else
             {
-                DebugError("✗ Hybrid test environment setup failed verification");
+                DebugSettings.LogError("✗ Hybrid test environment setup failed verification");
             }
         }
         
@@ -79,8 +77,7 @@ namespace DOTS.Terrain.Test
         /// <returns>True if setup was successful</returns>
         private bool SetupComputeShaderManager()
         {
-            if (logSetupProcess)
-                Debug.Log("Setting up ComputeShaderManager...");
+            DebugSettings.LogTest("Setting up ComputeShaderManager...");
             
             try
             {
@@ -89,18 +86,17 @@ namespace DOTS.Terrain.Test
                 
                 if (computeManager == null)
                 {
-                    Debug.LogError("Failed to get ComputeShaderManager instance");
+                    DebugSettings.LogError("Failed to get ComputeShaderManager instance");
                     return false;
                 }
                 
-                if (logSetupProcess)
-                    Debug.Log("✓ ComputeShaderManager singleton initialized");
+                DebugSettings.LogTest("✓ ComputeShaderManager singleton initialized");
                 
                 return true;
             }
             catch (System.Exception e)
             {
-                Debug.LogError($"Failed to setup ComputeShaderManager: {e.Message}");
+                DebugSettings.LogError($"Failed to setup ComputeShaderManager: {e.Message}");
                 return false;
             }
         }
@@ -111,15 +107,13 @@ namespace DOTS.Terrain.Test
         /// <returns>True if setup was successful</returns>
         private bool SetupTerrainEntityManager()
         {
-            if (logSetupProcess)
-                Debug.Log("Setting up TerrainEntityManager...");
+            DebugSettings.LogTest("Setting up TerrainEntityManager...");
             
             // Check if TerrainEntityManager already exists
             var existingManager = FindFirstObjectByType<TerrainEntityManager>();
             if (existingManager != null)
             {
-                if (logSetupProcess)
-                    Debug.Log("✓ TerrainEntityManager already exists");
+                DebugSettings.LogTest("✓ TerrainEntityManager already exists");
                 return true;
             }
             
@@ -129,7 +123,7 @@ namespace DOTS.Terrain.Test
             
             if (entityManager == null)
             {
-                Debug.LogError("Failed to create TerrainEntityManager component");
+                DebugSettings.LogError("Failed to create TerrainEntityManager component");
                 return false;
             }
             
@@ -138,8 +132,7 @@ namespace DOTS.Terrain.Test
             entityManager.defaultWorldScale = 1.0f;
             entityManager.defaultBiomeType = BiomeType.Plains;
             
-            if (logSetupProcess)
-                Debug.Log("✓ Created TerrainEntityManager with default settings");
+            DebugSettings.LogTest("✓ Created TerrainEntityManager with default settings");
             
             return true;
         }
@@ -150,15 +143,13 @@ namespace DOTS.Terrain.Test
         /// <returns>True if setup was successful</returns>
         private bool SetupTerrainComputeBufferManager()
         {
-            if (logSetupProcess)
-                Debug.Log("Setting up TerrainComputeBufferManager...");
+            DebugSettings.LogTest("Setting up TerrainComputeBufferManager...");
             
             // Check if TerrainComputeBufferManager already exists
             var existingBufferManager = FindFirstObjectByType<TerrainComputeBufferManager>();
             if (existingBufferManager != null)
             {
-                if (logSetupProcess)
-                    Debug.Log("✓ TerrainComputeBufferManager already exists");
+                DebugSettings.LogTest("✓ TerrainComputeBufferManager already exists");
                 return true;
             }
             
@@ -168,12 +159,11 @@ namespace DOTS.Terrain.Test
             
             if (bufferManager == null)
             {
-                Debug.LogError("Failed to create TerrainComputeBufferManager component");
+                DebugSettings.LogError("Failed to create TerrainComputeBufferManager component");
                 return false;
             }
             
-            if (logSetupProcess)
-                Debug.Log("✓ Created TerrainComputeBufferManager");
+            DebugSettings.LogTest("✓ Created TerrainComputeBufferManager");
             
             return true;
         }
@@ -184,8 +174,7 @@ namespace DOTS.Terrain.Test
         /// <returns>True if setup was successful</returns>
         private bool SetupWeatherSystems()
         {
-            if (logSetupProcess)
-                Debug.Log("Setting up Weather Systems...");
+            DebugSettings.LogTest("Setting up Weather Systems...");
             
             try
             {
@@ -193,21 +182,20 @@ namespace DOTS.Terrain.Test
                 var world = World.DefaultGameObjectInjectionWorld;
                 if (world == null)
                 {
-                    Debug.LogError("No DOTS world found for weather system setup");
+                    DebugSettings.LogError("No DOTS world found for weather system setup");
                     return false;
                 }
                 
                 // Weather systems will be auto-registered by DOTS
-                Debug.Log("Weather systems will be auto-registered by DOTS");
+                DebugSettings.LogTest("Weather systems will be auto-registered by DOTS");
                 
-                if (logSetupProcess)
-                    Debug.Log("✓ Weather systems setup complete");
+                DebugSettings.LogTest("✓ Weather systems setup complete");
                 
                 return true;
             }
             catch (System.Exception e)
             {
-                Debug.LogError($"Failed to setup Weather Systems: {e.Message}");
+                DebugSettings.LogError($"Failed to setup Weather Systems: {e.Message}");
                 return false;
             }
         }
@@ -218,8 +206,7 @@ namespace DOTS.Terrain.Test
         /// <returns>True if verification passed</returns>
         private bool VerifySetup()
         {
-            if (logSetupProcess)
-                Debug.Log("Verifying setup...");
+            DebugSettings.LogTest("Verifying setup...");
             
             // Check ComputeShaderManager
             try
@@ -227,13 +214,13 @@ namespace DOTS.Terrain.Test
                 var computeManager = ComputeShaderManager.Instance;
                 if (computeManager == null)
                 {
-                    Debug.LogError("ComputeShaderManager not found after setup");
+                    DebugSettings.LogError("ComputeShaderManager not found after setup");
                     return false;
                 }
             }
             catch (System.Exception e)
             {
-                Debug.LogError($"ComputeShaderManager not found after setup: {e.Message}");
+                DebugSettings.LogError($"ComputeShaderManager not found after setup: {e.Message}");
                 return false;
             }
             
@@ -241,7 +228,7 @@ namespace DOTS.Terrain.Test
             var entityManager = FindFirstObjectByType<TerrainEntityManager>();
             if (entityManager == null)
             {
-                Debug.LogError("TerrainEntityManager not found after setup");
+                DebugSettings.LogError("TerrainEntityManager not found after setup");
                 return false;
             }
             
@@ -249,7 +236,7 @@ namespace DOTS.Terrain.Test
             var bufferManager = FindFirstObjectByType<TerrainComputeBufferManager>();
             if (bufferManager == null)
             {
-                Debug.LogError("TerrainComputeBufferManager not found after setup");
+                DebugSettings.LogError("TerrainComputeBufferManager not found after setup");
                 return false;
             }
             
@@ -257,7 +244,7 @@ namespace DOTS.Terrain.Test
             var world = World.DefaultGameObjectInjectionWorld;
             if (world == null)
             {
-                Debug.LogError("DOTS World not found");
+                DebugSettings.LogError("DOTS World not found");
                 return false;
             }
             
@@ -265,24 +252,21 @@ namespace DOTS.Terrain.Test
             var hybridSystemHandle = world.GetExistingSystem<HybridTerrainGenerationSystem>();
             if (hybridSystemHandle == SystemHandle.Null)
             {
-                Debug.LogError("HybridTerrainGenerationSystem not found in world");
+                DebugSettings.LogError("HybridTerrainGenerationSystem not found in world");
                 return false;
             }
             
             // Weather systems will be auto-registered by DOTS
-            Debug.Log("Weather systems will be auto-registered by DOTS");
+            DebugSettings.LogTest("Weather systems will be auto-registered by DOTS");
             
-            if (logSetupProcess)
-            {
-                Debug.Log("✓ All components verified:");
-                Debug.Log($"  - ComputeShaderManager: Found");
-                Debug.Log($"  - TerrainEntityManager: {(entityManager != null ? "Found" : "Missing")}");
-                Debug.Log($"  - TerrainComputeBufferManager: {(bufferManager != null ? "Found" : "Missing")}");
-                Debug.Log($"  - DOTS World: {(world != null ? "Found" : "Missing")}");
-                Debug.Log($"  - HybridTerrainGenerationSystem: {(hybridSystemHandle != SystemHandle.Null ? "Found" : "Missing")}");
-                Debug.Log($"  - WeatherSystem: Auto-registered by DOTS");
-                Debug.Log($"  - HybridWeatherSystem: Auto-registered by DOTS");
-            }
+            DebugSettings.LogTest("✓ All components verified:");
+            DebugSettings.LogTest($"  - ComputeShaderManager: Found");
+            DebugSettings.LogTest($"  - TerrainEntityManager: {(entityManager != null ? "Found" : "Missing")}");
+            DebugSettings.LogTest($"  - TerrainComputeBufferManager: {(bufferManager != null ? "Found" : "Missing")}");
+            DebugSettings.LogTest($"  - DOTS World: {(world != null ? "Found" : "Missing")}");
+            DebugSettings.LogTest($"  - HybridTerrainGenerationSystem: {(hybridSystemHandle != SystemHandle.Null ? "Found" : "Missing")}");
+            DebugSettings.LogTest($"  - WeatherSystem: Auto-registered by DOTS");
+            DebugSettings.LogTest($"  - HybridWeatherSystem: Auto-registered by DOTS");
             
             return true;
         }
@@ -293,20 +277,20 @@ namespace DOTS.Terrain.Test
         [ContextMenu("Cleanup Test Environment")]
         public void CleanupTestEnvironment()
         {
-            Debug.Log("Cleaning up test environment...");
+            DebugSettings.LogTest("Cleaning up test environment...");
             
             // ComputeShaderManager is a singleton, no need to destroy
-            Debug.Log("✓ ComputeShaderManager is a singleton, no cleanup needed");
+            DebugSettings.LogTest("✓ ComputeShaderManager is a singleton, no cleanup needed");
             
             // Destroy TerrainEntityManager
             var entityManager = FindFirstObjectByType<TerrainEntityManager>();
             if (entityManager != null)
             {
                 DestroyImmediate(entityManager.gameObject);
-                Debug.Log("✓ Destroyed TerrainEntityManager");
+                DebugSettings.LogTest("✓ Destroyed TerrainEntityManager");
             }
             
-            Debug.Log("✓ Test environment cleanup complete");
+            DebugSettings.LogTest("✓ Test environment cleanup complete");
         }
         
         /// <summary>
@@ -315,7 +299,7 @@ namespace DOTS.Terrain.Test
         [ContextMenu("Get Setup Status")]
         public void GetSetupStatus()
         {
-            Debug.Log("=== HYBRID TEST SETUP STATUS ===");
+            DebugSettings.LogTest("=== HYBRID TEST SETUP STATUS ===");
             
             ComputeShaderManager computeManager = null;
             try
@@ -330,56 +314,37 @@ namespace DOTS.Terrain.Test
             var world = World.DefaultGameObjectInjectionWorld;
             var hybridSystemHandle = world?.GetExistingSystem<HybridTerrainGenerationSystem>();
             
-            Debug.Log($"ComputeShaderManager: {(computeManager != null ? "✓ Found" : "✗ Missing")}");
-            Debug.Log($"TerrainEntityManager: {(entityManager != null ? "✓ Found" : "✗ Missing")}");
-            Debug.Log($"DOTS World: {(world != null ? "✓ Found" : "✗ Missing")}");
-            Debug.Log($"HybridTerrainGenerationSystem: {(hybridSystemHandle != SystemHandle.Null ? "✓ Found" : "✗ Missing")}");
+            DebugSettings.LogTest($"ComputeShaderManager: {(computeManager != null ? "✓ Found" : "✗ Missing")}");
+            DebugSettings.LogTest($"TerrainEntityManager: {(entityManager != null ? "✓ Found" : "✗ Missing")}");
+            DebugSettings.LogTest($"DOTS World: {(world != null ? "✓ Found" : "✗ Missing")}");
+            DebugSettings.LogTest($"HybridTerrainGenerationSystem: {(hybridSystemHandle != SystemHandle.Null ? "✓ Found" : "✗ Missing")}");
             
             if (computeManager != null && entityManager != null && world != null && hybridSystemHandle != SystemHandle.Null)
             {
-                Debug.Log("✓ All components ready for testing!");
+                DebugSettings.LogTest("✓ All components ready for testing!");
             }
             else
             {
-                Debug.LogWarning("⚠ Some components are missing - run Setup Hybrid Test Environment");
+                DebugSettings.LogWarning("⚠ Some components are missing - run Setup Hybrid Test Environment");
             }
             
-            Debug.Log("=== STATUS COMPLETE ===");
+            DebugSettings.LogTest("=== STATUS COMPLETE ===");
         }
 
-        /// <summary>
-        /// Debug log wrapper that respects the debug toggle
-        /// </summary>
-        private void DebugLog(string message, bool verbose = false)
-        {
-            if (enableDebugLogs && (!verbose || logSetupProcess))
-            {
-                Debug.Log($"[HybridSetup] {message}");
-            }
-        }
-        
-        /// <summary>
-        /// Debug error log wrapper
-        /// </summary>
-        private void DebugError(string message)
-        {
-            Debug.LogError($"[HybridSetup] {message}");
-        }
-        
         private void OnDestroy()
         {
             // Clean up any remaining terrain entities to prevent memory leaks
             var entityManager = FindFirstObjectByType<TerrainEntityManager>();
             if (entityManager != null)
             {
-                Debug.Log("HybridTestSetup: Cleaning up terrain entities");
+                DebugSettings.LogTest("HybridTestSetup: Cleaning up terrain entities");
                 entityManager.DestroyAllTerrainEntities();
             }
         }
         
         void OnGUI()
         {
-            if (!enableDebugLogs) return;
+            if (!DebugSettings.EnableTestDebug) return;
             
             GUILayout.BeginArea(new Rect(Screen.width - 370, 20, 350, 150));
             GUILayout.Label("=== HYBRID SETUP STATUS ===");

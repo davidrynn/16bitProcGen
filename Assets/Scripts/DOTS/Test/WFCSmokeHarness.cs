@@ -50,7 +50,7 @@ namespace DOTS.Terrain.Test
             dotsWorld = World.DefaultGameObjectInjectionWorld;
             if (dotsWorld == null)
             {
-                Debug.LogError("[WFCSmokeHarness] No DOTS world found.");
+                DebugSettings.LogError("[WFCSmokeHarness] No DOTS world found.");
                 return;
             }
 
@@ -94,7 +94,7 @@ namespace DOTS.Terrain.Test
                 });
             }
 
-            Debug.Log($"[WFCSmokeHarness] Initialized {gridWidth}x{gridHeight} WFC with cellSize={cellSize}. Waiting for collapse and rendering...");
+            DebugSettings.Log($"[WFCSmokeHarness] Initialized {gridWidth}x{gridHeight} WFC with cellSize={cellSize}. Waiting for collapse and rendering...");
         }
 
         private static void CreateCells(EntityManager em, int width, int height)

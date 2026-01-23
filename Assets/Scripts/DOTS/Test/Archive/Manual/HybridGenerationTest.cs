@@ -3,6 +3,7 @@ using Unity.Mathematics;
 using Unity.Collections;
 using UnityEngine;
 using DOTS.Terrain.Generation;
+using DOTS.Terrain.Core;
 using System.Collections;
 
 namespace DOTS.Terrain.Test
@@ -364,7 +365,7 @@ namespace DOTS.Terrain.Test
         [ContextMenu("Force Generate All Terrain")]
         public void ForceGenerateAllTerrain()
         {
-            Debug.Log("Forcing generation of all terrain entities...");
+            DebugSettings.LogTest("Forcing generation of all terrain entities...");
             
             var terrainQuery = defaultWorld.EntityManager.CreateEntityQuery(typeof(TerrainData));
             var entities = terrainQuery.ToEntityArray(Allocator.Temp);
@@ -377,8 +378,9 @@ namespace DOTS.Terrain.Test
                 defaultWorld.EntityManager.SetComponentData(entity, terrainData);
             }
             
+            int entityCount = entities.Length;
             entities.Dispose();
-            Debug.Log($"✓ Forced generation of {entities.Length} terrain entities");
+            DebugSettings.LogTest($"✓ Forced generation of {entityCount} terrain entities");
         }
         
         /// <summary>
@@ -389,7 +391,7 @@ namespace DOTS.Terrain.Test
         {
             if (entityManager != null)
             {
-                Debug.Log("HybridGenerationTest: Manually cleaning up test entities");
+                DebugSettings.LogTest("HybridGenerationTest: Manually cleaning up test entities");
                 entityManager.DestroyAllTerrainEntities();
             }
         }
@@ -397,32 +399,32 @@ namespace DOTS.Terrain.Test
         [ContextMenu("Get System Status")]
         public void GetSystemStatus()
         {
-            Debug.Log("=== HYBRID SYSTEM STATUS ===");
+            DebugSettings.LogTest("=== HYBRID SYSTEM STATUS ===");
             
             if (hybridSystemHandle != SystemHandle.Null)
             {
-                Debug.Log($"HybridTerrainGenerationSystem: Handle valid, System exists");
+                DebugSettings.LogTest($"HybridTerrainGenerationSystem: Handle valid, System exists");
             }
             else
             {
-                Debug.LogWarning("HybridTerrainGenerationSystem: Not found");
+                DebugSettings.LogWarning("HybridTerrainGenerationSystem: Not found");
             }
             
             if (entityManager != null)
             {
-                Debug.Log($"TerrainEntityManager: Found in scene");
-                Debug.Log($"Active Terrain Entities: {entityManager.GetTerrainEntityCount()}");
+                DebugSettings.LogTest($"TerrainEntityManager: Found in scene");
+                DebugSettings.LogTest($"Active Terrain Entities: {entityManager.GetTerrainEntityCount()}");
             }
             else
             {
-                Debug.LogWarning("TerrainEntityManager: Not found");
+                DebugSettings.LogWarning("TerrainEntityManager: Not found");
             }
             
             var terrainQuery = defaultWorld.EntityManager.CreateEntityQuery(typeof(TerrainData));
             var terrainCount = terrainQuery.CalculateEntityCount();
-            Debug.Log($"Active Terrain Entities: {terrainCount}");
+            DebugSettings.LogTest($"Active Terrain Entities: {terrainCount}");
             
-            Debug.Log("=== STATUS COMPLETE ===");
+            DebugSettings.LogTest("=== STATUS COMPLETE ===");
         }
         
         private void OnDestroy()
@@ -430,11 +432,11 @@ namespace DOTS.Terrain.Test
             // Cleanup test entities to prevent memory leaks
             if (entityManager != null)
             {
-                Debug.Log("HybridGenerationTest: Cleaning up test entities");
+                DebugSettings.LogTest("HybridGenerationTest: Cleaning up test entities");
                 entityManager.DestroyAllTerrainEntities();
             }
             
-            Debug.Log("HybridGenerationTest: Destroyed");
+            DebugSettings.LogTest("HybridGenerationTest: Destroyed");
         }
 
         /// <summary>
@@ -444,7 +446,7 @@ namespace DOTS.Terrain.Test
         {
             if (enableDebugLogs && (!verbose || enableVerboseLogs))
             {
-                Debug.Log($"[HybridTest] {message}");
+                DebugSettings.LogTest($"HybridTest: {message}");
             }
         }
         
@@ -453,7 +455,7 @@ namespace DOTS.Terrain.Test
         /// </summary>
         private void DebugError(string message)
         {
-            Debug.LogError($"[HybridTest] {message}");
+            DebugSettings.LogError($"HybridTest: {message}");
         }
         
         /// <summary>
@@ -461,7 +463,7 @@ namespace DOTS.Terrain.Test
         /// </summary>
         private void DebugWarning(string message)
         {
-            Debug.LogWarning($"[HybridTest] {message}");
+            DebugSettings.LogWarning($"HybridTest: {message}");
         }
     }
 } 

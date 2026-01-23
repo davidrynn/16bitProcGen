@@ -1,4 +1,5 @@
 using UnityEngine;
+using DOTS.Terrain.Core;
 
 namespace DOTS.Terrain.Generation
 {
@@ -66,7 +67,7 @@ namespace DOTS.Terrain.Generation
                     _defaultInstance = Resources.Load<TerrainGenerationSettings>("TerrainGenerationSettings");
                     if (_defaultInstance == null)
                     {
-                        Debug.LogWarning("TerrainGenerationSettings not found in Resources folder. Creating default settings.");
+                        DebugSettings.LogWarning("TerrainGenerationSettings not found in Resources folder. Creating default settings.");
                         _defaultInstance = CreateInstance<TerrainGenerationSettings>();
                     }
                 }
@@ -93,22 +94,22 @@ namespace DOTS.Terrain.Generation
         {
             if (maxChunksPerFrame <= 0)
             {
-                Debug.LogWarning("TerrainGenerationSettings: maxChunksPerFrame should be > 0");
+                DebugSettings.LogWarning("TerrainGenerationSettings: maxChunksPerFrame should be > 0");
             }
             
             if (noiseScale <= 0)
             {
-                Debug.LogWarning("TerrainGenerationSettings: noiseScale should be > 0");
+                DebugSettings.LogWarning("TerrainGenerationSettings: noiseScale should be > 0");
             }
             
             if (heightMultiplier <= 0)
             {
-                Debug.LogWarning("TerrainGenerationSettings: heightMultiplier should be > 0");
+                DebugSettings.LogWarning("TerrainGenerationSettings: heightMultiplier should be > 0");
             }
             
             if (waterThreshold >= sandThreshold || sandThreshold >= grassThreshold || grassThreshold >= floraThreshold)
             {
-                Debug.LogWarning("TerrainGenerationSettings: Terrain type thresholds should be in ascending order");
+                DebugSettings.LogWarning("TerrainGenerationSettings: Terrain type thresholds should be in ascending order");
             }
         }
     }

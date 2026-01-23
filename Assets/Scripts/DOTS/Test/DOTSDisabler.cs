@@ -1,6 +1,7 @@
 using UnityEngine;
 using Unity.Entities;
 using DOTS.Terrain.WFC;
+using DOTS.Terrain.Core;
 
 namespace DOTS.Terrain.Test
 {
@@ -51,7 +52,7 @@ namespace DOTS.Terrain.Test
                         entityManager.SetComponentData(entity, request);
                         requestEntity = entity;
                         dotsWasActive = true;
-                        Debug.Log("DOTSDisabler: Disabled DungeonGenerationRequest to prevent DOTS interference");
+                        DebugSettings.Log("DOTSDisabler: Disabled DungeonGenerationRequest to prevent DOTS interference");
                     }
                 }
             }
@@ -71,7 +72,7 @@ namespace DOTS.Terrain.Test
                     var request = entityManager.GetComponentData<DungeonGenerationRequest>(requestEntity);
                     request.isActive = true;
                     entityManager.SetComponentData(requestEntity, request);
-                    Debug.Log("DOTSDisabler: Re-enabled DungeonGenerationRequest");
+                    DebugSettings.Log("DOTSDisabler: Re-enabled DungeonGenerationRequest");
                 }
             }
         }

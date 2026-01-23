@@ -5,9 +5,9 @@ using UnityEngine;
 using Unity.Entities;
 using Unity.Collections;
 
-public class TerrainManager : MonoBehaviour
+public class TerrainManagerLegacy : MonoBehaviour
 {
-    public static TerrainManager Instance { get; private set; }
+    public static TerrainManagerLegacy Instance { get; private set; }
     public Transform player;
     public GameObject terrainChunkPrefab;
     public int chunkSize = 16;

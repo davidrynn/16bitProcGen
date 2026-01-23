@@ -9,6 +9,7 @@ using UnityEngine.TestTools;
 using DOTS.Player.Components;
 using DOTS.Player.Tests.Bootstrap;
 using DOTS.Terrain;
+using DOTS.Terrain.Core;
 
 namespace DOTS.Terrain.Tests
 {
@@ -208,7 +209,7 @@ namespace DOTS.Terrain.Tests
             
             if (entities.Length > 0)
             {
-                Debug.Log($"Found {hasGridInfoCount}/{entities.Length} terrain chunks with GridInfo");
+                DebugSettings.LogTest($"Found {hasGridInfoCount}/{entities.Length} terrain chunks with GridInfo");
             }
         }
 
@@ -237,7 +238,7 @@ namespace DOTS.Terrain.Tests
             
             if (entities.Length > 0)
             {
-                Debug.Log($"Found {hasBoundsCount}/{entities.Length} terrain chunks with Bounds");
+                DebugSettings.LogTest($"Found {hasBoundsCount}/{entities.Length} terrain chunks with Bounds");
             }
         }
 
@@ -275,7 +276,7 @@ namespace DOTS.Terrain.Tests
             
             if (entities.Length > 0)
             {
-                Debug.Log($"Render components: RenderBounds={hasRenderBoundsCount}/{entities.Length}, MaterialMeshInfo={hasMaterialMeshInfoCount}/{entities.Length}");
+                DebugSettings.LogTest($"Render components: RenderBounds={hasRenderBoundsCount}/{entities.Length}, MaterialMeshInfo={hasMaterialMeshInfoCount}/{entities.Length}");
             }
         }
 
@@ -308,7 +309,7 @@ namespace DOTS.Terrain.Tests
             
             if (entities.Length > 0)
             {
-                Debug.Log($"Found {hasMeshDataCount}/{entities.Length} terrain chunks with mesh data");
+                DebugSettings.LogTest($"Found {hasMeshDataCount}/{entities.Length} terrain chunks with mesh data");
                 // Don't fail if no meshes yet - generation may still be in progress
             }
         }
@@ -416,7 +417,7 @@ namespace DOTS.Terrain.Tests
             
             if (entities.Length > 0)
             {
-                Debug.Log($"Found {hasMaterialCount}/{entities.Length} terrain chunks with MaterialMeshInfo");
+                DebugSettings.LogTest($"Found {hasMaterialCount}/{entities.Length} terrain chunks with MaterialMeshInfo");
                 // Don't fail if not all have materials yet - render prep may still be processing
             }
         }

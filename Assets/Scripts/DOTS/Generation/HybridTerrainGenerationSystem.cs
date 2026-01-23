@@ -52,7 +52,7 @@ namespace DOTS.Terrain.Generation
             }
             else
             {
-                Debug.LogWarning("HybridTerrainGenerationSystem: No settings found, using defaults");
+                DebugSettings.LogWarning("HybridTerrainGenerationSystem: No settings found, using defaults");
             }
             
             // Initialize performance counters
@@ -347,7 +347,7 @@ namespace DOTS.Terrain.Generation
             }
             catch (System.Exception e)
             {
-                Debug.LogError($"HybridTerrainGenerationSystem: Hardcoded test generation failed: {e.Message}");
+                DebugSettings.LogError($"HybridTerrainGenerationSystem: Hardcoded test generation failed: {e.Message}");
                 return false;
             }
         }
@@ -420,7 +420,7 @@ namespace DOTS.Terrain.Generation
             }
             catch (System.Exception e)
             {
-                Debug.LogError($"HybridTerrainGenerationSystem: Failed to initialize buffers: {e.Message}");
+                DebugSettings.LogError($"HybridTerrainGenerationSystem: Failed to initialize buffers: {e.Message}");
                 buffersInitialized = false;
             }
         }

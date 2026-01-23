@@ -39,8 +39,8 @@ namespace DOTS.Terrain.Test
 
         private void RunModelAlignmentTest()
         {
-            Debug.Log("=== MODEL ALIGNMENT TEST STARTING ===");
-            Debug.Log("Spawning all models in a line without rotation to check base orientations");
+            DebugSettings.LogTest("=== MODEL ALIGNMENT TEST STARTING ===");
+            DebugSettings.LogTest("Spawning all models in a line without rotation to check base orientations");
 
             float xPosition = 0f;
             int modelIndex = 0;
@@ -85,15 +85,15 @@ namespace DOTS.Terrain.Test
                 modelIndex++;
             }
 
-            Debug.Log("=== MODEL ALIGNMENT TEST COMPLETE ===");
-            Debug.Log($"Spawned {modelIndex} models in a line at Y={yOffset}");
-            Debug.Log("Check the scene view to verify model orientations match expected socket patterns");
-            Debug.Log("Expected orientations:");
-            Debug.Log("- Door: One open side should face +Z (forward)");
-            Debug.Log("- Corridor: Two opposite open sides should face +Z and -Z");
-            Debug.Log("- Corner: Two adjacent open sides should face +Z and +X");
-            Debug.Log("- Floor: All sides should be open");
-            Debug.Log("- Wall: All sides should be closed");
+            DebugSettings.LogTest("=== MODEL ALIGNMENT TEST COMPLETE ===");
+            DebugSettings.LogTest($"Spawned {modelIndex} models in a line at Y={yOffset}");
+            DebugSettings.LogTest("Check the scene view to verify model orientations match expected socket patterns");
+            DebugSettings.LogTest("Expected orientations:");
+            DebugSettings.LogTest("- Door: One open side should face +Z (forward)");
+            DebugSettings.LogTest("- Corridor: Two opposite open sides should face +Z and -Z");
+            DebugSettings.LogTest("- Corner: Two adjacent open sides should face +Z and +X");
+            DebugSettings.LogTest("- Floor: All sides should be open");
+            DebugSettings.LogTest("- Wall: All sides should be closed");
         }
 
         private void SpawnModelWithLabel(GameObject prefab, float xPosition, string label, string expected)
@@ -106,7 +106,7 @@ namespace DOTS.Terrain.Test
             // Add a label to identify the model
             instance.name = label;
 
-            Debug.Log($"Spawned {label} at position ({xPosition}, {yOffset}, 0) - {expected}");
+            DebugSettings.LogTest($"Spawned {label} at position ({xPosition}, {yOffset}, 0) - {expected}");
         }
 
         [ContextMenu("Run Model Alignment Test")]
@@ -130,7 +130,7 @@ namespace DOTS.Terrain.Test
             // Clear the list
             spawnedModels.Clear();
 
-            Debug.Log($"Cleared {spawnedModels.Count} test models spawned by ModelAlignmentTest.");
+            DebugSettings.LogTest($"Cleared {spawnedModels.Count} test models spawned by ModelAlignmentTest.");
         }
     }
 }

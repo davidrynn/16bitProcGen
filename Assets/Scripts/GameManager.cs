@@ -2,7 +2,7 @@ using UnityEngine;
 
 public class GameManager : MonoBehaviour
 {
-    private TerrainManager terrainManager;
+    private TerrainManagerLegacy terrainManager;
     private BiomeManager biomeManager;
     private LegacyWeatherSystem weatherSystem;
 
@@ -10,7 +10,7 @@ public class GameManager : MonoBehaviour
     {
         // Find systems
         biomeManager = FindAnyObjectByType<BiomeManager>();
-        terrainManager = FindAnyObjectByType<TerrainManager>();
+        terrainManager = FindAnyObjectByType<TerrainManagerLegacy>();
         weatherSystem = FindAnyObjectByType<LegacyWeatherSystem>();
 
         // Initialize terrain manager with biome manager

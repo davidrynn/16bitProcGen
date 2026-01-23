@@ -2,6 +2,7 @@ using Unity.Entities;
 using Unity.Mathematics;
 using UnityEngine;
 using Unity.Collections;
+using DOTS.Terrain.Core;
 
 namespace DOTS.Terrain.Test
 {
@@ -33,17 +34,17 @@ namespace DOTS.Terrain.Test
         [ContextMenu("Run Simple Terrain Test")]
         public void RunTest()
         {
-            Debug.Log("=== SIMPLE TERRAIN TEST ===");
+            DebugSettings.LogTest("=== SIMPLE TERRAIN TEST ===");
             
             if (!SetupTest())
             {
-                Debug.LogError("Test setup failed!");
+                DebugSettings.LogError("Test setup failed!");
                 return;
             }
             
             if (!CreateTestEntity())
             {
-                Debug.LogError("Failed to create test entity!");
+                DebugSettings.LogError("Failed to create test entity!");
                 return;
             }
             
@@ -53,13 +54,13 @@ namespace DOTS.Terrain.Test
         
         private bool SetupTest()
         {
-            Debug.Log("Setting up simple terrain test...");
+            DebugSettings.LogTest("Setting up simple terrain test...");
             
             // Get default world
             defaultWorld = World.DefaultGameObjectInjectionWorld;
             if (defaultWorld == null)
             {
-                Debug.LogError("Default world not found!");
+                DebugSettings.LogError("Default world not found!");
                 return false;
             }
             
@@ -67,17 +68,17 @@ namespace DOTS.Terrain.Test
             entityManager = FindFirstObjectByType<TerrainEntityManager>();
             if (entityManager == null)
             {
-                Debug.LogError("TerrainEntityManager not found!");
+                DebugSettings.LogError("TerrainEntityManager not found!");
                 return false;
             }
             
-            Debug.Log("✓ Simple test setup complete");
+            DebugSettings.LogTest("✓ Simple test setup complete");
             return true;
         }
         
         private bool CreateTestEntity()
         {
-            Debug.Log("Creating simple test terrain entity...");
+            DebugSettings.LogTest("Creating simple test terrain entity...");
             
             // Create a single test entity
             testEntity = entityManager.CreateTerrainEntity(
@@ -89,17 +90,17 @@ namespace DOTS.Terrain.Test
             
             if (testEntity == Entity.Null)
             {
-                Debug.LogError("Failed to create test entity!");
+                DebugSettings.LogError("Failed to create test entity!");
                 return false;
             }
             
-            Debug.Log($"✓ Created test entity {testEntity} at (0,0) with resolution {testResolution}");
+            DebugSettings.LogTest($"✓ Created test entity {testEntity} at (0,0) with resolution {testResolution}");
             return true;
         }
         
         private System.Collections.IEnumerator WaitAndVerify()
         {
-            Debug.Log("Waiting for terrain generation...");
+            DebugSettings.LogTest("Waiting for terrain generation...");
             
             // Wait for generation to complete
             int maxFrames = 60; // Wait up to 1 second
@@ -113,7 +114,7 @@ namespace DOTS.Terrain.Test
                     
                     if (!terrainData.needsGeneration && terrainData.heightData.IsCreated)
                     {
-                        Debug.Log("✓ Terrain generation completed!");
+                        DebugSettings.LogTest("✓ Terrain generation completed!");
                         VerifyResults();
                         yield break;
                     }
@@ -123,16 +124,16 @@ namespace DOTS.Terrain.Test
                 yield return null;
             }
             
-            Debug.LogError("Generation timeout!");
+            DebugSettings.LogError("Generation timeout!");
         }
         
         private void VerifyResults()
         {
-            Debug.Log("Verifying terrain generation results...");
+            DebugSettings.LogTest("Verifying terrain generation results...");
             
             if (!defaultWorld.EntityManager.Exists(testEntity))
             {
-                Debug.LogError("Test entity no longer exists!");
+                DebugSettings.LogError("Test entity no longer exists!");
                 return;
             }
             
@@ -140,13 +141,13 @@ namespace DOTS.Terrain.Test
             
             if (!terrainData.heightData.IsCreated)
             {
-                Debug.LogError("Height data was not generated!");
+                DebugSettings.LogError("Height data was not generated!");
                 return;
             }
             
             ref var heightData = ref terrainData.heightData.Value;
             
-            Debug.Log($"✓ Height data: {heightData.size.x}x{heightData.size.y} = {heightData.heights.Length} values");
+            DebugSettings.LogTest($"✓ Height data: {heightData.size.x}x{heightData.size.y} = {heightData.heights.Length} values");
             
             // Check for height variation
             float minHeight = float.MaxValue;
@@ -159,21 +160,21 @@ namespace DOTS.Terrain.Test
                 maxHeight = Mathf.Max(maxHeight, height);
             }
             
-            Debug.Log($"✓ Height range: {minHeight:F3} to {maxHeight:F3} (range: {maxHeight - minHeight:F3})");
+            DebugSettings.LogTest($"✓ Height range: {minHeight:F3} to {maxHeight:F3} (range: {maxHeight - minHeight:F3})");
             
             if (maxHeight > minHeight)
             {
-                Debug.Log("✓ SUCCESS: Terrain generation is working!");
+                DebugSettings.LogTest("✓ SUCCESS: Terrain generation is working!");
             }
             else
             {
-                Debug.LogError("✗ FAILED: No height variation detected!");
+                DebugSettings.LogError("✗ FAILED: No height variation detected!");
             }
         }
         
         private void OnDestroy()
         {
-            Debug.Log("SimpleTerrainTest: Destroyed");
+            DebugSettings.LogTest("SimpleTerrainTest: Destroyed");
         }
     }
 } 

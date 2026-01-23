@@ -3,6 +3,7 @@ using Unity.Mathematics;
 using Unity.Transforms;
 using Unity.Collections;
 using UnityEngine;
+using DOTS.Terrain.Core;
 
 namespace DOTS.Terrain.Modification
 {
@@ -32,7 +33,7 @@ namespace DOTS.Terrain.Modification
         
         public void OnCreate(ref SystemState state)
         {
-            Debug.Log("[DOTS] TerrainGlobPhysicsSystem: Initializing...");
+            DebugSettings.LogTerrain("TerrainGlobPhysicsSystem: Initializing...");
             state.RequireForUpdate<TerrainGlobComponent>();
             state.RequireForUpdate<TerrainGlobPhysicsComponent>();
         }
@@ -142,7 +143,7 @@ namespace DOTS.Terrain.Modification
 
             if (lastUpdateTime % 5f < deltaTime)
             {
-                Debug.Log($"[TerrainGlobPhysicsSystem] Active globs: {activeGlobs}, Grounded: {groundedGlobs}");
+                DebugSettings.LogTerrain($"TerrainGlobPhysicsSystem: Active globs: {activeGlobs}, Grounded: {groundedGlobs}");
             }
         }
         
@@ -211,7 +212,7 @@ namespace DOTS.Terrain.Modification
             entityManager.AddComponentData(entity, renderComponent);
             entityManager.AddComponentData(entity, transformComponent);
 
-            Debug.Log($"[TerrainGlobPhysicsSystem] Created glob at {position} with radius {radius}");
+            DebugSettings.LogTerrain($"TerrainGlobPhysicsSystem: Created glob at {position} with radius {radius}");
 
             return entity;
         }

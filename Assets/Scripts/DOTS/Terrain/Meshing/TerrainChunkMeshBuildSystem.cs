@@ -57,6 +57,14 @@ namespace DOTS.Terrain.Meshing
                 {
                     ecb.RemoveComponent<TerrainChunkNeedsMeshBuild>(entity);
                 }
+
+                // Update debug state if present
+                if (entityManager.HasComponent<DOTS.Terrain.Debug.TerrainChunkDebugState>(entity))
+                {
+                    var debugState = entityManager.GetComponentData<DOTS.Terrain.Debug.TerrainChunkDebugState>(entity);
+                    debugState.Stage = DOTS.Terrain.Debug.TerrainChunkDebugState.StageMeshReady;
+                    ecb.SetComponent(entity, debugState);
+                }
             }
             
             ecb.Playback(entityManager);

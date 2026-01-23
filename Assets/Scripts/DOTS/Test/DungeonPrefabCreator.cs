@@ -1,4 +1,5 @@
 using UnityEngine;
+using DOTS.Terrain.Core;
 
 namespace DOTS.Terrain.Test
 {
@@ -29,7 +30,7 @@ namespace DOTS.Terrain.Test
             if (floorMaterial != null)
                 floor.GetComponent<Renderer>().material = floorMaterial;
             
-            Debug.Log("Floor prefab created. Drag it to your project folder to save as prefab.");
+            DebugSettings.Log("Floor prefab created. Drag it to your project folder to save as prefab.");
         }
 
         [ContextMenu("Create Wall Prefab (XY)")]
@@ -42,7 +43,7 @@ namespace DOTS.Terrain.Test
             if (wallMaterial != null)
                 wall.GetComponent<Renderer>().material = wallMaterial;
             
-            Debug.Log("Wall prefab (XY) created. Drag it to your project folder to save as prefab.");
+            DebugSettings.Log("Wall prefab (XY) created. Drag it to your project folder to save as prefab.");
         }
 
         [ContextMenu("Create Wall Prefab (ZY)")]
@@ -57,7 +58,7 @@ namespace DOTS.Terrain.Test
             else if (wallMaterial != null)
                 wall.GetComponent<Renderer>().material = wallMaterial;
             
-            Debug.Log("Wall prefab (ZY) created. Drag it to your project folder to save as prefab.");
+            DebugSettings.Log("Wall prefab (ZY) created. Drag it to your project folder to save as prefab.");
         }
 
         [ContextMenu("Create Door Prefab")]
@@ -70,7 +71,7 @@ namespace DOTS.Terrain.Test
             if (doorMaterial != null)
                 door.GetComponent<Renderer>().material = doorMaterial;
             
-            Debug.Log("Door prefab created. Drag it to your project folder to save as prefab.");
+            DebugSettings.Log("Door prefab created. Drag it to your project folder to save as prefab.");
         }
 
         [ContextMenu("Create Corridor Prefab")]
@@ -83,7 +84,7 @@ namespace DOTS.Terrain.Test
             if (corridorMaterial != null)
                 corridor.GetComponent<Renderer>().material = corridorMaterial;
             
-            Debug.Log("Corridor prefab created. Drag it to your project folder to save as prefab.");
+            DebugSettings.Log("Corridor prefab created. Drag it to your project folder to save as prefab.");
         }
 
         [ContextMenu("Create Corner Prefab")]
@@ -96,7 +97,7 @@ namespace DOTS.Terrain.Test
             if (cornerMaterial != null)
                 corner.GetComponent<Renderer>().material = cornerMaterial;
             
-            Debug.Log("Corner prefab created. Drag it to your project folder to save as prefab.");
+            DebugSettings.Log("Corner prefab created. Drag it to your project folder to save as prefab.");
         }
 
         [ContextMenu("Create All Prefabs")]

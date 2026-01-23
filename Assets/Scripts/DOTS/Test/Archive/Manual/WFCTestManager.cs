@@ -1,6 +1,7 @@
 using UnityEngine;
 using Unity.Entities;
 using DOTS.Terrain.Test;
+using DOTS.Terrain.Core;
 
 namespace DOTS.Terrain.WFC
 {
@@ -165,13 +166,13 @@ namespace DOTS.Terrain.WFC
         {
             if (enableDebugLogs)
             {
-                Debug.Log($"[WFC Test Manager] {message}");
+                DebugSettings.Log($"[WFC Test Manager] {message}");
             }
         }
         
         private void LogError(string message)
         {
-            Debug.LogError($"[WFC Test Manager] {message}");
+            DebugSettings.LogError($"[WFC Test Manager] {message}");
         }
         
         // Public methods for manual control
@@ -195,12 +196,12 @@ namespace DOTS.Terrain.WFC
         
         private void OnProgressUpdated(int current, int total)
         {
-            Log($"Progress: {current}/{total} cells collapsed");
+            DebugSettings.Log($"Progress: {current}/{total} cells collapsed");
         }
         
         private void OnDebugMessage(string message)
         {
-            Log($"Debug: {message}");
+            DebugSettings.Log($"Debug: {message}");
         }
         
         void OnDestroy()

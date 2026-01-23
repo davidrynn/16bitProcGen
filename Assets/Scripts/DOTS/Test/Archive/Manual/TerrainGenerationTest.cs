@@ -2,6 +2,7 @@ using Unity.Entities;
 using Unity.Mathematics;
 using Unity.Collections;
 using UnityEngine;
+using DOTS.Terrain.Core;
 
 namespace DOTS.Terrain.Test
 {
@@ -37,23 +38,23 @@ namespace DOTS.Terrain.Test
         [ContextMenu("Run Terrain Generation Test")]
         public void RunTest()
         {
-            Debug.Log("=== TERRAIN GENERATION TEST ===");
+            DebugSettings.LogTest("=== TERRAIN GENERATION TEST ===");
             
             if (!SetupTest())
             {
-                Debug.LogError("Test setup failed!");
+                DebugSettings.LogError("Test setup failed!");
                 return;
             }
             
             if (!CreateTestEntity())
             {
-                Debug.LogError("Test entity creation failed!");
+                DebugSettings.LogError("Test entity creation failed!");
                 return;
             }
             
             if (!WaitForGeneration())
             {
-                Debug.LogError("Terrain generation failed!");
+                DebugSettings.LogError("Terrain generation failed!");
                 return;
             }
             
@@ -65,18 +66,18 @@ namespace DOTS.Terrain.Test
                 TestSeamlessGeneration();
             }
             
-            Debug.Log("=== TERRAIN GENERATION TEST COMPLETE ===");
+            DebugSettings.LogTest("=== TERRAIN GENERATION TEST COMPLETE ===");
         }
         
         private bool SetupTest()
         {
-            Debug.Log("Setting up terrain generation test...");
+            DebugSettings.LogTest("Setting up terrain generation test...");
             
             // Get DOTS world
             defaultWorld = World.DefaultGameObjectInjectionWorld;
             if (defaultWorld == null)
             {
-                Debug.LogError("DOTS World not found!");
+                DebugSettings.LogError("DOTS World not found!");
                 return false;
             }
             
@@ -84,17 +85,17 @@ namespace DOTS.Terrain.Test
             entityManager = FindFirstObjectByType<TerrainEntityManager>();
             if (entityManager == null)
             {
-                Debug.LogError("TerrainEntityManager not found!");
+                DebugSettings.LogError("TerrainEntityManager not found!");
                 return false;
             }
             
-            Debug.Log("✓ Test setup complete");
+            DebugSettings.LogTest("✓ Test setup complete");
             return true;
         }
         
         private bool CreateTestEntity()
         {
-            Debug.Log("Creating test terrain entity...");
+            DebugSettings.LogTest("Creating test terrain entity...");
             
             // Create a single test entity
             testEntity = entityManager.CreateTerrainEntity(
@@ -106,17 +107,17 @@ namespace DOTS.Terrain.Test
             
             if (testEntity == Entity.Null)
             {
-                Debug.LogError("Failed to create test entity!");
+                DebugSettings.LogError("Failed to create test entity!");
                 return false;
             }
             
-            Debug.Log($"✓ Created test entity {testEntity} at (0,0) with resolution {testResolution}");
+            DebugSettings.LogTest($"✓ Created test entity {testEntity} at (0,0) with resolution {testResolution}");
             return true;
         }
         
         private bool WaitForGeneration()
         {
-            Debug.Log("Waiting for terrain generation to complete...");
+            DebugSettings.LogTest("Waiting for terrain generation to complete...");
             
             // Wait for the TerrainGenerationSystem to process the entity
             StartCoroutine(WaitForGenerationCoroutine());
@@ -137,13 +138,13 @@ namespace DOTS.Terrain.Test
                     
                     if (!terrainData.needsGeneration)
                     {
-                        Debug.Log("✓ Terrain generation completed!");
+                        DebugSettings.LogTest("✓ Terrain generation completed!");
                         break;
                     }
                 }
                 else
                 {
-                    Debug.LogError("Test entity was destroyed during generation!");
+                    DebugSettings.LogError("Test entity was destroyed during generation!");
                     yield break;
                 }
                 
@@ -153,7 +154,7 @@ namespace DOTS.Terrain.Test
             
             if (frameCount >= maxFrames)
             {
-                Debug.LogError("Generation timeout - terrain generation did not complete");
+                DebugSettings.LogError("Generation timeout - terrain generation did not complete");
             }
             
             // Wait a few more frames to ensure the generation is fully processed
@@ -162,11 +163,11 @@ namespace DOTS.Terrain.Test
         
         private void VerifyGenerationResults()
         {
-            Debug.Log("Verifying generation results...");
+            DebugSettings.LogTest("Verifying generation results...");
             
             if (!defaultWorld.EntityManager.Exists(testEntity))
             {
-                Debug.LogError("Test entity no longer exists!");
+                DebugSettings.LogError("Test entity no longer exists!");
                 return;
             }
             
@@ -175,14 +176,14 @@ namespace DOTS.Terrain.Test
             // Check if height data was generated
             if (!terrainData.heightData.IsCreated)
             {
-                Debug.LogError("Height data was not generated!");
+                DebugSettings.LogError("Height data was not generated!");
                 return;
             }
             
             // Access the height data
             ref var heightData = ref terrainData.heightData.Value;
             
-            Debug.Log($"✓ Height data generated: {heightData.size.x}x{heightData.size.y} = {heightData.heights.Length} values");
+            DebugSettings.LogTest($"✓ Height data generated: {heightData.size.x}x{heightData.size.y} = {heightData.heights.Length} values");
             
             // Check some sample values
             int sampleCount = Mathf.Min(5, heightData.heights.Length);
@@ -200,11 +201,11 @@ namespace DOTS.Terrain.Test
             
             avgHeight /= heightData.heights.Length;
             
-            Debug.Log($"✓ Height Statistics:");
-            Debug.Log($"  - Min Height: {minHeight:F2}");
-            Debug.Log($"  - Max Height: {maxHeight:F2}");
-            Debug.Log($"  - Avg Height: {avgHeight:F2}");
-            Debug.Log($"  - Height Range: {maxHeight - minHeight:F2}");
+            DebugSettings.LogTest($"✓ Height Statistics:");
+            DebugSettings.LogTest($"  - Min Height: {minHeight:F2}");
+            DebugSettings.LogTest($"  - Max Height: {maxHeight:F2}");
+            DebugSettings.LogTest($"  - Avg Height: {avgHeight:F2}");
+            DebugSettings.LogTest($"  - Height Range: {maxHeight - minHeight:F2}");
             
             // Check terrain types
             int grassCount = 0, waterCount = 0, sandCount = 0, floraCount = 0, rockCount = 0;
@@ -221,21 +222,21 @@ namespace DOTS.Terrain.Test
                 }
             }
             
-            Debug.Log($"✓ Terrain Type Distribution:");
-            Debug.Log($"  - Water: {waterCount} ({waterCount * 100f / heightData.terrainTypes.Length:F1}%)");
-            Debug.Log($"  - Sand: {sandCount} ({sandCount * 100f / heightData.terrainTypes.Length:F1}%)");
-            Debug.Log($"  - Grass: {grassCount} ({grassCount * 100f / heightData.terrainTypes.Length:F1}%)");
-            Debug.Log($"  - Flora: {floraCount} ({floraCount * 100f / heightData.terrainTypes.Length:F1}%)");
-            Debug.Log($"  - Rock: {rockCount} ({rockCount * 100f / heightData.terrainTypes.Length:F1}%)");
+            DebugSettings.LogTest($"✓ Terrain Type Distribution:");
+            DebugSettings.LogTest($"  - Water: {waterCount} ({waterCount * 100f / heightData.terrainTypes.Length:F1}%)");
+            DebugSettings.LogTest($"  - Sand: {sandCount} ({sandCount * 100f / heightData.terrainTypes.Length:F1}%)");
+            DebugSettings.LogTest($"  - Grass: {grassCount} ({grassCount * 100f / heightData.terrainTypes.Length:F1}%)");
+            DebugSettings.LogTest($"  - Flora: {floraCount} ({floraCount * 100f / heightData.terrainTypes.Length:F1}%)");
+            DebugSettings.LogTest($"  - Rock: {rockCount} ({rockCount * 100f / heightData.terrainTypes.Length:F1}%)");
             
             // Verify the generation was successful
             if (maxHeight > minHeight && heightData.heights.Length > 0)
             {
-                Debug.Log("✓ Terrain generation verification successful!");
+                DebugSettings.LogTest("✓ Terrain generation verification successful!");
             }
             else
             {
-                Debug.LogError("Terrain generation verification failed - no height variation detected!");
+                DebugSettings.LogError("Terrain generation verification failed - no height variation detected!");
             }
         }
         
@@ -244,11 +245,11 @@ namespace DOTS.Terrain.Test
         /// </summary>
         private void TestSeamlessGeneration()
         {
-            Debug.Log("=== TESTING SEAMLESS GENERATION ===");
+            DebugSettings.LogTest("=== TESTING SEAMLESS GENERATION ===");
             
             if (!CreateSeamlessTestEntities())
             {
-                Debug.LogError("Failed to create seamless test entities!");
+                DebugSettings.LogError("Failed to create seamless test entities!");
                 return;
             }
             
@@ -261,7 +262,7 @@ namespace DOTS.Terrain.Test
         /// </summary>
         private bool CreateSeamlessTestEntities()
         {
-            Debug.Log($"Creating {seamlessTestChunks} entities for seamless testing...");
+            DebugSettings.LogTest($"Creating {seamlessTestChunks} entities for seamless testing...");
             
             int gridSize = Mathf.CeilToInt(Mathf.Sqrt(seamlessTestChunks));
             seamlessTestEntities = new Entity[seamlessTestChunks];
@@ -281,7 +282,7 @@ namespace DOTS.Terrain.Test
                 
                 if (entity == Entity.Null)
                 {
-                    Debug.LogError($"Failed to create seamless test entity at {chunkPosition}");
+                    DebugSettings.LogError($"Failed to create seamless test entity at {chunkPosition}");
                     return false;
                 }
                 
@@ -292,10 +293,10 @@ namespace DOTS.Terrain.Test
                 terrainData.needsGeneration = true;
                 defaultWorld.EntityManager.SetComponentData(entity, terrainData);
                 
-                Debug.Log($"✓ Created seamless test entity {i} at {chunkPosition}");
+                DebugSettings.LogTest($"✓ Created seamless test entity {i} at {chunkPosition}");
             }
             
-            Debug.Log($"✓ Created {seamlessTestChunks} seamless test entities");
+            DebugSettings.LogTest($"✓ Created {seamlessTestChunks} seamless test entities");
             return true;
         }
         
@@ -304,7 +305,7 @@ namespace DOTS.Terrain.Test
         /// </summary>
         private System.Collections.IEnumerator TestSeamlessAfterGeneration()
         {
-            Debug.Log("Waiting for seamless test entities to generate...");
+            DebugSettings.LogTest("Waiting for seamless test entities to generate...");
             
             // Wait for all entities to be generated
             int maxFrames = 180; // Wait up to 3 seconds
@@ -334,7 +335,7 @@ namespace DOTS.Terrain.Test
                 
                 if (allGenerated)
                 {
-                    Debug.Log("✓ All seamless test entities generated!");
+                    DebugSettings.LogTest("✓ All seamless test entities generated!");
                     break;
                 }
                 
@@ -344,7 +345,7 @@ namespace DOTS.Terrain.Test
             
             if (frameCount >= maxFrames)
             {
-                Debug.LogError("Seamless generation timeout!");
+                DebugSettings.LogError("Seamless generation timeout!");
                 yield break;
             }
             
@@ -360,7 +361,7 @@ namespace DOTS.Terrain.Test
         /// </summary>
         private void VerifySeamlessBoundaries()
         {
-            Debug.Log("Verifying seamless boundaries...");
+            DebugSettings.LogTest("Verifying seamless boundaries...");
             
             int gridSize = Mathf.CeilToInt(Mathf.Sqrt(seamlessTestChunks));
             int totalBoundaries = 0;
@@ -403,29 +404,29 @@ namespace DOTS.Terrain.Test
             // Report results
             float seamlessPercentage = totalBoundaries > 0 ? (float)seamlessBoundaries / totalBoundaries * 100f : 0f;
             
-            Debug.Log($"=== SEAMLESS TEST RESULTS ===");
-            Debug.Log($"Total boundaries tested: {totalBoundaries}");
-            Debug.Log($"Seamless boundaries: {seamlessBoundaries}");
-            Debug.Log($"Seamless percentage: {seamlessPercentage:F1}%");
+            DebugSettings.LogTest($"=== SEAMLESS TEST RESULTS ===");
+            DebugSettings.LogTest($"Total boundaries tested: {totalBoundaries}");
+            DebugSettings.LogTest($"Seamless boundaries: {seamlessBoundaries}");
+            DebugSettings.LogTest($"Seamless percentage: {seamlessPercentage:F1}%");
             
             if (seamlessPercentage >= 95f)
             {
-                Debug.Log("✓ EXCELLENT: Terrain is highly seamless!");
+                DebugSettings.LogTest("✓ EXCELLENT: Terrain is highly seamless!");
             }
             else if (seamlessPercentage >= 80f)
             {
-                Debug.Log("✓ GOOD: Terrain is mostly seamless");
+                DebugSettings.LogTest("✓ GOOD: Terrain is mostly seamless");
             }
             else if (seamlessPercentage >= 60f)
             {
-                Debug.Log("⚠ FAIR: Some seamless issues detected");
+                DebugSettings.LogTest("⚠ FAIR: Some seamless issues detected");
             }
             else
             {
-                Debug.Log("✗ POOR: Significant seamless issues detected");
+                DebugSettings.LogTest("✗ POOR: Significant seamless issues detected");
             }
             
-            Debug.Log("===============================");
+            DebugSettings.LogTest("===============================");
         }
         
         /// <summary>
@@ -497,7 +498,7 @@ namespace DOTS.Terrain.Test
             if (totalChecks > 0)
             {
                 string boundaryType = isHorizontal ? "Horizontal" : "Vertical";
-                Debug.Log($"{boundaryType} boundary {chunk1Index}->{chunk2Index}: {differences}/{totalChecks} differences ({(float)differences/totalChecks*100:F1}%) - {(isSeamless ? "SEAMLESS" : "NOT SEAMLESS")}");
+                DebugSettings.LogTest($"{boundaryType} boundary {chunk1Index}->{chunk2Index}: {differences}/{totalChecks} differences ({(float)differences/totalChecks*100:F1}%) - {(isSeamless ? "SEAMLESS" : "NOT SEAMLESS")}");
             }
             
             return isSeamless;
@@ -506,42 +507,42 @@ namespace DOTS.Terrain.Test
         [ContextMenu("Get Test Status")]
         public void GetTestStatus()
         {
-            Debug.Log("=== TERRAIN GENERATION TEST STATUS ===");
+            DebugSettings.LogTest("=== TERRAIN GENERATION TEST STATUS ===");
             
             if (defaultWorld != null)
             {
-                Debug.Log($"DOTS World: Active");
+                DebugSettings.LogTest($"DOTS World: Active");
                 
                 if (testEntity != Entity.Null && defaultWorld.EntityManager.Exists(testEntity))
                 {
                     var terrainData = defaultWorld.EntityManager.GetComponentData<TerrainData>(testEntity);
-                    Debug.Log($"Test Entity: {testEntity}");
-                    Debug.Log($"Needs Generation: {terrainData.needsGeneration}");
-                    Debug.Log($"Has Height Data: {terrainData.heightData.IsCreated}");
+                    DebugSettings.LogTest($"Test Entity: {testEntity}");
+                    DebugSettings.LogTest($"Needs Generation: {terrainData.needsGeneration}");
+                    DebugSettings.LogTest($"Has Height Data: {terrainData.heightData.IsCreated}");
                     
                     if (terrainData.heightData.IsCreated)
                     {
                         ref var heightData = ref terrainData.heightData.Value;
-                        Debug.Log($"Height Data Size: {heightData.size.x}x{heightData.size.y}");
-                        Debug.Log($"Height Values: {heightData.heights.Length}");
+                        DebugSettings.LogTest($"Height Data Size: {heightData.size.x}x{heightData.size.y}");
+                        DebugSettings.LogTest($"Height Values: {heightData.heights.Length}");
                     }
                 }
                 else
                 {
-                    Debug.Log("Test Entity: Not found or destroyed");
+                    DebugSettings.LogTest("Test Entity: Not found or destroyed");
                 }
             }
             else
             {
-                Debug.Log("DOTS World: Not available");
+                DebugSettings.LogTest("DOTS World: Not available");
             }
             
-            Debug.Log("=== STATUS COMPLETE ===");
+            DebugSettings.LogTest("=== STATUS COMPLETE ===");
         }
         
         private void OnDestroy()
         {
-            Debug.Log("TerrainGenerationTest: Destroyed");
+            DebugSettings.LogTest("TerrainGenerationTest: Destroyed");
         }
     }
 } 
