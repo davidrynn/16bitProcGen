@@ -14,6 +14,7 @@ namespace DOTS.Terrain.Core
         public static bool EnableWeatherDebug = false;
         public static bool EnableRenderingDebug = false;
         public static bool EnableTestDebug = false;
+        public static bool EnableSeamDebug = false;
         
         // Test system control
         public static bool EnableTestSystems = false;
@@ -85,6 +86,28 @@ namespace DOTS.Terrain.Core
             if (EnableTestDebug || forceLog)
             {
                 UnityEngine.Debug.Log($"[DOTS-Test] {message}");
+            }
+        }
+        
+        /// <summary>
+        /// Logs a debug message only if seam debug is enabled
+        /// </summary>
+        public static void LogSeam(string message, bool forceLog = false)
+        {
+            if (EnableSeamDebug || forceLog)
+            {
+                UnityEngine.Debug.Log($"[DOTS-Seam] {message}");
+            }
+        }
+        
+        /// <summary>
+        /// Logs a seam warning message only if seam debug is enabled
+        /// </summary>
+        public static void LogSeamWarning(string message, bool forceLog = false)
+        {
+            if (EnableSeamDebug || forceLog)
+            {
+                UnityEngine.Debug.LogWarning($"[DOTS-Seam] {message}");
             }
         }
         

@@ -3,6 +3,7 @@ using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;
 using UnityEngine;
+using DOTS.Terrain.Core;
 
 namespace DOTS.Terrain.Debug
 {
@@ -111,7 +112,7 @@ namespace DOTS.Terrain.Debug
             {
                 if (config.EnableSeamLogging)
                 {
-                    UnityEngine.Debug.LogWarning($"[SeamValidator] Resolution mismatch: A{coordA} res={resA} vs B{coordB} res={resB}");
+                    DebugSettings.LogSeamWarning($"Resolution mismatch: A{coordA} res={resA} vs B{coordB} res={resB}");
                 }
                 return;
             }
@@ -172,7 +173,7 @@ namespace DOTS.Terrain.Debug
             if (countAboveEpsilon > 0 && config.EnableSeamLogging)
             {
                 var dirStr = direction == BorderDirection.East ? "East" : "North";
-                UnityEngine.Debug.LogWarning($"[SEAM_MISMATCH] A{coordA} ↔ B{coordB} ({dirStr}) maxΔ={maxAbsDelta:F6} samples={countAboveEpsilon}/{sampleCount} above ε={config.SeamEpsilon}");
+                DebugSettings.LogSeamWarning($"SEAM_MISMATCH: A{coordA} ↔ B{coordB} ({dirStr}) maxΔ={maxAbsDelta:F6} samples={countAboveEpsilon}/{sampleCount} above ε={config.SeamEpsilon}");
             }
         }
 
