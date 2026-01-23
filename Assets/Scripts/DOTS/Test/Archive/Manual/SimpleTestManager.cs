@@ -2,6 +2,7 @@
 using UnityEngine;
 using Unity.Entities;
 using DOTS.Terrain.WFC;
+using DOTS.Terrain.Core;
 
 namespace DOTS.Terrain.Test
 {
@@ -134,13 +135,13 @@ namespace DOTS.Terrain.Test
         {
             if (enableDebugLogs)
             {
-                Debug.Log($"[Simple Test Manager] {message}");
+                DebugSettings.LogTest($"[Simple Test Manager] {message}");
             }
         }
         
         private void LogError(string message)
         {
-            Debug.LogError($"[Simple Test Manager] {message}");
+            DebugSettings.LogError($"[Simple Test Manager] {message}");
         }
         
         // Public methods for manual control

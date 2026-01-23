@@ -5,6 +5,7 @@ using Unity.Physics;
 using Unity.Physics.Systems;
 using UnityEngine;
 using Unity.Transforms;
+using DOTS.Terrain.Core;
 
 namespace DOTS.Terrain
 {
@@ -222,7 +223,7 @@ namespace DOTS.Terrain
 
         private static void LogInvalidMesh(int3 chunkCoord, Entity entity, int indexCount, int vertexCount)
         {
-            Debug.LogWarning($"[TerrainCollider] Invalid mesh for chunk {chunkCoord} (entity {entity.Index}). Indices={indexCount} Vertices={vertexCount}");
+            DebugSettings.LogWarning($"TerrainCollider: Invalid mesh for chunk {chunkCoord} (entity {entity.Index}). Indices={indexCount} Vertices={vertexCount}");
         }
     }
 }

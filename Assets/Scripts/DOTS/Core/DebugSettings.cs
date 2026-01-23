@@ -29,7 +29,7 @@ namespace DOTS.Terrain.Core
         {
             if (EnableDebugLogging || forceLog)
             {
-                Debug.Log($"[DOTS] {message}");
+                UnityEngine.Debug.Log($"[DOTS] {message}");
             }
         }
         
@@ -40,7 +40,7 @@ namespace DOTS.Terrain.Core
         {
             if (EnableWFCDebug || forceLog)
             {
-                Debug.Log($"[DOTS-WFC] {message}");
+                UnityEngine.Debug.Log($"[DOTS-WFC] {message}");
             }
         }
         
@@ -51,7 +51,7 @@ namespace DOTS.Terrain.Core
         {
             if (EnableTerrainDebug || forceLog)
             {
-                Debug.Log($"[DOTS-Terrain] {message}");
+                UnityEngine.Debug.Log($"[DOTS-Terrain] {message}");
             }
         }
         
@@ -62,7 +62,7 @@ namespace DOTS.Terrain.Core
         {
             if (EnableWeatherDebug || forceLog)
             {
-                Debug.Log($"[DOTS-Weather] {message}");
+                UnityEngine.Debug.Log($"[DOTS-Weather] {message}");
             }
         }
         
@@ -73,7 +73,7 @@ namespace DOTS.Terrain.Core
         {
             if (EnableRenderingDebug || forceLog)
             {
-                Debug.Log($"[DOTS-Rendering] {message}");
+                UnityEngine.Debug.Log($"[DOTS-Rendering] {message}");
             }
         }
         
@@ -84,7 +84,7 @@ namespace DOTS.Terrain.Core
         {
             if (EnableTestDebug || forceLog)
             {
-                Debug.Log($"[DOTS-Test] {message}");
+                UnityEngine.Debug.Log($"[DOTS-Test] {message}");
             }
         }
         
@@ -93,7 +93,7 @@ namespace DOTS.Terrain.Core
         /// </summary>
         public static void LogWarning(string message)
         {
-            Debug.LogWarning($"[DOTS] {message}");
+            UnityEngine.Debug.LogWarning($"[DOTS] {message}");
         }
         
         /// <summary>
@@ -101,7 +101,7 @@ namespace DOTS.Terrain.Core
         /// </summary>
         public static void LogError(string message)
         {
-            Debug.LogError($"[DOTS] {message}");
+            UnityEngine.Debug.LogError($"[DOTS] {message}");
         }
     }
 } 

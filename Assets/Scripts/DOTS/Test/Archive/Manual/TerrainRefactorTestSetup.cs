@@ -1,5 +1,6 @@
 using UnityEngine;
 using DOTS.Terrain;
+using DOTS.Terrain.Core;
 
 /// <summary>
 /// Simple setup script to create the necessary components for testing the terrain refactor
@@ -22,7 +23,7 @@ public class TerrainRefactorTestSetup : MonoBehaviour
     [ContextMenu("Setup Test Environment")]
     public void SetupTestEnvironment()
     {
-        Debug.Log("[TerrainRefactorTestSetup] Setting up test environment...");
+        DebugSettings.LogTest("[TerrainRefactorTestSetup] Setting up test environment...");
         
         if (createTerrainEntityManager)
         {
@@ -35,7 +36,7 @@ public class TerrainRefactorTestSetup : MonoBehaviour
             }
             else
             {
-                Debug.Log("✓ TerrainEntityManager already exists");
+                DebugSettings.LogTest("✓ TerrainEntityManager already exists");
             }
         }
         
@@ -46,11 +47,11 @@ public class TerrainRefactorTestSetup : MonoBehaviour
             {
                 var setupGO = new GameObject("DOTSWorldSetup");
                 setupGO.AddComponent<DOTSWorldSetup>();
-                Debug.Log("✓ Created DOTSWorldSetup");
+                DebugSettings.LogTest("✓ Created DOTSWorldSetup");
             }
             else
             {
-                Debug.Log("✓ DOTSWorldSetup already exists");
+                DebugSettings.LogTest("✓ DOTSWorldSetup already exists");
             }
         }
         
@@ -61,8 +62,8 @@ public class TerrainRefactorTestSetup : MonoBehaviour
             Debug.Log("✓ Added TerrainRefactorTest component");
         }
         
-        Debug.Log("[TerrainRefactorTestSetup] Test environment setup complete!");
-        Debug.Log("The TerrainRefactorTest will run automatically, or use the context menu to run it manually.");
+        DebugSettings.LogTest("[TerrainRefactorTestSetup] Test environment setup complete!");
+        DebugSettings.LogTest("The TerrainRefactorTest will run automatically, or use the context menu to run it manually.");
     }
     
     [ContextMenu("Run All Tests")]

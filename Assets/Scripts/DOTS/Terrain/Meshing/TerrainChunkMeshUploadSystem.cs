@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using DOTS.Terrain.Rendering;
 using DOTS.Terrain;
+using DOTS.Terrain.Core;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;
@@ -34,7 +35,7 @@ namespace DOTS.Terrain.Meshing
                 if (!loggedMissingMaterial)
                 {
                     loggedMissingMaterial = true;
-                    Debug.LogWarning("[DOTS Terrain] TerrainChunkMeshUploadSystem: No chunk material available (TerrainChunkRenderSettings missing or has no material). Chunks will not render until a material is assigned.");
+                    DebugSettings.LogWarning("[DOTS Terrain] TerrainChunkMeshUploadSystem: No chunk material available (TerrainChunkRenderSettings missing or has no material). Chunks will not render until a material is assigned.");
                 }
                 return;
             }

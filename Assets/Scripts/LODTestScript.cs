@@ -2,7 +2,7 @@ using UnityEngine;
 
 public class LODTestScript : MonoBehaviour
 {
-    public TerrainManager terrainManager;
+    public TerrainManagerLegacy terrainManager;
     public Transform player;
     
     void Update()

@@ -20,7 +20,7 @@ public partial struct ChunkProcessor : ISystem
         {
             if (terrain.ValueRO.resolution <= 0)
             {
-                Debug.LogWarning($"Invalid resolution for entity {entity}");
+                UnityEngine.Debug.LogWarning($"Invalid resolution for entity {entity}");
             }
         }
     }

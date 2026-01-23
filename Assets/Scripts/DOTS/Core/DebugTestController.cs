@@ -23,7 +23,7 @@ namespace DOTS.Terrain.Core
             {
                 DebugSettings.EnableTestSystems = true;
                 DebugSettings.EnableTestDebug = true;
-                Debug.Log("[DebugTestController] Test systems ENABLED - WFCSystemTest should now run");
+                UnityEngine.Debug.Log("[DebugTestController] Test systems ENABLED - WFCSystemTest should now run");
             }
             
             if (Input.GetKeyDown(enableAllDebugKey))
@@ -35,7 +35,7 @@ namespace DOTS.Terrain.Core
                 DebugSettings.EnableRenderingDebug = true;
                 DebugSettings.EnableTestDebug = true;
                 DebugSettings.EnableTestSystems = true;
-                Debug.Log("[DebugTestController] ALL DEBUG ENABLED");
+                UnityEngine.Debug.Log("[DebugTestController] ALL DEBUG ENABLED");
             }
             
             if (Input.GetKeyDown(disableAllDebugKey))
@@ -47,7 +47,7 @@ namespace DOTS.Terrain.Core
                 DebugSettings.EnableRenderingDebug = false;
                 DebugSettings.EnableTestDebug = false;
                 DebugSettings.EnableTestSystems = false;
-                Debug.Log("[DebugTestController] ALL DEBUG DISABLED");
+                UnityEngine.Debug.Log("[DebugTestController] ALL DEBUG DISABLED");
             }
         }
         

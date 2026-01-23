@@ -8,6 +8,7 @@ using Unity.Physics.Systems;
 using Unity.Transforms;
 using UnityEngine;
 using UnityEngine.TestTools;
+using DOTS.Terrain.Core;
 
 namespace DOTS.Terrain.Tests
 {
@@ -317,53 +318,53 @@ namespace DOTS.Terrain.Tests
 
         private void LogTerrainPipelineDiagnostics(Entity chunkEntity, string reason)
         {
-            Debug.LogWarning($"[TerrainPhysicsPlayModeTests] Terrain pipeline diagnostics: {reason}");
-            Debug.LogWarning($"[TerrainPhysicsPlayModeTests] Singleton: PhysicsWorldSingleton={HasPhysicsWorldSingleton()}");
+            DebugSettings.LogWarning($"[TerrainPhysicsPlayModeTests] Terrain pipeline diagnostics: {reason}");
+            DebugSettings.LogWarning($"[TerrainPhysicsPlayModeTests] Singleton: PhysicsWorldSingleton={HasPhysicsWorldSingleton()}");
             using var physicsStepQuery = entityManager.CreateEntityQuery(ComponentType.ReadOnly<PhysicsStep>());
             using var colliderSettingsQuery = entityManager.CreateEntityQuery(ComponentType.ReadOnly<TerrainColliderSettings>());
             using var sdfSettingsQuery = entityManager.CreateEntityQuery(ComponentType.ReadOnly<SDFTerrainFieldSettings>());
-            Debug.LogWarning($"[TerrainPhysicsPlayModeTests] Singleton: PhysicsStep={physicsStepQuery.IsEmpty == false}");
-            Debug.LogWarning($"[TerrainPhysicsPlayModeTests] Singleton: TerrainColliderSettings={colliderSettingsQuery.IsEmpty == false}");
-            Debug.LogWarning($"[TerrainPhysicsPlayModeTests] Singleton: SDFTerrainFieldSettings={sdfSettingsQuery.IsEmpty == false}");
+            DebugSettings.LogWarning($"[TerrainPhysicsPlayModeTests] Singleton: PhysicsStep={physicsStepQuery.IsEmpty == false}");
+            DebugSettings.LogWarning($"[TerrainPhysicsPlayModeTests] Singleton: TerrainColliderSettings={colliderSettingsQuery.IsEmpty == false}");
+            DebugSettings.LogWarning($"[TerrainPhysicsPlayModeTests] Singleton: SDFTerrainFieldSettings={sdfSettingsQuery.IsEmpty == false}");
 
             if (chunkEntity != Entity.Null && entityManager.Exists(chunkEntity))
             {
-                Debug.LogWarning($"[TerrainPhysicsPlayModeTests] Chunk components: NeedsDensityRebuild={entityManager.HasComponent<TerrainChunkNeedsDensityRebuild>(chunkEntity)}");
-                Debug.LogWarning($"[TerrainPhysicsPlayModeTests] Chunk components: Density={entityManager.HasComponent<TerrainChunkDensity>(chunkEntity)}");
-                Debug.LogWarning($"[TerrainPhysicsPlayModeTests] Chunk components: NeedsMeshBuild={entityManager.HasComponent<TerrainChunkNeedsMeshBuild>(chunkEntity)}");
-                Debug.LogWarning($"[TerrainPhysicsPlayModeTests] Chunk components: MeshData={entityManager.HasComponent<TerrainChunkMeshData>(chunkEntity)}");
-                Debug.LogWarning($"[TerrainPhysicsPlayModeTests] Chunk components: NeedsColliderBuild={entityManager.HasComponent<TerrainChunkNeedsColliderBuild>(chunkEntity)}");
+                DebugSettings.LogWarning($"[TerrainPhysicsPlayModeTests] Chunk components: NeedsDensityRebuild={entityManager.HasComponent<TerrainChunkNeedsDensityRebuild>(chunkEntity)}");
+                DebugSettings.LogWarning($"[TerrainPhysicsPlayModeTests] Chunk components: Density={entityManager.HasComponent<TerrainChunkDensity>(chunkEntity)}");
+                DebugSettings.LogWarning($"[TerrainPhysicsPlayModeTests] Chunk components: NeedsMeshBuild={entityManager.HasComponent<TerrainChunkNeedsMeshBuild>(chunkEntity)}");
+                DebugSettings.LogWarning($"[TerrainPhysicsPlayModeTests] Chunk components: MeshData={entityManager.HasComponent<TerrainChunkMeshData>(chunkEntity)}");
+                DebugSettings.LogWarning($"[TerrainPhysicsPlayModeTests] Chunk components: NeedsColliderBuild={entityManager.HasComponent<TerrainChunkNeedsColliderBuild>(chunkEntity)}");
                 var hasColliderData = entityManager.HasComponent<TerrainChunkColliderData>(chunkEntity);
-                Debug.LogWarning($"[TerrainPhysicsPlayModeTests] Chunk components: ColliderData={hasColliderData}");
+                DebugSettings.LogWarning($"[TerrainPhysicsPlayModeTests] Chunk components: ColliderData={hasColliderData}");
                 if (hasColliderData)
                 {
-                    Debug.LogWarning($"[TerrainPhysicsPlayModeTests] Chunk components: ColliderData.IsCreated={entityManager.GetComponentData<TerrainChunkColliderData>(chunkEntity).IsCreated}");
+                    DebugSettings.LogWarning($"[TerrainPhysicsPlayModeTests] Chunk components: ColliderData.IsCreated={entityManager.GetComponentData<TerrainChunkColliderData>(chunkEntity).IsCreated}");
                 }
-                Debug.LogWarning($"[TerrainPhysicsPlayModeTests] Chunk components: PhysicsCollider={entityManager.HasComponent<PhysicsCollider>(chunkEntity)}");
+                DebugSettings.LogWarning($"[TerrainPhysicsPlayModeTests] Chunk components: PhysicsCollider={entityManager.HasComponent<PhysicsCollider>(chunkEntity)}");
             }
             else
             {
-                Debug.LogWarning("[TerrainPhysicsPlayModeTests] Chunk entity missing or destroyed.");
+                DebugSettings.LogWarning("[TerrainPhysicsPlayModeTests] Chunk entity missing or destroyed.");
             }
 
             var systemList = testWorld.Systems;
-            Debug.LogWarning($"[TerrainPhysicsPlayModeTests] Systems in world: {systemList.Count}");
+            DebugSettings.LogWarning($"[TerrainPhysicsPlayModeTests] Systems in world: {systemList.Count}");
             foreach (var system in systemList)
             {
-                Debug.LogWarning($"[TerrainPhysicsPlayModeTests] System: {system.GetType().Name}");
+                DebugSettings.LogWarning($"[TerrainPhysicsPlayModeTests] System: {system.GetType().Name}");
             }
         }
 
         private void LogMissingPhysicsWorldDiagnostics()
         {
             var systemList = testWorld.Systems;
-            Debug.LogWarning($"[TerrainPhysicsPlayModeTests] Diagnostics: fixedStepGroup created={fixedStepGroup != null && fixedStepGroup.World == testWorld} enabled={fixedStepGroup?.Enabled ?? false} timestep={fixedStepGroup?.Timestep ?? 0f} deltaTime={testWorld.Time.DeltaTime}");
-            Debug.LogWarning($"[TerrainPhysicsPlayModeTests] Diagnostics: physicsGroup created={physicsGroup != null && physicsGroup.World == testWorld} enabled={physicsGroup?.Enabled ?? false}");
+            DebugSettings.LogWarning($"[TerrainPhysicsPlayModeTests] Diagnostics: fixedStepGroup created={fixedStepGroup != null && fixedStepGroup.World == testWorld} enabled={fixedStepGroup?.Enabled ?? false} timestep={fixedStepGroup?.Timestep ?? 0f} deltaTime={testWorld.Time.DeltaTime}");
+            DebugSettings.LogWarning($"[TerrainPhysicsPlayModeTests] Diagnostics: physicsGroup created={physicsGroup != null && physicsGroup.World == testWorld} enabled={physicsGroup?.Enabled ?? false}");
             LogUpdateListDiagnostics();
-            Debug.LogWarning($"[TerrainPhysicsPlayModeTests] PhysicsWorldSingleton missing after tick. Systems count: {systemList.Count}");
+            DebugSettings.LogWarning($"[TerrainPhysicsPlayModeTests] PhysicsWorldSingleton missing after tick. Systems count: {systemList.Count}");
             foreach (var system in systemList)
             {
-                Debug.LogWarning($"[TerrainPhysicsPlayModeTests] System: {system.GetType().Name}");
+                DebugSettings.LogWarning($"[TerrainPhysicsPlayModeTests] System: {system.GetType().Name}");
             }
         }
 
@@ -382,7 +383,7 @@ namespace DOTS.Terrain.Tests
         {
             var fixedStepContainsPhysics = TryContainsSystem(fixedStepGroup, physicsGroup);
 
-            Debug.LogWarning($"[TerrainPhysicsPlayModeTests] Diagnostics: fixedStepGroup contains PhysicsSystemGroup={fixedStepContainsPhysics}");
+            DebugSettings.LogWarning($"[TerrainPhysicsPlayModeTests] Diagnostics: fixedStepGroup contains PhysicsSystemGroup={fixedStepContainsPhysics}");
         }
 
         private static string TryContainsSystem(ComponentSystemGroup group, ComponentSystemBase system)
@@ -418,7 +419,7 @@ namespace DOTS.Terrain.Tests
             }
             catch (System.Exception exception)
             {
-                Debug.LogWarning($"[TerrainPhysicsPlayModeTests] Diagnostics: unable to inspect update list ({exception.GetType().Name})");
+                DebugSettings.LogWarning($"[TerrainPhysicsPlayModeTests] Diagnostics: unable to inspect update list ({exception.GetType().Name})");
                 return "error";
             }
         }

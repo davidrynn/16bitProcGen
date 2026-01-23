@@ -1,5 +1,6 @@
 using UnityEngine;
 using Unity.Entities;
+using DOTS.Terrain.Core;
 
 namespace DOTS.Terrain.Test
 {
@@ -34,9 +35,9 @@ namespace DOTS.Terrain.Test
                     var (passed, result) = testSystem.GetTestResults();
 
                     if (passed)
-                        Debug.Log($"[WFC Test] SUCCESS: {result}");
+                        DebugSettings.Log($"[WFC Test] SUCCESS: {result}");
                     else
-                        Debug.LogError($"[WFC Test] FAILURE: {result}");
+                        DebugSettings.LogError($"[WFC Test] FAILURE: {result}");
 
                     testStarted = false;
                 }
@@ -53,7 +54,7 @@ namespace DOTS.Terrain.Test
             // Only run if test systems are enabled
             if (!DOTS.Terrain.Core.DebugSettings.EnableTestSystems)
             {
-                Debug.LogWarning("[WFC Test] Test systems are disabled - not starting test");
+                DebugSettings.LogWarning("[WFC Test] Test systems are disabled - not starting test");
                 return;
             }
 
@@ -63,20 +64,20 @@ namespace DOTS.Terrain.Test
             var world = World.DefaultGameObjectInjectionWorld;
             if (world == null)
             {
-                Debug.LogError("[WFC Test] No DOTS world found");
+                DebugSettings.LogError("[WFC Test] No DOTS world found");
                 return;
             }
 
             testSystem = world.GetOrCreateSystemManaged<WFCSystemTest>();
             if (testSystem == null)
             {
-                Debug.LogError("[WFC Test] Failed to create WFC test system");
+                DebugSettings.LogError("[WFC Test] Failed to create WFC test system");
                 return;
             }
 
             // Optionally set the timeout if you want to expose it
             testStarted = true;
-            Debug.Log("[WFC Test] Test started");
+            DebugSettings.Log("[WFC Test] Test started");
         }
 
         /// <summary>
@@ -91,21 +92,21 @@ namespace DOTS.Terrain.Test
             // Disable the WFC test specifically
             WFCSystemTest.SetWFCTestEnabled(false);
             
-            Debug.Log("[WFC Test] Test stopped");
+            DebugSettings.Log("[WFC Test] Test stopped");
         }
         
         [ContextMenu("Disable Auto-Start")]
         public void DisableAutoStart()
         {
             runTestOnStart = false;
-            Debug.Log("[WFC Test] Auto-start disabled");
+            DebugSettings.Log("[WFC Test] Auto-start disabled");
         }
         
         [ContextMenu("Enable Auto-Start")]
         public void EnableAutoStart()
         {
             runTestOnStart = true;
-            Debug.Log("[WFC Test] Auto-start enabled");
+            DebugSettings.Log("[WFC Test] Auto-start enabled");
         }
     }
 } 

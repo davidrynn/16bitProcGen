@@ -41,7 +41,7 @@ public class TerrainEntityManager : MonoBehaviour
         var world = World.DefaultGameObjectInjectionWorld;
         if (world == null)
         {
-            Debug.LogWarning("TerrainEntityManager: No default world found! This is normal during initialization. Will retry when needed.");
+            UnityEngine.Debug.LogWarning("TerrainEntityManager: No default world found! This is normal during initialization. Will retry when needed.");
             return;
         }
         
@@ -51,7 +51,7 @@ public class TerrainEntityManager : MonoBehaviour
         terrainQuery = entityManager.CreateEntityQuery(typeof(DOTS.Terrain.TerrainData));
         
         isInitialized = true;
-        Debug.Log("TerrainEntityManager: Initialized successfully");
+        UnityEngine.Debug.Log("TerrainEntityManager: Initialized successfully");
     }
     
     /// <summary>
@@ -67,7 +67,7 @@ public class TerrainEntityManager : MonoBehaviour
         // If still not initialized, the world might not be ready yet
         if (!isInitialized)
         {
-            Debug.LogWarning("TerrainEntityManager: World not ready yet - initialization will be retried when world becomes available");
+            UnityEngine.Debug.LogWarning("TerrainEntityManager: World not ready yet - initialization will be retried when world becomes available");
             return false;
         }
         
@@ -97,7 +97,7 @@ public class TerrainEntityManager : MonoBehaviour
     {
         if (!EnsureInitialized())
         {
-            Debug.LogError("TerrainEntityManager: Failed to initialize - cannot create entity. Make sure you're in Play Mode and DOTS world is available.");
+            UnityEngine.Debug.LogError("TerrainEntityManager: Failed to initialize - cannot create entity. Make sure you're in Play Mode and DOTS world is available.");
             return Entity.Null;
         }
         
@@ -132,7 +132,7 @@ public class TerrainEntityManager : MonoBehaviour
         };
         entityManager.AddComponentData(entity, localToWorld);
         
-        Debug.Log($"Created terrain entity at {chunkPosition} with resolution {resolution}, scale {worldScale}, biome {biomeType}");
+        UnityEngine.Debug.Log($"Created terrain entity at {chunkPosition} with resolution {resolution}, scale {worldScale}, biome {biomeType}");
         
         return entity;
     }
@@ -149,7 +149,7 @@ public class TerrainEntityManager : MonoBehaviour
             CleanupTerrainData(entity);
             
             entityManager.DestroyEntity(entity);
-            Debug.Log($"Destroyed terrain entity {entity}");
+            UnityEngine.Debug.Log($"Destroyed terrain entity {entity}");
         }
     }
     
@@ -166,7 +166,7 @@ public class TerrainEntityManager : MonoBehaviour
         }
         
         entities.Dispose();
-        Debug.Log("Destroyed all terrain entities");
+        UnityEngine.Debug.Log("Destroyed all terrain entities");
     }
     
     /// <summary>
@@ -263,7 +263,7 @@ public class TerrainEntityManager : MonoBehaviour
             catch (System.Exception e)
             {
                 // Ignore disposal errors when world is already destroyed
-                Debug.LogWarning($"TerrainEntityManager: Error disposing TerrainData query during cleanup. " +
+                UnityEngine.Debug.LogWarning($"TerrainEntityManager: Error disposing TerrainData query during cleanup. " +
                     $"Exception Type: {e.GetType().Name}, " +
                     $"Message: {e.Message}" +
                     (e.InnerException != null ? $", Inner Exception: {e.InnerException.GetType().Name} - {e.InnerException.Message}" : "") +

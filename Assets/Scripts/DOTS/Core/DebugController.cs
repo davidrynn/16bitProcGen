@@ -100,7 +100,7 @@ namespace DOTS.Terrain.Core
             // Log the current state
             if (enableDebugLogging)
             {
-                Debug.Log($"[DebugController] Debug settings applied: WFC={enableWFCDebug}, Terrain={enableTerrainDebug}, Weather={enableWeatherDebug}, Rendering={enableRenderingDebug}, Test={enableTestDebug}, TestSystems={enableTestSystems}");
+                UnityEngine.Debug.Log($"[DebugController] Debug settings applied: WFC={enableWFCDebug}, Terrain={enableTerrainDebug}, Weather={enableWeatherDebug}, Rendering={enableRenderingDebug}, Test={enableTestDebug}, TestSystems={enableTestSystems}");
             }
         }
         

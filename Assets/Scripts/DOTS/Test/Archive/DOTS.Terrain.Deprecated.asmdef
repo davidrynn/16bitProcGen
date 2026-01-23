@@ -1,0 +1,30 @@
+{
+    "name": "DOTS.Terrain.Deprecated",
+    "rootNamespace": "",
+    "references": [
+        "DOTS.Terrain",
+        "Core",
+        "DOTS.Player.Components",
+        "Unity.Entities",
+        "Unity.Entities.Hybrid",
+        "Unity.Transforms",
+        "Unity.Mathematics",
+        "Unity.Mathematics.Extensions",
+        "Unity.Collections",
+        "Unity.Burst",
+        "Unity.Physics",
+        "Unity.Physics.Authoring",
+        "UnityEngine"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

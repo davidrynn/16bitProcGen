@@ -1,4 +1,5 @@
 using DOTS.Terrain;
+using DOTS.Terrain.Core;
 using Unity.Entities;
 using Unity.Mathematics;
 using Unity.Transforms;
@@ -37,7 +38,7 @@ namespace DOTS.Terrain.Bootstrap
             var world = worldOverride ?? World.DefaultGameObjectInjectionWorld;
             if (world == null)
             {
-                Debug.LogWarning("No DOTS world found for TerrainBootstrapAuthoring.");
+                DebugSettings.LogWarning("No DOTS world found for TerrainBootstrapAuthoring.");
                 return false;
             }
 
@@ -82,7 +83,7 @@ namespace DOTS.Terrain.Bootstrap
             }
             else if (chunkSpacing > 0f && math.abs(chunkSpacing - expectedStride) > 1e-4f)
             {
-                Debug.LogWarning($"[TerrainBootstrapAuthoring] chunkSpacing ({chunkSpacing}) does not match expected chunk stride ({expectedStride}) for resolution={safeResolution}, voxelSize={voxelSize}. Using {expectedStride} to avoid seams.");
+                DebugSettings.LogWarning($"[TerrainBootstrapAuthoring] chunkSpacing ({chunkSpacing}) does not match expected chunk stride ({expectedStride}) for resolution={safeResolution}, voxelSize={voxelSize}. Using {expectedStride} to avoid seams.");
             }
 
             // Center the chunk volume vertically around BaseHeight so the ground isosurface is

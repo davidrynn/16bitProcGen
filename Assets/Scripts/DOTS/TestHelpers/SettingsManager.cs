@@ -1,5 +1,6 @@
 using UnityEngine;
 using DOTS.Terrain.Generation;
+using DOTS.Terrain.Core;
 
 namespace DOTS.Terrain.Test
 {
@@ -30,12 +31,12 @@ namespace DOTS.Terrain.Test
             currentSettings = TerrainGenerationSettings.Default;
             if (currentSettings != null)
             {
-                Debug.Log("✓ Settings loaded successfully");
+                DebugSettings.Log("✓ Settings loaded successfully");
                 UpdatePreviewValues();
             }
             else
             {
-                Debug.LogWarning("⚠ No settings found");
+                DebugSettings.LogWarning("⚠ No settings found");
             }
         }
         
@@ -48,10 +49,10 @@ namespace DOTS.Terrain.Test
                 currentSettings.noiseScale = noiseScale;
                 currentSettings.heightMultiplier = heightMultiplier;
                 
-                Debug.Log("✓ Quick settings applied");
-                Debug.Log($"  - Debug Logs: {currentSettings.enableDebugLogs}");
-                Debug.Log($"  - Noise Scale: {currentSettings.noiseScale}");
-                Debug.Log($"  - Height Multiplier: {currentSettings.heightMultiplier}");
+                DebugSettings.Log("✓ Quick settings applied");
+                DebugSettings.Log($"  - Debug Logs: {currentSettings.enableDebugLogs}");
+                DebugSettings.Log($"  - Noise Scale: {currentSettings.noiseScale}");
+                DebugSettings.Log($"  - Height Multiplier: {currentSettings.heightMultiplier}");
             }
         }
         
@@ -71,9 +72,9 @@ namespace DOTS.Terrain.Test
             UnityEditor.AssetDatabase.SaveAssets();
             UnityEditor.AssetDatabase.Refresh();
             
-            Debug.Log("✓ Settings asset created at Assets/Resources/TerrainGenerationSettings.asset");
+            DebugSettings.Log("✓ Settings asset created at Assets/Resources/TerrainGenerationSettings.asset");
             #else
-            Debug.LogWarning("Settings asset creation only works in Unity Editor");
+            DebugSettings.LogWarning("Settings asset creation only works in Unity Editor");
             #endif
         }
         
@@ -88,7 +89,7 @@ namespace DOTS.Terrain.Test
                 currentSettings.enableVerboseLogs = true;
                 currentSettings.logHeightValues = true;
                 
-                Debug.Log("✓ Settings reset to defaults");
+                DebugSettings.Log("✓ Settings reset to defaults");
             }
         }
         

@@ -16,7 +16,7 @@ public partial class TerrainSystem : SystemBase
 {
     protected override void OnCreate() 
     {
-        Debug.Log("[DOTS] TerrainSystem: Initializing...");
+        UnityEngine.Debug.Log("[DOTS] TerrainSystem: Initializing...");
         RequireForUpdate<DOTS.Terrain.TerrainData>();
     }
     
@@ -27,7 +27,7 @@ public partial class TerrainSystem : SystemBase
         {
             if (terrain.ValueRO.resolution <= 0)
             {
-                Debug.LogWarning($"[DOTS] Invalid resolution for entity {entity}");
+                UnityEngine.Debug.LogWarning($"[DOTS] Invalid resolution for entity {entity}");
             }
         }
     }

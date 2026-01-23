@@ -43,7 +43,7 @@ namespace DOTS.Terrain.Test
         [ContextMenu("Setup Test Environment")]
         public void SetupTestEnvironment()
         {
-            Debug.Log("[WFC Test Setup] Configuring test environment...");
+            DebugSettings.LogTest("WFC Test Setup: Configuring test environment...");
             
             // Configure debug settings
             ConfigureDebugSettings();
@@ -51,7 +51,7 @@ namespace DOTS.Terrain.Test
             // Add test manager based on type
             AddTestManager();
             
-            Debug.Log("[WFC Test Setup] Test environment ready!");
+            DebugSettings.LogTest("WFC Test Setup: Test environment ready!");
         }
         
         private void ConfigureDebugSettings()
@@ -62,7 +62,7 @@ namespace DOTS.Terrain.Test
             {
                 var debugGO = new GameObject("DebugController");
                 debugController = debugGO.AddComponent<DebugController>();
-                Debug.Log("[WFC Test Setup] Created DebugController");
+                DebugSettings.LogTest("WFC Test Setup: Created DebugController");
             }
             
             // Configure debug settings directly on the controller
@@ -82,7 +82,7 @@ namespace DOTS.Terrain.Test
                 // Just set the flags - the controller will apply them automatically
             }
             
-            Debug.Log($"[WFC Test Setup] Debug settings configured: TestSystems={enableTestSystems}, TestDebug={enableTestDebug}, RenderingDebug={enableRenderingDebug}, WFCDebug={enableWFCDebug}");
+            DebugSettings.LogTest($"WFC Test Setup: Debug settings configured: TestSystems={enableTestSystems}, TestDebug={enableTestDebug}, RenderingDebug={enableRenderingDebug}, WFCDebug={enableWFCDebug}");
         }
         
         private void AddTestManager()
@@ -93,13 +93,13 @@ namespace DOTS.Terrain.Test
             
             if (existingSimple != null)
             {
-                Debug.Log("[WFC Test Setup] Removing existing SimpleTestManager");
+                DebugSettings.LogTest("WFC Test Setup: Removing existing SimpleTestManager");
                 DestroyImmediate(existingSimple.gameObject);
             }
             
             if (existingWFC != null)
             {
-                Debug.Log("[WFC Test Setup] Removing existing WFCTestSetup");
+                DebugSettings.LogTest("WFC Test Setup: Removing existing WFCTestSetup");
                 DestroyImmediate(existingWFC.gameObject);
             }
             
@@ -109,25 +109,25 @@ namespace DOTS.Terrain.Test
                 case TestType.SimpleRendering:
                     var simpleGO = new GameObject("SimpleTestManager");
                     simpleGO.AddComponent<SimpleTestManager>();
-                    Debug.Log("[WFC Test Setup] Added SimpleTestManager");
+                    DebugSettings.LogTest("WFC Test Setup: Added SimpleTestManager");
                     break;
                     
                 case TestType.FullWFC:
                     var wfcGO = new GameObject("WFCTestSetup");
                     wfcGO.AddComponent<WFCTestSetup>();
-                    Debug.Log("[WFC Test Setup] Added WFCTestSetup");
+                    DebugSettings.LogTest("WFC Test Setup: Added WFCTestSetup");
                     break;
                     
                 case TestType.DungeonRendering:
                     // Enable the dungeon rendering test specifically
                     WFCDungeonRenderingTest.SetWFCDungeonTestEnabled(true);
-                    Debug.Log("[WFC Test Setup] Enabled DungeonRendering test");
+                    DebugSettings.LogTest("WFC Test Setup: Enabled DungeonRendering test");
                     break;
                     
                 case TestType.DungeonDOTSRendering:
                     // DOTS-only renderer was removed; map to standard DungeonRendering test
                     WFCDungeonRenderingTest.SetWFCDungeonTestEnabled(true);
-                    Debug.Log("[WFC Test Setup] DungeonDOTSRendering mapped to DungeonRendering (DOTS fallback removed)");
+                    DebugSettings.LogTest("WFC Test Setup: DungeonDOTSRendering mapped to DungeonRendering (DOTS fallback removed)");
                     break;
             }
         }
@@ -202,7 +202,7 @@ namespace DOTS.Terrain.Test
             {
                 setup.runTestOnStart = false;
                 setup.StopTest();
-                Debug.Log($"[WFC Test Setup] Disabled WFCTestSetup on {setup.gameObject.name}");
+                DebugSettings.LogTest($"WFC Test Setup: Disabled WFCTestSetup on {setup.gameObject.name}");
             }
             
             // Disable all SimpleTestManager components
@@ -210,7 +210,7 @@ namespace DOTS.Terrain.Test
             foreach (var manager in simpleManagers)
             {
                 manager.enabled = false;
-                Debug.Log($"[WFC Test Setup] Disabled SimpleTestManager on {manager.gameObject.name}");
+                DebugSettings.LogTest($"WFC Test Setup: Disabled SimpleTestManager on {manager.gameObject.name}");
             }
             
             // Disable all WFCTestSceneSetup components
@@ -221,10 +221,10 @@ namespace DOTS.Terrain.Test
                 setup.enableTestDebug = false;
                 setup.enableRenderingDebug = false;
                 setup.enableWFCDebug = false;
-                Debug.Log($"[WFC Test Setup] Disabled WFCTestSceneSetup on {setup.gameObject.name}");
+                DebugSettings.LogTest($"WFC Test Setup: Disabled WFCTestSceneSetup on {setup.gameObject.name}");
             }
             
-            Debug.Log("[WFC Test Setup] All test components disabled");
+            DebugSettings.LogTest("WFC Test Setup: All test components disabled");
         }
     }
 }

@@ -523,7 +523,7 @@ public class SceneDiagnostics : MonoBehaviour
             reportBuilder.AppendLine("    (These are from the legacy terrain system - consider migrating to SDF DOTS terrain)");
         }
         
-        var terrainManager = TerrainManager.Instance;
+        var terrainManager = TerrainManagerLegacy.Instance;
         if (terrainManager != null)
         {
             reportBuilder.AppendLine($"  ⚠ LEGACY: TerrainManager found (legacy GameObject-based terrain system)");

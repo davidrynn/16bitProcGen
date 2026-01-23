@@ -32,8 +32,8 @@ namespace DOTS.Terrain.Test
 
         private void RunSocketPatternTest()
         {
-            Debug.Log("=== SOCKET PATTERN TEST STARTING ===");
-            Debug.Log("Spawning models with specific socket patterns to show expected rotations");
+            DebugSettings.LogTest("=== SOCKET PATTERN TEST STARTING ===");
+            DebugSettings.LogTest("Spawning models with specific socket patterns to show expected rotations");
             
             float xPosition = 0f;
             int modelIndex = 0;
@@ -41,7 +41,7 @@ namespace DOTS.Terrain.Test
             // Test Door/DeadEnd patterns
             if (doorPrefab != null)
             {
-                Debug.Log("=== DOOR/DEADEND PATTERNS ===");
+                DebugSettings.LogTest("=== DOOR/DEADEND PATTERNS ===");
                 
                 // FWWW - North open (should face +Z, rotation 0°)
                 SpawnModelWithRotation(doorPrefab, xPosition, "Door FWWW", "North open", Quaternion.identity, "Should face +Z (forward)");
@@ -67,7 +67,7 @@ namespace DOTS.Terrain.Test
             // Test Corridor patterns
             if (corridorPrefab != null)
             {
-                Debug.Log("=== CORRIDOR PATTERNS ===");
+                DebugSettings.LogTest("=== CORRIDOR PATTERNS ===");
                 
                 // FWFW - North-South open (should face +Z/-Z, rotation 0°)
                 SpawnModelWithRotation(corridorPrefab, xPosition, "Corridor FWFW", "North-South open", Quaternion.identity, "Should face +Z and -Z");
@@ -83,7 +83,7 @@ namespace DOTS.Terrain.Test
             // Test Corner patterns
             if (cornerPrefab != null)
             {
-                Debug.Log("=== CORNER PATTERNS ===");
+                DebugSettings.LogTest("=== CORNER PATTERNS ===");
                 
                 // FFWW - North-East open (should face +Z/+X, rotation 0°)
                 SpawnModelWithRotation(cornerPrefab, xPosition, "Corner FFWW", "North-East open", Quaternion.identity, "Should face +Z and +X");
@@ -106,12 +106,12 @@ namespace DOTS.Terrain.Test
                 modelIndex++;
             }
 
-            Debug.Log("=== SOCKET PATTERN TEST COMPLETE ===");
-            Debug.Log($"Spawned {modelIndex} models with specific socket patterns and rotations");
-            Debug.Log("Check the scene view to verify:");
-            Debug.Log("1. Base model orientations (first row)");
-            Debug.Log("2. Applied rotations make models face correct directions");
-            Debug.Log("3. Socket patterns match visual geometry");
+            DebugSettings.LogTest("=== SOCKET PATTERN TEST COMPLETE ===");
+            DebugSettings.LogTest($"Spawned {modelIndex} models with specific socket patterns and rotations");
+            DebugSettings.LogTest("Check the scene view to verify:");
+            DebugSettings.LogTest("1. Base model orientations (first row)");
+            DebugSettings.LogTest("2. Applied rotations make models face correct directions");
+            DebugSettings.LogTest("3. Socket patterns match visual geometry");
         }
 
         private void SpawnModelWithRotation(GameObject prefab, float xPosition, string label, string socketPattern, Quaternion rotation, string expected)
@@ -122,7 +122,7 @@ namespace DOTS.Terrain.Test
             // Add a label to identify the model
             instance.name = $"{label} ({socketPattern})";
             
-            Debug.Log($"Spawned {label} at ({xPosition}, {yOffset}, 0) with rotation {rotation.eulerAngles} - {expected}");
+            DebugSettings.LogTest($"Spawned {label} at ({xPosition}, {yOffset}, 0) with rotation {rotation.eulerAngles} - {expected}");
         }
 
         [ContextMenu("Run Socket Pattern Test")]
