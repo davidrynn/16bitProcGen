@@ -27,6 +27,9 @@ namespace DOTS.Terrain.Core
         [Tooltip("Enable test system debug logging")]
         public bool enableTestDebug = false;
         
+        [Tooltip("Enable seam validation debug logging")]
+        public bool enableSeamDebug = false;
+        
         [Header("Test System Control")]
         [Tooltip("Enable test systems to run (WFCSystemTest, SimpleRenderingTest, etc.)")]
         public bool enableTestSystems = false;
@@ -60,6 +63,7 @@ namespace DOTS.Terrain.Core
                    DebugSettings.EnableWeatherDebug != enableWeatherDebug ||
                    DebugSettings.EnableRenderingDebug != enableRenderingDebug ||
                    DebugSettings.EnableTestDebug != enableTestDebug ||
+                   DebugSettings.EnableSeamDebug != enableSeamDebug ||
                    DebugSettings.EnableTestSystems != enableTestSystems;
         }
         
@@ -74,6 +78,7 @@ namespace DOTS.Terrain.Core
                 enableWeatherDebug = true;
                 enableRenderingDebug = true;
                 enableTestDebug = true;
+                enableSeamDebug = true;
                 enableTestSystems = true;
             }
             
@@ -85,6 +90,7 @@ namespace DOTS.Terrain.Core
                 enableWeatherDebug = false;
                 enableRenderingDebug = false;
                 enableTestDebug = false;
+                enableSeamDebug = false;
                 enableTestSystems = false;
             }
             
@@ -95,12 +101,13 @@ namespace DOTS.Terrain.Core
             DebugSettings.EnableWeatherDebug = enableWeatherDebug;
             DebugSettings.EnableRenderingDebug = enableRenderingDebug;
             DebugSettings.EnableTestDebug = enableTestDebug;
+            DebugSettings.EnableSeamDebug = enableSeamDebug;
             DebugSettings.EnableTestSystems = enableTestSystems;
             
             // Log the current state
             if (enableDebugLogging)
             {
-                UnityEngine.Debug.Log($"[DebugController] Debug settings applied: WFC={enableWFCDebug}, Terrain={enableTerrainDebug}, Weather={enableWeatherDebug}, Rendering={enableRenderingDebug}, Test={enableTestDebug}, TestSystems={enableTestSystems}");
+                UnityEngine.Debug.Log($"[DebugController] Debug settings applied: WFC={enableWFCDebug}, Terrain={enableTerrainDebug}, Weather={enableWeatherDebug}, Rendering={enableRenderingDebug}, Test={enableTestDebug}, Seam={enableSeamDebug}, TestSystems={enableTestSystems}");
             }
         }
         
@@ -138,6 +145,7 @@ namespace DOTS.Terrain.Core
             enableWeatherDebug = false;
             enableRenderingDebug = false;
             enableTestDebug = false;
+            enableSeamDebug = false;
             enableTestSystems = false;
             ApplySettings();
         }
@@ -156,6 +164,7 @@ namespace DOTS.Terrain.Core
             enableWeatherDebug = false;
             enableRenderingDebug = false;
             enableTestDebug = true;
+            enableSeamDebug = false;
             enableTestSystems = true;
             ApplySettings();
         }
