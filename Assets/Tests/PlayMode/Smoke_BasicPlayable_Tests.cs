@@ -1,10 +1,13 @@
 using System;
 using System.Collections;
+using DOTS.Player.Bootstrap;
 using DOTS.Player.Components;
-using DOTS.Terrain.SDF;
+using DOTS.Terrain;
 using NUnit.Framework;
 using Unity.Entities;
 using Unity.Mathematics;
+using Unity.Physics;
+using Unity.Physics.Systems;
 using Unity.Transforms;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -17,7 +20,7 @@ namespace Tests.PlayMode
 {
     public class Smoke_BasicPlayable_Tests
     {
-        private const string ScenePath = "Assets/Tests/Scenes/Smoke_BasicPlayable.unity";
+        private const string ScenePath = "Assets/Scenes/Tests/Smoke_BasicPlayable.unity";        
         private const string SceneName = "Smoke_BasicPlayable";
         private const float TimeoutSeconds = 10f;
         private const int MovementFrames = 12;
@@ -106,6 +109,13 @@ namespace Tests.PlayMode
                 "SDF terrain field settings not found (SDFTerrainFieldSettings). Ensure TerrainBootstrapAuthoring runs at startup.");
 
             var playerEntity = playerQuery.GetSingletonEntity();
+            
+            // DIAGNOSTIC: Log player entity details
+            Debug.Log($"[Smoke Test] Player entity found: {playerEntity}");
+            Debug.Log($"[Smoke Test] Player has LocalTransform: {entityManager.HasComponent<LocalTransform>(playerEntity)}");
+            Debug.Log($"[Smoke Test] Player has PlayerInputComponent: {entityManager.HasComponent<PlayerInputComponent>(playerEntity)}");
+            Debug.Log($"[Smoke Test] Player has PlayerMovementState: {entityManager.HasComponent<PlayerMovementState>(playerEntity)}");
+            
             Assert.IsTrue(entityManager.HasComponent<PlayerInputComponent>(playerEntity),
                 "Player entity missing PlayerInputComponent. Movement input cannot be injected.");
             Assert.IsTrue(entityManager.HasComponent<PlayerMovementState>(playerEntity),

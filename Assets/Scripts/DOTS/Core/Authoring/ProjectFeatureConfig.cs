@@ -6,8 +6,8 @@ public class ProjectFeatureConfig : ScriptableObject
     [Header("Feature Toggles")]
     public bool EnablePlayerSystem = true;
     public bool EnableTerrainSystem = true;
-    public bool EnableDungeonSystem = true;
-    public bool EnableWeatherSystem = true;
+    public bool EnableDungeonSystem = false;
+    public bool EnableWeatherSystem = false;
     public bool EnableRenderingSystem = true;
     public bool EnableTestSystems = false;
 
@@ -29,8 +29,9 @@ public class ProjectFeatureConfig : ScriptableObject
     public bool EnableSimplePlayerMovementSystem = false;
 
     [Header("Terrain Core Systems")]
-    public bool EnableTerrainCleanupSystem = true;
-    public bool EnableChunkProcessor = true;
+    public bool EnableHybridTerrainGenerationSystem = true;
+    public bool EnableTerrainCleanupSystem = false;
+    public bool EnableChunkProcessor = false;
     public bool EnableTerrainModificationSystem = true;
     public bool EnableTerrainGlobPhysicsSystem = true;
 
@@ -38,14 +39,21 @@ public class ProjectFeatureConfig : ScriptableObject
     public bool EnableTerrainChunkDensitySamplingSystem = true;
     public bool EnableTerrainEditInputSystem = true;
 
+    [Header("Terrain Streaming")]
+    public bool EnableTerrainChunkStreamingSystem = true;
+    [Min(0)]
+    public int TerrainStreamingRadiusInChunks = 2;
+
     [Header("Terrain Meshing Systems")]
     public bool EnableTerrainChunkMeshBuildSystem = true;
     public bool EnableTerrainChunkRenderPrepSystem = true;
     public bool EnableTerrainChunkMeshUploadSystem = true;
+    public bool EnableTerrainChunkColliderBuildSystem = true;
+    public bool EnableTerrainColliderSettingsBootstrapSystem = true;
 
     [Header("Dungeon Systems")]
-    public bool EnableDungeonRenderingSystem = true;
+    public bool EnableDungeonRenderingSystem = false;
 
     [Header("Weather Systems")]
-    public bool EnableHybridWeatherSystem = true;
+    public bool EnableHybridWeatherSystem = false;
 }

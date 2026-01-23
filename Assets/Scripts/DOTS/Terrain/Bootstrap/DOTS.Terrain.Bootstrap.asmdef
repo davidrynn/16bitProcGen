@@ -1,0 +1,24 @@
+{
+    "name": "DOTS.Terrain.Bootstrap",
+    "rootNamespace": "DOTS.Terrain.Bootstrap",
+    "references": [
+        "DOTS.Terrain",
+        "Unity.Entities",
+        "Unity.Entities.Hybrid",
+        "Unity.Transforms",
+        "Unity.Mathematics",
+        "Unity.Collections"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
+
+
+

@@ -8,8 +8,16 @@ using DOTS.Terrain;
 using TerrainData = DOTS.Terrain.TerrainData;
 
 /// <summary>
-/// System responsible for generating terrain using compute shaders
-/// Handles the integration between DOTS entities and compute shaders
+/// [LEGACY] System responsible for generating terrain using compute shaders for the legacy TerrainData component.
+/// Handles the integration between DOTS entities and compute shaders.
+/// 
+/// ⚠️ LEGACY SYSTEM: This system operates on DOTS.Terrain.TerrainData component and is currently disabled internally.
+/// The current active terrain system uses SDF (Signed Distance Fields) with systems in DOTS.Terrain namespace:
+/// - TerrainChunkDensitySamplingSystem (SDF density sampling)
+/// - TerrainChunkMeshBuildSystem (Surface Nets meshing)
+/// - TerrainChunkRenderPrepSystem, TerrainChunkMeshUploadSystem
+/// 
+/// This system is maintained for backward compatibility but should not be used for new development.
 /// </summary>
 [DisableAutoCreation]
 public partial class TerrainGenerationSystem : SystemBase

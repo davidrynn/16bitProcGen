@@ -3,8 +3,14 @@ using Unity.Mathematics;
 using Unity.Collections;
 
 /// <summary>
-/// Biome component for DOTS terrain system
-/// Defines biome properties and generation parameters
+/// [LEGACY] Biome component for the legacy DOTS terrain system.
+/// Defines biome properties and generation parameters.
+/// 
+/// ⚠️ LEGACY COMPONENT: This component is part of the legacy terrain system using DOTS.Terrain.TerrainData.
+/// The current active terrain system uses SDF (Signed Distance Fields) with SDFTerrainFieldSettings for terrain parameters,
+/// and does not use BiomeComponent.
+/// 
+/// This component is maintained for backward compatibility with existing tests and legacy code.
 /// </summary>
 public struct BiomeComponent : IComponentData
 {

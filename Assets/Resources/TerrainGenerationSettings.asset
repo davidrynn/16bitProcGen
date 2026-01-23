@@ -9,15 +9,15 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 4c99a2b33553d49d087bb888ba73d193, type: 3}
+  m_Script: {fileID: 11500000, guid: 9bc0f6c51b6e5bd40aab508b52b2678c, type: 3}
   m_Name: TerrainGenerationSettings
-  m_EditorClassIdentifier: 
+  m_EditorClassIdentifier: DOTS.Terrain::DOTS.Terrain.Generation.TerrainGenerationSettings
   maxChunksPerFrame: 4
   defaultBufferSize: 1048576
   noiseScale: 0.02
   heightMultiplier: 100
   biomeScale: 1
-  noiseOffset: {x: 0, y: 0}
+  noiseOffset: {x: 123.456, y: 789.012}
   enableDebugLogs: 0
   enableVerboseLogs: 0
   logHeightValues: 0

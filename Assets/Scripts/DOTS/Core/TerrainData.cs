@@ -7,9 +7,16 @@ using UnityEngine;
 namespace DOTS.Terrain
 {
     /// <summary>
-    /// Core terrain data component for DOTS terrain system
-    /// Contains all necessary data for terrain generation, modification, and rendering
-    /// Note: ComputeBuffer fields removed - they will be managed externally
+    /// [LEGACY] Core terrain data component for the legacy DOTS terrain system.
+    /// Contains all necessary data for terrain generation, modification, and rendering.
+    /// Note: ComputeBuffer fields removed - they will be managed externally.
+    /// 
+    /// ⚠️ LEGACY COMPONENT: This component is part of the legacy terrain system.
+    /// The current active terrain system uses SDF (Signed Distance Fields) with components in DOTS.Terrain namespace:
+    /// - DOTS.Terrain.TerrainChunk (replaces this component)
+    /// - TerrainChunkGridInfo, TerrainChunkBounds, TerrainChunkDensity, TerrainChunkMeshData
+    /// 
+    /// This component is maintained for backward compatibility with existing tests and legacy code.
     /// </summary>
     public struct TerrainData : IComponentData
     {

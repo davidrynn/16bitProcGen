@@ -187,6 +187,10 @@ TerrainChunkDensity : IComponentData
 
 Reference to grid data (NativeArray or Blob for now)
 
+TerrainChunkDensityGridInfo : IComponentData
+
+int3 Resolution  // resolution of the density grid stored in TerrainChunkDensity (may be padded)
+
 5.2 Sampling Job
 
 Create:
@@ -195,7 +199,10 @@ TerrainChunkDensitySamplingSystem
 
 For each chunk:
 
-Allocate NativeArray<float> of size resolution³
+Allocate NativeArray<float> sized for seam stitching (padded on +X/+Z):
+
+- densityResolution = (res.x + 1, res.y, res.z + 1)
+- densityCount = densityResolution.x * densityResolution.y * densityResolution.z
 
 Convert each index → (ix, iy, iz)
 
@@ -206,6 +213,8 @@ Call terrainField.Sample(worldPos, edits)
 Store density
 
 Pass density grid to Phase 3
+
+Store `TerrainChunkDensityGridInfo { Resolution = densityResolution }` alongside the density blob so meshing can interpret the blob correctly.
 
 Read edits once into a temporary NativeArray<SDFEdit>.
 
@@ -222,7 +231,7 @@ Ensure job completes without errors
 
 Create:
 
-Assets/Scripts/Terrain/Meshing/SurfaceNets.cs
+Assets/Scripts/DOTS/Terrain/Meshing/SurfaceNets.cs
 
 Implement:
 

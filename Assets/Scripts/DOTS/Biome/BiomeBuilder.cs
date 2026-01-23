@@ -4,8 +4,14 @@ using Unity.Collections;
 using UnityEngine;
 
 /// <summary>
-/// Factory class for creating BiomeComponent and related structures
-/// Provides methods for initializing biome data with proper memory management
+/// [LEGACY] Factory class for creating BiomeComponent and related structures for the legacy terrain system.
+/// Provides methods for initializing biome data with proper memory management.
+/// 
+/// ⚠️ LEGACY SYSTEM: This builder is primarily used with the legacy TerrainEntityManager and DOTS.Terrain.TerrainData component.
+/// The current active terrain system uses SDF (Signed Distance Fields) with SDFTerrainFieldSettings for terrain parameters,
+/// and does not use BiomeComponent or BiomeBuilder.
+/// 
+/// This builder is maintained for backward compatibility with existing tests and legacy code.
 /// </summary>
 public static class BiomeBuilder
 {

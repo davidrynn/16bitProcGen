@@ -5,8 +5,14 @@ using UnityEngine;
 using DOTS.Terrain;
 
 /// <summary>
-/// Manages terrain entity creation and destruction
-/// Provides methods for spawning and managing terrain chunks as entities
+/// [LEGACY] Manages terrain entity creation and destruction for the legacy DOTS.Terrain.TerrainData system.
+/// Provides methods for spawning and managing terrain chunks as entities.
+/// 
+/// ⚠️ LEGACY SYSTEM: This is part of the legacy terrain system that uses DOTS.Terrain.TerrainData component.
+/// The current active terrain system uses SDF (Signed Distance Fields) with components in DOTS.Terrain namespace.
+/// 
+/// For new terrain generation, use TerrainBootstrapAuthoring or create entities with SDF components directly.
+/// This system is maintained for backward compatibility with existing tests and legacy code.
 /// </summary>
 public class TerrainEntityManager : MonoBehaviour
 {
@@ -257,7 +263,11 @@ public class TerrainEntityManager : MonoBehaviour
             catch (System.Exception e)
             {
                 // Ignore disposal errors when world is already destroyed
-                Debug.LogWarning($"TerrainEntityManager: Error disposing query during cleanup: {e.Message}");
+                Debug.LogWarning($"TerrainEntityManager: Error disposing TerrainData query during cleanup. " +
+                    $"Exception Type: {e.GetType().Name}, " +
+                    $"Message: {e.Message}" +
+                    (e.InnerException != null ? $", Inner Exception: {e.InnerException.GetType().Name} - {e.InnerException.Message}" : "") +
+                    $"\nStack Trace: {e.StackTrace}");
             }
         }
         

@@ -1,0 +1,96 @@
+using Unity.Burst;
+using Unity.Collections;
+using Unity.Entities;
+using Unity.Mathematics;
+#if UNITY_ENTITIES_GRAPHICS
+using Unity.Rendering;
+#endif
+using Unity.Transforms;
+using DOTS.Terrain;
+
+namespace DOTS.Terrain.Meshing
+{
+    [DisableAutoCreation]
+    [BurstCompile]
+    [UpdateInGroup(typeof(SimulationSystemGroup))]
+    public partial struct TerrainChunkRenderPrepSystem : ISystem
+    {
+        public void OnCreate(ref SystemState state)
+        {
+            state.RequireForUpdate<TerrainChunkMeshData>();
+        }
+
+        public void OnUpdate(ref SystemState state)
+        {
+#if UNITY_ENTITIES_GRAPHICS
+            var ecb = new EntityCommandBuffer(Allocator.Temp);
+
+            foreach (var (meshData, bounds, entity) in SystemAPI.Query<RefRO<TerrainChunkMeshData>, RefRO<TerrainChunkBounds>>().WithEntityAccess())
+            {
+                var mesh = meshData.ValueRO.Mesh;
+                if (!mesh.IsCreated || mesh.Value.Vertices.Length == 0)
+                {
+                    continue;
+                }
+
+                var renderBounds = new RenderBounds { Value = ComputeBounds(mesh) };
+
+                if (state.EntityManager.HasComponent<RenderBounds>(entity))
+                {
+                    ecb.SetComponent(entity, renderBounds);
+                }
+                else
+                {
+                    ecb.AddComponent(entity, renderBounds);
+                }
+
+                var localTransform = LocalTransform.FromPositionRotationScale(bounds.ValueRO.WorldOrigin, quaternion.identity, 1f);
+                if (state.EntityManager.HasComponent<LocalTransform>(entity))
+                {
+                    ecb.SetComponent(entity, localTransform);
+                }
+                else
+                {
+                    ecb.AddComponent(entity, localTransform);
+                }
+
+                if (!state.EntityManager.HasComponent<MaterialMeshInfo>(entity))
+                {
+                    // Upload system overwrites this placeholder once a RenderMeshArray is assigned.
+                    ecb.AddComponent(entity, default(MaterialMeshInfo));
+                }
+            }
+
+            ecb.Playback(state.EntityManager);
+            ecb.Dispose();
+#endif
+        }
+
+#if UNITY_ENTITIES_GRAPHICS
+        public static AABB ComputeBounds(BlobAssetReference<TerrainChunkMeshBlob> mesh)
+        {
+            ref var vertices = ref mesh.Value.Vertices;
+            var vertexCount = vertices.Length;
+            if (vertexCount == 0)
+            {
+                return new AABB { Center = float3.zero, Extents = float3.zero };
+            }
+
+            var min = vertices[0];
+            var max = vertices[0];
+
+            for (int i = 1; i < vertexCount; i++)
+            {
+                ref readonly var v = ref vertices[i];
+                // Track min/max corners to build the chunk's axis-aligned bounds.
+                min = math.min(min, v);
+                max = math.max(max, v);
+            }
+
+            var center = (min + max) * 0.5f;
+            var extents = (max - min) * 0.5f;
+            return new AABB { Center = center, Extents = extents };
+        }
+#endif
+    }
+}

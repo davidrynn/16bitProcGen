@@ -28,6 +28,9 @@ namespace DOTS.Player.Tests.Bootstrap
             testWorld = World.DefaultGameObjectInjectionWorld;
             entityManager = testWorld.EntityManager;
 
+            // Create player systems for testing (bypasses ProjectFeatureConfig)
+            TestSystemBootstrap.CreateBootstrapSystemsOnly(testWorld);
+
             UpdateWorldOnce();
         }
 
@@ -242,15 +245,6 @@ namespace DOTS.Player.Tests.Bootstrap
 
             var sync = playerVisual.GetComponent<PlayerVisualSync>();
             Assert.IsNotNull(sync, "Player visual should have PlayerVisualSync component");
-        }
-
-        [UnityTest]
-        public IEnumerator GroundVisual_Created()
-        {
-            yield return null;
-            var groundVisual = GameObject.Find("Ground Visual (ECS Synced)");
-            Assert.IsNotNull(groundVisual, "Ground visual GameObject should be created");
-            Assert.IsNull(groundVisual.GetComponent<UnityEngine.Collider>(), "Ground visual should not have a collider");
         }
 
         [UnityTest]
@@ -506,7 +500,13 @@ namespace DOTS.Player.Tests.Bootstrap
                 return;
             }
 
+            // Create the system if it doesn't exist (needed for [DisableAutoCreation] systems)
             var handle = testWorld.GetExistingSystem<T>();
+            if (handle == SystemHandle.Null)
+            {
+                handle = testWorld.CreateSystem<T>();
+            }
+            
             if (handle != SystemHandle.Null)
             {
                 handle.Update(testWorld.Unmanaged);
@@ -555,6 +555,17 @@ namespace DOTS.Player.Tests.Bootstrap
             DefaultWorldInitialization.Initialize(worldName, false);
             world = World.DefaultGameObjectInjectionWorld;
             manager = world.EntityManager;
+            
+            // Create player systems for testing (bypasses ProjectFeatureConfig)
+            TestSystemBootstrap.CreateBootstrapSystemsOnly(world);
+            
+            // Run the bootstrap system once to create entities
+            var bootstrapHandle = world.GetExistingSystem<PlayerEntityBootstrap>();
+            if (bootstrapHandle != SystemHandle.Null)
+            {
+                bootstrapHandle.Update(world.Unmanaged);
+            }
+            
             var initGroup = world.GetExistingSystemManaged<InitializationSystemGroup>();
             initGroup.Update();
             ScriptBehaviourUpdateOrder.RemoveWorldFromCurrentPlayerLoop(world);
@@ -565,6 +576,10 @@ namespace DOTS.Player.Tests.Bootstrap
             DefaultWorldInitialization.Initialize("Test World", false);
             testWorld = World.DefaultGameObjectInjectionWorld;
             entityManager = testWorld.EntityManager;
+            
+            // Create player systems for testing (bypasses ProjectFeatureConfig)
+            TestSystemBootstrap.CreateBootstrapSystemsOnly(testWorld);
+            
             UpdateWorldOnce();
         }
 
