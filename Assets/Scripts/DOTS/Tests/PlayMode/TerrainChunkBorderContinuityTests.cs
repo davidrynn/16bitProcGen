@@ -74,10 +74,15 @@ namespace DOTS.Terrain.Tests
             var voxelSize = 1f;
             var chunkStride = (resolution.x - 1) * voxelSize;
 
+            // Calculate originY using the same formula as the streaming system
+            // Center chunk volume vertically around BaseHeight so the SdGround isosurface stays in-range.
+            var chunkVerticalSpan = math.max(0, resolution.y - 1) * voxelSize;
+            var originY = settings.BaseHeight - (chunkVerticalSpan * 0.5f);
+
             var initialEntity = entityManager.CreateEntity();
             entityManager.AddComponentData(initialEntity, new TerrainChunk { ChunkCoord = new int3(0, 0, 0) });
             entityManager.AddComponentData(initialEntity, TerrainChunkGridInfo.Create(resolution, voxelSize));
-            entityManager.AddComponentData(initialEntity, new TerrainChunkBounds { WorldOrigin = float3.zero });
+            entityManager.AddComponentData(initialEntity, new TerrainChunkBounds { WorldOrigin = new float3(0, originY, 0) });
             entityManager.AddComponent<TerrainChunkNeedsDensityRebuild>(initialEntity);
 
             // Create and add systems
