@@ -19,7 +19,7 @@ namespace DOTS.Terrain.Streaming
             playerQuery = state.GetEntityQuery(ComponentType.ReadOnly<PlayerTag>(), ComponentType.ReadOnly<LocalTransform>());
             chunkQuery = state.GetEntityQuery(ComponentType.ReadOnly<TerrainChunk>(), ComponentType.ReadOnly<TerrainChunkBounds>(), ComponentType.ReadOnly<TerrainChunkGridInfo>());
 
-            state.RequireForUpdate(playerQuery);
+            // Don't require player unconditionally - debug-freeze mode doesn't need it
         }
 
         public void OnUpdate(ref SystemState state)
