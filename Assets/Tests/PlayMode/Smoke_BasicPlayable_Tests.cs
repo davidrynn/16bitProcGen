@@ -81,8 +81,7 @@ namespace Tests.PlayMode
             Assert.IsNotNull(world, "Default DOTS world was unexpectedly null.");
 
             var entityManager = world.EntityManager;
-            Assert.IsTrue(entityManager.IsCreated, "EntityManager was not created for the Default world.");
-
+            Assert.IsTrue(world.IsCreated, "World was not properly created.");
             using var playerQuery = entityManager.CreateEntityQuery(ComponentType.ReadOnly<PlayerTag>());
             using var cameraQuery = entityManager.CreateEntityQuery(ComponentType.ReadOnly<MainCameraTag>());
             using var terrainQuery = entityManager.CreateEntityQuery(ComponentType.ReadOnly<TerrainChunk>());

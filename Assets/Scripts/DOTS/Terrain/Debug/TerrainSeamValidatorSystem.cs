@@ -13,7 +13,6 @@ namespace DOTS.Terrain.Debug
     /// Only active when TerrainDebugConfig.Enabled is true.
     /// </summary>
     [DisableAutoCreation]
-    [BurstCompile]
     [UpdateInGroup(typeof(SimulationSystemGroup))]
     [UpdateAfter(typeof(TerrainChunkDensitySamplingSystem))]
     public partial struct TerrainSeamValidatorSystem : ISystem
@@ -23,7 +22,6 @@ namespace DOTS.Terrain.Debug
             state.RequireForUpdate<TerrainDebugConfig>();
         }
 
-        [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
             var debugConfig = SystemAPI.GetSingleton<TerrainDebugConfig>();
