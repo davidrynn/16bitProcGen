@@ -53,6 +53,8 @@ public class ProjectFeatureConfig : ScriptableObject
 
     [Header("Terrain Debug Systems")]
     public bool EnableTerrainSeamValidatorSystem = false;
+    public bool EnableTerrainMeshSeamValidatorSystem = false;
+    public bool EnableTerrainMeshBorderDebugSystem = false;
 
     [Header("Dungeon Systems")]
     public bool EnableDungeonRenderingSystem = false;

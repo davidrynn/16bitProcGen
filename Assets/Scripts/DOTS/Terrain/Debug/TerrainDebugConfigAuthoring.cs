@@ -24,12 +24,22 @@ namespace DOTS.Terrain.Debug
         [Tooltip("Radius in chunks around center when FreezeStreaming is true")]
         public int StreamingRadiusInChunks = 2;
 
-        [Header("Seam Validation")]
+        [Header("Density Seam Validation")]
         [Tooltip("Maximum allowed density difference at chunk borders")]
         public float SeamEpsilon = 0.001f;
 
         [Tooltip("Log seam mismatches to Console")]
         public bool EnableSeamLogging = true;
+
+        [Header("Mesh Debug (v2)")]
+        [Tooltip("Draw debug visuals for mesh borders (vertices, normals, chunk bounds)")]
+        public bool EnableMeshDebugOverlay = false;
+
+        [Tooltip("Maximum allowed position difference at mesh borders")]
+        public float MeshSeamPositionEpsilon = 0.001f;
+
+        [Tooltip("Maximum allowed normal angle difference (degrees) at mesh borders")]
+        public float MeshSeamNormalAngleThreshold = 5.0f;
 
         class Baker : Baker<TerrainDebugConfigAuthoring>
         {
@@ -43,7 +53,10 @@ namespace DOTS.Terrain.Debug
                     FixedCenterChunk = new int2(authoring.FixedCenterChunk.x, authoring.FixedCenterChunk.y),
                     StreamingRadiusInChunks = authoring.StreamingRadiusInChunks,
                     SeamEpsilon = authoring.SeamEpsilon,
-                    EnableSeamLogging = authoring.EnableSeamLogging
+                    EnableSeamLogging = authoring.EnableSeamLogging,
+                    EnableMeshDebugOverlay = authoring.EnableMeshDebugOverlay,
+                    MeshSeamPositionEpsilon = authoring.MeshSeamPositionEpsilon,
+                    MeshSeamNormalAngleThreshold = authoring.MeshSeamNormalAngleThreshold
                 });
             }
         }

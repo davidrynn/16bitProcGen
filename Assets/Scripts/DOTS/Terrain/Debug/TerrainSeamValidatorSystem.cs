@@ -115,17 +115,41 @@ namespace DOTS.Terrain.Debug
                 return;
             }
 
-            // For east border: compare x=max(A) with x=0(B)
-            // For north border: compare z=max(A) with z=0(B)
+            // The density grid is expanded by +1 for Surface Nets stitching.
+            // Chunk stride = (originalResolution - 1) * voxelSize, so:
+            // - Chunk A's sample at index (res - 2) is at the shared border world position
+            // - Chunk B's sample at index 0 is at the same shared border world position
+            // We also verify the overlap sample (res - 1 vs 1) for Surface Nets compatibility.
             var maxAbsDelta = 0f;
             var countAboveEpsilon = 0;
             var sampleCount = 0;
 
             if (direction == BorderDirection.East)
             {
-                // Compare rightmost column of A with leftmost column of B
-                var xA = resA.x - 1;
+                // Compare shared border: A's second-to-last column with B's first column
+                var xA = resA.x - 2;
                 var xB = 0;
+
+                for (int y = 0; y < resA.y; y++)
+                {
+                    for (int z = 0; z < resA.z; z++)
+                    {
+                        var valA = blobA.GetDensity(xA, y, z);
+                        var valB = blobB.GetDensity(xB, y, z);
+                        var delta = math.abs(valA - valB);
+
+                        maxAbsDelta = math.max(maxAbsDelta, delta);
+                        if (delta > config.SeamEpsilon)
+                        {
+                            countAboveEpsilon++;
+                        }
+                        sampleCount++;
+                    }
+                }
+
+                // Also compare the overlap sample for Surface Nets stitching
+                xA = resA.x - 1;
+                xB = 1;
 
                 for (int y = 0; y < resA.y; y++)
                 {
@@ -146,9 +170,30 @@ namespace DOTS.Terrain.Debug
             }
             else // North
             {
-                // Compare farthest z column of A with nearest z column of B
-                var zA = resA.z - 1;
+                // Compare shared border: A's second-to-last row with B's first row
+                var zA = resA.z - 2;
                 var zB = 0;
+
+                for (int y = 0; y < resA.y; y++)
+                {
+                    for (int x = 0; x < resA.x; x++)
+                    {
+                        var valA = blobA.GetDensity(x, y, zA);
+                        var valB = blobB.GetDensity(x, y, zB);
+                        var delta = math.abs(valA - valB);
+
+                        maxAbsDelta = math.max(maxAbsDelta, delta);
+                        if (delta > config.SeamEpsilon)
+                        {
+                            countAboveEpsilon++;
+                        }
+                        sampleCount++;
+                    }
+                }
+
+                // Also compare the overlap sample for Surface Nets stitching
+                zA = resA.z - 1;
+                zB = 1;
 
                 for (int y = 0; y < resA.y; y++)
                 {

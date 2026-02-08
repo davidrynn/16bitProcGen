@@ -40,6 +40,25 @@ namespace DOTS.Terrain.Debug
         /// </summary>
         public bool EnableSeamLogging;
 
+        // ─────────────────────────────────────────────────────────────────────
+        // Mesh Debug Fields (v2 - TERRAIN_SEAM_DEBUG_MESH_SPEC)
+        // ─────────────────────────────────────────────────────────────────────
+
+        /// <summary>
+        /// If true, draw debug visuals for mesh borders (vertices, normals, chunk bounds).
+        /// </summary>
+        public bool EnableMeshDebugOverlay;
+
+        /// <summary>
+        /// Maximum allowed position difference at chunk borders before flagging as mismatch.
+        /// </summary>
+        public float MeshSeamPositionEpsilon;
+
+        /// <summary>
+        /// Maximum allowed normal angle difference (degrees) at chunk borders before flagging as mismatch.
+        /// </summary>
+        public float MeshSeamNormalAngleThreshold;
+
         public static TerrainDebugConfig Default => new TerrainDebugConfig
         {
             Enabled = false,
@@ -47,7 +66,11 @@ namespace DOTS.Terrain.Debug
             FixedCenterChunk = int2.zero,
             StreamingRadiusInChunks = 2,
             SeamEpsilon = 0.001f,
-            EnableSeamLogging = true
+            EnableSeamLogging = true,
+            // Mesh debug defaults
+            EnableMeshDebugOverlay = false,
+            MeshSeamPositionEpsilon = 0.001f,
+            MeshSeamNormalAngleThreshold = 5.0f
         };
     }
 }

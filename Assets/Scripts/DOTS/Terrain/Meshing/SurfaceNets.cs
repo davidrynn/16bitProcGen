@@ -84,8 +84,11 @@ namespace DOTS.Terrain.Meshing
             float maxDensity = float.MinValue;
             float densitySum = 0f;
 
-            float totalWeight = 0f;
-            float3 weightedPosition = float3.zero;
+            // Sample all 8 corners and store densities + world positions
+            var cornerDensities = new FixedList64Bytes<float>();
+            var cornerWorldX = new FixedList64Bytes<float>();
+            var cornerWorldY = new FixedList64Bytes<float>();
+            var cornerWorldZ = new FixedList64Bytes<float>();
 
             for (int corner = 0; corner < 8; corner++)
             {
@@ -93,15 +96,14 @@ namespace DOTS.Terrain.Meshing
                 var samplePos = new int3(cellX + offset.x, cellY + offset.y, cellZ + offset.z);
                 var density = SampleDensity(samplePos);
 
+                cornerDensities.Add(density);
+                cornerWorldX.Add(samplePos.x * VoxelSize);
+                cornerWorldY.Add(samplePos.y * VoxelSize);
+                cornerWorldZ.Add(samplePos.z * VoxelSize);
+
                 densitySum += density;
                 minDensity = math.min(minDensity, density);
                 maxDensity = math.max(maxDensity, density);
-
-                var worldPos = new float3(samplePos) * VoxelSize;
-                var weight = 1f / (math.abs(density) + 1e-5f);
-
-                weightedPosition += worldPos * weight;
-                totalWeight += weight;
             }
 
             var hasSurface = minDensity < 0f && maxDensity > 0f;
@@ -113,13 +115,67 @@ namespace DOTS.Terrain.Meshing
 
             SetCellSign(cellX, cellY, cellZ, 0);
 
-            var vertex = totalWeight > 0f
-                ? weightedPosition / totalWeight
+            // Edge interpolation: find zero-crossing on each of the 12 cube edges where
+            // a sign change occurs, then average those crossing points.
+            // This places the vertex on the actual isosurface instead of biasing toward
+            // corners with density ≈ 0 (which caused banding on nearly-horizontal surfaces).
+            //
+            // Edge pairs (corner index A → corner index B):
+            // Bottom face: 0-1, 1-2, 2-3, 3-0
+            // Top face:    4-5, 5-6, 6-7, 7-4
+            // Verticals:   0-4, 1-5, 2-6, 3-7
+            float3 crossingSum = float3.zero;
+            int crossingCount = 0;
+
+            ProcessEdge(0, 1, ref cornerDensities, ref cornerWorldX, ref cornerWorldY, ref cornerWorldZ, ref crossingSum, ref crossingCount);
+            ProcessEdge(1, 2, ref cornerDensities, ref cornerWorldX, ref cornerWorldY, ref cornerWorldZ, ref crossingSum, ref crossingCount);
+            ProcessEdge(2, 3, ref cornerDensities, ref cornerWorldX, ref cornerWorldY, ref cornerWorldZ, ref crossingSum, ref crossingCount);
+            ProcessEdge(3, 0, ref cornerDensities, ref cornerWorldX, ref cornerWorldY, ref cornerWorldZ, ref crossingSum, ref crossingCount);
+            ProcessEdge(4, 5, ref cornerDensities, ref cornerWorldX, ref cornerWorldY, ref cornerWorldZ, ref crossingSum, ref crossingCount);
+            ProcessEdge(5, 6, ref cornerDensities, ref cornerWorldX, ref cornerWorldY, ref cornerWorldZ, ref crossingSum, ref crossingCount);
+            ProcessEdge(6, 7, ref cornerDensities, ref cornerWorldX, ref cornerWorldY, ref cornerWorldZ, ref crossingSum, ref crossingCount);
+            ProcessEdge(7, 4, ref cornerDensities, ref cornerWorldX, ref cornerWorldY, ref cornerWorldZ, ref crossingSum, ref crossingCount);
+            ProcessEdge(0, 4, ref cornerDensities, ref cornerWorldX, ref cornerWorldY, ref cornerWorldZ, ref crossingSum, ref crossingCount);
+            ProcessEdge(1, 5, ref cornerDensities, ref cornerWorldX, ref cornerWorldY, ref cornerWorldZ, ref crossingSum, ref crossingCount);
+            ProcessEdge(2, 6, ref cornerDensities, ref cornerWorldX, ref cornerWorldY, ref cornerWorldZ, ref crossingSum, ref crossingCount);
+            ProcessEdge(3, 7, ref cornerDensities, ref cornerWorldX, ref cornerWorldY, ref cornerWorldZ, ref crossingSum, ref crossingCount);
+
+            var vertex = crossingCount > 0
+                ? crossingSum / crossingCount
                 : (new float3(cellX, cellY, cellZ) + 0.5f) * VoxelSize;
 
             int newIndex = Vertices.Length;
             Vertices.Add(vertex);
             SetVertexIndex(cellX, cellY, cellZ, newIndex);
+        }
+
+        /// <summary>
+        /// Check one cube edge for a sign change. If found, linearly interpolate to the
+        /// zero-crossing point and accumulate it into the running average.
+        /// </summary>
+        private static void ProcessEdge(
+            int a, int b,
+            ref FixedList64Bytes<float> densities,
+            ref FixedList64Bytes<float> worldX,
+            ref FixedList64Bytes<float> worldY,
+            ref FixedList64Bytes<float> worldZ,
+            ref float3 crossingSum,
+            ref int crossingCount)
+        {
+            float dA = densities[a];
+            float dB = densities[b];
+
+            // Only process edges where a sign change occurs (one positive, one negative)
+            if ((dA < 0f) == (dB < 0f)) return;
+
+            // Linear interpolation to find zero-crossing: t where density = 0
+            float t = dA / (dA - dB);
+            t = math.clamp(t, 0f, 1f);
+
+            var posA = new float3(worldX[a], worldY[a], worldZ[a]);
+            var posB = new float3(worldX[b], worldY[b], worldZ[b]);
+            crossingSum += math.lerp(posA, posB, t);
+            crossingCount++;
         }
 
         private void BuildIndices()
@@ -132,14 +188,6 @@ namespace DOTS.Terrain.Meshing
             GenerateXYFaces();
             GenerateXZFaces();
             GenerateYZFaces();
-
-            if (Indices.Length == 0 && Vertices.Length >= 3)
-            {
-                for (int i = 2; i < Vertices.Length; i++)
-                {
-                    EmitTriangle(0, i - 1, i);
-                }
-            }
         }
 
         private void GenerateXYFaces()
@@ -168,10 +216,14 @@ namespace DOTS.Terrain.Meshing
                                      + GetCellSign(x + 1, y + 1, z)
                                      + GetCellSign(x, y + 1, z);
 
-                        // Use the sign of the neighboring +Z cell to break ties on blended slopes / seams.
-                        var neighborSign = GetCellSign(x, y, math.min(z + 1, CellResolution.z - 1));
-                        // For XY faces, enforce outward along -Z (matches prior orientation expectations).
-                        TryEmitQuad(i0, i1, i2, i3, signSum, neighborSign, new float3(0f, 0f, -1f));
+                        // Full 3D gradient at the shared interior grid node (x+1, y+1, z)
+                        // using backward differences for X/Y and forward for Z.
+                        var d111 = SampleDensity(new int3(x + 1, y + 1, z + 1));
+                        var d110 = SampleDensity(new int3(x + 1, y + 1, z));
+                        var d011 = SampleDensity(new int3(x, y + 1, z + 1));
+                        var d101 = SampleDensity(new int3(x + 1, y, z + 1));
+                        var gradient = new float3(d111 - d011, d111 - d101, d111 - d110);
+                        TryEmitQuad(i0, i1, i2, i3, signSum, gradient);
                     }
                 }
             }
@@ -203,8 +255,14 @@ namespace DOTS.Terrain.Meshing
                                      + GetCellSign(x + 1, y, z + 1)
                                      + GetCellSign(x, y, z + 1);
 
-                        var neighborSign = GetCellSign(x, math.min(y + 1, CellResolution.y - 1), z);
-                        TryEmitQuad(i0, i1, i2, i3, signSum, neighborSign, new float3(0f, 1f, 0f));
+                        // Full 3D gradient at the shared interior grid node (x+1, y, z+1)
+                        // using backward differences for X/Z and forward for Y.
+                        var d111 = SampleDensity(new int3(x + 1, y + 1, z + 1));
+                        var d011 = SampleDensity(new int3(x, y + 1, z + 1));
+                        var d101 = SampleDensity(new int3(x + 1, y, z + 1));
+                        var d110 = SampleDensity(new int3(x + 1, y + 1, z));
+                        var gradient = new float3(d111 - d011, d111 - d101, d111 - d110);
+                        TryEmitQuad(i0, i1, i2, i3, signSum, gradient);
                     }
                 }
             }
@@ -239,14 +297,20 @@ namespace DOTS.Terrain.Meshing
                                      + GetCellSign(x, y + 1, z + 1)
                                      + GetCellSign(x, y, z + 1);
 
-                        var neighborSign = GetCellSign(math.min(x + 1, CellResolution.x - 1), y, z);
-                        TryEmitQuad(i0, i1, i2, i3, signSum, neighborSign, new float3(1f, 0f, 0f));
+                        // Full 3D gradient at the shared interior grid node (x, y+1, z+1)
+                        // using forward difference for X and backward for Y/Z.
+                        var d111 = SampleDensity(new int3(x + 1, y + 1, z + 1));
+                        var d011 = SampleDensity(new int3(x, y + 1, z + 1));
+                        var d101 = SampleDensity(new int3(x + 1, y, z + 1));
+                        var d110 = SampleDensity(new int3(x + 1, y + 1, z));
+                        var gradient = new float3(d111 - d011, d111 - d101, d111 - d110);
+                        TryEmitQuad(i0, i1, i2, i3, signSum, gradient);
                     }
                 }
             }
         }
 
-        private void TryEmitQuad(int i0, int i1, int i2, int i3, int signSum, int tieBreakSign, float3 faceAxis)
+        private void TryEmitQuad(int i0, int i1, int i2, int i3, int signSum, float3 gradient)
         {
             if (i0 < 0 || i1 < 0 || i2 < 0 || i3 < 0)
             {
@@ -258,51 +322,38 @@ namespace DOTS.Terrain.Meshing
                 return;
             }
 
-            var effectiveSign = signSum;
-            if (effectiveSign == 0)
-            {
-                effectiveSign = tieBreakSign;
-            }
-
-            if (effectiveSign == 0)
-            {
-                effectiveSign = 1; // deterministic fallback to avoid winding flip-flop
-            }
-
-            var flip = effectiveSign < 0;
-
             if (i0 >= Vertices.Length || i1 >= Vertices.Length || i2 >= Vertices.Length || i3 >= Vertices.Length)
             {
                 return;
             }
 
-            var a = Vertices[i0];
-            var b = Vertices[flip ? i2 : i1];
-            var c = Vertices[flip ? i1 : i2];
+            // Surface Nets winding: each triangle is independently oriented so its normal
+            // aligns with the full 3D SDF gradient sampled at the shared interior grid
+            // node. Using the full gradient (not just the face-axis component) handles
+            // curved surfaces where the actual triangle normal may point in a very
+            // different direction than the face axis.
+            EmitTriangleWithGradient(i0, i1, i2, gradient);
+            EmitTriangleWithGradient(i0, i2, i3, gradient);
+        }
 
-            var normal = math.cross(b - a, c - a);
-            if (math.dot(normal, faceAxis) > 0f)
-            {
-                flip = !flip; // enforce deterministic outward-facing orientation per axis
-            }
+        private void EmitTriangleWithGradient(int a, int b, int c, float3 gradient)
+        {
+            var normal = math.cross(Vertices[b] - Vertices[a], Vertices[c] - Vertices[a]);
+            var dot = math.dot(normal, gradient);
 
-            if (flip)
+            if (dot < 0f)
             {
-                EmitTriangle(i0, i2, i1);
-                EmitTriangle(i0, i3, i2);
+                // Flip winding so normal aligns with gradient (outward)
+                Indices.Add(a);
+                Indices.Add(c);
+                Indices.Add(b);
             }
             else
             {
-                EmitTriangle(i0, i1, i2);
-                EmitTriangle(i0, i2, i3);
+                Indices.Add(a);
+                Indices.Add(b);
+                Indices.Add(c);
             }
-        }
-
-        private void EmitTriangle(int a, int b, int c)
-        {
-            Indices.Add(a);
-            Indices.Add(c);
-            Indices.Add(b);
         }
 
         private void SetVertexIndex(int x, int y, int z, int vertexIndex)

@@ -198,10 +198,34 @@ namespace DOTS.Terrain.Tests
             var res = blobA.Resolution;
             var count = 0;
 
+            // The density grid is expanded by +1 for Surface Nets stitching.
+            // Chunk stride = (originalResolution - 1) * voxelSize, so:
+            // - Chunk A's sample at index (res.x - 2) is at the shared border world position
+            // - Chunk B's sample at index 0 is at the same shared border world position
+            // We also verify the overlap sample (res.x - 1 vs 1) for Surface Nets compatibility.
+
             if (direction == BorderDirection.East)
             {
-                var xA = res.x - 1;
+                // Compare shared border: A's second-to-last column with B's first column
+                var xA = res.x - 2;
                 var xB = 0;
+
+                for (int y = 0; y < res.y; y++)
+                {
+                    for (int z = 0; z < res.z; z++)
+                    {
+                        var valA = blobA.GetDensity(xA, y, z);
+                        var valB = blobB.GetDensity(xB, y, z);
+                        if (math.abs(valA - valB) > epsilon)
+                        {
+                            count++;
+                        }
+                    }
+                }
+
+                // Also compare the overlap sample for Surface Nets stitching
+                xA = res.x - 1;
+                xB = 1;
 
                 for (int y = 0; y < res.y; y++)
                 {
@@ -218,8 +242,26 @@ namespace DOTS.Terrain.Tests
             }
             else
             {
-                var zA = res.z - 1;
+                // Compare shared border: A's second-to-last row with B's first row
+                var zA = res.z - 2;
                 var zB = 0;
+
+                for (int y = 0; y < res.y; y++)
+                {
+                    for (int x = 0; x < res.x; x++)
+                    {
+                        var valA = blobA.GetDensity(x, y, zA);
+                        var valB = blobB.GetDensity(x, y, zB);
+                        if (math.abs(valA - valB) > epsilon)
+                        {
+                            count++;
+                        }
+                    }
+                }
+
+                // Also compare the overlap sample for Surface Nets stitching
+                zA = res.z - 1;
+                zB = 1;
 
                 for (int y = 0; y < res.y; y++)
                 {

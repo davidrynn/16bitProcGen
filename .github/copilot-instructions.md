@@ -1,5 +1,5 @@
 # Copilot Instructions for 16bitProcGen
-
+tools: ['vscode', 'execute', 'read', 'edit', 'search', 'web', 'agent', 'todo']
 ## Precedence
 If instructions conflict: safety > architecture rules > performance > style > logging verbosity. If possible, explain to user that there is a conflict and which instruction took precedence.
 

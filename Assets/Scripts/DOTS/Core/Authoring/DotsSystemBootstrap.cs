@@ -143,6 +143,20 @@ public class DotsSystemBootstrap : MonoBehaviour
                 simGroup.AddSystemToUpdateList(handle);
                 Debug.Log("[DOTS Bootstrap] TerrainSeamValidatorSystem enabled and added to SimulationSystemGroup.");
             }
+
+            if (config.EnableTerrainMeshSeamValidatorSystem)
+            {
+                var handle = world.CreateSystem<DOTS.Terrain.Debug.TerrainMeshSeamValidatorSystem>();
+                simGroup.AddSystemToUpdateList(handle);
+                Debug.Log("[DOTS Bootstrap] TerrainMeshSeamValidatorSystem enabled and added to SimulationSystemGroup.");
+            }
+
+            if (config.EnableTerrainMeshBorderDebugSystem)
+            {
+                var handle = world.CreateSystem<DOTS.Terrain.Debug.TerrainMeshBorderDebugSystem>();
+                simGroup.AddSystemToUpdateList(handle);
+                Debug.Log("[DOTS Bootstrap] TerrainMeshBorderDebugSystem enabled and added to SimulationSystemGroup.");
+            }
         }
 
         if (config.EnablePlayerSystem)

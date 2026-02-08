@@ -1,6 +1,15 @@
-# TERRAIN_SEAM_DEBUG_SPEC.md
-**Project:** Unity 6 DOTS Terrain (SDF + Surface Nets)  
-**Goal:** Identify root cause of chunk seam artifacts (vertical 90° “walls”, flipped-looking rendering, ring/arc patterns) using deterministic reproduction, debug visualization, numeric seam validation, and PlayMode invariant tests.  
+# TERRAIN_SEAM_DEBUG_SPEC.md [OBSOLETE]
+
+> **STATUS: OBSOLETE**
+>
+> This comprehensive spec has been replaced by two focused specs:
+> - `TERRAIN_SEAM_DEBUG_SPEC_v1.md` - Density sampling validation (✅ Completed - density confirmed correct)
+> - `TERRAIN_SEAM_DEBUG_MESH_SPEC.md` - Mesh/rendering validation (📋 Active)
+
+---
+
+**Project:** Unity 6 DOTS Terrain (SDF + Surface Nets)
+**Goal:** Identify root cause of chunk seam artifacts (vertical 90° "walls", flipped-looking rendering, ring/arc patterns) using deterministic reproduction, debug visualization, numeric seam validation, and PlayMode invariant tests.
 **Non-goal (for this SPEC):** Fix the seam bug. No algorithm changes beyond adding metadata, debug-only toggles, and diagnostics.
 
 ---
