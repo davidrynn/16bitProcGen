@@ -157,6 +157,27 @@ public class DotsSystemBootstrap : MonoBehaviour
                 simGroup.AddSystemToUpdateList(handle);
                 Debug.Log("[DOTS Bootstrap] TerrainMeshBorderDebugSystem enabled and added to SimulationSystemGroup.");
             }
+
+            // Logs per-frame snapshots (position, velocity, grounding, nearby chunk collider status)
+            // when the player unexpectedly loses ground or drops below the SDF surface.
+            // Enable alongside DebugSettings.EnableFallThroughDebug to diagnose fall-through bugs.
+            if (config.EnablePlayerFallThroughDiagnosticSystem)
+            {
+                var handle = world.CreateSystem<DOTS.Terrain.Debug.PlayerFallThroughDiagnosticSystem>();
+                simGroup.AddSystemToUpdateList(handle);
+                Debug.Log("[DOTS Bootstrap] PlayerFallThroughDiagnosticSystem enabled and added to SimulationSystemGroup.");
+            }
+
+            // Measures frames/time between chunk spawn and collider completion.
+            // Useful for tuning MaxCollidersPerFrame or verifying that colliders build
+            // before the player reaches newly streamed chunks.
+            // Requires DebugSettings.EnableFallThroughDebug for spawn timestamps.
+            if (config.EnableTerrainColliderTimingSystem)
+            {
+                var handle = world.CreateSystem<DOTS.Terrain.Debug.TerrainColliderTimingSystem>();
+                simGroup.AddSystemToUpdateList(handle);
+                Debug.Log("[DOTS Bootstrap] TerrainColliderTimingSystem enabled and added to SimulationSystemGroup.");
+            }
         }
 
         if (config.EnablePlayerSystem)
@@ -205,6 +226,16 @@ public class DotsSystemBootstrap : MonoBehaviour
                 var handle = world.CreateSystem<PlayerMovementSystem>();
                 physicsGroup.AddSystemToUpdateList(handle);
                 Debug.Log("[DOTS Bootstrap] PlayerMovementSystem enabled and added to PhysicsSystemGroup.");
+            }
+
+            // Safety net: raycasts from the player's previous position to current position each
+            // frame. If a collider is hit between the two, the player tunneled through a surface
+            // and is snapped back. Works for any geometry (terrain, dungeons, caves).
+            if (config.EnablePlayerTerrainSafetySystem)
+            {
+                var handle = world.CreateSystem<PlayerTerrainSafetySystem>();
+                physicsGroup.AddSystemToUpdateList(handle);
+                Debug.Log("[DOTS Bootstrap] PlayerTerrainSafetySystem enabled and added to PhysicsSystemGroup.");
             }
 
             if (config.EnablePlayerGroundingSystem)

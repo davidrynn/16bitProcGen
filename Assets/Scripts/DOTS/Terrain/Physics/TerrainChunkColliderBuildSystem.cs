@@ -163,6 +163,12 @@ namespace DOTS.Terrain
                 ecb.AddComponent(entity, colliderComponent);
             }
 
+            // Register the entity in the default physics world so the broadphase sees the collider.
+            if (!entityManager.HasComponent<PhysicsWorldIndex>(entity))
+            {
+                ecb.AddSharedComponent(entity, new PhysicsWorldIndex());
+            }
+
             var newData = new TerrainChunkColliderData { Collider = newCollider };
             if (hadColliderData)
             {

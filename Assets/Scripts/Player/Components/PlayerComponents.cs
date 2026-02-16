@@ -36,6 +36,7 @@ namespace DOTS.Player.Components
         public PlayerMovementMode Mode;
         public bool IsGrounded;
         public float FallTime;
+        public float3 PreviousPosition;
     }
 
     public struct PlayerViewComponent : IComponentData

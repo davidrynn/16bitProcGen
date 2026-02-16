@@ -5,6 +5,7 @@ using Unity.Physics;
 using Unity.Physics.Systems;
 using Unity.Transforms;
 using DOTS.Player.Components;
+using DOTS.Terrain.Core;
 
 namespace DOTS.Player.Systems
 {
@@ -52,7 +53,34 @@ namespace DOTS.Player.Systems
                     Filter = CollisionFilter.Default
                 };
 
-                bool hit = physicsWorld.CastRay(rayInput);
+                bool hit;
+                if (DebugSettings.EnableFallThroughDebug)
+                {
+                    hit = physicsWorld.CastRay(rayInput, out var closestHit);
+                    var prevGrounded = movementState.ValueRO.IsGrounded;
+
+                    // Log grounding state transitions
+                    if (prevGrounded != hit)
+                    {
+                        if (hit)
+                        {
+                            DebugSettings.LogFallThrough(
+                                $"Grounded: pos={origin}, hitPos={closestHit.Position}, " +
+                                $"normal={closestHit.SurfaceNormal}, fraction={closestHit.Fraction:F4}, " +
+                                $"fallTime={movementState.ValueRO.FallTime:F3}");
+                        }
+                        else
+                        {
+                            DebugSettings.LogFallThroughWarning(
+                                $"Ungrounded: pos={origin}, probeEnd={rayInput.End}, " +
+                                $"fallTime={movementState.ValueRO.FallTime:F3}");
+                        }
+                    }
+                }
+                else
+                {
+                    hit = physicsWorld.CastRay(rayInput);
+                }
 
                 movementState.ValueRW.IsGrounded = hit;
                 if (hit)

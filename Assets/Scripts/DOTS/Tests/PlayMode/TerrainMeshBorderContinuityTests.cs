@@ -309,7 +309,11 @@ namespace DOTS.Terrain.Tests
             using var borderVertsA = new NativeList<float3>(Allocator.Temp);
             using var borderVertsB = new NativeList<float3>(Allocator.Temp);
 
-            // Get border vertices from chunk A
+            // Get border vertices from chunk A — only the overlap/ghost cells.
+            // Overlap cells start at index baseCellResolution (= Resolution - 1),
+            // whose vertices have local coords >= chunkSize (= baseCellResolution * VoxelSize).
+            // Using chunkSize - borderThreshold would also capture interior cells one
+            // layer deeper, which have no matching counterparts in the neighbor.
             for (int v = 0; v < blobA.Vertices.Length; v++)
             {
                 var localPos = blobA.Vertices[v];
@@ -317,11 +321,11 @@ namespace DOTS.Terrain.Tests
 
                 if (direction == BorderDirection.East)
                 {
-                    onBorder = localPos.x >= chunkSize.x - borderThreshold;
+                    onBorder = localPos.x >= chunkSize.x;
                 }
                 else
                 {
-                    onBorder = localPos.z >= chunkSize.z - borderThreshold;
+                    onBorder = localPos.z >= chunkSize.z;
                 }
 
                 if (onBorder)

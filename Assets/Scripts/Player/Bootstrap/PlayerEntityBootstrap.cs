@@ -16,8 +16,8 @@ namespace DOTS.Player.Bootstrap
     public partial struct PlayerEntityBootstrap : ISystem
     {
         private bool _hasSpawned;
-       // Player spawn configuration
-        private const float PlayerStartHeight = 5f; // Adjust this value to change spawn height
+        // Player spawn configuration — high enough for terrain colliders to build before landing
+        private const float PlayerStartHeight = 20f;
 
         public void OnCreate(ref SystemState state)
         {
@@ -42,8 +42,9 @@ namespace DOTS.Player.Bootstrap
             }
 
             var playerEntity = CreatePlayerEntity(ref state);
-            CreateGroundPlane(ref state);
-            // Camera is created and linked in CreatePlayerEntity
+            // Ground plane removed: it sat at Y=0 inside the terrain surface range [-4,+4],
+            // trapping the player under terrain after colliders built.
+            // Terrain mesh colliders are the sole physics surface.
             
             _hasSpawned = true;
             state.Enabled = false; // Disable after spawning
@@ -53,6 +54,7 @@ namespace DOTS.Player.Bootstrap
         {
             var entityManager = state.EntityManager;
             var entity = entityManager.CreateEntity();
+            var spawnPos = new float3(0, PlayerStartHeight, 0);
 
             // Add core player components
             entityManager.AddComponentData(entity, new PlayerMovementConfig
@@ -79,7 +81,8 @@ namespace DOTS.Player.Bootstrap
             {
                 Mode = PlayerMovementMode.Ground,
                 IsGrounded = false,
-                FallTime = 0f
+                FallTime = 0f,
+                PreviousPosition = spawnPos
             });
 
             entityManager.AddComponentData(entity, new PlayerViewComponent
@@ -91,7 +94,7 @@ namespace DOTS.Player.Bootstrap
             // Add transform
             entityManager.AddComponentData(entity, new LocalTransform
             {
-                Position = new float3(0, 2, 0), // Start 2 units above ground
+                Position = spawnPos,
                 Rotation = quaternion.identity,
                 Scale = 1f
             });
@@ -99,7 +102,7 @@ namespace DOTS.Player.Bootstrap
             entityManager.AddComponentData(entity, new LocalToWorld
             {
                 Value = float4x4.TRS(
-                    new float3(0, 2, 0),
+                    spawnPos,
                     quaternion.identity,
                     new float3(1f)
                 )
@@ -166,7 +169,7 @@ namespace DOTS.Player.Bootstrap
             entityManager.AddComponent<PlayerTag>(entity);
 
             // Get player position and view for camera setup
-            var playerPosition = new float3(0, 2, 0); // Start 2 units above ground
+            var playerPosition = spawnPos;
             var playerView = entityManager.GetComponentData<PlayerViewComponent>(entity);
 
             // Create camera entity and link it to player
@@ -193,7 +196,7 @@ namespace DOTS.Player.Bootstrap
             }
             else
             {
-                entityManager.AddComponentData(entity, new PlayerCameraSettings
+                entityManager.AddComponentData  (entity, new PlayerCameraSettings
                 {
                     FirstPersonOffset = new float3(0f, 1.6f, 0f),
                     ThirdPersonPivotOffset = new float3(0f, 1.5f, 0f),
@@ -205,7 +208,7 @@ namespace DOTS.Player.Bootstrap
             }
 
             // Create visual representation (minimal hybrid - GameObject sync)
-            CreatePlayerVisual(entity, new float3(0, 2, 0));
+            CreatePlayerVisual(entity, spawnPos);
             
             return entity;
         }
@@ -232,54 +235,6 @@ namespace DOTS.Player.Bootstrap
             var sync = visual.AddComponent<PlayerVisualSync>();
             sync.targetEntity = playerEntity;
 
-        }
-
-        private void CreateGroundPlane(ref SystemState state)
-        {
-            var entityManager = state.EntityManager;
-            var groundEntity = entityManager.CreateEntity();
-            entityManager.SetName(groundEntity, "Ground Plane (ECS Physics Only)");
-
-            // Transform
-            var groundPosition = float3.zero;
-            var groundTransform = new LocalTransform
-            {
-                Position = groundPosition,
-                Rotation = quaternion.identity,
-                Scale = 1f
-            };
-            entityManager.AddComponentData(groundEntity, groundTransform);
-            entityManager.AddComponentData(groundEntity, new LocalToWorld
-            {
-                Value = float4x4.TRS(groundPosition, quaternion.identity, new float3(1f))
-            });
-
-            // Physics collider (static box for ground)
-            var groundSize = new float2(50f, 50f); // Large ground plane
-            var boxGeometry = new BoxGeometry
-            {
-                Center = float3.zero,
-                Orientation = quaternion.identity,
-                Size = new float3(groundSize.x, 0.1f, groundSize.y), // Thin box
-                BevelRadius = 0f
-            };
-
-            entityManager.AddComponentData(groundEntity, new PhysicsCollider
-            {
-                Value = Unity.Physics.BoxCollider.Create(
-                    boxGeometry,
-                    new CollisionFilter
-                    {
-                        BelongsTo = 2u,    // Ground layer
-                        CollidesWith = ~0u, // Collides with everything
-                        GroupIndex = 0
-                    },
-                    Unity.Physics.Material.Default
-                )
-            });
-
-            // Mark as static (no physics mass needed)
-            entityManager.AddComponent<PhysicsWorldIndex>(groundEntity);
         }
 
         private Entity CreateMainCameraAndEntity(ref SystemState state, Entity playerEntity, float3 playerPosition, PlayerViewComponent playerView)

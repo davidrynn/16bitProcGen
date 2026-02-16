@@ -1,4 +1,5 @@
 using DOTS.Player.Components;
+using DOTS.Terrain.Core;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;
@@ -46,11 +47,14 @@ namespace DOTS.Terrain.Streaming
 
             var entityManager = state.EntityManager;
 
+            var elapsedTime = SystemAPI.Time.ElapsedTime;
+            var frameCount = UnityEngine.Time.frameCount;
+
             // If debug freeze streaming is active, skip normal player-based streaming
             if (debugEnabled && debugConfig.FreezeStreaming)
             {
                 // Use fixed center chunk from debug config
-                ProcessStreamingWindow(ref state, debugConfig.FixedCenterChunk, debugConfig.StreamingRadiusInChunks, debugEnabled);
+                ProcessStreamingWindow(ref state, debugConfig.FixedCenterChunk, debugConfig.StreamingRadiusInChunks, debugEnabled, elapsedTime, frameCount);
                 return;
             }
 
@@ -94,10 +98,10 @@ namespace DOTS.Terrain.Streaming
                 (int)math.floor(playerPos.x / chunkStride),
                 (int)math.floor(playerPos.z / chunkStride));
 
-            ProcessStreamingWindow(ref state, centerCoord, radius, debugEnabled);
+            ProcessStreamingWindow(ref state, centerCoord, radius, debugEnabled, elapsedTime, frameCount);
         }
 
-        private void ProcessStreamingWindow(ref SystemState state, int2 centerCoord, int radius, bool debugEnabled)
+        private void ProcessStreamingWindow(ref SystemState state, int2 centerCoord, int radius, bool debugEnabled, double elapsedTime, int frameCount)
         {
             var entityManager = state.EntityManager;
 
@@ -161,6 +165,16 @@ namespace DOTS.Terrain.Streaming
                     if (debugEnabled)
                     {
                         ecb.AddComponent(entity, DOTS.Terrain.Debug.TerrainChunkDebugState.Create(coord));
+                    }
+
+                    // Add spawn timestamp for collider timing diagnostics
+                    if (DebugSettings.EnableFallThroughDebug)
+                    {
+                        ecb.AddComponent(entity, new DOTS.Terrain.Debug.TerrainChunkSpawnTimestamp
+                        {
+                            SpawnElapsedTime = elapsedTime,
+                            SpawnFrameCount = frameCount
+                        });
                     }
                 }
             }

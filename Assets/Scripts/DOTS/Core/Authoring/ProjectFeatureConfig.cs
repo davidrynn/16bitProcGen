@@ -21,6 +21,7 @@ public class ProjectFeatureConfig : ScriptableObject
     public bool EnablePlayerLookSystem = true;
     public bool EnablePlayerMovementSystem = true;
     public bool EnablePlayerGroundingSystem = true;
+    public bool EnablePlayerTerrainSafetySystem = true;
     public bool EnablePlayerCameraSystem = true;
     public bool EnablePlayerCinemachineCameraSystem = true;
     public bool EnableCameraFollowSystem = true;
@@ -55,6 +56,8 @@ public class ProjectFeatureConfig : ScriptableObject
     public bool EnableTerrainSeamValidatorSystem = false;
     public bool EnableTerrainMeshSeamValidatorSystem = false;
     public bool EnableTerrainMeshBorderDebugSystem = false;
+    public bool EnablePlayerFallThroughDiagnosticSystem = false;
+    public bool EnableTerrainColliderTimingSystem = false;
 
     [Header("Dungeon Systems")]
     public bool EnableDungeonRenderingSystem = false;

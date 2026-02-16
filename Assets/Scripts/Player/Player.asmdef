@@ -3,6 +3,7 @@
     "rootNamespace": "DOTS.Player",
     "references": [
         "DOTS.Player.Components",
+        "DOTS.Terrain",
         "Unity.Entities",
         "Unity.Transforms",
         "Unity.Mathematics",

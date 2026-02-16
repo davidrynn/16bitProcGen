@@ -15,7 +15,9 @@ namespace DOTS.Terrain.Core
         public static bool EnableRenderingDebug = false;
         public static bool EnableTestDebug = false;
         public static bool EnableSeamDebug = false;
-        
+        public static bool EnableFallThroughDebug = false;
+        public static bool DisableBootstrapGroundPlane = false;
+
         // Test system control
         public static bool EnableTestSystems = false;
         
@@ -111,6 +113,28 @@ namespace DOTS.Terrain.Core
             }
         }
         
+        /// <summary>
+        /// Logs a debug message only if fall-through debug is enabled
+        /// </summary>
+        public static void LogFallThrough(string message, bool forceLog = false)
+        {
+            if (EnableFallThroughDebug || forceLog)
+            {
+                UnityEngine.Debug.Log($"[DOTS-FallThrough] {message}");
+            }
+        }
+
+        /// <summary>
+        /// Logs a fall-through warning message only if fall-through debug is enabled
+        /// </summary>
+        public static void LogFallThroughWarning(string message, bool forceLog = false)
+        {
+            if (EnableFallThroughDebug || forceLog)
+            {
+                UnityEngine.Debug.LogWarning($"[DOTS-FallThrough] {message}");
+            }
+        }
+
         /// <summary>
         /// Logs a warning message (always shown)
         /// </summary>
