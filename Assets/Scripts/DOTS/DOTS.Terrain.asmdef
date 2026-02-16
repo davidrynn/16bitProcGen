@@ -13,7 +13,8 @@
         "Unity.Collections",
         "Unity.Burst",
         "Unity.Physics",
-        "Unity.Physics.Authoring"
+        "Unity.Physics.Authoring",
+        "Unity.InputSystem"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

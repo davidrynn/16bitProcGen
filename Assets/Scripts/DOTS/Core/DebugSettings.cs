@@ -16,6 +16,7 @@ namespace DOTS.Terrain.Core
         public static bool EnableTestDebug = false;
         public static bool EnableSeamDebug = false;
         public static bool EnableFallThroughDebug = false;
+        public static bool EnableTerrainEditDebug = false;
         public static bool DisableBootstrapGroundPlane = false;
 
         // Test system control
@@ -132,6 +133,17 @@ namespace DOTS.Terrain.Core
             if (EnableFallThroughDebug || forceLog)
             {
                 UnityEngine.Debug.LogWarning($"[DOTS-FallThrough] {message}");
+            }
+        }
+
+        /// <summary>
+        /// Logs a debug message only if terrain edit debug is enabled
+        /// </summary>
+        public static void LogTerrainEdit(string message, bool forceLog = false)
+        {
+            if (EnableTerrainEditDebug || forceLog)
+            {
+                UnityEngine.Debug.Log($"[DOTS-TerrainEdit] {message}");
             }
         }
 

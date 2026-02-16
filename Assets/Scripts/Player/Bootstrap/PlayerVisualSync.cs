@@ -14,6 +14,8 @@ namespace DOTS.Player.Bootstrap
     {
         [Tooltip("The ECS entity this visual represents")]
         public Entity targetEntity;
+        [Tooltip("World-space visual offset from the ECS entity origin. Use Y=1 for feet-origin capsule bodies.")]
+        public Vector3 visualOffset = new Vector3(0f, 1f, 0f);
 
         private EntityManager _entityManager;
         private bool _entityManagerValid;
@@ -53,8 +55,8 @@ namespace DOTS.Player.Bootstrap
             var entityTransform = entityManager.GetComponentData<LocalTransform>(targetEntity);
             var worldPosition = (Vector3)entityTransform.Position;
             var worldRotation = new Quaternion(entityTransform.Rotation.value.x, entityTransform.Rotation.value.y, entityTransform.Rotation.value.z, entityTransform.Rotation.value.w);
-
-            transform.SetPositionAndRotation(worldPosition, worldRotation);
+            var rotatedOffset = worldRotation * visualOffset;
+            transform.SetPositionAndRotation(worldPosition + rotatedOffset, worldRotation);
 
             var uniformScale = entityTransform.Scale;
             if (!Mathf.Approximately(transform.localScale.x, uniformScale) ||
