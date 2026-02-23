@@ -3,6 +3,7 @@ using Unity.Mathematics;
 using Unity.Transforms;
 using UnityEngine;
 using DOTS.Player.Components;
+using DOTS.Terrain.Core;
 
 namespace DOTS.Player.Systems
 {
@@ -33,7 +34,7 @@ namespace DOTS.Player.Systems
                 {
                     if (!_hasLoggedOnce)
                     {
-                        Debug.LogWarning("[PlayerCamera] Camera entity is null!");
+                        DebugSettings.LogPlayerWarning("Camera entity is null!");
                         _hasLoggedOnce = true;
                     }
                     continue;
@@ -104,14 +105,19 @@ namespace DOTS.Player.Systems
                         
                         if (!_hasLoggedOnce)
                         {
-                            Debug.Log($"[PlayerCamera] Camera updated: pos={cameraPosition}, yaw={view.ValueRO.YawDegrees:F1}, pitch={view.ValueRO.PitchDegrees:F1}");
+                            var mainCam = Camera.main;
+                            bool isMain = mainCam != null && mainCam.GetInstanceID() == camera.GetInstanceID();
+                            DebugSettings.LogPlayer($"DIAG: Managing camera '{camera.name}' (instanceID={camera.GetInstanceID()})  Camera.main match={isMain}", forceLog: true);
+                            if (!isMain && mainCam != null)
+                                DebugSettings.LogPlayerWarning($"DIAG: Camera.main is '{mainCam.name}' (instanceID={mainCam.GetInstanceID()}) — MISMATCH! Edit/reticle systems will aim from the wrong camera.", forceLog: true);
+                            DebugSettings.LogPlayer($"Camera updated: pos={cameraPosition}, yaw={view.ValueRO.YawDegrees:F1}, pitch={view.ValueRO.PitchDegrees:F1}", forceLog: true);
                             _hasLoggedOnce = true;
                         }
                     }
                 }
                 else if (!_hasLoggedOnce)
                 {
-                    Debug.LogWarning($"[PlayerCamera] Camera entity {cameraLink.ValueRO.CameraEntity} doesn't have UnityEngine.Camera component!");
+                    DebugSettings.LogPlayerWarning($"Camera entity {cameraLink.ValueRO.CameraEntity} doesn't have UnityEngine.Camera component!");
                     _hasLoggedOnce = true;
                 }
             }

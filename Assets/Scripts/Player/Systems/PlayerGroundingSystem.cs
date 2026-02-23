@@ -1,4 +1,3 @@
-using Unity.Burst;
 using Unity.Entities;
 using Unity.Mathematics;
 using Unity.Physics;
@@ -6,6 +5,7 @@ using Unity.Physics.Systems;
 using Unity.Transforms;
 using DOTS.Player.Components;
 using DOTS.Terrain.Core;
+using System;
 
 namespace DOTS.Player.Systems
 {
@@ -16,11 +16,13 @@ namespace DOTS.Player.Systems
     /// Runs ahead of <see cref="PlayerMovementSystem"/> so that movement logic can rely on updated grounded state information.
     /// </remarks>
     [DisableAutoCreation]
-    [BurstCompile]
     [UpdateInGroup(typeof(PhysicsSystemGroup))]
+    [UpdateAfter(typeof(BuildPhysicsWorld))]
     [UpdateBefore(typeof(PlayerMovementSystem))]
     public partial struct PlayerGroundingSystem : ISystem
     {
+        private bool _hasLoggedInvalidColliderRaycast;
+
         /// <summary>
         /// Declares the singleton components that must exist before the system begins updating.
         /// </summary>
@@ -28,6 +30,7 @@ namespace DOTS.Player.Systems
         {
             state.RequireForUpdate<PhysicsWorldSingleton>();
             state.RequireForUpdate<PlayerMovementState>();
+            _hasLoggedInvalidColliderRaycast = false;
         }
 
         /// <summary>
@@ -56,7 +59,11 @@ namespace DOTS.Player.Systems
                 bool hit;
                 if (DebugSettings.EnableFallThroughDebug)
                 {
-                    hit = physicsWorld.CastRay(rayInput, out var closestHit);
+                    if (!TryCastRaySafe(in physicsWorld, rayInput, ref _hasLoggedInvalidColliderRaycast, out var closestHit, out hit))
+                    {
+                        hit = false;
+                        closestHit = default;
+                    }
                     var prevGrounded = movementState.ValueRO.IsGrounded;
 
                     // Log grounding state transitions
@@ -79,7 +86,10 @@ namespace DOTS.Player.Systems
                 }
                 else
                 {
-                    hit = physicsWorld.CastRay(rayInput);
+                    if (!TryCastRaySafe(in physicsWorld, rayInput, ref _hasLoggedInvalidColliderRaycast, out _, out hit))
+                    {
+                        hit = false;
+                    }
                 }
 
                 movementState.ValueRW.IsGrounded = hit;
@@ -92,6 +102,28 @@ namespace DOTS.Player.Systems
                 {
                     movementState.ValueRW.FallTime += deltaTime;
                 }
+            }
+        }
+
+        private static bool TryCastRaySafe(in PhysicsWorld physicsWorld, in RaycastInput input, ref bool hasLoggedInvalidColliderRaycast, out RaycastHit hitInfo, out bool hit)
+        {
+            hitInfo = default;
+            hit = false;
+            try
+            {
+                hit = physicsWorld.CastRay(input, out hitInfo);
+                return true;
+            }
+            catch (InvalidOperationException ex)
+            {
+                if (!hasLoggedInvalidColliderRaycast)
+                {
+                    DebugSettings.LogFallThroughWarning(
+                        $"Grounding raycast skipped due to invalid collider blob reference. " +
+                        $"Likely terrain collider disposal race during streaming/rebuild. Details: {ex.Message}");
+                    hasLoggedInvalidColliderRaycast = true;
+                }
+                return false;
             }
         }
     }

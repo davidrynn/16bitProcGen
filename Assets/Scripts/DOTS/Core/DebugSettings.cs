@@ -17,6 +17,7 @@ namespace DOTS.Terrain.Core
         public static bool EnableSeamDebug = false;
         public static bool EnableFallThroughDebug = false;
         public static bool EnableTerrainEditDebug = false;
+        public static bool EnablePlayerDebug = false;
         public static bool DisableBootstrapGroundPlane = false;
 
         // Test system control
@@ -144,6 +145,39 @@ namespace DOTS.Terrain.Core
             if (EnableTerrainEditDebug || forceLog)
             {
                 UnityEngine.Debug.Log($"[DOTS-TerrainEdit] {message}");
+            }
+        }
+
+        /// <summary>
+        /// Logs a terrain edit warning only if terrain edit debug is enabled
+        /// </summary>
+        public static void LogTerrainEditWarning(string message, bool forceLog = false)
+        {
+            if (EnableTerrainEditDebug || forceLog)
+            {
+                UnityEngine.Debug.LogWarning($"[DOTS-TerrainEdit] {message}");
+            }
+        }
+
+        /// <summary>
+        /// Logs a debug message only if player debug is enabled
+        /// </summary>
+        public static void LogPlayer(string message, bool forceLog = false)
+        {
+            if (EnablePlayerDebug || forceLog)
+            {
+                UnityEngine.Debug.Log($"[DOTS-Player] {message}");
+            }
+        }
+
+        /// <summary>
+        /// Logs a player warning only if player debug is enabled
+        /// </summary>
+        public static void LogPlayerWarning(string message, bool forceLog = false)
+        {
+            if (EnablePlayerDebug || forceLog)
+            {
+                UnityEngine.Debug.LogWarning($"[DOTS-Player] {message}");
             }
         }
 

@@ -29,6 +29,9 @@ namespace DOTS.Terrain
         {
             var entityManager = state.EntityManager;
             var ecb = new EntityCommandBuffer(Allocator.Temp);
+            // Collect stale blobs and dispose them AFTER ECB playback so that
+            // PhysicsCollider components never reference disposed data.
+            var staleBlobs = new NativeList<BlobAssetReference<Unity.Physics.Collider>>(Allocator.Temp);
             int builtCount = 0;
             bool collidersEnabled = true;
 
@@ -45,7 +48,7 @@ namespace DOTS.Terrain
                              .WithAll<TerrainChunk>()
                              .WithEntityAccess())
                 {
-                    RemoveCollider(entityManager, ecb, entity);
+                    CollectAndRemoveCollider(entityManager, ecb, staleBlobs, entity);
                     removedCount++;
                     if (removedCount >= MaxDisableRemovalsPerFrame)
                     {
@@ -55,12 +58,15 @@ namespace DOTS.Terrain
 
                 ecb.Playback(entityManager);
                 ecb.Dispose();
+                DisposeStaleBlobs(staleBlobs);
+                staleBlobs.Dispose();
                 return;
             }
 
             if (pendingColliderQuery.IsEmpty)
             {
                 ecb.Dispose();
+                staleBlobs.Dispose();
                 return;
             }
 
@@ -78,7 +84,7 @@ namespace DOTS.Terrain
                 var mesh = meshData.ValueRO.Mesh;
                 if (!mesh.IsCreated || mesh.Value.Vertices.Length == 0 || mesh.Value.Indices.Length == 0)
                 {
-                    RemoveCollider(entityManager, ecb, entity);
+                    CollectAndRemoveCollider(entityManager, ecb, staleBlobs, entity);
                     continue;
                 }
 
@@ -87,7 +93,7 @@ namespace DOTS.Terrain
                 if (indexCount % 3 != 0 || !IndicesWithinBounds(mesh, vertexCount))
                 {
                     LogInvalidMesh(chunk.ValueRO.ChunkCoord, entity, indexCount, vertexCount);
-                    RemoveCollider(entityManager, ecb, entity);
+                    CollectAndRemoveCollider(entityManager, ecb, staleBlobs, entity);
                     continue;
                 }
 
@@ -101,16 +107,18 @@ namespace DOTS.Terrain
                 var newCollider = BuildMeshCollider(mesh, filter);
                 if (!newCollider.IsCreated)
                 {
-                    RemoveCollider(entityManager, ecb, entity);
+                    CollectAndRemoveCollider(entityManager, ecb, staleBlobs, entity);
                     continue;
                 }
 
-                ApplyCollider(entityManager, ecb, entity, newCollider);
+                ApplyCollider(entityManager, ecb, staleBlobs, entity, newCollider);
                 builtCount++;
             }
 
             ecb.Playback(entityManager);
             ecb.Dispose();
+            DisposeStaleBlobs(staleBlobs);
+            staleBlobs.Dispose();
         }
 
         private static BlobAssetReference<Unity.Physics.Collider> BuildMeshCollider(BlobAssetReference<TerrainChunkMeshBlob> mesh, CollisionFilter filter)
@@ -144,13 +152,16 @@ namespace DOTS.Terrain
             return collider;
         }
 
-        private static void ApplyCollider(EntityManager entityManager, EntityCommandBuffer ecb, Entity entity, BlobAssetReference<Unity.Physics.Collider> newCollider)
+        private static void ApplyCollider(EntityManager entityManager, EntityCommandBuffer ecb, NativeList<BlobAssetReference<Unity.Physics.Collider>> staleBlobs, Entity entity, BlobAssetReference<Unity.Physics.Collider> newCollider)
         {
             var hadColliderData = entityManager.HasComponent<TerrainChunkColliderData>(entity);
-            TerrainChunkColliderData oldData = default;
             if (hadColliderData)
             {
-                oldData = entityManager.GetComponentData<TerrainChunkColliderData>(entity);
+                var oldData = entityManager.GetComponentData<TerrainChunkColliderData>(entity);
+                if (oldData.IsCreated)
+                {
+                    staleBlobs.Add(oldData.Collider);
+                }
             }
 
             var colliderComponent = new PhysicsCollider { Value = newCollider };
@@ -179,18 +190,13 @@ namespace DOTS.Terrain
                 ecb.AddComponent(entity, newData);
             }
 
-            if (oldData.IsCreated)
-            {
-                oldData.Dispose();
-            }
-
             if (entityManager.HasComponent<TerrainChunkNeedsColliderBuild>(entity))
             {
                 ecb.RemoveComponent<TerrainChunkNeedsColliderBuild>(entity);
             }
         }
 
-        private static void RemoveCollider(EntityManager entityManager, EntityCommandBuffer ecb, Entity entity)
+        private static void CollectAndRemoveCollider(EntityManager entityManager, EntityCommandBuffer ecb, NativeList<BlobAssetReference<Unity.Physics.Collider>> staleBlobs, Entity entity)
         {
             if (entityManager.HasComponent<PhysicsCollider>(entity))
             {
@@ -202,13 +208,24 @@ namespace DOTS.Terrain
                 var data = entityManager.GetComponentData<TerrainChunkColliderData>(entity);
                 if (data.IsCreated)
                 {
-                    data.Dispose();
+                    staleBlobs.Add(data.Collider);
                 }
             }
 
             if (entityManager.HasComponent<TerrainChunkNeedsColliderBuild>(entity))
             {
                 ecb.RemoveComponent<TerrainChunkNeedsColliderBuild>(entity);
+            }
+        }
+
+        private static void DisposeStaleBlobs(NativeList<BlobAssetReference<Unity.Physics.Collider>> staleBlobs)
+        {
+            for (int i = 0; i < staleBlobs.Length; i++)
+            {
+                if (staleBlobs[i].IsCreated)
+                {
+                    staleBlobs[i].Dispose();
+                }
             }
         }
 

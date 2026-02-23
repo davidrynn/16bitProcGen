@@ -6,6 +6,7 @@ using Unity.Entities;
 using Unity.Mathematics;
 using Unity.Transforms;
 using DOTS.Player.Components;
+using DOTS.Terrain.Core;
 
     [DisableAutoCreation]
     [BurstCompile]
@@ -59,7 +60,7 @@ public partial struct CameraFollowSystem : ISystem
         // Get player's view angles (yaw and pitch) from PlayerViewComponent
         if (!state.EntityManager.HasComponent<PlayerViewComponent>(playerEntity))
         {
-            UnityEngine.Debug.LogWarning("[CameraFollowSystem] Player entity missing PlayerViewComponent!");
+            DebugSettings.LogPlayerWarning("Player entity missing PlayerViewComponent!");
             return;
         }
         

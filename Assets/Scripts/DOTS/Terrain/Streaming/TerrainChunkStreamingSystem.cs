@@ -3,6 +3,7 @@ using DOTS.Terrain.Core;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;
+using Unity.Physics;
 using Unity.Transforms;
 using UnityEngine;
 
@@ -201,6 +202,21 @@ namespace DOTS.Terrain.Streaming
                 {
                     var meshData = entityManager.GetComponentData<TerrainChunkMeshData>(entity);
                     meshData.Dispose();
+                }
+
+                if (entityManager.HasComponent<TerrainChunkColliderData>(entity))
+                {
+                    // Do not dispose collider blobs inline during SimulationSystemGroup.
+                    // Physics systems may still read the previous world this frame.
+                    // Remove the component and let collider lifecycle systems own disposal timing.
+                    ecb.RemoveComponent<TerrainChunkColliderData>(entity);
+                }
+
+                // Remove PhysicsCollider before entity destruction so the physics broadphase
+                // doesn't reference a disposed blob between ECB playback and world rebuild.
+                if (entityManager.HasComponent<PhysicsCollider>(entity))
+                {
+                    ecb.RemoveComponent<PhysicsCollider>(entity);
                 }
 
                 if (entityManager.HasComponent<Mesh>(entity))

@@ -5,6 +5,7 @@ using Unity.Physics.Systems;
 using Unity.Transforms;
 using DOTS.Player.Components;
 using DOTS.Terrain.Core;
+using System;
 
 namespace DOTS.Player.Systems
 {
@@ -20,6 +21,7 @@ namespace DOTS.Player.Systems
     /// </summary>
     [DisableAutoCreation]
     [UpdateInGroup(typeof(PhysicsSystemGroup))]
+    [UpdateAfter(typeof(BuildPhysicsWorld))]
     [UpdateBefore(typeof(PlayerGroundingSystem))]
     public partial struct PlayerTerrainSafetySystem : ISystem
     {
@@ -40,12 +42,14 @@ namespace DOTS.Player.Systems
         private static readonly float3 CapsuleCenterOffset = new float3(0f, 1.0f, 0f);
 
         private double _lastTeleportTime;
+        private bool _hasLoggedInvalidColliderRaycast;
 
         public void OnCreate(ref SystemState state)
         {
             state.RequireForUpdate<PlayerMovementState>();
             state.RequireForUpdate<PhysicsWorldSingleton>();
             _lastTeleportTime = 0.0;
+            _hasLoggedInvalidColliderRaycast = false;
         }
 
         public void OnUpdate(ref SystemState state)
@@ -103,7 +107,7 @@ namespace DOTS.Player.Systems
                     }
                 };
 
-                if (physicsWorld.CastRay(rayInput, out var hit))
+                if (TryCastRaySafe(in physicsWorld, rayInput, ref _hasLoggedInvalidColliderRaycast, out var hit))
                 {
                     // Ignore near-end contacts that represent expected landing.
                     if (hit.Fraction >= MaxHitFractionForTunnel || hit.Entity == entity)
@@ -126,6 +130,26 @@ namespace DOTS.Player.Systems
                         $"Safety snap-back: tunneled from {previousPos} to {currentPos}, " +
                         $"hit at fraction={hit.Fraction:F4}, restored to {previousPos}");
                 }
+            }
+        }
+
+        private static bool TryCastRaySafe(in PhysicsWorld physicsWorld, in RaycastInput input, ref bool hasLoggedInvalidColliderRaycast, out RaycastHit hit)
+        {
+            hit = default;
+            try
+            {
+                return physicsWorld.CastRay(input, out hit);
+            }
+            catch (InvalidOperationException ex)
+            {
+                if (!hasLoggedInvalidColliderRaycast)
+                {
+                    DebugSettings.LogFallThroughWarning(
+                        $"Safety raycast skipped due to invalid collider blob reference. " +
+                        $"Likely terrain collider disposal race during streaming/rebuild. Details: {ex.Message}");
+                    hasLoggedInvalidColliderRaycast = true;
+                }
+                return false;
             }
         }
     }

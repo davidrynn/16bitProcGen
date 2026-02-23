@@ -1,41 +1,167 @@
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.SceneManagement;
+using DOTS.Terrain;
 
 namespace DOTS.Player.Bootstrap
 {
     /// <summary>
-    /// Creates a small center-screen reticle dot at runtime.
-    /// Lightweight: no Update loop, static ScreenSpaceOverlay canvas.
+    /// Creates and manages a center-screen reticle that binds to the active main camera.
+    /// Auto-instantiates at runtime so no scene wiring is required.
     /// </summary>
-    public class ReticleBootstrap : MonoBehaviour
+    public static class ReticleBootstrap
     {
-        private void Start()
+        private const string RootName = "ReticleRoot";
+        private const string CanvasName = "ReticleCanvas";
+        private const string DotName = "ReticleDot";
+        private const float DotSizePixels = 10f;
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
+        private static void EnsureReticleInstalled()
         {
-            var canvasGO = new GameObject("ReticleCanvas");
-            var canvas = canvasGO.AddComponent<Canvas>();
-            canvas.renderMode = RenderMode.ScreenSpaceOverlay;
-            canvas.sortingOrder = 100;
-            canvasGO.AddComponent<CanvasScaler>();
+            if (GameObject.Find(RootName) != null)
+            {
+                return;
+            }
 
-            var dotGO = new GameObject("ReticleDot");
-            dotGO.transform.SetParent(canvasGO.transform, false);
-
-            var image = dotGO.AddComponent<Image>();
-            image.sprite = CreateCircleSprite();
-            image.color = new Color(1f, 1f, 1f, 0.6f);
-
-            var rect = image.rectTransform;
-            rect.anchorMin = new Vector2(0.5f, 0.5f);
-            rect.anchorMax = new Vector2(0.5f, 0.5f);
-            rect.pivot = new Vector2(0.5f, 0.5f);
-            rect.anchoredPosition = Vector2.zero;
-            rect.sizeDelta = new Vector2(8f, 8f);
+            var root = new GameObject(RootName);
+            Object.DontDestroyOnLoad(root);
+            root.AddComponent<ReticleController>();
         }
 
-        private static Sprite CreateCircleSprite()
+        private sealed class ReticleController : MonoBehaviour
+        {
+            private Canvas _canvas;
+            private Camera _boundCamera;
+            private bool _warnedMissingCamera;
+            private Sprite _dotSprite;
+            private Texture2D _dotTexture;
+
+            private void Awake()
+            {
+                BuildUiIfNeeded();
+                SceneManager.sceneLoaded += OnSceneLoaded;
+                TryBindToMainCamera();
+            }
+
+            private void OnDestroy()
+            {
+                SceneManager.sceneLoaded -= OnSceneLoaded;
+
+                if (_dotSprite != null)
+                {
+                    Destroy(_dotSprite);
+                    _dotSprite = null;
+                }
+
+                if (_dotTexture != null)
+                {
+                    Destroy(_dotTexture);
+                    _dotTexture = null;
+                }
+            }
+
+            private void LateUpdate()
+            {
+                BuildUiIfNeeded();
+                var currentMain = Camera.main;
+                if (currentMain != _boundCamera)
+                {
+                    TryBindToMainCamera();
+                }
+            }
+
+            private void OnSceneLoaded(Scene _, LoadSceneMode __)
+            {
+                BuildUiIfNeeded();
+                TryBindToMainCamera();
+            }
+
+            private void BuildUiIfNeeded()
+            {
+                if (_canvas != null)
+                {
+                    return;
+                }
+
+                var canvasGO = new GameObject(CanvasName);
+                canvasGO.transform.SetParent(transform, false);
+
+                _canvas = canvasGO.AddComponent<Canvas>();
+                _canvas.renderMode = RenderMode.ScreenSpaceOverlay;
+                _canvas.sortingOrder = 500;
+
+                var scaler = canvasGO.AddComponent<CanvasScaler>();
+                scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
+                scaler.referenceResolution = new Vector2(1920f, 1080f);
+                scaler.matchWidthOrHeight = 0.5f;
+
+                var dotGO = new GameObject(DotName);
+                dotGO.transform.SetParent(canvasGO.transform, false);
+
+                var image = dotGO.AddComponent<Image>();
+                _dotSprite = CreateCircleSprite(out _dotTexture);
+                image.sprite = _dotSprite;
+                image.color = new Color(1f, 1f, 1f, 0.9f);
+                image.raycastTarget = false;
+
+                var rect = image.rectTransform;
+                rect.anchorMin = CenterAimRayUtility.CenterViewport;
+                rect.anchorMax = CenterAimRayUtility.CenterViewport;
+                rect.pivot = CenterAimRayUtility.CenterViewport;
+                rect.anchoredPosition = Vector2.zero;
+                rect.sizeDelta = new Vector2(DotSizePixels, DotSizePixels);
+
+                var outline = dotGO.AddComponent<Outline>();
+                outline.effectColor = new Color(0f, 0f, 0f, 0.85f);
+                outline.effectDistance = new Vector2(1f, -1f);
+            }
+
+            private void TryBindToMainCamera()
+            {
+                if (_canvas == null)
+                {
+                    return;
+                }
+
+                var main = Camera.main;
+                if (main == null)
+                {
+                    _boundCamera = null;
+                    _canvas.renderMode = RenderMode.ScreenSpaceOverlay;
+                    _canvas.worldCamera = null;
+                    if (_canvas.transform.parent != transform)
+                    {
+                        _canvas.transform.SetParent(transform, false);
+                    }
+                    if (!_warnedMissingCamera)
+                    {
+                        Debug.LogWarning("[ReticleBootstrap] MainCamera not found yet. Using ScreenSpaceOverlay fallback.");
+                        _warnedMissingCamera = true;
+                    }
+                    return;
+                }
+
+                _warnedMissingCamera = false;
+                _boundCamera = main;
+                _canvas.renderMode = RenderMode.ScreenSpaceCamera;
+                _canvas.worldCamera = main;
+                _canvas.planeDistance = Mathf.Max(main.nearClipPlane + 0.01f, 0.1f);
+                if (_canvas.transform.parent != main.transform)
+                {
+                    _canvas.transform.SetParent(main.transform, false);
+                }
+                Debug.Log($"[ReticleBootstrap] DIAG: Bound to camera '{main.name}' (instanceID={main.GetInstanceID()}) pos={main.transform.position} depth={main.depth}");
+                var allCams = Camera.allCameras;
+                if (allCams.Length > 1)
+                    Debug.LogWarning($"[ReticleBootstrap] DIAG: {allCams.Length} cameras exist — reticle may be on wrong camera.");
+            }
+        }
+
+        private static Sprite CreateCircleSprite(out Texture2D texture)
         {
             const int size = 16;
-            var texture = new Texture2D(size, size, TextureFormat.RGBA32, false)
+            texture = new Texture2D(size, size, TextureFormat.RGBA32, false)
             {
                 filterMode = FilterMode.Bilinear,
                 wrapMode = TextureWrapMode.Clamp

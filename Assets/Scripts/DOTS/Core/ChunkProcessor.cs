@@ -1,6 +1,6 @@
 using Unity.Entities;
-using UnityEngine;
 using DOTS.Terrain;
+using DOTS.Terrain.Core;
 using TerrainData = DOTS.Terrain.TerrainData;
 
 /// <summary>
@@ -20,7 +20,7 @@ public partial struct ChunkProcessor : ISystem
         {
             if (terrain.ValueRO.resolution <= 0)
             {
-                UnityEngine.Debug.LogWarning($"Invalid resolution for entity {entity}");
+                DebugSettings.LogWarning($"[ChunkProcessor] Invalid resolution for entity {entity}");
             }
         }
     }

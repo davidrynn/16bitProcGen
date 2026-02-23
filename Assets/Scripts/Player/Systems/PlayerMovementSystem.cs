@@ -5,8 +5,8 @@ using Unity.Mathematics;
 using Unity.Physics;
 using Unity.Physics.Systems;
 using Unity.Transforms;
-using UnityEngine;
 using DOTS.Player.Components;
+using DOTS.Terrain.Core;
 
 namespace DOTS.Player.Systems
 {
@@ -52,7 +52,7 @@ namespace DOTS.Player.Systems
                 // Debug: Log first movement to see which entity is moving
                 if (math.lengthsq(moveInput) > 0.01f && !_hasLoggedMovementOnce)
                 {
-                    Debug.Log($"[PlayerMovement] Entity {entity.Index} is moving! Input: {moveInput}, Position: {transform.ValueRO.Position}, Velocity: {velocity.ValueRO.Linear}");
+                    DebugSettings.LogPlayer($"Entity {entity.Index} is moving! Input: {moveInput}, Position: {transform.ValueRO.Position}, Velocity: {velocity.ValueRO.Linear}");
                     _hasLoggedMovementOnce = true;
                 }
                 if (math.lengthsq(moveInput) > 1f)
@@ -108,7 +108,7 @@ namespace DOTS.Player.Systems
             // Debug: Warn if multiple player entities found
             if (entityCount > 1 && _frameCount % 60 == 0) // Log every 60 frames
             {
-                Debug.LogWarning($"[PlayerMovement] WARNING: Found {entityCount} player entities! This causes conflicts. Only one should exist.");
+                DebugSettings.LogPlayerWarning($"Found {entityCount} player entities! This causes conflicts. Only one should exist.", forceLog: true);
             }
         }
     }

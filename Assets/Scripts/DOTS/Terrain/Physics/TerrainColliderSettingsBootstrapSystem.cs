@@ -1,4 +1,5 @@
 using Unity.Entities;
+using DOTS.Terrain.Core;
 
 namespace DOTS.Terrain
 {
@@ -12,7 +13,7 @@ namespace DOTS.Terrain
             {
                 var entity = state.EntityManager.CreateEntity(typeof(TerrainColliderSettings));
                 state.EntityManager.SetComponentData(entity, new TerrainColliderSettings { Enabled = true });
-                UnityEngine.Debug.Log("[DOTS Terrain] Created default TerrainColliderSettings singleton (Enabled=true).");
+                DebugSettings.LogTerrain("Created default TerrainColliderSettings singleton (Enabled=true).");
             }
 
             state.Enabled = false;

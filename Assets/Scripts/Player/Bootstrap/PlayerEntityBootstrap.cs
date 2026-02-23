@@ -4,6 +4,7 @@ using Unity.Physics;
 using Unity.Transforms;
 using UnityEngine;
 using DOTS.Player.Components;
+using DOTS.Terrain.Core;
 
 namespace DOTS.Player.Bootstrap
 {
@@ -17,7 +18,7 @@ namespace DOTS.Player.Bootstrap
     {
         private bool _hasSpawned;
         // Player spawn configuration — high enough for terrain colliders to build before landing
-        private const float PlayerStartHeight = 20f;
+        public const float PlayerStartHeight = 20f;
 
         public void OnCreate(ref SystemState state)
         {
@@ -240,13 +241,17 @@ namespace DOTS.Player.Bootstrap
         private Entity CreateMainCameraAndEntity(ref SystemState state, Entity playerEntity, float3 playerPosition, PlayerViewComponent playerView)
         {
             var entityManager = state.EntityManager;
-            
-            // Check if main camera already exists
-            var existingCamera = Camera.main;
-            if (existingCamera != null)
+
+            // Phase 1 fix (BUG-003/BUG-004): disable and untag any pre-existing MainCamera-tagged
+            // cameras so Camera.main resolves to our ECS-managed camera, not the Unity scene default.
+            var preExistingMainCameras = GameObject.FindGameObjectsWithTag("MainCamera");
+            foreach (var go in preExistingMainCameras)
             {
-                // If camera exists, we might not have its entity, so we'll still create one
-                // This handles the case where camera exists but wasn't baked
+                var cam = go.GetComponent<Camera>();
+                if (cam != null)
+                    cam.enabled = false;
+                go.tag = "Untagged";
+                DebugSettings.LogPlayer($"Disabled and untagged pre-existing MainCamera: '{go.name}' (instanceID={go.GetInstanceID()})");
             }
 
             // Get camera settings (use default values that match PlayerCameraSettings)

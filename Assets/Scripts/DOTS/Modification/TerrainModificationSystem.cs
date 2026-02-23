@@ -5,6 +5,7 @@ using Unity.Transforms;
 using UnityEngine;
 using System.Collections.Generic;
 using DOTS.Terrain;
+using DOTS.Terrain.Core;
 using DOTS.Terrain.Modification;
 using TerrainData = DOTS.Terrain.TerrainData;
 
@@ -69,7 +70,7 @@ public partial struct TerrainModificationSystem : ISystem
             }
             else
             {
-                Debug.Log($"[TerrainModificationSystem] Modification Request: Pos={modification.ValueRO.position}, Radius={modification.ValueRO.radius}, Strength={modification.ValueRO.strength}, Res={modification.ValueRO.resolution}");
+                DebugSettings.LogTerrain($"[TerrainModificationSystem] Modification Request: Pos={modification.ValueRO.position}, Radius={modification.ValueRO.radius}, Strength={modification.ValueRO.strength}, Res={modification.ValueRO.resolution}");
             }
 
             ecb.DestroyEntity(entity);
@@ -82,11 +83,11 @@ public partial struct TerrainModificationSystem : ISystem
     private void ApplyTerrainGlobRemoval(EntityManager entityManager, float elapsedTime, PlayerModificationComponent modification, ComputeShaderManager computeManager, TerrainComputeBufferManager bufferManager)
     {
         var globShader = computeManager.GetComputeShader("TerrainGlobRemoval");
-        if (globShader == null) { Debug.LogError("[TerrainModificationSystem] TerrainGlobRemoval compute shader not found!"); return; }
+        if (globShader == null) { DebugSettings.LogError("[TerrainModificationSystem] TerrainGlobRemoval compute shader not found!"); return; }
         var terrainChunk = FindTerrainChunkAtPosition(entityManager, modification.position);
-        if (terrainChunk == Entity.Null) { Debug.LogWarning($"[TerrainModificationSystem] No terrain chunk found at position {modification.position}"); return; }
+        if (terrainChunk == Entity.Null) { DebugSettings.LogWarning($"[TerrainModificationSystem] No terrain chunk found at position {modification.position}"); return; }
         var terrainData = entityManager.GetComponentData<TerrainData>(terrainChunk);
-        if (!terrainData.heightData.IsCreated) { Debug.LogWarning($"[TerrainModificationSystem] Terrain chunk at {terrainData.chunkPosition} has no height data"); return; }
+        if (!terrainData.heightData.IsCreated) { DebugSettings.LogWarning($"[TerrainModificationSystem] Terrain chunk at {terrainData.chunkPosition} has no height data"); return; }
         
         // Get height data from blob asset
         ref var heightData = ref terrainData.heightData.Value;
@@ -144,7 +145,7 @@ public partial struct TerrainModificationSystem : ISystem
         
         // Update the terrain data (this would need to be done through a proper update system)
         // For now, just log the modification
-        Debug.Log($"[TerrainModificationSystem] Applied glob removal at {modification.position} with radius {modification.radius}");
+        DebugSettings.LogTerrain($"[TerrainModificationSystem] Applied glob removal at {modification.position} with radius {modification.radius}");
         
         // Clean up only the removedMaskBuffer
         removedMaskBuffer.Release();
@@ -246,7 +247,7 @@ public partial struct TerrainModificationSystem : ISystem
         entityManager.AddComponentData(globEntity, physicsComponent);
         entityManager.AddComponentData(globEntity, transform);
         
-        Debug.Log($"[TerrainModificationSystem] Created glob entity at {globData.position} with radius {globData.radius}");
+        DebugSettings.LogTerrain($"[TerrainModificationSystem] Created glob entity at {globData.position} with radius {globData.radius}");
     }
     
     

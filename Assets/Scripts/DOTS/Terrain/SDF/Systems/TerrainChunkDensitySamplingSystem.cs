@@ -3,7 +3,7 @@ using Unity.Collections;
 using Unity.Entities;
 using Unity.Jobs;
 using Unity.Mathematics;
-using UnityEngine;
+using DOTS.Terrain.Core;
 
 namespace DOTS.Terrain
 {
@@ -29,7 +29,7 @@ namespace DOTS.Terrain
             // Check requirements manually - this allows OnUpdate to run and log diagnostic info
             if (!SystemAPI.HasSingleton<SDFTerrainFieldSettings>())
             {
-                UnityEngine.Debug.LogWarning("[TerrainChunkDensitySamplingSystem] SDFTerrainFieldSettings singleton not found. Waiting for TerrainBootstrapAuthoring...");
+                DebugSettings.LogWarning("[TerrainChunkDensitySamplingSystem] SDFTerrainFieldSettings singleton not found. Waiting for TerrainBootstrapAuthoring...");
                 return;
             }
 

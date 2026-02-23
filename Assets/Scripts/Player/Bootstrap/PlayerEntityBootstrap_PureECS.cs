@@ -4,6 +4,7 @@ using Unity.Physics;
 using Unity.Transforms;
 using UnityEngine;
 using DOTS.Player.Components;
+using DOTS.Terrain.Core;
 #if UNITY_ENTITIES_GRAPHICS
 using Unity.Rendering;
 #endif
@@ -42,7 +43,7 @@ namespace DOTS.Player.Bootstrap
             state.Enabled = false;
             _hasSpawned = false;
             
-            Debug.Log("[PlayerEntityBootstrap_PureECS] DISABLED - Use PlayerEntityBootstrap instead. Enable this only when ready to migrate to Entities.Graphics rendering.");
+            DebugSettings.LogPlayer("PlayerEntityBootstrap_PureECS DISABLED - Use PlayerEntityBootstrap instead. Enable this only when ready to migrate to Entities.Graphics rendering.");
         }
 
         public void OnUpdate(ref SystemState state)
@@ -57,7 +58,7 @@ namespace DOTS.Player.Bootstrap
             // Check if player already exists
             if (!SystemAPI.QueryBuilder().WithAll<PlayerTag>().Build().IsEmpty)
             {
-                Debug.Log("[PlayerBootstrap_PureECS] Player entity already exists, skipping spawn");
+                DebugSettings.LogPlayer("PlayerBootstrap_PureECS: Player entity already exists, skipping spawn");
                 _hasSpawned = true;
                 state.Enabled = false;
                 return;
@@ -179,10 +180,10 @@ namespace DOTS.Player.Bootstrap
                 }
             });
 
-            Debug.Log("[PlayerBootstrap_PureECS] Player entity created with pure ECS rendering");
+            DebugSettings.LogPlayer("PlayerBootstrap_PureECS: Player entity created with pure ECS rendering");
 #else
-            Debug.LogWarning("[PlayerBootstrap_PureECS] Entities.Graphics package not installed. Install via Package Manager to enable pure ECS rendering.");
-            Debug.LogWarning("[PlayerBootstrap_PureECS] Player entity created but without visual rendering. Use PlayerEntityBootstrap for minimal hybrid approach.");
+            DebugSettings.LogPlayerWarning("PlayerBootstrap_PureECS: Entities.Graphics package not installed. Install via Package Manager to enable pure ECS rendering.");
+            DebugSettings.LogPlayerWarning("PlayerBootstrap_PureECS: Player entity created but without visual rendering. Use PlayerEntityBootstrap for minimal hybrid approach.");
 #endif
         }
 
@@ -245,9 +246,9 @@ namespace DOTS.Player.Bootstrap
                 }
             });
 
-            Debug.Log("[PlayerBootstrap_PureECS] Ground plane created with pure ECS rendering");
+            DebugSettings.LogPlayer("PlayerBootstrap_PureECS: Ground plane created with pure ECS rendering");
 #else
-            Debug.LogWarning("[PlayerBootstrap_PureECS] Ground plane created but without visual rendering (Entities.Graphics not installed).");
+            DebugSettings.LogPlayerWarning("PlayerBootstrap_PureECS: Ground plane created but without visual rendering (Entities.Graphics not installed).");
 #endif
         }
 
@@ -277,7 +278,7 @@ namespace DOTS.Player.Bootstrap
             cameraGO.AddComponent<AudioListener>();
 
             // Camera system will sync GameObject to entity transform
-            Debug.Log("[PlayerBootstrap_PureECS] Camera entity created");
+            DebugSettings.LogPlayer("PlayerBootstrap_PureECS: Camera entity created");
         }
 
         // ===== HELPER METHODS FOR PURE ECS RENDERING =====

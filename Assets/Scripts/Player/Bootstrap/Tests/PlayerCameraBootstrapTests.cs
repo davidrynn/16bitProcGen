@@ -1,7 +1,7 @@
 using System.Collections;
 using System.Text;
+using System.Reflection;
 using NUnit.Framework;
-using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;
 using Unity.Physics;
@@ -10,6 +10,7 @@ using UnityEngine;
 using UnityEngine.TestTools;
 using DOTS.Player.Bootstrap;
 using DOTS.Player.Components;
+using DOTS.Terrain;
 
 namespace DOTS.Player.Tests.Bootstrap
 {
@@ -64,13 +65,6 @@ namespace DOTS.Player.Tests.Bootstrap
             yield return null;
             using var query = entityManager.CreateEntityQuery(typeof(MainCameraTag));
             Assert.AreEqual(1, query.CalculateEntityCount(), "Should create exactly one camera entity");
-        }
-
-        [UnityTest]
-        public IEnumerator PlayerBootstrap_CreatesGroundEntity()
-        {
-            yield return null;
-            Assert.IsTrue(GetGroundEntity().HasValue, "Should create ground entity");
         }
 
         [UnityTest]
@@ -204,32 +198,41 @@ namespace DOTS.Player.Tests.Bootstrap
             Assert.Less(rotationDiff, 0.001f, $"Camera rotation should match player view rotation (diff: {rotationDiff})");
         }
 
-        #endregion
-
-        #region Ground Entity Tests
-
         [UnityTest]
-        public IEnumerator GroundEntity_HasPhysicsCollider()
+        public IEnumerator Bootstrap_DisablesPreExistingMainCamera()
         {
+            // Tear down current world to get a clean slate before bootstrap runs.
+            TearDown();
+
+            // Arrange: create a pre-existing scene camera tagged MainCamera,
+            // simulating Unity's default "Main Camera" that ships in new scenes.
+            var preExistingGO = new GameObject("Pre-existing Main Camera");
+            var preExistingCam = preExistingGO.AddComponent<Camera>();
+            preExistingGO.tag = "MainCamera";
+
+            // Act: run bootstrap — it should find and disable the pre-existing camera.
+            SetUp();
             yield return null;
-            var groundEntity = GetGroundEntity();
-            Assert.IsTrue(groundEntity.HasValue, "Ground entity should exist");
-            Assert.IsTrue(entityManager.HasComponent<PhysicsCollider>(groundEntity.Value), "Ground should have PhysicsCollider");
 
-            var collider = entityManager.GetComponentData<PhysicsCollider>(groundEntity.Value);
-            Assert.IsTrue(collider.IsValid, "Ground physics collider should be valid");
-            Assert.AreEqual(ColliderType.Box, collider.Value.Value.Type, "Ground should have box collider");
-        }
+            // Assert: Camera.main resolves to the ECS-managed camera.
+            Assert.IsNotNull(Camera.main, "Camera.main should not be null after bootstrap");
+            Assert.AreEqual("Main Camera (ECS Player)", Camera.main.name,
+                "Camera.main should be the ECS-managed camera, not the pre-existing scene camera");
 
-        [UnityTest]
-        public IEnumerator GroundEntity_HasCorrectPosition()
-        {
-            yield return null;
-            var groundEntity = GetGroundEntity();
-            Assert.IsTrue(groundEntity.HasValue, "Ground entity should exist");
+            // Assert: the old scene camera is disabled and untagged.
+            Assert.IsFalse(preExistingCam.enabled,
+                "Pre-existing MainCamera camera component should be disabled");
+            Assert.AreNotEqual("MainCamera", preExistingGO.tag,
+                "Pre-existing camera should no longer be tagged MainCamera");
 
-            var transform = entityManager.GetComponentData<LocalTransform>(groundEntity.Value);
-            Assert.AreEqual(new float3(0, 0, 0), transform.Position, "Ground position should be at origin");
+            // Assert: exactly one enabled camera is tagged MainCamera.
+            var remaining = GameObject.FindGameObjectsWithTag("MainCamera");
+            Assert.AreEqual(1, remaining.Length, "Exactly one camera should remain tagged MainCamera");
+            Assert.IsTrue(remaining[0].GetComponent<Camera>().enabled,
+                "The remaining tagged camera should be enabled");
+
+            // Cleanup pre-existing camera.
+            Object.DestroyImmediate(preExistingGO);
         }
 
         #endregion
@@ -266,6 +269,57 @@ namespace DOTS.Player.Tests.Bootstrap
             Assert.IsTrue(rotDiff < 0.001f, $"Camera rotation should sync with entity (diff: {rotDiff})");
         }
 
+        [UnityTest]
+        public IEnumerator CenterAimRay_And_ReticleDot_AreAligned_With_MainCamera()
+        {
+            yield return null;
+            yield return new WaitForEndOfFrame();
+
+            EnsureReticleInstalledForTests();
+
+            // Let RuntimeInitialize + ReticleController build/bind its UI.
+            yield return null;
+            yield return new WaitForEndOfFrame();
+
+            var mainCamera = Camera.main;
+            Assert.IsNotNull(mainCamera, "Camera.main should exist for center aim and reticle checks.");
+
+            const float probeDistance = 25f;
+            bool gotCenterRay = CenterAimRayUtility.TryGetCenterRay(
+                probeDistance,
+                out var utilityCamera,
+                out var origin,
+                out var direction,
+                out var end);
+
+            Assert.IsTrue(gotCenterRay, "CenterAimRayUtility should produce a center ray when Camera.main exists.");
+            Assert.AreEqual(mainCamera.GetInstanceID(), utilityCamera.GetInstanceID(),
+                "CenterAimRayUtility should use the active main camera.");
+
+            var viewportCenterRay = mainCamera.ViewportPointToRay(new Vector3(0.5f, 0.5f, 0f));
+            Assert.Less(Vector3.Distance((Vector3)origin, viewportCenterRay.origin), 0.001f,
+                "Center ray origin should match camera viewport-center ray origin.");
+            Assert.Less(Vector3.Distance((Vector3)direction, viewportCenterRay.direction.normalized), 0.001f,
+                "Center ray direction should match camera viewport-center ray direction.");
+            Assert.Less(Vector3.Distance((Vector3)end, viewportCenterRay.origin + viewportCenterRay.direction.normalized * probeDistance), 0.001f,
+                "Center ray end should match origin + direction * distance.");
+
+            var reticleDot = GameObject.Find("ReticleDot");
+            Assert.IsNotNull(reticleDot, "Reticle dot should exist.");
+
+            var dotRect = reticleDot.GetComponent<RectTransform>();
+            Assert.IsNotNull(dotRect, "Reticle dot should have a RectTransform.");
+
+            var canvas = reticleDot.GetComponentInParent<Canvas>();
+            Assert.IsNotNull(canvas, "Reticle dot should have a parent canvas.");
+
+            var screenPoint = RectTransformUtility.WorldToScreenPoint(canvas.worldCamera, dotRect.position);
+            var expectedCenter = new Vector2(Screen.width * 0.5f, Screen.height * 0.5f);
+
+            Assert.LessOrEqual(Vector2.Distance(screenPoint, expectedCenter), 2f,
+                $"Reticle dot should remain centered on screen. Dot={screenPoint}, Expected={expectedCenter}");
+        }
+
         #endregion
 
         #region PlayerVisualSync Tests
@@ -282,7 +336,7 @@ namespace DOTS.Player.Tests.Bootstrap
                 var transform = spawnManager.GetComponentData<LocalTransform>(playerEntity);
 
                 Assert.AreEqual(0f, transform.Position.x, 0.001f, "Spawn X should be zero");
-                Assert.AreEqual(2f, transform.Position.y, 0.001f, "Spawn Y should be configured height prior to physics update");
+                Assert.AreEqual(PlayerEntityBootstrap.PlayerStartHeight, transform.Position.y, 0.001f, "Spawn Y should be configured height prior to physics update");
                 Assert.AreEqual(0f, transform.Position.z, 0.001f, "Spawn Z should be zero");
             }
 
@@ -520,6 +574,16 @@ namespace DOTS.Player.Tests.Bootstrap
             DestroyImmediateIfExists("Main Camera (ECS Player)");
         }
 
+        private static void EnsureReticleInstalledForTests()
+        {
+            var method = typeof(ReticleBootstrap).GetMethod(
+                "EnsureReticleInstalled",
+                BindingFlags.NonPublic | BindingFlags.Static);
+
+            Assert.IsNotNull(method, "ReticleBootstrap.EnsureReticleInstalled method should exist.");
+            method.Invoke(null, null);
+        }
+
         private static void DestroyImmediateIfExists(string name)
         {
             var go = GameObject.Find(name);
@@ -583,20 +647,7 @@ namespace DOTS.Player.Tests.Bootstrap
             UpdateWorldOnce();
         }
 
-        private Entity? GetGroundEntity()
-        {
-            using var entities = entityManager.GetAllEntities(Allocator.Temp);
-            foreach (var entity in entities)
-            {
-                if (entityManager.GetName(entity).Contains("Ground"))
-                {
-                    return entity;
-                }
-            }
-            return null;
-        }
-
-        private IEnumerator SamplePhysicsVelocityTimeline(World world, EntityManager manager, string label, int frames)
+private IEnumerator SamplePhysicsVelocityTimeline(World world, EntityManager manager, string label, int frames)
         {
             using var query = manager.CreateEntityQuery(typeof(PlayerTag));
             var playerEntity = query.GetSingletonEntity();
