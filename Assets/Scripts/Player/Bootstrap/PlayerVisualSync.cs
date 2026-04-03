@@ -18,8 +18,10 @@ namespace DOTS.Player.Bootstrap
         public Vector3 visualOffset = new Vector3(0f, 1f, 0f);
 
         private EntityManager _entityManager;
+        private World _cachedWorld;
         private bool _entityManagerValid;
         private bool _isDestroyed;
+        private bool _warnedMissingEntityManager;
 
         private void LateUpdate()
         {
@@ -30,9 +32,15 @@ namespace DOTS.Player.Bootstrap
 
             if (!TryResolveEntityManager(out var entityManager))
             {
-                UnityEngine.Debug.LogWarning("EntityManager could not be resolved. Ensure that the DOTS world is initialized.");
+                if (!_warnedMissingEntityManager)
+                {
+                    UnityEngine.Debug.LogWarning("EntityManager could not be resolved. Ensure that the DOTS world is initialized.");
+                    _warnedMissingEntityManager = true;
+                }
                 return;
             }
+
+            _warnedMissingEntityManager = false;
 
             if (targetEntity == Entity.Null)
             {
@@ -89,20 +97,24 @@ namespace DOTS.Player.Bootstrap
 
         private bool TryResolveEntityManager(out EntityManager entityManager)
         {
-            if (_entityManagerValid && _entityManager.WorldUnmanaged.IsCreated)
+            if (_entityManagerValid && _cachedWorld != null && _cachedWorld.IsCreated)
             {
+                _entityManager = _cachedWorld.EntityManager;
                 entityManager = _entityManager;
                 return true;
             }
 
             var world = World.DefaultGameObjectInjectionWorld;
-            if (world == null)
+            if (world == null || !world.IsCreated)
             {
                 entityManager = default;
                 _entityManagerValid = false;
+                _cachedWorld = null;
+                _entityManager = default;
                 return false;
             }
 
+            _cachedWorld = world;
             _entityManager = world.EntityManager;
             _entityManagerValid = true;
             entityManager = _entityManager;

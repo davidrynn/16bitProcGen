@@ -1,6 +1,8 @@
 # Document Index
 
-**Last Updated:** 2026-02-15
+**Last Updated:** 2026-04-03
+
+> **New here?** Start with [MASTER_PLAN.md](MASTER_PLAN.md) — it has the project vision, current status, phase roadmap, and a curated document map.
 
 Quick-reference index of all project documentation. Docs are organized by category with status and links.
 
@@ -12,6 +14,8 @@ Quick-reference index of all project documentation. Docs are organized by catego
 |----------|--------|-------------|
 | [KNOWN_ISSUES.md](KNOWN_ISSUES.md) | ACTIVE | Master bug/issue tracker |
 | [AI/TERRAIN_ECS_NEXT_STEPS_SPEC.md](AI/TERRAIN_ECS_NEXT_STEPS_SPEC.md) | ACTIVE | SDF + Surface Nets terrain implementation roadmap |
+| [AI/PERSISTENCE_SPEC.md](AI/PERSISTENCE_SPEC.md) | DESIGN | World persistence — edit journals, entity/NPC/player state (Phase 4) |
+| [AI/BIOME_GRASS_STREAMING_MVP_PLAN.md](AI/BIOME_GRASS_STREAMING_MVP_PLAN.md) | DESIGN | Biome-based grass streaming MVP plan for infinite terrain |
 | [AI/PLAYER_TERRAIN_FALLTHROUGH_DEBUG_SPEC.md](AI/PLAYER_TERRAIN_FALLTHROUGH_DEBUG_SPEC.md) | ROOT CAUSE FIXED | Fall-through debug: missing PhysicsWorldIndex |
 | [AI/TERRAIN_EDIT_CONTROLS_SPEC.md](AI/TERRAIN_EDIT_CONTROLS_SPEC.md) | IMPLEMENTED | Terrain edit raycast fix, Input System migration, reticle |
 | [AI/PLAYER_BOOTSTRAP_FIX_SPEC.md](AI/PLAYER_BOOTSTRAP_FIX_SPEC.md) | ACTIVE | Player bootstrap reliability for DOTS tests |
@@ -24,10 +28,10 @@ Quick-reference index of all project documentation. Docs are organized by catego
 
 | Document | Description |
 |----------|-------------|
+| [MASTER_PLAN.md](MASTER_PLAN.md) | **Project overview — vision, status, phase roadmap, doc map** |
 | [/CLAUDE.md](/CLAUDE.md) | Claude Code project instructions |
 | [/.github/copilot-instructions.md](/.github/copilot-instructions.md) | GitHub Copilot instructions |
-| [AI_Instructions.md](AI_Instructions.md) | AI assistant standards |
-| [PROJECT_NOTES.md](PROJECT_NOTES.md) | Work session tracking |
+| [PROJECT_NOTES.md](PROJECT_NOTES.md) | Current work session notes and TODO |
 | [PROJECT_STRUCTURE_DOTS.md](PROJECT_STRUCTURE_DOTS.md) | DOTS-first folder layout |
 
 ## Code Guides
@@ -67,4 +71,6 @@ Quick-reference index of all project documentation. Docs are organized by catego
 | [Archives/TestReports_Oct2025/](Archives/TestReports_Oct2025/) | Oct 2025 test campaign reports |
 | [DebugTraces/](DebugTraces/) | Historical WFC debug traces |
 | [AI/TERRAIN_SEAM_DEBUG_SPEC_OBSOLETE.md](AI/TERRAIN_SEAM_DEBUG_SPEC_OBSOLETE.md) | Superseded by v1 |
-| [DOTS_Migration_Plan.md](DOTS_Migration_Plan.md) | Legacy hybrid terrain migration (superseded by SDF pipeline) |
+| [Archives/DOTS_Migration_Plan.md](Archives/DOTS_Migration_Plan.md) | Legacy hybrid terrain migration (superseded by SDF pipeline) |
+| [Archives/AI_Instructions.md](Archives/AI_Instructions.md) | AI assistant standards (superseded by CLAUDE.md) |
+| [Archives/PROJECT_NOTES_2025-11.md](Archives/PROJECT_NOTES_2025-11.md) | Nov 2025 work session notes (camera system, test org) |

@@ -254,6 +254,16 @@ namespace DOTS.Player.Bootstrap
                 DebugSettings.LogPlayer($"Disabled and untagged pre-existing MainCamera: '{go.name}' (instanceID={go.GetInstanceID()})");
             }
 
+            // Ensure only one active listener to avoid repeated Unity warning spam.
+            var existingListeners = Object.FindObjectsByType<AudioListener>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+            foreach (var listener in existingListeners)
+            {
+                if (listener != null)
+                {
+                    listener.enabled = false;
+                }
+            }
+
             // Get camera settings (use default values that match PlayerCameraSettings)
             var cameraSettings = new PlayerCameraSettings
             {

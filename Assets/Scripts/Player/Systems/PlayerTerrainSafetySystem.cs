@@ -21,7 +21,6 @@ namespace DOTS.Player.Systems
     /// </summary>
     [DisableAutoCreation]
     [UpdateInGroup(typeof(PhysicsSystemGroup))]
-    [UpdateAfter(typeof(BuildPhysicsWorld))]
     [UpdateBefore(typeof(PlayerGroundingSystem))]
     public partial struct PlayerTerrainSafetySystem : ISystem
     {

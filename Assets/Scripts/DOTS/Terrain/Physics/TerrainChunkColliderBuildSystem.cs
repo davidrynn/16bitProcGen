@@ -12,7 +12,6 @@ namespace DOTS.Terrain
     [DisableAutoCreation]
     [UpdateInGroup(typeof(SimulationSystemGroup))]
     [UpdateAfter(typeof(Meshing.TerrainChunkMeshBuildSystem))]
-    [UpdateBefore(typeof(PhysicsSystemGroup))]
     public partial struct TerrainChunkColliderBuildSystem : ISystem
     {
         private const int MaxCollidersPerFrame = 4;

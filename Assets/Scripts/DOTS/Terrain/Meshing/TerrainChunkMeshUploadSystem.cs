@@ -154,9 +154,12 @@ namespace DOTS.Terrain.Meshing
                 vertexCount = vertexCount
             };
 
+
             Mesh.ApplyAndDisposeWritableMeshData(meshDataArray, mesh);
             mesh.subMeshCount = 1;
             mesh.SetSubMesh(0, subMesh, MeshUpdateFlags.DontRecalculateBounds);
+            // Ensure Lit shaders receive valid lighting data from generated terrain meshes.
+            mesh.RecalculateNormals();
             mesh.RecalculateBounds();
         }
 

@@ -106,7 +106,21 @@ namespace DOTS.Terrain.Meshing
                 maxDensity = math.max(maxDensity, density);
             }
 
-            var hasSurface = minDensity < 0f && maxDensity > 0f;
+            // Use >= 0f (not > 0f) so that a corner with density exactly 0 is treated as
+            // "on the surface" rather than "not yet outside terrain."
+            //
+            // WHY THIS MATTERS FOR EDITS:
+            // OpSubtraction(baseDensity, editDistance) returns 0 when the sample sits exactly
+            // on the sphere boundary (editDistance == 0) and the base terrain is present
+            // (baseDensity <= 0).  This produces density = 0.0f at the ring of voxels where
+            // the edit sphere intersects the terrain surface.
+            //
+            // A cell with bottom corners at -1 (inside terrain) and top corners at 0 (sphere
+            // boundary) has minDensity=-1, maxDensity=0.  The old strict check
+            //   minDensity < 0f && maxDensity > 0f  →  true && false  →  false
+            // silently dropped the cell, leaving a ring of holes wherever the sphere edge met
+            // the terrain.  The relaxed check correctly detects this as a surface crossing.
+            var hasSurface = minDensity < 0f && maxDensity >= 0f;
             if (!hasSurface)
             {
                 SetCellSign(cellX, cellY, cellZ, densitySum >= 0f ? (sbyte)1 : (sbyte)(-1));
@@ -197,7 +211,6 @@ namespace DOTS.Terrain.Meshing
                 return;
             }
 
-            // Allow stitching on +X/+Y by permitting x/y at the last base cell (referencing the ghost cell at +1).
             var maxX = math.min(BaseCellResolution.x, CellResolution.x - 1);
             var maxY = math.min(BaseCellResolution.y, CellResolution.y - 1);
             for (int z = 0; z < CellResolution.z; z++)
@@ -216,13 +229,11 @@ namespace DOTS.Terrain.Meshing
                                      + GetCellSign(x + 1, y + 1, z)
                                      + GetCellSign(x, y + 1, z);
 
-                        // Full 3D gradient at the shared interior grid node (x+1, y+1, z)
-                        // using backward differences for X/Y and forward for Z.
-                        var d111 = SampleDensity(new int3(x + 1, y + 1, z + 1));
-                        var d110 = SampleDensity(new int3(x + 1, y + 1, z));
-                        var d011 = SampleDensity(new int3(x, y + 1, z + 1));
-                        var d101 = SampleDensity(new int3(x + 1, y, z + 1));
-                        var gradient = new float3(d111 - d011, d111 - d101, d111 - d110);
+                        var gradient = AveragedGradient(
+                            x, y, z,
+                            x + 1, y, z,
+                            x + 1, y + 1, z,
+                            x, y + 1, z);
                         TryEmitQuad(i0, i1, i2, i3, signSum, gradient);
                     }
                 }
@@ -236,7 +247,6 @@ namespace DOTS.Terrain.Meshing
                 return;
             }
 
-            // Allow stitching on +X/+Z by permitting x/z at the last base cell (referencing the ghost cell at +1).
             var maxX = math.min(BaseCellResolution.x, CellResolution.x - 1);
             var maxZ = math.min(BaseCellResolution.z, CellResolution.z - 1);
             for (int y = 0; y < CellResolution.y; y++)
@@ -255,13 +265,11 @@ namespace DOTS.Terrain.Meshing
                                      + GetCellSign(x + 1, y, z + 1)
                                      + GetCellSign(x, y, z + 1);
 
-                        // Full 3D gradient at the shared interior grid node (x+1, y, z+1)
-                        // using backward differences for X/Z and forward for Y.
-                        var d111 = SampleDensity(new int3(x + 1, y + 1, z + 1));
-                        var d011 = SampleDensity(new int3(x, y + 1, z + 1));
-                        var d101 = SampleDensity(new int3(x + 1, y, z + 1));
-                        var d110 = SampleDensity(new int3(x + 1, y + 1, z));
-                        var gradient = new float3(d111 - d011, d111 - d101, d111 - d110);
+                        var gradient = AveragedGradient(
+                            x, y, z,
+                            x + 1, y, z,
+                            x + 1, y, z + 1,
+                            x, y, z + 1);
                         TryEmitQuad(i0, i1, i2, i3, signSum, gradient);
                     }
                 }
@@ -275,8 +283,6 @@ namespace DOTS.Terrain.Meshing
                 return;
             }
 
-            // Don't emit the full overlap region on +X; stitching is handled by XY/XZ faces.
-            // Allow stitching on +Y/+Z by permitting y/z at the last base cell (referencing the ghost cell at +1).
             var maxX = math.min(BaseCellResolution.x, CellResolution.x);
             var maxY = math.min(BaseCellResolution.y, CellResolution.y - 1);
             var maxZ = math.min(BaseCellResolution.z, CellResolution.z - 1);
@@ -297,17 +303,43 @@ namespace DOTS.Terrain.Meshing
                                      + GetCellSign(x, y + 1, z + 1)
                                      + GetCellSign(x, y, z + 1);
 
-                        // Full 3D gradient at the shared interior grid node (x, y+1, z+1)
-                        // using forward difference for X and backward for Y/Z.
-                        var d111 = SampleDensity(new int3(x + 1, y + 1, z + 1));
-                        var d011 = SampleDensity(new int3(x, y + 1, z + 1));
-                        var d101 = SampleDensity(new int3(x + 1, y, z + 1));
-                        var d110 = SampleDensity(new int3(x + 1, y + 1, z));
-                        var gradient = new float3(d111 - d011, d111 - d101, d111 - d110);
+                        var gradient = AveragedGradient(
+                            x, y, z,
+                            x, y + 1, z,
+                            x, y + 1, z + 1,
+                            x, y, z + 1);
                         TryEmitQuad(i0, i1, i2, i3, signSum, gradient);
                     }
                 }
             }
+        }
+
+        /// <summary>
+        /// Full 3D SDF gradient averaged over 4 face corners. Using all three
+        /// components instead of just the face-normal axis prevents the dot product
+        /// in EmitTriangleWithGradient from becoming unreliable when the surface
+        /// gradient is nearly tangent to the face axis (common at CSG seams where
+        /// OpSubtraction/OpUnion create C0-continuous kinks in the density field).
+        /// </summary>
+        private float3 AveragedGradient(
+            int x0, int y0, int z0,
+            int x1, int y1, int z1,
+            int x2, int y2, int z2,
+            int x3, int y3, int z3)
+        {
+            return GradientAt(x0, y0, z0)
+                 + GradientAt(x1, y1, z1)
+                 + GradientAt(x2, y2, z2)
+                 + GradientAt(x3, y3, z3);
+        }
+
+        private float3 GradientAt(int x, int y, int z)
+        {
+            var d = SampleDensity(new int3(x, y, z));
+            return new float3(
+                SampleDensity(new int3(x + 1, y, z)) - d,
+                SampleDensity(new int3(x, y + 1, z)) - d,
+                SampleDensity(new int3(x, y, z + 1)) - d);
         }
 
         private void TryEmitQuad(int i0, int i1, int i2, int i3, int signSum, float3 gradient)
@@ -327,11 +359,6 @@ namespace DOTS.Terrain.Meshing
                 return;
             }
 
-            // Surface Nets winding: each triangle is independently oriented so its normal
-            // aligns with the full 3D SDF gradient sampled at the shared interior grid
-            // node. Using the full gradient (not just the face-axis component) handles
-            // curved surfaces where the actual triangle normal may point in a very
-            // different direction than the face axis.
             EmitTriangleWithGradient(i0, i1, i2, gradient);
             EmitTriangleWithGradient(i0, i2, i3, gradient);
         }

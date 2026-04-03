@@ -2,6 +2,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.SceneManagement;
 using DOTS.Terrain;
+using DOTS.Terrain.Core;
 
 namespace DOTS.Player.Bootstrap
 {
@@ -14,7 +15,7 @@ namespace DOTS.Player.Bootstrap
         private const string RootName = "ReticleRoot";
         private const string CanvasName = "ReticleCanvas";
         private const string DotName = "ReticleDot";
-        private const float DotSizePixels = 10f;
+        private const float DotSizePixels = 4f;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
         private static void EnsureReticleInstalled()
@@ -136,7 +137,7 @@ namespace DOTS.Player.Bootstrap
                     }
                     if (!_warnedMissingCamera)
                     {
-                        Debug.LogWarning("[ReticleBootstrap] MainCamera not found yet. Using ScreenSpaceOverlay fallback.");
+                        DebugSettings.LogPlayerWarning("ReticleBootstrap: MainCamera not found yet. Using ScreenSpaceOverlay fallback.");
                         _warnedMissingCamera = true;
                     }
                     return;
@@ -151,10 +152,10 @@ namespace DOTS.Player.Bootstrap
                 {
                     _canvas.transform.SetParent(main.transform, false);
                 }
-                Debug.Log($"[ReticleBootstrap] DIAG: Bound to camera '{main.name}' (instanceID={main.GetInstanceID()}) pos={main.transform.position} depth={main.depth}");
+                DebugSettings.LogPlayer($"ReticleBootstrap: Bound to camera '{main.name}' (instanceID={main.GetInstanceID()}) pos={main.transform.position} depth={main.depth}");
                 var allCams = Camera.allCameras;
                 if (allCams.Length > 1)
-                    Debug.LogWarning($"[ReticleBootstrap] DIAG: {allCams.Length} cameras exist — reticle may be on wrong camera.");
+                    DebugSettings.LogPlayerWarning($"ReticleBootstrap: {allCams.Length} cameras exist — reticle may be on wrong camera.");
             }
         }
 

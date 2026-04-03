@@ -473,3 +473,7 @@ ConsoleLogs.txt
 # AI Assistant folders
 .claude/
 .agents/
+skills-lock.json
+ugs_installer
+# Windows reserved name accidentally created as a file (e.g. bad -logFile nul)
+/nul

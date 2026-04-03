@@ -183,6 +183,14 @@ namespace DOTS.Player.Bootstrap
             cameraGO.transform.rotation = cameraTransform.Rotation;
 
             // Add AudioListener (required for 3D audio)
+            var existingListeners = Object.FindObjectsByType<AudioListener>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+            foreach (var listener in existingListeners)
+            {
+                if (listener != null)
+                {
+                    listener.enabled = false;
+                }
+            }
             cameraGO.AddComponent<AudioListener>();
 
             Debug.Log("[PlayerCameraBootstrap] Created Camera GameObject for rendering");

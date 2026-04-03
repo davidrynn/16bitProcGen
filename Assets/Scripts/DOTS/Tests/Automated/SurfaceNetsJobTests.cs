@@ -758,6 +758,409 @@ namespace DOTS.Terrain.Tests
             yield return null;
         }
 
+        /// <summary>
+        /// Regression test for the hasSurface strict-inequality bug (BUG-007 root cause).
+        ///
+        /// After a subtract edit, OpSubtraction produces density = 0.0f exactly at the sphere
+        /// boundary where terrain was present:
+        ///   OpSubtraction(baseDensity=-1, editDistance=0) = max(-1, -0) = 0
+        ///
+        /// A cell whose bottom corners are negative (inside terrain) and top corners are exactly
+        /// zero (sphere boundary) represents a valid surface crossing.  The old hasSurface check:
+        ///   minDensity &lt; 0f &amp;&amp; maxDensity &gt; 0f
+        /// is a strict inequality on maxDensity — it silently rejects this cell, producing a hole
+        /// at every point where the edit sphere boundary intersects the terrain surface.
+        ///
+        /// The fix: relax to maxDensity &gt;= 0f so zero-valued corners are treated as
+        /// "on the surface" rather than "not yet outside terrain."
+        ///
+        /// Cell setup: 2×2×2 grid (one cell). y=0 layer = -1 (terrain), y=1 layer = 0 (boundary).
+        /// FAILS with the old code (maxDensity &gt; 0f). PASSES after the fix (maxDensity &gt;= 0f).
+        /// </summary>
+        [UnityTest]
+        public IEnumerator SurfaceNetsJob_GeneratesVertex_WhenMaxDensityIsExactlyZero()
+        {
+            // 2×2×2 sample grid → 1×1×1 cell.
+            // y=0 corners: -1f (inside terrain).
+            // y=1 corners:  0f (sphere-edit boundary via OpSubtraction(base=-1, editDist=0)=0).
+            // The isosurface lies at y=1; this cell must produce a vertex.
+            var resolution = new int3(2, 2, 2);
+            var densities = new NativeArray<float>(8, Allocator.TempJob);
+
+            for (int z = 0; z < 2; z++)
+            for (int y = 0; y < 2; y++)
+            for (int x = 0; x < 2; x++)
+                densities[x + 2 * (y + 2 * z)] = y == 0 ? -1f : 0f;
+
+            var vertexMap = new NativeArray<int>(1, Allocator.TempJob);
+            var cellSigns = new NativeArray<sbyte>(1, Allocator.TempJob);
+            var vertices = new NativeList<float3>(Allocator.TempJob);
+            var indices = new NativeList<int>(Allocator.TempJob);
+
+            try
+            {
+                var job = new SurfaceNetsJob
+                {
+                    Densities = densities,
+                    Resolution = resolution,
+                    VoxelSize = 1f,
+                    Vertices = vertices,
+                    Indices = indices,
+                    VertexIndices = vertexMap,
+                    CellSigns = cellSigns,
+                    CellResolution = new int3(1, 1, 1),
+                    BaseCellResolution = new int3(1, 1, 1)
+                };
+
+                job.Execute();
+
+                // hasSurface = minDensity < 0f && maxDensity > 0f  → false (maxDensity == 0)
+                // hasSurface = minDensity < 0f && maxDensity >= 0f  → true  (correct)
+                Assert.AreEqual(1, vertices.Length,
+                    "Cell with bottom=-1 and top=0 (sphere-edit boundary) must produce a vertex. " +
+                    "hasSurface check must use >= 0f, not > 0f, to catch this crossing.");
+            }
+            finally
+            {
+                densities.Dispose();
+                vertexMap.Dispose();
+                cellSigns.Dispose();
+                vertices.Dispose();
+                indices.Dispose();
+            }
+
+            yield return null;
+        }
+
+        /// <summary>
+        /// Regression test for reversed normals after a spherical terrain edit.
+        ///
+        /// The in-game terrain modification pipeline evaluates:
+        ///   density = OpSubtraction(SdGround(pos), SdSphere(pos - editCenter, editRadius))
+        ///
+        /// OpSubtraction uses max(base, -edit), creating a C0-continuous (non-smooth) SDF
+        /// at the intersection seam where baseDistance == -editDistance. The finite-difference
+        /// gradient sampled across this seam can flip sign or drop to near-zero, causing
+        /// EmitTriangleWithGradient to choose the wrong winding for triangles at the crater
+        /// rim and walls.
+        ///
+        /// This test creates the exact density field produced by a subtract-sphere edit on
+        /// a ground plane and asserts that all non-degenerate triangle normals point outward
+        /// (aligned with the analytical SDF gradient). Any inward-facing triangle proves the
+        /// winding logic fails for the OpSubtraction kink.
+        /// </summary>
+        [UnityTest]
+        public IEnumerator SurfaceNetsJob_Winding_ConsistentAfterSphereSubtraction()
+        {
+            var resolution = new int3(16, 16, 16);
+            var densities = new NativeArray<float>(
+                resolution.x * resolution.y * resolution.z, Allocator.TempJob);
+
+            const float baseHeight = 8f;
+            const float amplitude = 2f;
+            const float frequency = 0.5f;
+            var sphereCenter = new float3(8f, 7f, 8f);
+            const float sphereRadius = 3f;
+
+            var index = 0;
+            for (int z = 0; z < resolution.z; z++)
+            {
+                for (int y = 0; y < resolution.y; y++)
+                {
+                    for (int x = 0; x < resolution.x; x++)
+                    {
+                        float3 pos = new float3(x, y, z);
+                        float groundDensity = pos.y - (baseHeight +
+                            amplitude * math.sin(pos.x * frequency) * math.sin(pos.z * frequency));
+                        float sphereDist = math.length(pos - sphereCenter) - sphereRadius;
+                        densities[index++] = SDFMath.OpSubtraction(groundDensity, sphereDist);
+                    }
+                }
+            }
+
+            var cellRes = resolution - new int3(1, 1, 1);
+            var totalCells = cellRes.x * cellRes.y * cellRes.z;
+            var vertexMap = new NativeArray<int>(totalCells, Allocator.TempJob);
+            var cellSigns = new NativeArray<sbyte>(totalCells, Allocator.TempJob);
+            var vertices = new NativeList<float3>(Allocator.TempJob);
+            var indices = new NativeList<int>(Allocator.TempJob);
+
+            try
+            {
+                var job = new SurfaceNetsJob
+                {
+                    Densities = densities,
+                    Resolution = resolution,
+                    VoxelSize = 1f,
+                    Vertices = vertices,
+                    Indices = indices,
+                    VertexIndices = vertexMap,
+                    CellSigns = cellSigns,
+                    CellResolution = cellRes,
+                    BaseCellResolution = cellRes
+                };
+
+                job.Execute();
+
+                Assert.Greater(vertices.Length, 0, "Should generate vertices for edited terrain");
+                Assert.Greater(indices.Length, 0, "Should generate indices for edited terrain");
+                Assert.AreEqual(0, indices.Length % 3, "Indices should be a multiple of 3 (triangles)");
+
+                int outwardCount = 0;
+                int inwardCount = 0;
+                int degenerateCount = 0;
+                int tangentSkipCount = 0;
+                int seamSkipCount = 0;
+
+                const float tangentThreshold = 0.35f;
+                // OpSubtraction creates a C0 kink where groundDensity == -sphereDist.
+                // The discrete gradient (averaged over grid corners spanning ~2 voxels)
+                // and the analytical gradient (evaluated at the centroid point) legitimately
+                // disagree within this band because grid samples straddle both branches of
+                // the max(). Triangles in this zone are excluded from the analytical check.
+                const float seamBand = 1.5f;
+
+                for (int i = 0; i < indices.Length; i += 3)
+                {
+                    var v0 = vertices[indices[i]];
+                    var v1 = vertices[indices[i + 1]];
+                    var v2 = vertices[indices[i + 2]];
+
+                    var triNormal = math.cross(v1 - v0, v2 - v0);
+
+                    if (math.lengthsq(triNormal) < 1e-12f)
+                    {
+                        degenerateCount++;
+                        continue;
+                    }
+
+                    var centroid = (v0 + v1 + v2) / 3f;
+
+                    float groundDensity = centroid.y - (baseHeight +
+                        amplitude * math.sin(centroid.x * frequency) * math.sin(centroid.z * frequency));
+                    float sphereDist = math.length(centroid - sphereCenter) - sphereRadius;
+
+                    if (math.abs(groundDensity + sphereDist) < seamBand)
+                    {
+                        seamSkipCount++;
+                        continue;
+                    }
+
+                    float3 gradient;
+                    if (groundDensity > 0f || groundDensity >= -sphereDist)
+                    {
+                        gradient = new float3(
+                            -amplitude * frequency * math.cos(centroid.x * frequency) * math.sin(centroid.z * frequency),
+                            1f,
+                            -amplitude * math.sin(centroid.x * frequency) * frequency * math.cos(centroid.z * frequency));
+                    }
+                    else
+                    {
+                        var toCenter = centroid - sphereCenter;
+                        var len = math.length(toCenter);
+                        gradient = len > 1e-6f ? -toCenter / len : new float3(0, 1, 0);
+                    }
+
+                    var nN = math.normalize(triNormal);
+                    var nG = math.normalize(gradient);
+                    float cosAngle = math.dot(nN, nG);
+
+                    if (math.abs(cosAngle) < tangentThreshold)
+                    {
+                        tangentSkipCount++;
+                        continue;
+                    }
+
+                    if (cosAngle > 0f)
+                        outwardCount++;
+                    else
+                        inwardCount++;
+                }
+
+                int totalMeaningful = outwardCount + inwardCount;
+                Assert.Greater(totalMeaningful, 0, "Should have non-degenerate, non-tangent triangles");
+
+                float outwardPct = totalMeaningful > 0
+                    ? (outwardCount / (float)totalMeaningful) * 100f
+                    : 0f;
+
+                UnityEngine.Debug.Log(
+                    $"[Winding SphereSubtraction] outward={outwardCount} inward={inwardCount} " +
+                    $"degenerate={degenerateCount} tangentSkipped={tangentSkipCount} " +
+                    $"seamSkipped={seamSkipCount} total={indices.Length / 3} outwardPct={outwardPct:F1}%");
+
+                Assert.AreEqual(0, inwardCount,
+                    $"Terrain after sphere subtraction should have 0 inward-facing triangles " +
+                    $"(outside CSG seam band) but found {inwardCount} " +
+                    $"({100f - outwardPct:F1}% of {totalMeaningful}). " +
+                    $"seamSkipped={seamSkipCount} tangentSkipped={tangentSkipCount}.");
+            }
+            finally
+            {
+                densities.Dispose();
+                vertexMap.Dispose();
+                cellSigns.Dispose();
+                vertices.Dispose();
+                indices.Dispose();
+            }
+
+            yield return null;
+        }
+
+        /// <summary>
+        /// Same as the subtraction test but uses OpUnion (terrain addition).
+        /// OpUnion = min(base, sphere) also creates a C0 seam, and the gradient at the
+        /// join can flip in the same way as subtraction. This ensures winding is correct
+        /// for both add and remove terrain operations.
+        /// </summary>
+        [UnityTest]
+        public IEnumerator SurfaceNetsJob_Winding_ConsistentAfterSphereAddition()
+        {
+            var resolution = new int3(16, 16, 16);
+            var densities = new NativeArray<float>(
+                resolution.x * resolution.y * resolution.z, Allocator.TempJob);
+
+            const float baseHeight = 4f;
+            var sphereCenter = new float3(8f, 6f, 8f);
+            const float sphereRadius = 3f;
+
+            var index = 0;
+            for (int z = 0; z < resolution.z; z++)
+            {
+                for (int y = 0; y < resolution.y; y++)
+                {
+                    for (int x = 0; x < resolution.x; x++)
+                    {
+                        float3 pos = new float3(x, y, z);
+                        float groundDensity = pos.y - baseHeight;
+                        float sphereDist = math.length(pos - sphereCenter) - sphereRadius;
+                        densities[index++] = SDFMath.OpUnion(groundDensity, sphereDist);
+                    }
+                }
+            }
+
+            var cellRes = resolution - new int3(1, 1, 1);
+            var totalCells = cellRes.x * cellRes.y * cellRes.z;
+            var vertexMap = new NativeArray<int>(totalCells, Allocator.TempJob);
+            var cellSigns = new NativeArray<sbyte>(totalCells, Allocator.TempJob);
+            var vertices = new NativeList<float3>(Allocator.TempJob);
+            var indices = new NativeList<int>(Allocator.TempJob);
+
+            try
+            {
+                var job = new SurfaceNetsJob
+                {
+                    Densities = densities,
+                    Resolution = resolution,
+                    VoxelSize = 1f,
+                    Vertices = vertices,
+                    Indices = indices,
+                    VertexIndices = vertexMap,
+                    CellSigns = cellSigns,
+                    CellResolution = cellRes,
+                    BaseCellResolution = cellRes
+                };
+
+                job.Execute();
+
+                Assert.Greater(vertices.Length, 0, "Should generate vertices for terrain with addition");
+                Assert.Greater(indices.Length, 0, "Should generate indices for terrain with addition");
+                Assert.AreEqual(0, indices.Length % 3, "Indices should be a multiple of 3");
+
+                int outwardCount = 0;
+                int inwardCount = 0;
+                int degenerateCount = 0;
+                int tangentSkipCount = 0;
+                int seamSkipCount = 0;
+
+                const float tangentThreshold = 0.35f;
+                // OpUnion creates a C0 kink where groundDensity == sphereDist.
+                // Same rationale as the subtraction test's seamBand.
+                const float seamBand = 1.5f;
+
+                for (int i = 0; i < indices.Length; i += 3)
+                {
+                    var v0 = vertices[indices[i]];
+                    var v1 = vertices[indices[i + 1]];
+                    var v2 = vertices[indices[i + 2]];
+
+                    var triNormal = math.cross(v1 - v0, v2 - v0);
+
+                    if (math.lengthsq(triNormal) < 1e-12f)
+                    {
+                        degenerateCount++;
+                        continue;
+                    }
+
+                    var centroid = (v0 + v1 + v2) / 3f;
+
+                    float groundDensity = centroid.y - baseHeight;
+                    float sphereDist = math.length(centroid - sphereCenter) - sphereRadius;
+
+                    if (math.abs(groundDensity - sphereDist) < seamBand)
+                    {
+                        seamSkipCount++;
+                        continue;
+                    }
+
+                    float3 gradient;
+                    if (groundDensity <= sphereDist)
+                    {
+                        gradient = new float3(0f, 1f, 0f);
+                    }
+                    else
+                    {
+                        var toCenter = centroid - sphereCenter;
+                        var len = math.length(toCenter);
+                        gradient = len > 1e-6f ? toCenter / len : new float3(0, 1, 0);
+                    }
+
+                    var nN = math.normalize(triNormal);
+                    var nG = math.normalize(gradient);
+                    float cosAngle = math.dot(nN, nG);
+
+                    if (math.abs(cosAngle) < tangentThreshold)
+                    {
+                        tangentSkipCount++;
+                        continue;
+                    }
+
+                    if (cosAngle > 0f)
+                        outwardCount++;
+                    else
+                        inwardCount++;
+                }
+
+                int totalMeaningful = outwardCount + inwardCount;
+                Assert.Greater(totalMeaningful, 0, "Should have non-degenerate, non-tangent triangles");
+
+                float outwardPct = totalMeaningful > 0
+                    ? (outwardCount / (float)totalMeaningful) * 100f
+                    : 0f;
+
+                UnityEngine.Debug.Log(
+                    $"[Winding SphereAddition] outward={outwardCount} inward={inwardCount} " +
+                    $"degenerate={degenerateCount} tangentSkipped={tangentSkipCount} " +
+                    $"seamSkipped={seamSkipCount} total={indices.Length / 3} outwardPct={outwardPct:F1}%");
+
+                Assert.AreEqual(0, inwardCount,
+                    $"Terrain after sphere addition should have 0 inward-facing triangles " +
+                    $"(outside CSG seam band) but found {inwardCount} " +
+                    $"({100f - outwardPct:F1}% of {totalMeaningful}). " +
+                    $"seamSkipped={seamSkipCount} tangentSkipped={tangentSkipCount}.");
+            }
+            finally
+            {
+                densities.Dispose();
+                vertexMap.Dispose();
+                cellSigns.Dispose();
+                vertices.Dispose();
+                indices.Dispose();
+            }
+
+            yield return null;
+        }
+
         private static void FillPlaneDensities(NativeArray<float> densities, int3 resolution)
         {
             var index = 0;

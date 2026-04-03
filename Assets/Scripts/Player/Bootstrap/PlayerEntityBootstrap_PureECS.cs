@@ -275,6 +275,16 @@ namespace DOTS.Player.Bootstrap
             var cameraGO = new GameObject("Main Camera (Pure ECS)");
             var camera = cameraGO.AddComponent<Camera>();
             camera.tag = "MainCamera";
+
+            var existingListeners = Object.FindObjectsByType<AudioListener>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+            foreach (var listener in existingListeners)
+            {
+                if (listener != null)
+                {
+                    listener.enabled = false;
+                }
+            }
+
             cameraGO.AddComponent<AudioListener>();
 
             // Camera system will sync GameObject to entity transform

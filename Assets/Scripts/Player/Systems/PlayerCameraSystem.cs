@@ -107,10 +107,10 @@ namespace DOTS.Player.Systems
                         {
                             var mainCam = Camera.main;
                             bool isMain = mainCam != null && mainCam.GetInstanceID() == camera.GetInstanceID();
-                            DebugSettings.LogPlayer($"DIAG: Managing camera '{camera.name}' (instanceID={camera.GetInstanceID()})  Camera.main match={isMain}", forceLog: true);
+                            DebugSettings.LogPlayer($"DIAG: Managing camera '{camera.name}' (instanceID={camera.GetInstanceID()})  Camera.main match={isMain}");
                             if (!isMain && mainCam != null)
-                                DebugSettings.LogPlayerWarning($"DIAG: Camera.main is '{mainCam.name}' (instanceID={mainCam.GetInstanceID()}) — MISMATCH! Edit/reticle systems will aim from the wrong camera.", forceLog: true);
-                            DebugSettings.LogPlayer($"Camera updated: pos={cameraPosition}, yaw={view.ValueRO.YawDegrees:F1}, pitch={view.ValueRO.PitchDegrees:F1}", forceLog: true);
+                                DebugSettings.LogPlayerWarning($"DIAG: Camera.main is '{mainCam.name}' (instanceID={mainCam.GetInstanceID()}) — MISMATCH! Edit/reticle systems will aim from the wrong camera.");
+                            DebugSettings.LogPlayer($"Camera updated: pos={cameraPosition}, yaw={view.ValueRO.YawDegrees:F1}, pitch={view.ValueRO.PitchDegrees:F1}");
                             _hasLoggedOnce = true;
                         }
                     }
