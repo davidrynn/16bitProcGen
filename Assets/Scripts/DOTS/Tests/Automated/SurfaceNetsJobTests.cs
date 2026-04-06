@@ -1161,6 +1161,195 @@ namespace DOTS.Terrain.Tests
             yield return null;
         }
 
+        /// <summary>
+        /// BUG-011 regression test: thin box wall (half-width 0.6) added to a ground
+        /// plane via OpUnion. The player approaches from the -X side, so the left wall
+        /// face (at x ≈ wallCenter.x - halfWidth) must have outward-pointing normals
+        /// (negative X). This test verifies that the gradient-based winding produces
+        /// correct outward normals on ALL wall faces of a thin additive box, not just
+        /// the ground surface or CSG seam.
+        /// </summary>
+        [UnityTest]
+        public IEnumerator SurfaceNetsJob_Winding_ThinBoxWall_BUG011()
+        {
+            // Match the repro geometry: 16x16x16 grid, ground at y=2, thin box wall.
+            var resolution = new int3(16, 16, 16);
+            var densities = new NativeArray<float>(
+                resolution.x * resolution.y * resolution.z, Allocator.TempJob);
+
+            const float baseHeight = 2f;
+            var wallCenter = new float3(8f, 6f, 8f);
+            var wallHalfExtents = new float3(0.6f, 4f, 6f); // thin in X, tall in Y, wide in Z
+
+            var index = 0;
+            for (int z = 0; z < resolution.z; z++)
+            {
+                for (int y = 0; y < resolution.y; y++)
+                {
+                    for (int x = 0; x < resolution.x; x++)
+                    {
+                        float3 pos = new float3(x, y, z);
+                        float groundDensity = pos.y - baseHeight;
+                        float boxDist = SDFMath.SdBox(pos - wallCenter, wallHalfExtents);
+                        densities[index++] = SDFMath.OpUnion(groundDensity, boxDist);
+                    }
+                }
+            }
+
+            var cellRes = resolution - new int3(1, 1, 1);
+            var totalCells = cellRes.x * cellRes.y * cellRes.z;
+            var vertexMap = new NativeArray<int>(totalCells, Allocator.TempJob);
+            var cellSigns = new NativeArray<sbyte>(totalCells, Allocator.TempJob);
+            var vertices = new NativeList<float3>(Allocator.TempJob);
+            var indices = new NativeList<int>(Allocator.TempJob);
+
+            try
+            {
+                var job = new SurfaceNetsJob
+                {
+                    Densities = densities,
+                    Resolution = resolution,
+                    VoxelSize = 1f,
+                    Vertices = vertices,
+                    Indices = indices,
+                    VertexIndices = vertexMap,
+                    CellSigns = cellSigns,
+                    CellResolution = cellRes,
+                    BaseCellResolution = cellRes
+                };
+
+                job.Execute();
+
+                Assert.Greater(vertices.Length, 0, "Should generate vertices for terrain with thin box wall");
+                Assert.Greater(indices.Length, 0, "Should generate indices for terrain with thin box wall");
+                Assert.AreEqual(0, indices.Length % 3, "Indices should be a multiple of 3");
+
+                int outwardCount = 0;
+                int inwardCount = 0;
+                int degenerateCount = 0;
+                int tangentSkipCount = 0;
+                int seamSkipCount = 0;
+
+                // Wall-face-specific counters (triangles whose gradient is mostly ±X)
+                int wallFaceOutward = 0;
+                int wallFaceInward = 0;
+
+                const float tangentThreshold = 0.35f;
+                const float seamBand = 1.5f;
+
+                for (int i = 0; i < indices.Length; i += 3)
+                {
+                    var v0 = vertices[indices[i]];
+                    var v1 = vertices[indices[i + 1]];
+                    var v2 = vertices[indices[i + 2]];
+
+                    var triNormal = math.cross(v1 - v0, v2 - v0);
+
+                    if (math.lengthsq(triNormal) < 1e-12f)
+                    {
+                        degenerateCount++;
+                        continue;
+                    }
+
+                    var centroid = (v0 + v1 + v2) / 3f;
+
+                    // Analytical gradient for ground+box union.
+                    float groundDensity = centroid.y - baseHeight;
+                    float boxDist = SDFMath.SdBox(centroid - wallCenter, wallHalfExtents);
+
+                    if (math.abs(groundDensity - boxDist) < seamBand)
+                    {
+                        seamSkipCount++;
+                        continue;
+                    }
+
+                    float3 gradient;
+                    if (groundDensity <= boxDist)
+                    {
+                        // Ground dominates — gradient is (0, 1, 0).
+                        gradient = new float3(0f, 1f, 0f);
+                    }
+                    else
+                    {
+                        // Box dominates — gradient is the box SDF gradient.
+                        // For a box SDF, the gradient points away from the nearest face.
+                        var localP = centroid - wallCenter;
+                        var absP = math.abs(localP);
+                        var diff = absP - wallHalfExtents;
+
+                        // Determine which face is closest (largest diff component = nearest face axis).
+                        if (diff.x >= diff.y && diff.x >= diff.z)
+                            gradient = new float3(math.sign(localP.x), 0, 0);
+                        else if (diff.y >= diff.x && diff.y >= diff.z)
+                            gradient = new float3(0, math.sign(localP.y), 0);
+                        else
+                            gradient = new float3(0, 0, math.sign(localP.z));
+                    }
+
+                    var nN = math.normalize(triNormal);
+                    var nG = math.normalize(gradient);
+                    float cosAngle = math.dot(nN, nG);
+
+                    if (math.abs(cosAngle) < tangentThreshold)
+                    {
+                        tangentSkipCount++;
+                        continue;
+                    }
+
+                    if (cosAngle > 0f)
+                        outwardCount++;
+                    else
+                        inwardCount++;
+
+                    // Track wall-face triangles specifically (gradient mostly ±X).
+                    if (math.abs(gradient.x) > 0.9f)
+                    {
+                        if (cosAngle > 0f)
+                            wallFaceOutward++;
+                        else
+                            wallFaceInward++;
+                    }
+                }
+
+                int totalMeaningful = outwardCount + inwardCount;
+                Assert.Greater(totalMeaningful, 0, "Should have non-degenerate, non-tangent triangles");
+
+                float outwardPct = totalMeaningful > 0
+                    ? (outwardCount / (float)totalMeaningful) * 100f
+                    : 0f;
+
+                UnityEngine.Debug.Log(
+                    $"[Winding ThinBoxWall BUG-011] outward={outwardCount} inward={inwardCount} " +
+                    $"degenerate={degenerateCount} tangentSkipped={tangentSkipCount} " +
+                    $"seamSkipped={seamSkipCount} total={indices.Length / 3} outwardPct={outwardPct:F1}% " +
+                    $"wallFaceOutward={wallFaceOutward} wallFaceInward={wallFaceInward}");
+
+                Assert.Greater(wallFaceOutward + wallFaceInward, 0,
+                    "Should have wall-face triangles (gradient mostly ±X) outside the seam band");
+
+                Assert.AreEqual(0, wallFaceInward,
+                    $"Thin box wall faces should have 0 inward-facing triangles " +
+                    $"but found {wallFaceInward} of {wallFaceOutward + wallFaceInward} wall-face tris. " +
+                    $"This would cause MeshCollider to be one-sided in the wrong direction (BUG-011).");
+
+                Assert.AreEqual(0, inwardCount,
+                    $"Terrain after thin box addition should have 0 inward-facing triangles " +
+                    $"(outside CSG seam band) but found {inwardCount} " +
+                    $"({100f - outwardPct:F1}% of {totalMeaningful}). " +
+                    $"seamSkipped={seamSkipCount} tangentSkipped={tangentSkipCount}.");
+            }
+            finally
+            {
+                densities.Dispose();
+                vertexMap.Dispose();
+                cellSigns.Dispose();
+                vertices.Dispose();
+                indices.Dispose();
+            }
+
+            yield return null;
+        }
+
         private static void FillPlaneDensities(NativeArray<float> densities, int3 resolution)
         {
             var index = 0;

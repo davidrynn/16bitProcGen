@@ -9,6 +9,7 @@
         "Player",
         "Unity.Collections",
         "Unity.Entities",
+        "Unity.Mathematics",
         "Unity.Physics",
         "Unity.Transforms"
     ],

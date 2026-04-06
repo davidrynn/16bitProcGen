@@ -6,6 +6,7 @@
         "UnityEditor.TestRunner",
         "Player",
         "DOTS.Player.Components",
+        "DOTS.Terrain",
         "Unity.Entities",
         "Unity.Entities.Hybrid",
         "Unity.Transforms",

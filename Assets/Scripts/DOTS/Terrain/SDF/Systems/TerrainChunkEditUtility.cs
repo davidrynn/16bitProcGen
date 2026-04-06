@@ -10,7 +10,7 @@ namespace DOTS.Terrain
     public static class TerrainChunkEditUtility
     {
         /// <summary>
-        /// Marks all chunk entities whose density sampling region intersects the edit sphere with
+        /// Marks all chunk entities whose density sampling region intersects the edit volume with
         /// <see cref="TerrainChunkNeedsDensityRebuild"/> so <c>TerrainChunkDensitySamplingSystem</c>
         /// only re-samples where the SDF field has actually changed.
         ///
@@ -24,21 +24,28 @@ namespace DOTS.Terrain
         /// </summary>
         public static void MarkChunksDirty(EntityManager entityManager, NativeArray<Entity> chunkEntities, float3 editCenter, float editRadius)
         {
+            MarkChunksDirty(entityManager, chunkEntities, SDFEdit.Create(editCenter, editRadius, SDFEditOperation.Add));
+        }
+
+        /// <summary>
+        /// Marks all chunks whose density region intersects the edit volume represented by <paramref name="edit"/>.
+        /// </summary>
+        public static void MarkChunksDirty(EntityManager entityManager, NativeArray<Entity> chunkEntities, in SDFEdit edit)
+        {
             if (!chunkEntities.IsCreated || chunkEntities.Length == 0)
             {
                 return;
             }
 
-            var shouldFilter = editRadius > 0f;
-            var radiusSq = editRadius * editRadius;
+            var hasValidFilter = TryCreateEditFilter(in edit, out var filter);
 
             for (int i = 0; i < chunkEntities.Length; i++)
             {
                 var chunk = chunkEntities[i];
 
-                if (shouldFilter && TryGetChunkAabb(entityManager, chunk, out var min, out var max))
+                if (hasValidFilter && TryGetChunkAabb(entityManager, chunk, out var min, out var max))
                 {
-                    if (!SphereIntersectsAabb(editCenter, radiusSq, min, max))
+                    if (!EditIntersectsAabb(in filter, min, max))
                     {
                         continue;
                     }
@@ -49,6 +56,97 @@ namespace DOTS.Terrain
                     entityManager.AddComponent<TerrainChunkNeedsDensityRebuild>(chunk);
                 }
             }
+        }
+
+        public static float ComputeChunkStride(in TerrainChunkGridInfo grid)
+        {
+            var voxelSize = math.max(1e-5f, grid.VoxelSize);
+            var strideCells = math.max(0, grid.Resolution.x - 1);
+            return strideCells * voxelSize;
+        }
+
+        public static float ComputeQuantizedCellSize(in TerrainChunkGridInfo grid, float editCellFraction)
+        {
+            var voxelSize = math.max(1e-5f, grid.VoxelSize);
+            var chunkStride = ComputeChunkStride(in grid);
+            if (chunkStride <= 0f)
+            {
+                return voxelSize;
+            }
+
+            var clampedFraction = math.clamp(editCellFraction, 0.25f, 1f);
+            var rawCellSize = chunkStride * clampedFraction;
+            var quantizedSteps = math.max(1f, math.round(rawCellSize / voxelSize));
+            return quantizedSteps * voxelSize;
+        }
+
+        public static float3 SnapToGlobalLattice(float3 worldPoint, float3 anchor, float cellSize)
+        {
+            var safeCellSize = math.max(1e-5f, cellSize);
+            return anchor + math.round((worldPoint - anchor) / safeCellSize) * safeCellSize;
+        }
+
+        public static float3 SnapToChunkLocalLattice(float3 worldPoint, float3 chunkOrigin, float cellSize)
+        {
+            var safeCellSize = math.max(1e-5f, cellSize);
+            var localPoint = worldPoint - chunkOrigin;
+            var cell = math.floor(localPoint / safeCellSize);
+            return chunkOrigin + (cell + 0.5f) * safeCellSize;
+        }
+
+        /// <summary>
+        /// Finds the chunk that contains <paramref name="worldPoint"/> using half-open bounds.
+        /// </summary>
+        public static bool TryFindOwningChunk(
+            EntityManager entityManager,
+            NativeArray<Entity> chunkEntities,
+            float3 worldPoint,
+            out Entity chunkEntity,
+            out TerrainChunk chunk,
+            out TerrainChunkBounds bounds,
+            out TerrainChunkGridInfo grid)
+        {
+            chunkEntity = Entity.Null;
+            chunk = default;
+            bounds = default;
+            grid = default;
+
+            if (!chunkEntities.IsCreated || chunkEntities.Length == 0)
+            {
+                return false;
+            }
+
+            for (int i = 0; i < chunkEntities.Length; i++)
+            {
+                var candidate = chunkEntities[i];
+                if (!entityManager.HasComponent<TerrainChunk>(candidate) ||
+                    !entityManager.HasComponent<TerrainChunkBounds>(candidate) ||
+                    !entityManager.HasComponent<TerrainChunkGridInfo>(candidate))
+                {
+                    continue;
+                }
+
+                var candidateChunk = entityManager.GetComponentData<TerrainChunk>(candidate);
+                var candidateBounds = entityManager.GetComponentData<TerrainChunkBounds>(candidate);
+                var candidateGrid = entityManager.GetComponentData<TerrainChunkGridInfo>(candidate);
+                if (!TryGetChunkLookupAabb(candidateBounds, candidateGrid, out var min, out var max))
+                {
+                    continue;
+                }
+
+                if (!PointInHalfOpenAabb(worldPoint, min, max))
+                {
+                    continue;
+                }
+
+                chunkEntity = candidate;
+                chunk = candidateChunk;
+                bounds = candidateBounds;
+                grid = candidateGrid;
+                return true;
+            }
+
+            return false;
         }
 
         /// <summary>
@@ -93,6 +191,33 @@ namespace DOTS.Terrain
             return true;
         }
 
+        private static bool TryGetChunkLookupAabb(in TerrainChunkBounds bounds, in TerrainChunkGridInfo grid, out float3 min, out float3 max)
+        {
+            min = bounds.WorldOrigin;
+            max = bounds.WorldOrigin;
+
+            var voxelSize = math.max(1e-5f, grid.VoxelSize);
+            var meshExtent = new float3(
+                math.max(0, grid.Resolution.x - 1) * voxelSize,
+                math.max(0, grid.Resolution.y - 1) * voxelSize,
+                math.max(0, grid.Resolution.z - 1) * voxelSize);
+
+            if (meshExtent.x <= 0f || meshExtent.y <= 0f || meshExtent.z <= 0f)
+            {
+                return false;
+            }
+
+            max = min + meshExtent;
+            return true;
+        }
+
+        private static bool PointInHalfOpenAabb(float3 point, float3 min, float3 max)
+        {
+            return point.x >= min.x && point.x < max.x &&
+                   point.y >= min.y && point.y < max.y &&
+                   point.z >= min.z && point.z < max.z;
+        }
+
         /// <summary>
         /// Returns true if the sphere (defined by squared radius) overlaps the axis-aligned box.
         /// Finds the closest point on the box to the sphere center; the sphere overlaps if that
@@ -103,6 +228,77 @@ namespace DOTS.Terrain
             var clamped = math.clamp(center, min, max);
             var delta = center - clamped;
             return math.lengthsq(delta) <= radiusSq;
+        }
+
+        private static bool BoxIntersectsAabb(float3 center, float3 halfExtents, float3 min, float3 max)
+        {
+            var boxMin = center - halfExtents;
+            var boxMax = center + halfExtents;
+            return boxMin.x <= max.x && boxMax.x >= min.x &&
+                   boxMin.y <= max.y && boxMax.y >= min.y &&
+                   boxMin.z <= max.z && boxMax.z >= min.z;
+        }
+
+        private static bool EditIntersectsAabb(in EditFilter filter, float3 min, float3 max)
+        {
+            if (filter.Shape == SDFEditShape.Box)
+            {
+                return BoxIntersectsAabb(filter.Center, filter.HalfExtents, min, max);
+            }
+
+            return SphereIntersectsAabb(filter.Center, filter.RadiusSq, min, max);
+        }
+
+        private static bool TryCreateEditFilter(in SDFEdit edit, out EditFilter filter)
+        {
+            filter = default;
+            if (!IsFinite(edit.Center))
+            {
+                return false;
+            }
+
+            if (edit.Shape == SDFEditShape.Box)
+            {
+                var halfExtents = math.max(float3.zero, edit.HalfExtents);
+                if (!IsFinite(halfExtents) || math.cmax(halfExtents) <= 0f)
+                {
+                    return false;
+                }
+
+                filter = new EditFilter
+                {
+                    Shape = SDFEditShape.Box,
+                    Center = edit.Center,
+                    HalfExtents = halfExtents
+                };
+                return true;
+            }
+
+            if (!math.isfinite(edit.Radius) || edit.Radius <= 0f)
+            {
+                return false;
+            }
+
+            filter = new EditFilter
+            {
+                Shape = SDFEditShape.Sphere,
+                Center = edit.Center,
+                RadiusSq = edit.Radius * edit.Radius
+            };
+            return true;
+        }
+
+        private static bool IsFinite(float3 value)
+        {
+            return math.all(math.isfinite(value));
+        }
+
+        private struct EditFilter
+        {
+            public SDFEditShape Shape;
+            public float3 Center;
+            public float RadiusSq;
+            public float3 HalfExtents;
         }
     }
 }

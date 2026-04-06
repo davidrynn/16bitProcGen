@@ -16,6 +16,11 @@ namespace DOTS.Terrain.Core
         public static bool EnableTestDebug = false;
         public static bool EnableSeamDebug = false;
         public static bool EnableFallThroughDebug = false;
+        /// <summary>
+        /// When true, logs terrain mesh render upload vs. physics collider build (BUG-011 diagnostics).
+        /// Pair with <see cref="EnableFallThroughDebug"/> for grounding correlation.
+        /// </summary>
+        public static bool EnableTerrainColliderPipelineDebug = false;
         public static bool EnableTerrainEditDebug = false;
         public static bool EnablePlayerDebug = false;
         public static bool DisableBootstrapGroundPlane = false;
@@ -134,6 +139,17 @@ namespace DOTS.Terrain.Core
             if (EnableFallThroughDebug || forceLog)
             {
                 UnityEngine.Debug.LogWarning($"[DOTS-FallThrough] {message}");
+            }
+        }
+
+        /// <summary>
+        /// Logs mesh upload / collider pipeline correlation (BUG-011). Enable <see cref="EnableTerrainColliderPipelineDebug"/>.
+        /// </summary>
+        public static void LogTerrainColliderPipeline(string message, bool forceLog = false)
+        {
+            if (EnableTerrainColliderPipelineDebug || forceLog)
+            {
+                UnityEngine.Debug.Log($"[DOTS-TerrainColliderPipeline] {message}");
             }
         }
 

@@ -320,5 +320,31 @@ public class DotsSystemBootstrap : MonoBehaviour
             });
         }
         query.Dispose();
+
+        var editSettings = TerrainEditSettings.Default;
+        if (config != null)
+        {
+            editSettings = TerrainEditSettings.FromValues(
+                config.TerrainEditPlacementMode,
+                config.TerrainEditSnapSpace,
+                config.TerrainEditCellFraction,
+                config.TerrainEditGlobalSnapAnchor.x,
+                config.TerrainEditGlobalSnapAnchor.y,
+                config.TerrainEditGlobalSnapAnchor.z,
+                config.TerrainEditCubeDepthCells);
+        }
+
+        var editQuery = entityManager.CreateEntityQuery(ComponentType.ReadOnly<TerrainEditSettings>());
+        if (editQuery.CalculateEntityCount() == 0)
+        {
+            var settingsEntity = entityManager.CreateEntity(typeof(TerrainEditSettings));
+            entityManager.SetComponentData(settingsEntity, editSettings);
+        }
+        else
+        {
+            var settingsEntity = editQuery.GetSingletonEntity();
+            entityManager.SetComponentData(settingsEntity, editSettings);
+        }
+        editQuery.Dispose();
     }
 }

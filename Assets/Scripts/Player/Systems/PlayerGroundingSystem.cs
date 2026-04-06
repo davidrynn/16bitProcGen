@@ -20,6 +20,9 @@ namespace DOTS.Player.Systems
     [UpdateBefore(typeof(PlayerMovementSystem))]
     public partial struct PlayerGroundingSystem : ISystem
     {
+        // Treat only reasonably upward-facing surfaces as "ground".
+        // This prevents vertical/near-vertical walls from being classified as grounded.
+        private const float MinGroundNormalY = 0.5f;
         private bool _hasLoggedInvalidColliderRaycast;
 
         /// <summary>
@@ -29,7 +32,6 @@ namespace DOTS.Player.Systems
         {
             state.RequireForUpdate<PhysicsWorldSingleton>();
             state.RequireForUpdate<PlayerMovementState>();
-            _hasLoggedInvalidColliderRaycast = false;
         }
 
         /// <summary>
@@ -55,15 +57,14 @@ namespace DOTS.Player.Systems
                     Filter = CollisionFilter.Default
                 };
 
+                var prevGrounded = movementState.ValueRO.IsGrounded;
+                bool rayHit;
                 bool hit;
+                RaycastHit closestHit;
                 if (DebugSettings.EnableFallThroughDebug)
                 {
-                    if (!TryCastRaySafe(in physicsWorld, rayInput, ref _hasLoggedInvalidColliderRaycast, out var closestHit, out hit))
-                    {
-                        hit = false;
-                        closestHit = default;
-                    }
-                    var prevGrounded = movementState.ValueRO.IsGrounded;
+                    rayHit = TryCastRaySafe(in physicsWorld, in rayInput, ref _hasLoggedInvalidColliderRaycast, out closestHit);
+                    hit = rayHit && closestHit.SurfaceNormal.y >= MinGroundNormalY;
 
                     // Log grounding state transitions
                     if (prevGrounded != hit)
@@ -77,18 +78,19 @@ namespace DOTS.Player.Systems
                         }
                         else
                         {
+                            var reason = rayHit
+                                ? $"steepHit normal={closestHit.SurfaceNormal}"
+                                : "noHit";
                             DebugSettings.LogFallThroughWarning(
-                                $"Ungrounded: pos={origin}, probeEnd={rayInput.End}, " +
+                                $"Ungrounded: pos={origin}, probeEnd={rayInput.End}, reason={reason}, " +
                                 $"fallTime={movementState.ValueRO.FallTime:F3}");
                         }
                     }
                 }
                 else
                 {
-                    if (!TryCastRaySafe(in physicsWorld, rayInput, ref _hasLoggedInvalidColliderRaycast, out _, out hit))
-                    {
-                        hit = false;
-                    }
+                    rayHit = TryCastRaySafe(in physicsWorld, in rayInput, ref _hasLoggedInvalidColliderRaycast, out closestHit);
+                    hit = rayHit && closestHit.SurfaceNormal.y >= MinGroundNormalY;
                 }
 
                 movementState.ValueRW.IsGrounded = hit;
@@ -104,14 +106,12 @@ namespace DOTS.Player.Systems
             }
         }
 
-        private static bool TryCastRaySafe(in PhysicsWorld physicsWorld, in RaycastInput input, ref bool hasLoggedInvalidColliderRaycast, out RaycastHit hitInfo, out bool hit)
+        private static bool TryCastRaySafe(in PhysicsWorld physicsWorld, in RaycastInput input, ref bool hasLoggedInvalidColliderRaycast, out RaycastHit hitInfo)
         {
             hitInfo = default;
-            hit = false;
             try
             {
-                hit = physicsWorld.CastRay(input, out hitInfo);
-                return true;
+                return physicsWorld.CastRay(input, out hitInfo);
             }
             catch (InvalidOperationException ex)
             {

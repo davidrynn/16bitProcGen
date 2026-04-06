@@ -45,8 +45,8 @@ namespace DOTS.Terrain.Meshing
 
             var uploadItems = new List<UploadItem>();
 
-            foreach (var (meshData, entity) in SystemAPI
-                         .Query<RefRO<TerrainChunkMeshData>>()
+            foreach (var (meshData, chunk, entity) in SystemAPI
+                         .Query<RefRO<TerrainChunkMeshData>, RefRO<TerrainChunk>>()
                          .WithAll<TerrainChunkNeedsRenderUpload>()
                          .WithEntityAccess())
             {
@@ -63,6 +63,7 @@ namespace DOTS.Terrain.Meshing
                 uploadItems.Add(new UploadItem
                 {
                     Entity = entity,
+                    ChunkCoord = chunk.ValueRO.ChunkCoord,
                     Blob = meshData.ValueRO.Mesh,
                     Mesh = mesh,
                     NeedsMeshComponent = needsMeshComponent
@@ -99,6 +100,14 @@ namespace DOTS.Terrain.Meshing
 #if UNITY_ENTITIES_GRAPHICS
                 EnsureEntitiesGraphicsComponents(entityManager, item.Entity, item.Mesh, material);
 #endif
+
+                if (DebugSettings.EnableTerrainColliderPipelineDebug)
+                {
+                    var triCount = blob.Value.Indices.Length / 3;
+                    DebugSettings.LogTerrainColliderPipeline(
+                        $"render upload done chunk={item.ChunkCoord} entity={item.Entity.Index} " +
+                        $"tris={triCount} verts={blob.Value.Vertices.Length}");
+                }
 
                 if (entityManager.HasComponent<TerrainChunkNeedsRenderUpload>(item.Entity))
                 {
@@ -191,6 +200,7 @@ namespace DOTS.Terrain.Meshing
         private struct UploadItem
         {
             public Entity Entity;
+            public int3 ChunkCoord;
             public BlobAssetReference<TerrainChunkMeshBlob> Blob;
             public Mesh Mesh;
             public bool NeedsMeshComponent;

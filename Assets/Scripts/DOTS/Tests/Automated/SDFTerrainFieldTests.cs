@@ -83,5 +83,33 @@ namespace DOTS.Terrain.Tests
                 edits.Dispose();
             }
         }
+
+        [Test]
+        public void Sample_BoxSubtractEdit_CarvesInteriorButPreservesFarExterior()
+        {
+            var field = new SDFTerrainField
+            {
+                BaseHeight = 5f,
+                Amplitude = 0f,
+                Frequency = 0f,
+                NoiseValue = 0f
+            };
+
+            var edits = new NativeArray<SDFEdit>(1, Allocator.Temp);
+            try
+            {
+                edits[0] = SDFEdit.CreateBox(new float3(0f, 5f, 0f), new float3(1f, 1f, 1f), SDFEditOperation.Subtract);
+
+                var insideDensity = field.Sample(new float3(0f, 5f, 0f), edits);
+                var farDensity = field.Sample(new float3(0f, 10f, 0f), edits);
+
+                Assert.Greater(insideDensity, 0f, "Subtract box should carve interior points to air.");
+                Assert.Greater(farDensity, 0f, "Far exterior points should remain outside terrain.");
+            }
+            finally
+            {
+                edits.Dispose();
+            }
+        }
     }
 }

@@ -1,3 +1,4 @@
+using DOTS.Terrain;
 using UnityEngine;
 
 [CreateAssetMenu(menuName = "Config/ProjectFeatureConfig")]
@@ -39,6 +40,15 @@ public class ProjectFeatureConfig : ScriptableObject
     [Header("Terrain SDF Systems")]
     public bool EnableTerrainChunkDensitySamplingSystem = true;
     public bool EnableTerrainEditInputSystem = true;
+
+    [Header("Terrain Edit Settings")]
+    public TerrainEditPlacementMode TerrainEditPlacementMode = TerrainEditPlacementMode.SnappedCube;
+    public TerrainEditSnapSpace TerrainEditSnapSpace = TerrainEditSnapSpace.Global;
+    [Range(0.25f, 1f)]
+    public float TerrainEditCellFraction = 0.25f;
+    public Vector3 TerrainEditGlobalSnapAnchor = Vector3.zero;
+    [Min(1)]
+    public int TerrainEditCubeDepthCells = 1;
 
     [Header("Terrain Streaming")]
     public bool EnableTerrainChunkStreamingSystem = true;

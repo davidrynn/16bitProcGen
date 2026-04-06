@@ -15,9 +15,11 @@ namespace DOTS.Terrain.Tests
     [TestFixture]
     public class GrassChunkGenerationTests
     {
-        // A single upward-facing triangle at the origin, area = 0.5
+        // Single triangle in XZ plane (y=0), area = 0.5. Winding must give +Y normal so
+        // GrassBladeScatter's upward-facing filter (normal.y >= 0.4) accepts it — order
+        // (0,1,2) yields -Y and zero blades in Scatter.
         private static readonly float3[] TriVerts  = { float3.zero, new float3(1,0,0), new float3(0,0,1) };
-        private static readonly int[]    TriIdx    = { 0, 1, 2 };
+        private static readonly int[]    TriIdx    = { 0, 2, 1 };
 
         private NativeArray<float3>        _verts;
         private NativeArray<int>           _idx;

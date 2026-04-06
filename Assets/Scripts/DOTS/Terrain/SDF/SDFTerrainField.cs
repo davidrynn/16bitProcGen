@@ -27,19 +27,31 @@ namespace DOTS.Terrain
             for (var i = 0; i < edits.Length; i++)
             {
                 var edit = edits[i];
-                var sphere = SDFMath.SdSphere(worldPos - edit.Center, edit.Radius);
+                var editDistance = ComputeEditDistance(worldPos, in edit);
 
                 if (edit.Operation == SDFEditOperation.Subtract)
                 {
-                    density = SDFMath.OpSubtraction(density, sphere);
+                    density = SDFMath.OpSubtraction(density, editDistance);
                 }
                 else
                 {
-                    density = SDFMath.OpUnion(density, sphere);
+                    density = SDFMath.OpUnion(density, editDistance);
                 }
             }
 
             return density;
+        }
+
+        private static float ComputeEditDistance(float3 worldPos, in SDFEdit edit)
+        {
+            var offset = worldPos - edit.Center;
+            if (edit.Shape == SDFEditShape.Box)
+            {
+                var halfExtents = math.max(edit.HalfExtents, new float3(1e-5f));
+                return SDFMath.SdBox(offset, halfExtents);
+            }
+
+            return SDFMath.SdSphere(offset, edit.Radius);
         }
     }
 }

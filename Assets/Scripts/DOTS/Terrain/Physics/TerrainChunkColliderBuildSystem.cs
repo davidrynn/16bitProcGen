@@ -14,7 +14,7 @@ namespace DOTS.Terrain
     [UpdateAfter(typeof(Meshing.TerrainChunkMeshBuildSystem))]
     public partial struct TerrainChunkColliderBuildSystem : ISystem
     {
-        private const int MaxCollidersPerFrame = 4;
+        private const int DefaultMaxCollidersPerFrame = 4;
         private const int MaxDisableRemovalsPerFrame = 16;
         private EntityQuery pendingColliderQuery;
 
@@ -33,11 +33,21 @@ namespace DOTS.Terrain
             var staleBlobs = new NativeList<BlobAssetReference<Unity.Physics.Collider>>(Allocator.Temp);
             int builtCount = 0;
             bool collidersEnabled = true;
+            var maxCollidersThisFrame = DefaultMaxCollidersPerFrame;
+            var enableDetailedStaticMeshCollision = true;
 
             if (SystemAPI.TryGetSingleton<TerrainColliderSettings>(out var settings))
             {
                 collidersEnabled = settings.Enabled;
+                if (settings.MaxCollidersPerFrame > 0)
+                {
+                    maxCollidersThisFrame = settings.MaxCollidersPerFrame;
+                }
+
+                enableDetailedStaticMeshCollision = settings.EnableDetailedStaticMeshCollision;
             }
+
+            var terrainMaterial = CreateTerrainColliderMaterial(enableDetailedStaticMeshCollision);
 
             if (!collidersEnabled)
             {
@@ -69,20 +79,34 @@ namespace DOTS.Terrain
                 return;
             }
 
+            if (DebugSettings.EnableTerrainColliderPipelineDebug)
+            {
+                DebugSettings.LogTerrainColliderPipeline(
+                    $"collider build config: detailedStaticMesh={enableDetailedStaticMeshCollision}, " +
+                    $"maxPerFrame={maxCollidersThisFrame}");
+            }
+
             foreach (var (chunk, meshData, entity) in SystemAPI
                          .Query<RefRO<TerrainChunk>, RefRO<TerrainChunkMeshData>>()
                          .WithAll<LocalTransform>()
                          .WithAll<TerrainChunkNeedsColliderBuild>()
                          .WithEntityAccess())
             {
-                if (builtCount >= MaxCollidersPerFrame)
+                if (builtCount >= maxCollidersThisFrame)
                 {
                     break;
                 }
 
                 var mesh = meshData.ValueRO.Mesh;
+                var chunkCoord = chunk.ValueRO.ChunkCoord;
                 if (!mesh.IsCreated || mesh.Value.Vertices.Length == 0 || mesh.Value.Indices.Length == 0)
                 {
+                    if (DebugSettings.EnableTerrainColliderPipelineDebug)
+                    {
+                        DebugSettings.LogTerrainColliderPipeline(
+                            $"collider skipped (empty mesh) chunk={chunkCoord} entity={entity.Index}");
+                    }
+
                     CollectAndRemoveCollider(entityManager, ecb, staleBlobs, entity);
                     continue;
                 }
@@ -91,7 +115,7 @@ namespace DOTS.Terrain
                 var indexCount = mesh.Value.Indices.Length;
                 if (indexCount % 3 != 0 || !IndicesWithinBounds(mesh, vertexCount))
                 {
-                    LogInvalidMesh(chunk.ValueRO.ChunkCoord, entity, indexCount, vertexCount);
+                    LogInvalidMesh(chunkCoord, entity, indexCount, vertexCount);
                     CollectAndRemoveCollider(entityManager, ecb, staleBlobs, entity);
                     continue;
                 }
@@ -103,14 +127,27 @@ namespace DOTS.Terrain
                     GroupIndex = 0
                 };
 
-                var newCollider = BuildMeshCollider(mesh, filter);
+                var newCollider = BuildMeshCollider(mesh, filter, terrainMaterial);
                 if (!newCollider.IsCreated)
                 {
+                    if (DebugSettings.EnableTerrainColliderPipelineDebug)
+                    {
+                        DebugSettings.LogTerrainColliderPipeline(
+                            $"collider build failed (MeshCollider.Create) chunk={chunkCoord} entity={entity.Index}");
+                    }
+
                     CollectAndRemoveCollider(entityManager, ecb, staleBlobs, entity);
                     continue;
                 }
 
                 ApplyCollider(entityManager, ecb, staleBlobs, entity, newCollider);
+                if (DebugSettings.EnableTerrainColliderPipelineDebug)
+                {
+                    var triCount = indexCount / 3;
+                    DebugSettings.LogTerrainColliderPipeline(
+                        $"collider applied chunk={chunkCoord} entity={entity.Index} tris={triCount} verts={vertexCount}");
+                }
+
                 builtCount++;
             }
 
@@ -118,9 +155,20 @@ namespace DOTS.Terrain
             ecb.Dispose();
             DisposeStaleBlobs(staleBlobs);
             staleBlobs.Dispose();
+
+            if (DebugSettings.EnableTerrainColliderPipelineDebug && !pendingColliderQuery.IsEmpty)
+            {
+                var stillPending = pendingColliderQuery.CalculateEntityCount();
+                if (stillPending > 0)
+                {
+                    DebugSettings.LogTerrainColliderPipeline(
+                        $"collider backlog: {stillPending} chunk(s) still have TerrainChunkNeedsColliderBuild " +
+                        $"(built={builtCount} this frame, maxPerFrame={maxCollidersThisFrame})");
+                }
+            }
         }
 
-        private static BlobAssetReference<Unity.Physics.Collider> BuildMeshCollider(BlobAssetReference<TerrainChunkMeshBlob> mesh, CollisionFilter filter)
+        private static BlobAssetReference<Unity.Physics.Collider> BuildMeshCollider(BlobAssetReference<TerrainChunkMeshBlob> mesh, CollisionFilter filter, Unity.Physics.Material material)
         {
             var vertexCount = mesh.Value.Vertices.Length;
             var indexCount = mesh.Value.Indices.Length;
@@ -143,12 +191,19 @@ namespace DOTS.Terrain
                     mesh.Value.Indices[baseIndex + 2]);
             }
 
-            var collider = Unity.Physics.MeshCollider.Create(vertices, triangles, filter, Unity.Physics.Material.Default);
+            var collider = Unity.Physics.MeshCollider.Create(vertices, triangles, filter, material);
 
             vertices.Dispose();
             triangles.Dispose();
 
             return collider;
+        }
+
+        private static Unity.Physics.Material CreateTerrainColliderMaterial(bool enableDetailedStaticMeshCollision)
+        {
+            var material = Unity.Physics.Material.Default;
+            material.EnableDetailedStaticMeshCollision = enableDetailedStaticMeshCollision;
+            return material;
         }
 
         private static void ApplyCollider(EntityManager entityManager, EntityCommandBuffer ecb, NativeList<BlobAssetReference<Unity.Physics.Collider>> staleBlobs, Entity entity, BlobAssetReference<Unity.Physics.Collider> newCollider)

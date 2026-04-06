@@ -36,6 +36,8 @@ namespace DOTS.Player.Systems
         private const float MaxHitFractionForTunnel = 0.9f;
         // Player layer bit used in PlayerEntityBootstrap collider setup.
         private const uint PlayerLayerBit = 1u;
+        // Push recovered position slightly away from wall to prevent immediate re-penetration.
+        private const float WallPushOutDistance = 0.05f;
         // Offset ray to capsule center so it doesn't scrape the terrain surface.
         // Capsule: Vertex0=(0,0.5,0), Vertex1=(0,1.5,0) -> center at Y+1.0 from entity origin.
         private static readonly float3 CapsuleCenterOffset = new float3(0f, 1.0f, 0f);
@@ -70,26 +72,20 @@ namespace DOTS.Player.Systems
                 // Always update previous position for next frame.
                 movementState.ValueRW.PreviousPosition = currentPos;
 
-                // Only check for tunneling when the player is airborne and has been
-                // falling for a meaningful duration. When grounded, the prev->current
-                // ray will clip the terrain surface we're standing on, causing constant
-                // false-positive snap-backs (the "bouncing" bug).
-                if (movementState.ValueRO.IsGrounded)
-                    continue;
-
-                if (movementState.ValueRO.FallTime < MinFallTimeForCheck)
-                    continue;
-
                 var displacement = currentPos - previousPos;
                 if (math.lengthsq(displacement) < MinDisplacementSq)
                     continue;
 
-                // Only check when moving downward — tunneling through terrain means
-                // passing downward through a surface, not walking horizontally.
-                if (displacement.y >= 0f)
-                    continue;
+                var horizontalDisplacementSq = displacement.x * displacement.x + displacement.z * displacement.z;
+                var fallingTunnelCheck =
+                    !movementState.ValueRO.IsGrounded &&
+                    movementState.ValueRO.FallTime >= MinFallTimeForCheck &&
+                    displacement.y < 0f &&
+                    velocity.ValueRO.Linear.y <= MinDownwardVelocity;
 
-                if (velocity.ValueRO.Linear.y > MinDownwardVelocity)
+                // Also detect lateral tunneling into steep surfaces (e.g. thin vertical terrain walls).
+                var horizontalTunnelCheck = horizontalDisplacementSq >= MinDisplacementSq;
+                if (!fallingTunnelCheck && !horizontalTunnelCheck)
                     continue;
 
                 // Cast from previous to current, raised to capsule center height.
@@ -113,11 +109,19 @@ namespace DOTS.Player.Systems
                         continue;
 
                     // The ray hit a collider between previous and current — the player tunneled.
-                    // Snap back to previous known-good position and zero downward velocity.
-                    transform.ValueRW.Position = previousPos;
-                    movementState.ValueRW.PreviousPosition = previousPos;
+                    // Snap back to previous known-good position, pushed slightly away from
+                    // the wall surface to prevent immediate re-penetration (BUG-011).
+                    float3 safePos = previousPos + hit.SurfaceNormal * WallPushOutDistance;
+                    transform.ValueRW.Position = safePos;
+                    movementState.ValueRW.PreviousPosition = safePos;
 
+                    // Remove the velocity component driving into the wall so the player
+                    // doesn't immediately re-penetrate on the next frame.
                     var vel = velocity.ValueRO.Linear;
+                    float velIntoWall = math.dot(vel, hit.SurfaceNormal);
+                    if (velIntoWall < 0f)
+                        vel -= velIntoWall * hit.SurfaceNormal;
+                    // Also zero any residual downward velocity for falling tunnel cases.
                     if (vel.y < 0f)
                         vel.y = 0f;
                     velocity.ValueRW.Linear = vel;
@@ -127,7 +131,8 @@ namespace DOTS.Player.Systems
 
                     DebugSettings.LogFallThrough(
                         $"Safety snap-back: tunneled from {previousPos} to {currentPos}, " +
-                        $"hit at fraction={hit.Fraction:F4}, restored to {previousPos}");
+                        $"hit at fraction={hit.Fraction:F4}, normal={hit.SurfaceNormal}, " +
+                        $"restored to {safePos}");
                 }
             }
         }
