@@ -1,6 +1,6 @@
 # Document Index
 
-**Last Updated:** 2026-04-03
+**Last Updated:** 2026-04-07
 
 > **New here?** Start with [MASTER_PLAN.md](MASTER_PLAN.md) — it has the project vision, current status, phase roadmap, and a curated document map.
 
@@ -19,6 +19,7 @@ Quick-reference index of all project documentation. Docs are organized by catego
 | [AI/PLAYER_TERRAIN_FALLTHROUGH_DEBUG_SPEC.md](AI/PLAYER_TERRAIN_FALLTHROUGH_DEBUG_SPEC.md) | ROOT CAUSE FIXED | Fall-through debug: missing PhysicsWorldIndex |
 | [AI/TERRAIN_EDIT_CONTROLS_SPEC.md](AI/TERRAIN_EDIT_CONTROLS_SPEC.md) | IMPLEMENTED | Terrain edit raycast fix, Input System migration, reticle |
 | [AI/PLAYER_BOOTSTRAP_FIX_SPEC.md](AI/PLAYER_BOOTSTRAP_FIX_SPEC.md) | ACTIVE | Player bootstrap reliability for DOTS tests |
+| [AI/DOTS_Terrain_LOD_Implementation_Checklist.md](AI/DOTS_Terrain_LOD_Implementation_Checklist.md) | ACTIVE | Gap-to-spec execution checklist for current LOD implementation |
 | [AI/TERRAIN_BANDING_DIAGNOSTIC_SPEC.md](AI/TERRAIN_BANDING_DIAGNOSTIC_SPEC.md) | ACTIVE | Terrain banding visual artifact diagnostic |
 | [AI/TERRAIN_SEAM_DEBUG_SPEC_v1.md](AI/TERRAIN_SEAM_DEBUG_SPEC_v1.md) | COMPLETE | Terrain seam/ring pattern investigation |
 | [AI/TERRAIN_SEAM_DEBUG_MESH_SPEC.md](AI/TERRAIN_SEAM_DEBUG_MESH_SPEC.md) | COMPLETE | Mesh seam validator findings |

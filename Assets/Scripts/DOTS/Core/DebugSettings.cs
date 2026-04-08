@@ -22,6 +22,7 @@ namespace DOTS.Terrain.Core
         /// </summary>
         public static bool EnableTerrainColliderPipelineDebug = false;
         public static bool EnableTerrainEditDebug = false;
+        public static bool EnableLodDebug = false;
         public static bool EnablePlayerDebug = false;
         public static bool DisableBootstrapGroundPlane = false;
 
@@ -172,6 +173,14 @@ namespace DOTS.Terrain.Core
             if (EnableTerrainEditDebug || forceLog)
             {
                 UnityEngine.Debug.LogWarning($"[DOTS-TerrainEdit] {message}");
+            }
+        }
+
+        public static void LogLod(string message, bool forceLog = false)
+        {
+            if (EnableLodDebug || forceLog)
+            {
+                UnityEngine.Debug.Log($"[DOTS-LOD] {message}");
             }
         }
 

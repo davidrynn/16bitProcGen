@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using DOTS.Terrain.Rendering;
+using DOTS.Terrain.LOD;
 using DOTS.Terrain;
 using DOTS.Terrain.Core;
 using Unity.Collections;
@@ -42,6 +43,7 @@ namespace DOTS.Terrain.Meshing
 
             var entityManager = state.EntityManager;
             var material = settings.ChunkMaterial;
+            var hasLodPolicy = SystemAPI.TryGetSingleton<TerrainLodSettings>(out var lodPolicy);
 
             var uploadItems = new List<UploadItem>();
 
@@ -97,8 +99,16 @@ namespace DOTS.Terrain.Meshing
                 }
 
                 UploadMesh(blob, item.Mesh);
+
+                var castShadows = true;
+                if (hasLodPolicy && entityManager.HasComponent<TerrainChunkLodState>(item.Entity))
+                {
+                    var lodState = entityManager.GetComponentData<TerrainChunkLodState>(item.Entity);
+                    castShadows = lodState.CurrentLod <= lodPolicy.ShadowMaxLod;
+                }
+
 #if UNITY_ENTITIES_GRAPHICS
-                EnsureEntitiesGraphicsComponents(entityManager, item.Entity, item.Mesh, material);
+                EnsureEntitiesGraphicsComponents(entityManager, item.Entity, item.Mesh, material, castShadows);
 #endif
 
                 if (DebugSettings.EnableTerrainColliderPipelineDebug)
@@ -172,7 +182,7 @@ namespace DOTS.Terrain.Meshing
             mesh.RecalculateBounds();
         }
 
-        private static void EnsureEntitiesGraphicsComponents(EntityManager entityManager, Entity entity, Mesh mesh, Material material)
+        private static void EnsureEntitiesGraphicsComponents(EntityManager entityManager, Entity entity, Mesh mesh, Material material, bool castShadows)
         {
 #if UNITY_ENTITIES_GRAPHICS
             var renderMeshArray = new RenderMeshArray(new[] { material }, new[] { mesh });
@@ -183,7 +193,7 @@ namespace DOTS.Terrain.Meshing
             if (!entityManager.HasComponent<RenderFilterSettings>(entity) || !entityManager.HasComponent<WorldRenderBounds>(entity))
             {
                 var renderMeshDescription = new RenderMeshDescription(
-                    shadowCastingMode: ShadowCastingMode.On,
+                    shadowCastingMode: castShadows ? ShadowCastingMode.On : ShadowCastingMode.Off,
                     receiveShadows: true);
 
                 RenderMeshUtility.AddComponents(entity, entityManager, renderMeshDescription, renderMeshArray, materialMeshInfo);
@@ -193,6 +203,14 @@ namespace DOTS.Terrain.Meshing
                 // Already renderable; just refresh the mesh/material bindings.
                 entityManager.SetSharedComponentManaged(entity, renderMeshArray);
                 entityManager.SetComponentData(entity, materialMeshInfo);
+
+                if (entityManager.HasComponent<RenderFilterSettings>(entity))
+                {
+                    var renderFilterSettings = entityManager.GetSharedComponentManaged<RenderFilterSettings>(entity);
+                    renderFilterSettings.ShadowCastingMode = castShadows ? ShadowCastingMode.On : ShadowCastingMode.Off;
+                    renderFilterSettings.ReceiveShadows = true;
+                    entityManager.SetSharedComponentManaged(entity, renderFilterSettings);
+                }
             }
 #endif
         }

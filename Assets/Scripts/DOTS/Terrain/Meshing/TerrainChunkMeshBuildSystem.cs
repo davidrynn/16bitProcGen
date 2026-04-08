@@ -9,6 +9,8 @@ namespace DOTS.Terrain.Meshing
     [DisableAutoCreation]
     [BurstCompile]
     [UpdateInGroup(typeof(SimulationSystemGroup))]
+    [UpdateAfter(typeof(DOTS.Terrain.TerrainChunkDensitySamplingSystem))]
+    [UpdateBefore(typeof(TerrainChunkMeshUploadSystem))]
     public partial struct TerrainChunkMeshBuildSystem : ISystem
     {
         public void OnCreate(ref SystemState state)
@@ -20,6 +22,15 @@ namespace DOTS.Terrain.Meshing
         {
             var entityManager = state.EntityManager;
             var ecb = new EntityCommandBuffer(Unity.Collections.Allocator.Temp);
+            var maxMeshBuilds = int.MaxValue;
+
+            if (SystemAPI.TryGetSingleton<DOTS.Terrain.LOD.TerrainLodSettings>(out var lodSettings)
+                && lodSettings.MaxMeshRebuildsPerFrame > 0)
+            {
+                maxMeshBuilds = lodSettings.MaxMeshRebuildsPerFrame;
+            }
+
+            var builtCount = 0;
 
             // Check if debug mode is enabled
             var debugEnabled = false;
@@ -34,6 +45,11 @@ namespace DOTS.Terrain.Meshing
                          .WithAll<TerrainChunkNeedsMeshBuild>()
                          .WithEntityAccess())
             {
+                if (builtCount >= maxMeshBuilds)
+                {
+                    break;
+                }
+
                 var meshBlob = TerrainChunkMeshBuilder.BuildMeshBlob(ref density.ValueRW, grid.ValueRO, densityGrid.ValueRO, bounds.ValueRO);
 
                 if (!meshBlob.IsCreated)
@@ -88,6 +104,8 @@ namespace DOTS.Terrain.Meshing
                     debugState.Stage = TerrainChunkDebugState.StageMeshReady;
                     ecb.SetComponent(entity, debugState);
                 }
+
+                builtCount++;
             }
 
             ecb.Playback(entityManager);

@@ -1,4 +1,5 @@
 using DOTS.Terrain.Core;
+using DOTS.Terrain.LOD;
 using DOTS.Terrain.Settings;
 using Unity.Collections;
 using Unity.Entities;
@@ -24,13 +25,17 @@ namespace DOTS.Terrain.Rendering
     ///
     /// UpdateBefore PresentationSystemGroup so buffers are ready before GrassChunkRenderSystem.
     /// </summary>
+    [DisableAutoCreation]
     [UpdateInGroup(typeof(SimulationSystemGroup))]
+    [UpdateAfter(typeof(DOTS.Terrain.TerrainChunkColliderBuildSystem))]
     public partial struct GrassChunkGenerationSystem : ISystem
     {
         // Query: surface chunks that have a mesh and need a rebuild.
         private EntityQuery _rebuildQuery;
         // Query: surface chunks that have no buffer at all (first-time setup).
         private EntityQuery _uninitializedQuery;
+        // Query: chunks currently holding grass GPU buffers.
+        private EntityQuery _bufferedQuery;
 
         public void OnCreate(ref SystemState state)
         {
@@ -49,15 +54,28 @@ namespace DOTS.Terrain.Rendering
                 .WithAll<TerrainChunkMeshData>()
                 .WithNone<GrassChunkNeedsRebuild>()
                 .Build(ref state);
+
+            _bufferedQuery = state.GetEntityQuery(
+                ComponentType.ReadOnly<TerrainChunkGrassSurface>(),
+                ComponentType.ReadOnly<TerrainChunkLodState>(),
+                ComponentType.ReadOnly<GrassChunkBladeBuffer>()
+            );
         }
 
         // Not Burst: uses managed APIs (GraphicsBuffer, ScriptableObject, EntityManager structural changes).
         public void OnUpdate(ref SystemState state)
         {
             var em = state.EntityManager;
+            var hasLodPolicy = SystemAPI.TryGetSingleton<TerrainLodSettings>(out var lodPolicy);
+            var grassMaxLod = hasLodPolicy ? lodPolicy.GrassMaxLod : int.MaxValue;
+
+            if (hasLodPolicy)
+            {
+                RemoveBuffersOutsideLodPolicy(em, grassMaxLod);
+            }
 
             // Tag any surface chunk that has a mesh but no rebuild request and no buffer.
-            TagUninitializedChunks(em);
+            TagUninitializedChunks(em, hasLodPolicy, grassMaxLod);
 
             if (_rebuildQuery.IsEmpty) return;
 
@@ -67,6 +85,17 @@ namespace DOTS.Terrain.Rendering
             foreach (var entity in entities)
             {
                 var surface = em.GetComponentData<TerrainChunkGrassSurface>(entity);
+
+                if (hasLodPolicy && em.HasComponent<TerrainChunkLodState>(entity))
+                {
+                    var lodState = em.GetComponentData<TerrainChunkLodState>(entity);
+                    if (lodState.CurrentLod > grassMaxLod)
+                    {
+                        em.RemoveComponent<GrassChunkNeedsRebuild>(entity);
+                        RemoveBufferIfPresent(em, entity);
+                        continue;
+                    }
+                }
 
                 // Skip unimplemented grass types.
                 if (surface.GrassType != 0)
@@ -96,17 +125,42 @@ namespace DOTS.Terrain.Rendering
             entities.Dispose();
         }
 
-        private void TagUninitializedChunks(EntityManager em)
+        private void TagUninitializedChunks(EntityManager em, bool hasLodPolicy, int grassMaxLod)
         {
             if (_uninitializedQuery.IsEmpty) return;
             var uninitialized = _uninitializedQuery.ToEntityArray(Allocator.Temp);
             foreach (var e in uninitialized)
             {
+                if (hasLodPolicy && em.HasComponent<TerrainChunkLodState>(e))
+                {
+                    var lodState = em.GetComponentData<TerrainChunkLodState>(e);
+                    if (lodState.CurrentLod > grassMaxLod)
+                        continue;
+                }
+
                 // Only tag if no buffer has been built yet.
                 if (!em.HasComponent<GrassChunkBladeBuffer>(e))
                     em.AddComponent<GrassChunkNeedsRebuild>(e);
             }
             uninitialized.Dispose();
+        }
+
+        private void RemoveBuffersOutsideLodPolicy(EntityManager em, int grassMaxLod)
+        {
+            if (_bufferedQuery.IsEmpty) return;
+
+            using var entities = _bufferedQuery.ToEntityArray(Allocator.Temp);
+            using var lodStates = _bufferedQuery.ToComponentDataArray<TerrainChunkLodState>(Allocator.Temp);
+
+            for (int i = 0; i < entities.Length; i++)
+            {
+                if (lodStates[i].CurrentLod <= grassMaxLod)
+                    continue;
+
+                RemoveBufferIfPresent(em, entities[i]);
+                if (em.HasComponent<GrassChunkNeedsRebuild>(entities[i]))
+                    em.RemoveComponent<GrassChunkNeedsRebuild>(entities[i]);
+            }
         }
 
         private static void BuildBuffer(

@@ -9,6 +9,8 @@ namespace DOTS.Terrain
 {
     [DisableAutoCreation]
     [UpdateInGroup(typeof(SimulationSystemGroup))]
+    [UpdateAfter(typeof(DOTS.Terrain.LOD.TerrainChunkLodApplySystem))]
+    [UpdateBefore(typeof(DOTS.Terrain.Meshing.TerrainChunkMeshBuildSystem))]
     public partial struct TerrainChunkDensitySamplingSystem : ISystem
     {
         private EntityQuery chunkQuery;
@@ -47,8 +49,16 @@ namespace DOTS.Terrain
                 NoiseValue = settings.NoiseValue
             };
 
+            var maxDensityRebuilds = int.MaxValue;
+            if (SystemAPI.TryGetSingleton<DOTS.Terrain.LOD.TerrainLodSettings>(out var lodSettings)
+                && lodSettings.MaxDensityRebuildsPerFrame > 0)
+            {
+                maxDensityRebuilds = lodSettings.MaxDensityRebuildsPerFrame;
+            }
+
             var edits = CopyEditsToTempArray(ref state);
             var ecb = new EntityCommandBuffer(Allocator.Temp);
+            var processedCount = 0;
 
             try
             {
@@ -57,6 +67,11 @@ namespace DOTS.Terrain
 
                 foreach (var entity in chunkEntities)
                 {
+                    if (processedCount >= maxDensityRebuilds)
+                    {
+                        break;
+                    }
+
                     var grid = entityManager.GetComponentData<TerrainChunkGridInfo>(entity);
                     var bounds = entityManager.GetComponentData<TerrainChunkBounds>(entity);
 
@@ -144,6 +159,8 @@ namespace DOTS.Terrain
                         debugState.Stage = DOTS.Terrain.Debug.TerrainChunkDebugState.StageDensityReady;
                         ecb.SetComponent(entity, debugState);
                     }
+
+                    processedCount++;
                 }
                 
                 ecb.Playback(entityManager);

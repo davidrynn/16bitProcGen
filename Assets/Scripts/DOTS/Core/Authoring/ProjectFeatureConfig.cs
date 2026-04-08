@@ -1,9 +1,32 @@
 using DOTS.Terrain;
 using UnityEngine;
 
+public enum TerrainRenderDistancePreset
+{
+    Low = 0,
+    Medium = 1,
+    High = 2,
+}
+
 [CreateAssetMenu(menuName = "Config/ProjectFeatureConfig")]
 public class ProjectFeatureConfig : ScriptableObject
 {
+    private const float LowRenderDistance = 120f;
+    private const float MediumRenderDistance = 180f;
+    private const float HighRenderDistance = 240f;
+
+    [Header("Terrain Render Distance")]
+    [Tooltip("Preset render-distance quality. Drives streaming radius, LOD thresholds, and camera far clip automatically.")]
+    public TerrainRenderDistancePreset TerrainRenderDistancePreset = TerrainRenderDistancePreset.Medium;
+
+    public float TerrainRenderDistance => TerrainRenderDistancePreset switch
+    {
+        TerrainRenderDistancePreset.Low => LowRenderDistance,
+        TerrainRenderDistancePreset.Medium => MediumRenderDistance,
+        TerrainRenderDistancePreset.High => HighRenderDistance,
+        _ => MediumRenderDistance,
+    };
+
     [Header("Feature Toggles")]
     public bool EnablePlayerSystem = true;
     public bool EnableTerrainSystem = true;
@@ -52,8 +75,6 @@ public class ProjectFeatureConfig : ScriptableObject
 
     [Header("Terrain Streaming")]
     public bool EnableTerrainChunkStreamingSystem = true;
-    [Min(0)]
-    public int TerrainStreamingRadiusInChunks = 2;
 
     [Header("Terrain Meshing Systems")]
     public bool EnableTerrainChunkMeshBuildSystem = true;
@@ -61,6 +82,36 @@ public class ProjectFeatureConfig : ScriptableObject
     public bool EnableTerrainChunkMeshUploadSystem = true;
     public bool EnableTerrainChunkColliderBuildSystem = true;
     public bool EnableTerrainColliderSettingsBootstrapSystem = true;
+
+    [Header("Terrain LOD Systems")]
+    [Tooltip("LOD systems are auto-enabled when terrain render distance > 0. Override to force off.")]
+    public bool EnableTerrainLodSelectionSystem = true;
+    public bool EnableTerrainLodApplySystem = true;
+
+    // ── Derived values from TerrainRenderDistance ──
+
+    /// <summary>Default chunk stride: (16-1) * 1 = 15 world units.</summary>
+    public const float DefaultChunkStride = 15f;
+
+    /// <summary>Streaming radius in chunks, derived from TerrainRenderDistance.</summary>
+    public int DerivedStreamingRadiusInChunks =>
+        Mathf.Max(1, Mathf.CeilToInt(TerrainRenderDistance / DefaultChunkStride));
+
+    /// <summary>Camera far clip plane, derived from TerrainRenderDistance with headroom.</summary>
+    public float DerivedCameraFarClip =>
+        Mathf.Max(100f, TerrainRenderDistance * 1.5f);
+
+    /// <summary>LOD0 ring radius in chunk units (~1/3 of streaming radius).</summary>
+    public float DerivedLod0MaxDist =>
+        Mathf.Max(1f, DerivedStreamingRadiusInChunks / 3f);
+
+    /// <summary>LOD1 ring radius in chunk units (~2/3 of streaming radius).</summary>
+    public float DerivedLod1MaxDist =>
+        Mathf.Max(2f, DerivedStreamingRadiusInChunks * 2f / 3f);
+
+    /// <summary>LOD2 ring radius in chunk units (matches streaming radius by default).</summary>
+    public float DerivedLod2MaxDist =>
+        Mathf.Max(DerivedLod1MaxDist + 1f, DerivedStreamingRadiusInChunks);
 
     [Header("Terrain Debug Systems")]
     public bool EnableTerrainSeamValidatorSystem = false;

@@ -1,6 +1,6 @@
 # Known Issues
 
-**Last Updated:** 2026-04-04
+**Last Updated:** 2026-04-07
 
 Master tracker for active bugs, investigations, and resolved issues. Link to detailed specs rather than duplicating analysis here.
 
@@ -287,6 +287,97 @@ Replace `mesh.RecalculateNormals()` with **SDF-gradient-based analytical normals
 - `Assets/Scripts/DOTS/Terrain/Meshing/SurfaceNets.cs` — `GradientAt` already computes SDF gradient per cell; needs to store per-vertex normals
 - `Assets/Scripts/DOTS/Terrain/Meshing/TerrainChunkMeshUploadSystem.cs` — `UploadMesh` currently calls `RecalculateNormals()`; needs to write stored normals instead
 - `Assets/Scripts/DOTS/Terrain/Meshing/TerrainChunkMeshBlob.cs` — needs `Normals` array added to blob
+
+---
+
+### BUG-013: Player freeze after LOD system introduction with TerrainRenderDistance=30
+
+**Status:** PARTIAL — primary safety system fix committed (86d8edb); LOD stride fix applied (2026-04-07); bootstrap LOD state still open
+**Severity:** High (gameplay blocker — player cannot move)
+**Affected Systems:** `PlayerTerrainSafetySystem`, `TerrainChunkLodSelectionSystem`, `TerrainBootstrapAuthoring`
+
+**Symptoms:**
+- Player appears frozen at spawn position immediately after scene start
+- No visible error; player just never moves regardless of input
+- Reproduces when `TerrainRenderDistance` is set to 30 (or any low value) after the LOD systems were introduced
+
+**Derived values at TerrainRenderDistance=30:**
+- `StreamingRadiusInChunks = 2` (5×5 = 25 active chunks)
+- `Lod0MaxDist = 1f`, `Lod1MaxDist = 2f` (very tight rings; all 25 chunks are LOD0 or LOD1)
+- `CameraFarClipPlane = 100f`
+
+---
+
+**Root Cause 1 — PRIMARY (FIXED in commit 86d8edb):**
+`PlayerTerrainSafetySystem.horizontalTunnelCheck` fired every frame the player had any horizontal displacement, even when grounded.
+
+Original code (pre-fix):
+```csharp
+var horizontalTunnelCheck = horizontalDisplacementSq >= MinDisplacementSq;
+```
+
+The horizontal safety raycast originates at `previousPos + (0, 1.0, 0)` (capsule center height). The SDF terrain uses `amplitude=4, baseHeight=0`, so the ground surface extends well above Y=1 in bumpy areas. The ray at Y+1 routinely clips terrain geometry while the player is standing normally. On every hit:
+1. Player snapped to `previousPos + surfaceNormal * 0.05f`
+2. `_lastTeleportTime` updated → 0.5 s cooldown
+3. After cooldown expires, snap fires again → player can never move
+
+**Fix (committed):** Added `!movementState.ValueRO.IsGrounded &&` guard:
+```csharp
+var horizontalTunnelCheck =
+    !movementState.ValueRO.IsGrounded &&
+    horizontalDisplacementSq >= MinDisplacementSq;
+```
+
+---
+
+**Root Cause 2 — SECONDARY (OPEN — wrong LOD ring distances):**
+`TerrainChunkLodSelectionSystem.OnUpdate` derives the chunk stride from `gridInfos[0]` without first checking `TerrainLodSettings`:
+
+```csharp
+// Line 41 — BUG: no LOD0 fallback; picks stride from whichever chunk lands at index 0
+using var gridInfos = _chunkQuery.ToComponentDataArray<TerrainChunkGridInfo>(Allocator.Temp);
+var stride = math.max(0, gridInfos[0].Resolution.x - 1) * gridInfos[0].VoxelSize;
+```
+
+After the first frame, LOD1 chunks (resolution=9, voxelSize=2) appear in the query. If `gridInfos[0]` is a LOD1 chunk: `stride = (9-1)*2 = 16` instead of the correct `(16-1)*1 = 15`. This produces a wrong `playerChunkCoord`, causing off-by-one LOD ring assignments — chunks that should be LOD0 get tagged LOD1 and vice versa, triggering unnecessary density/mesh/collider rebuilds every frame.
+
+**Fix (applied 2026-04-07):** Replaced `gridInfos[0]`-based stride with a direct read from `settings` (already in scope via `GetSingleton<TerrainLodSettings>()`). The `gridInfos` temp array is no longer allocated:
+```csharp
+// Always derive stride from LOD0 settings so playerChunkCoord is consistent
+// regardless of which chunk entity lands at index 0 (may be LOD1 after first frame).
+var stride = math.max(0, settings.Lod0Resolution.x - 1) * settings.Lod0VoxelSize;
+```
+
+**File:** `Assets/Scripts/DOTS/Terrain/LOD/TerrainChunkLodSelectionSystem.cs` — line 41
+
+---
+
+**Root Cause 3 — TERTIARY (OPEN, low priority — bootstrap chunks never LOD-managed):**
+`TerrainBootstrapAuthoring` spawns an initial 3×3 chunk grid without `TerrainChunkLodState`. Since `TerrainChunkLodSelectionSystem._chunkQuery` requires `TerrainChunkLodState`, these bootstrap chunks are permanently invisible to the LOD system and stay at their initial LOD0 grid settings. This is not a freeze cause, but it means the bootstrap chunks are never promoted/demoted and generate spurious density/mesh rebuilds when the streaming system eventually replaces them with properly-tagged chunks.
+
+**Fix (not yet applied):** In `TerrainBootstrapAuthoring.SpawnChunks` (wherever initial chunk entities are created), add:
+```csharp
+entityManager.AddComponentData(entity, new TerrainChunkLodState { CurrentLod = 0, TargetLod = 0, LastSwitchFrame = 0 });
+```
+
+**File:** `Assets/Scripts/DOTS/Terrain/Bootstrap/TerrainBootstrapAuthoring.cs`
+
+---
+
+**Stale Build Assessment:**
+This is a **code regression**, not a stale Library folder issue. Evidence:
+
+1. `PlayerTerrainSafetySystem.cs` contains the fix with explanatory comments about the exact failure mode — this was added as part of the LOD work session, not present before.
+2. The LOD systems (`TerrainChunkLodSelectionSystem.cs`, `TerrainChunkLodApplySystem.cs`, `TerrainLodSettings.cs`) are new untracked files. Deleting Library would force recompilation of these same scripts — the stride bug would still be present.
+3. `TerrainChunkStreamingSystem.cs` and `DotsSystemBootstrap.cs` have script-level changes that register and configure the LOD systems. A Library delete does not revert source files.
+4. The freeze correlates with `TerrainRenderDistance=30` (a ScriptableObject value, unaffected by build cache).
+
+**Conclusion:** Deleting the Library folder will not fix this. The primary safety-system freeze is already fixed in the committed code. The secondary LOD stride issue (Root Cause 2) is the remaining risk for ongoing instability.
+
+**Files:**
+- `Assets/Scripts/Player/Systems/PlayerTerrainSafetySystem.cs` — primary fix committed (lines 87-94)
+- `Assets/Scripts/DOTS/Terrain/LOD/TerrainChunkLodSelectionSystem.cs` — secondary fix needed (line 41)
+- `Assets/Scripts/DOTS/Terrain/Bootstrap/TerrainBootstrapAuthoring.cs` — tertiary: add `TerrainChunkLodState` to spawned chunks
 
 ---
 
