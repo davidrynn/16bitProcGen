@@ -59,6 +59,8 @@ namespace DOTS.Player.Systems
             if (elapsed - _lastTeleportTime < CooldownSeconds)
                 return;
 
+            var entityManager = state.EntityManager;
+
             var physicsWorld = SystemAPI.GetSingleton<PhysicsWorldSingleton>().PhysicsWorld;
 
             foreach (var (transform, velocity, movementState, entity) in
@@ -66,6 +68,14 @@ namespace DOTS.Player.Systems
                          .WithAll<PlayerTag>()
                          .WithEntityAccess())
             {
+                if (entityManager.HasComponent<PlayerStartupReadinessGate>(entity))
+                {
+                    movementState.ValueRW.PreviousPosition = transform.ValueRO.Position;
+                    velocity.ValueRW.Linear = float3.zero;
+                    velocity.ValueRW.Angular = float3.zero;
+                    continue;
+                }
+
                 var currentPos = transform.ValueRO.Position;
                 var previousPos = movementState.ValueRO.PreviousPosition;
 
@@ -83,8 +93,15 @@ namespace DOTS.Player.Systems
                     displacement.y < 0f &&
                     velocity.ValueRO.Linear.y <= MinDownwardVelocity;
 
-                // Also detect lateral tunneling into steep surfaces (e.g. thin vertical terrain walls).
-                var horizontalTunnelCheck = horizontalDisplacementSq >= MinDisplacementSq;
+                // Detect lateral tunneling into steep surfaces (e.g. thin vertical terrain walls).
+                // Only check while airborne — grounded lateral wall-clipping is handled by
+                // the wall probe in PlayerMovementSystem and doesn't require a snap-back.
+                // Firing while grounded causes false positives: the horizontal ray at capsule-
+                // center height (Y+1) routinely clips seamless terrain geometry on the ground
+                // surface, snapping the player back every 0.5 s and appearing as a freeze.
+                var horizontalTunnelCheck =
+                    !movementState.ValueRO.IsGrounded &&
+                    horizontalDisplacementSq >= MinDisplacementSq;
                 if (!fallingTunnelCheck && !horizontalTunnelCheck)
                     continue;
 

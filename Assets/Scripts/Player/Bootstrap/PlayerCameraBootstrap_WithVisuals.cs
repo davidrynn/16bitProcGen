@@ -174,13 +174,29 @@ namespace DOTS.Player.Bootstrap
             mainCamera.tag = "MainCamera";
             mainCamera.clearFlags = CameraClearFlags.Skybox;
             mainCamera.nearClipPlane = 0.3f;
-            mainCamera.farClipPlane = 1000f;
+
+            // Derive far clip from TerrainRenderDistance via config singleton
+            float farClip = 300f;
+            var world = World.DefaultGameObjectInjectionWorld;
+            if (world != null && world.IsCreated)
+            {
+                using var q = world.EntityManager.CreateEntityQuery(
+                    Unity.Entities.ComponentType.ReadOnly<DOTS.Terrain.Streaming.ProjectFeatureConfigSingleton>());
+                if (q.CalculateEntityCount() > 0)
+                {
+                    var cfg = q.GetSingleton<DOTS.Terrain.Streaming.ProjectFeatureConfigSingleton>();
+                    if (cfg.CameraFarClipPlane > 0f)
+                        farClip = cfg.CameraFarClipPlane;
+                }
+            }
+            mainCamera.farClipPlane = farClip;
             
             // Position it at the camera entity's position
-            var world = World.DefaultGameObjectInjectionWorld;
-            var cameraTransform = world.EntityManager.GetComponentData<LocalTransform>(cameraEntity);
-            cameraGO.transform.position = cameraTransform.Position;
-            cameraGO.transform.rotation = cameraTransform.Rotation;
+            {
+                var cameraTransform = world.EntityManager.GetComponentData<LocalTransform>(cameraEntity);
+                cameraGO.transform.position = cameraTransform.Position;
+                cameraGO.transform.rotation = cameraTransform.Rotation;
+            }
 
             // Add AudioListener (required for 3D audio)
             var existingListeners = Object.FindObjectsByType<AudioListener>(FindObjectsInactive.Include, FindObjectsSortMode.None);

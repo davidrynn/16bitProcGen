@@ -59,4 +59,13 @@ namespace DOTS.Player.Components
         public float ThirdPersonDistance;
         public bool IsThirdPerson;
     }
+
+    public struct PlayerStartupReadinessGate : IComponentData
+    {
+        // Negative means the gate has not started tracking elapsed time yet.
+        public double StartTime;
+        public float TimeoutSeconds;
+        public float ProbeDistance;
+        public float ReleasedGravityFactor;
+    }
 }

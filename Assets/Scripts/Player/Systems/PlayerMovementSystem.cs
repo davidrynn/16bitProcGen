@@ -67,6 +67,21 @@ namespace DOTS.Player.Systems
                      SystemAPI.Query<RefRO<PlayerMovementConfig>, RefRW<PlayerInputComponent>, RefRW<PlayerMovementState>, RefRO<PlayerViewComponent>, RefRW<LocalTransform>, RefRW<PhysicsVelocity>>().WithEntityAccess())
             {
                 entityCount++;
+
+                // Startup readiness gate keeps player physics frozen until terrain colliders are ready.
+                if (state.EntityManager.HasComponent<PlayerStartupReadinessGate>(entity))
+                {
+                    velocity.ValueRW.Linear = float3.zero;
+                    velocity.ValueRW.Angular = float3.zero;
+                    input.ValueRW.Move = float2.zero;
+                    input.ValueRW.Look = float2.zero;
+                    input.ValueRW.JumpPressed = false;
+                    movementState.ValueRW.IsGrounded = false;
+                    movementState.ValueRW.FallTime = 0f;
+                    movementState.ValueRW.PreviousPosition = transform.ValueRO.Position;
+                    continue;
+                }
+
                 float2 moveInput = input.ValueRO.Move;
                 
                 // Debug: Log first movement to see which entity is moving

@@ -418,10 +418,16 @@ namespace DOTS.Player.Tests.Bootstrap
             yield return new WaitForEndOfFrame();
 
             var updatedTransform = entityManager.GetComponentData<LocalTransform>(playerEntity);
+            var entityRotation = new Quaternion(
+                updatedTransform.Rotation.value.x,
+                updatedTransform.Rotation.value.y,
+                updatedTransform.Rotation.value.z,
+                updatedTransform.Rotation.value.w);
+            var expectedVisualPosition = (Vector3)updatedTransform.Position + entityRotation * sync.visualOffset;
             Vector3 actualPosition = playerVisual.transform.position;
-            float positionDelta = Vector3.Distance(actualPosition, (Vector3)updatedTransform.Position);
+            float positionDelta = Vector3.Distance(actualPosition, expectedVisualPosition);
             Assert.LessOrEqual(positionDelta, 0.001f,
-                $"Visual GameObject position should match entity transform within tolerance. Entity: {updatedTransform.Position}, Visual: {actualPosition}, Delta: {positionDelta}");
+                $"Visual GameObject position should match entity transform + visual offset within tolerance. Expected: {expectedVisualPosition}, Visual: {actualPosition}, Delta: {positionDelta}");
         }
 
         [UnityTest]

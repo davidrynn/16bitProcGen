@@ -122,6 +122,14 @@ namespace Tests.PlayMode
             Assert.IsTrue(entityManager.HasComponent<LocalTransform>(playerEntity),
                 "Player entity missing LocalTransform.");
 
+            if (entityManager.HasComponent<PlayerStartupReadinessGate>(playerEntity))
+            {
+                yield return WaitForCondition(
+                    () => entityManager.Exists(playerEntity) && !entityManager.HasComponent<PlayerStartupReadinessGate>(playerEntity),
+                    TimeoutSeconds,
+                    "Player startup readiness gate did not release in time. Ensure nearby terrain colliders build or timeout is configured correctly.");
+            }
+
             var initialTransform = entityManager.GetComponentData<LocalTransform>(playerEntity);
             var initialPosition = initialTransform.Position;
 
