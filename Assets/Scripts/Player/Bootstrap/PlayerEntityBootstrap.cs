@@ -169,6 +169,28 @@ namespace DOTS.Player.Bootstrap
             // Add player tag for identification
             entityManager.AddComponent<PlayerTag>(entity);
 
+            // Startup readiness gate: hold player physics until nearby terrain colliders are ready.
+            // This is only enabled when terrain streaming is active.
+            if (SystemAPI.TryGetSingleton<DOTS.Terrain.Streaming.ProjectFeatureConfigSingleton>(out var cfg)
+                && cfg.TerrainStreamingEnabled
+                && cfg.TerrainStreamingRadiusInChunks > 0)
+            {
+                entityManager.AddComponentData(entity, new PlayerStartupReadinessGate
+                {
+                    StartTime = -1d,
+                    TimeoutSeconds = 3f,
+                    ProbeDistance = 96f,
+                    ReleasedGravityFactor = 1f
+                });
+
+                entityManager.SetComponentData(entity, new PhysicsGravityFactor
+                {
+                    Value = 0f
+                });
+
+                DebugSettings.LogPlayer("Player startup readiness gate enabled (waiting for nearby terrain collider).");
+            }
+
             // Get player position and view for camera setup
             var playerPosition = spawnPos;
             var playerView = entityManager.GetComponentData<PlayerViewComponent>(entity);
@@ -289,7 +311,15 @@ namespace DOTS.Player.Bootstrap
             camera.tag = "MainCamera";
             camera.clearFlags = CameraClearFlags.Skybox;
             camera.nearClipPlane = 0.3f;
-            camera.farClipPlane = 1000f;
+
+            // Derive far clip from TerrainRenderDistance via the config singleton
+            float farClip = 300f;
+            if (SystemAPI.TryGetSingleton<Terrain.Streaming.ProjectFeatureConfigSingleton>(out var cfgSingleton)
+                && cfgSingleton.CameraFarClipPlane > 0f)
+            {
+                farClip = cfgSingleton.CameraFarClipPlane;
+            }
+            camera.farClipPlane = farClip;
 
             // Set position and rotation based on calculated values
             cameraGO.transform.position = (Vector3)cameraPosition;

@@ -1,5 +1,6 @@
 using DOTS.Player.Components;
 using DOTS.Terrain.Core;
+using DOTS.Terrain.LOD;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;
@@ -76,10 +77,17 @@ namespace DOTS.Terrain.Streaming
             using var existingEntities = chunkQuery.ToEntityArray(Allocator.Temp);
             using var existingChunks = chunkQuery.ToComponentDataArray<TerrainChunk>(Allocator.Temp);
 
-            // Infer chunk stride from the first existing chunk.
-            var anyGridInfo = entityManager.GetComponentData<TerrainChunkGridInfo>(existingEntities[0]);
-            // Chunks share border samples; the world-space span of a chunk is (resolution-1) * voxelSize.
-            var chunkStride = math.max(0, anyGridInfo.Resolution.x - 1) * anyGridInfo.VoxelSize;
+            // Always derive stride from LOD0 settings so centerCoord is consistent regardless of
+            // which chunk entity happens to be first in the query (it may be a demoted LOD1/2 chunk).
+            var lod0Resolution = entityManager.GetComponentData<TerrainChunkGridInfo>(existingEntities[0]).Resolution;
+            var lod0VoxelSize  = entityManager.GetComponentData<TerrainChunkGridInfo>(existingEntities[0]).VoxelSize;
+            if (SystemAPI.TryGetSingleton<TerrainLodSettings>(out var lodSettingsForStride))
+            {
+                lod0Resolution = lodSettingsForStride.Lod0Resolution;
+                lod0VoxelSize  = lodSettingsForStride.Lod0VoxelSize;
+            }
+
+            var chunkStride = math.max(0, lod0Resolution.x - 1) * lod0VoxelSize;
             if (chunkStride <= 0f)
             {
                 return;
@@ -91,9 +99,6 @@ namespace DOTS.Terrain.Streaming
             {
                 baseHeight = fieldSettings.BaseHeight;
             }
-
-            var chunkVerticalSpan = math.max(0, anyGridInfo.Resolution.y - 1) * anyGridInfo.VoxelSize;
-            var originY = baseHeight - (chunkVerticalSpan * 0.5f);
 
             var centerCoord = new int2(
                 (int)math.floor(playerPos.x / chunkStride),
@@ -114,10 +119,18 @@ namespace DOTS.Terrain.Streaming
             using var existingEntities = chunkQuery.ToEntityArray(Allocator.Temp);
             using var existingChunks = chunkQuery.ToComponentDataArray<TerrainChunk>(Allocator.Temp);
 
-            // Infer chunk stride from the first existing chunk.
-            var anyGridInfo = entityManager.GetComponentData<TerrainChunkGridInfo>(existingEntities[0]);
-            // Chunks share border samples; the world-space span of a chunk is (resolution-1) * voxelSize.
-            var chunkStride = math.max(0, anyGridInfo.Resolution.x - 1) * anyGridInfo.VoxelSize;
+            // Always use LOD0 settings for chunk stride, origin, and GridInfo on new chunks.
+            // Reading from an arbitrary existing chunk risks picking a demoted LOD1/2 entity,
+            // which produces wrong stride and resolution for all newly spawned chunks.
+            var lod0Resolution = entityManager.GetComponentData<TerrainChunkGridInfo>(existingEntities[0]).Resolution;
+            var lod0VoxelSize  = entityManager.GetComponentData<TerrainChunkGridInfo>(existingEntities[0]).VoxelSize;
+            if (SystemAPI.TryGetSingleton<TerrainLodSettings>(out var lodSettings))
+            {
+                lod0Resolution = lodSettings.Lod0Resolution;
+                lod0VoxelSize  = lodSettings.Lod0VoxelSize;
+            }
+
+            var chunkStride = math.max(0, lod0Resolution.x - 1) * lod0VoxelSize;
             if (chunkStride <= 0f)
             {
                 return;
@@ -130,7 +143,7 @@ namespace DOTS.Terrain.Streaming
                 baseHeight = fieldSettings.BaseHeight;
             }
 
-            var chunkVerticalSpan = math.max(0, anyGridInfo.Resolution.y - 1) * anyGridInfo.VoxelSize;
+            var chunkVerticalSpan = math.max(0, lod0Resolution.y - 1) * lod0VoxelSize;
             var originY = baseHeight - (chunkVerticalSpan * 0.5f);
 
             var map = new NativeParallelHashMap<int2, Entity>(existingEntities.Length, Allocator.Temp);
@@ -155,7 +168,8 @@ namespace DOTS.Terrain.Streaming
 
                     var entity = ecb.CreateEntity();
                     ecb.AddComponent(entity, new TerrainChunk { ChunkCoord = new int3(coord.x, 0, coord.y) });
-                    ecb.AddComponent(entity, TerrainChunkGridInfo.Create(anyGridInfo.Resolution, anyGridInfo.VoxelSize));
+                    ecb.AddComponent(entity, TerrainChunkGridInfo.Create(lod0Resolution, lod0VoxelSize));
+                    ecb.AddComponent(entity, new TerrainChunkLodState { CurrentLod = 0, TargetLod = 0, LastSwitchFrame = 0 });
 
                     var origin = new float3(coord.x * chunkStride, originY, coord.y * chunkStride);
                     ecb.AddComponent(entity, new TerrainChunkBounds { WorldOrigin = origin });
@@ -244,5 +258,7 @@ namespace DOTS.Terrain.Streaming
     public struct ProjectFeatureConfigSingleton : IComponentData
     {
         public int TerrainStreamingRadiusInChunks;
+        public float CameraFarClipPlane;
+        public bool TerrainStreamingEnabled;
     }
 }

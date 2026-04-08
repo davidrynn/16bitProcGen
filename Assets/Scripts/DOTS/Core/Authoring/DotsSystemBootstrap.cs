@@ -3,8 +3,10 @@ using DOTS.Player.Systems;
 using DOTS.Terrain.Core;
 using DOTS.Terrain;
 using DOTS.Terrain.Generation;
+using DOTS.Terrain.LOD;
 using DOTS.Terrain.Meshing;
 using DOTS.Terrain.Modification;
+using DOTS.Terrain.Rendering;
 using DOTS.Terrain.Streaming;
 using DOTS.Terrain.WFC;
 using DOTS.Terrain.Weather;
@@ -83,13 +85,6 @@ public class DotsSystemBootstrap : MonoBehaviour
             // Systems with [DisableAutoCreation] must be manually added to a system group to run
             var simGroup = world.GetExistingSystemManaged<SimulationSystemGroup>();
 
-            if (config.EnableTerrainChunkDensitySamplingSystem)
-            {
-                var densitySamplingHandle = world.CreateSystem<TerrainChunkDensitySamplingSystem>();
-                simGroup.AddSystemToUpdateList(densitySamplingHandle);
-                DebugSettings.Log("Bootstrap: TerrainChunkDensitySamplingSystem enabled and added to SimulationSystemGroup.");
-            }
-
             if (config.EnableTerrainChunkStreamingSystem)
             {
                 var handle = world.CreateSystem<TerrainChunkStreamingSystem>();
@@ -97,11 +92,32 @@ public class DotsSystemBootstrap : MonoBehaviour
                 DebugSettings.Log("Bootstrap: TerrainChunkStreamingSystem enabled and added to SimulationSystemGroup.");
             }
 
+            if (config.EnableTerrainLodSelectionSystem)
+            {
+                var handle = world.CreateSystem<TerrainChunkLodSelectionSystem>();
+                simGroup.AddSystemToUpdateList(handle);
+                DebugSettings.Log("Bootstrap: TerrainChunkLodSelectionSystem enabled and added to SimulationSystemGroup.");
+            }
+
+            if (config.EnableTerrainLodApplySystem)
+            {
+                var handle = world.CreateSystem<TerrainChunkLodApplySystem>();
+                simGroup.AddSystemToUpdateList(handle);
+                DebugSettings.Log("Bootstrap: TerrainChunkLodApplySystem enabled and added to SimulationSystemGroup.");
+            }
+
             if (config.EnableTerrainEditInputSystem)
             {
                 var editInputHandle = world.CreateSystem<TerrainEditInputSystem>();
                 simGroup.AddSystemToUpdateList(editInputHandle);
                 DebugSettings.Log("Bootstrap: TerrainEditInputSystem enabled and added to SimulationSystemGroup.");
+            }
+
+            if (config.EnableTerrainChunkDensitySamplingSystem)
+            {
+                var densitySamplingHandle = world.CreateSystem<TerrainChunkDensitySamplingSystem>();
+                simGroup.AddSystemToUpdateList(densitySamplingHandle);
+                DebugSettings.Log("Bootstrap: TerrainChunkDensitySamplingSystem enabled and added to SimulationSystemGroup.");
             }
 
             if (config.EnableTerrainChunkMeshBuildSystem)
@@ -137,6 +153,10 @@ public class DotsSystemBootstrap : MonoBehaviour
                 simGroup.AddSystemToUpdateList(handle);
                 DebugSettings.Log("Bootstrap: TerrainChunkColliderBuildSystem enabled and added to SimulationSystemGroup.");
             }
+
+            var grassGenerationHandle = world.CreateSystem<GrassChunkGenerationSystem>();
+            simGroup.AddSystemToUpdateList(grassGenerationHandle);
+            DebugSettings.Log("Bootstrap: GrassChunkGenerationSystem enabled and added to SimulationSystemGroup.");
 
             if (config.EnableTerrainSeamValidatorSystem)
             {
@@ -229,6 +249,11 @@ public class DotsSystemBootstrap : MonoBehaviour
                 DebugSettings.Log("Bootstrap: PlayerMovementSystem enabled and added to PhysicsSystemGroup.");
             }
 
+            // Holds player physics until nearby terrain colliders are ready to prevent startup fall-through.
+            var startupReadinessHandle = world.CreateSystem<PlayerStartupReadinessSystem>();
+            physicsGroup.AddSystemToUpdateList(startupReadinessHandle);
+            DebugSettings.Log("Bootstrap: PlayerStartupReadinessSystem enabled and added to PhysicsSystemGroup.");
+
             // Safety net: raycasts from the player's previous position to current position each
             // frame. If a collider is hit between the two, the player tunneled through a surface
             // and is snapped back. Works for any geometry (terrain, dungeons, caves).
@@ -316,10 +341,32 @@ public class DotsSystemBootstrap : MonoBehaviour
             var entity = entityManager.CreateEntity(typeof(ProjectFeatureConfigSingleton));
             entityManager.SetComponentData(entity, new ProjectFeatureConfigSingleton
             {
-                TerrainStreamingRadiusInChunks = config != null ? config.TerrainStreamingRadiusInChunks : 0
+                TerrainStreamingRadiusInChunks = config != null ? config.DerivedStreamingRadiusInChunks : 0,
+                CameraFarClipPlane = config != null ? config.DerivedCameraFarClip : 300f,
+                TerrainStreamingEnabled = config != null && config.EnableTerrainChunkStreamingSystem
             });
         }
         query.Dispose();
+
+        var lodQuery = entityManager.CreateEntityQuery(ComponentType.ReadOnly<TerrainLodSettings>());
+        if (lodQuery.CalculateEntityCount() == 0)
+        {
+            var lodEntity = entityManager.CreateEntity(typeof(TerrainLodSettings));
+            if (config != null)
+            {
+                var lodDefaults = TerrainLodSettings.Default;
+                lodDefaults.Lod0MaxDist = config.DerivedLod0MaxDist;
+                lodDefaults.Lod1MaxDist = config.DerivedLod1MaxDist;
+                lodDefaults.Lod2MaxDist = config.DerivedLod2MaxDist;
+                lodDefaults.UseStreamingAsCullBoundary = true;
+                entityManager.SetComponentData(lodEntity, lodDefaults);
+            }
+            else
+            {
+                entityManager.SetComponentData(lodEntity, TerrainLodSettings.Default);
+            }
+        }
+        lodQuery.Dispose();
 
         var editSettings = TerrainEditSettings.Default;
         if (config != null)

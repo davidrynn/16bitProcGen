@@ -6,22 +6,28 @@ using Unity.Physics.Systems;
 using UnityEngine;
 using Unity.Transforms;
 using DOTS.Terrain.Core;
+using System;
 
 namespace DOTS.Terrain
 {
     [DisableAutoCreation]
     [UpdateInGroup(typeof(SimulationSystemGroup))]
-    [UpdateAfter(typeof(Meshing.TerrainChunkMeshBuildSystem))]
+    [UpdateAfter(typeof(Meshing.TerrainChunkMeshUploadSystem))]
     public partial struct TerrainChunkColliderBuildSystem : ISystem
     {
         private const int DefaultMaxCollidersPerFrame = 4;
         private const int MaxDisableRemovalsPerFrame = 16;
         private EntityQuery pendingColliderQuery;
+        private EntityQuery colliderLodCleanupQuery;
 
         public void OnCreate(ref SystemState state)
         {
             state.RequireForUpdate<TerrainChunk>();
             pendingColliderQuery = state.GetEntityQuery(ComponentType.ReadOnly<TerrainChunkNeedsColliderBuild>());
+            colliderLodCleanupQuery = new EntityQueryBuilder(Allocator.Temp)
+                .WithAll<TerrainChunk, DOTS.Terrain.LOD.TerrainChunkLodState, PhysicsCollider>()
+                .WithNone<TerrainChunkNeedsColliderBuild>()
+                .Build(ref state);
         }
 
         public void OnUpdate(ref SystemState state)
@@ -72,10 +78,34 @@ namespace DOTS.Terrain
                 return;
             }
 
+            // Read LOD policy once before the loop.
+            var lodPolicyValid = SystemAPI.TryGetSingleton<DOTS.Terrain.LOD.TerrainLodSettings>(out var lodPolicy);
+            var lodRemovalCount = 0;
+            if (lodPolicyValid)
+            {
+                lodRemovalCount = RemoveCollidersOutsideLodPolicy(
+                    entityManager,
+                    ecb,
+                    staleBlobs,
+                    lodPolicy.ColliderMaxLod,
+                    MaxDisableRemovalsPerFrame);
+            }
+
             if (pendingColliderQuery.IsEmpty)
             {
-                ecb.Dispose();
-                staleBlobs.Dispose();
+                if (lodRemovalCount > 0)
+                {
+                    ecb.Playback(entityManager);
+                    ecb.Dispose();
+                    DisposeStaleBlobs(staleBlobs);
+                    staleBlobs.Dispose();
+                }
+                else
+                {
+                    ecb.Dispose();
+                    staleBlobs.Dispose();
+                }
+
                 return;
             }
 
@@ -97,6 +127,22 @@ namespace DOTS.Terrain
                     break;
                 }
 
+                // Skip collider builds for chunks above ColliderMaxLod — they are far from the
+                // player and will be promoted before the player can reach them. This keeps the
+                // 4/frame budget free for near-player LOD0/1 chunks.
+                if (lodPolicyValid && entityManager.HasComponent<DOTS.Terrain.LOD.TerrainChunkLodState>(entity))
+                {
+                    var lodState = entityManager.GetComponentData<DOTS.Terrain.LOD.TerrainChunkLodState>(entity);
+                    if (lodState.CurrentLod > lodPolicy.ColliderMaxLod)
+                    {
+                        CollectAndRemoveCollider(entityManager, ecb, staleBlobs, entity);
+                        if (DebugSettings.EnableTerrainColliderPipelineDebug)
+                            DebugSettings.LogTerrainColliderPipeline(
+                                $"collider removed (LOD {lodState.CurrentLod} > max {lodPolicy.ColliderMaxLod}) chunk={entity.Index}");
+                        continue;
+                    }
+                }
+
                 var mesh = meshData.ValueRO.Mesh;
                 var chunkCoord = chunk.ValueRO.ChunkCoord;
                 if (!mesh.IsCreated || mesh.Value.Vertices.Length == 0 || mesh.Value.Indices.Length == 0)
@@ -104,10 +150,13 @@ namespace DOTS.Terrain
                     if (DebugSettings.EnableTerrainColliderPipelineDebug)
                     {
                         DebugSettings.LogTerrainColliderPipeline(
-                            $"collider skipped (empty mesh) chunk={chunkCoord} entity={entity.Index}");
+                            $"collider skipped (empty mesh) chunk={chunkCoord} entity={entity.Index} — preserving existing collider");
                     }
 
-                    CollectAndRemoveCollider(entityManager, ecb, staleBlobs, entity);
+                    // Preserve any existing collider as a safety net (e.g. previous LOD's collider
+                    // while a coarser LOD mesh is empty). Just clear the pending tag.
+                    if (entityManager.HasComponent<TerrainChunkNeedsColliderBuild>(entity))
+                        ecb.RemoveComponent<TerrainChunkNeedsColliderBuild>(entity);
                     continue;
                 }
 
@@ -168,6 +217,47 @@ namespace DOTS.Terrain
             }
         }
 
+        private int RemoveCollidersOutsideLodPolicy(
+            EntityManager entityManager,
+            EntityCommandBuffer ecb,
+            NativeList<BlobAssetReference<Unity.Physics.Collider>> staleBlobs,
+            int colliderMaxLod,
+            int maxRemovalsPerFrame)
+        {
+            if (colliderLodCleanupQuery.IsEmpty)
+            {
+                return 0;
+            }
+
+            var removedCount = 0;
+            using var entities = colliderLodCleanupQuery.ToEntityArray(Allocator.Temp);
+            using var lodStates = colliderLodCleanupQuery.ToComponentDataArray<DOTS.Terrain.LOD.TerrainChunkLodState>(Allocator.Temp);
+
+            for (int i = 0; i < entities.Length; i++)
+            {
+                if (removedCount >= maxRemovalsPerFrame)
+                {
+                    break;
+                }
+
+                if (lodStates[i].CurrentLod <= colliderMaxLod)
+                {
+                    continue;
+                }
+
+                CollectAndRemoveCollider(entityManager, ecb, staleBlobs, entities[i]);
+                removedCount++;
+
+                if (DebugSettings.EnableTerrainColliderPipelineDebug)
+                {
+                    DebugSettings.LogTerrainColliderPipeline(
+                        $"collider removed (steady-state LOD cleanup, LOD {lodStates[i].CurrentLod} > max {colliderMaxLod}) chunk={entities[i].Index}");
+                }
+            }
+
+            return removedCount;
+        }
+
         private static BlobAssetReference<Unity.Physics.Collider> BuildMeshCollider(BlobAssetReference<TerrainChunkMeshBlob> mesh, CollisionFilter filter, Unity.Physics.Material material)
         {
             var vertexCount = mesh.Value.Vertices.Length;
@@ -214,7 +304,7 @@ namespace DOTS.Terrain
                 var oldData = entityManager.GetComponentData<TerrainChunkColliderData>(entity);
                 if (oldData.IsCreated)
                 {
-                    staleBlobs.Add(oldData.Collider);
+                    AddStaleBlobIfNeeded(staleBlobs, oldData.Collider);
                 }
             }
 
@@ -262,8 +352,12 @@ namespace DOTS.Terrain
                 var data = entityManager.GetComponentData<TerrainChunkColliderData>(entity);
                 if (data.IsCreated)
                 {
-                    staleBlobs.Add(data.Collider);
+                    AddStaleBlobIfNeeded(staleBlobs, data.Collider);
                 }
+
+                // Remove data component together with PhysicsCollider so stale blob references
+                // are not observed/disposed again in later frames.
+                ecb.RemoveComponent<TerrainChunkColliderData>(entity);
             }
 
             if (entityManager.HasComponent<TerrainChunkNeedsColliderBuild>(entity))
@@ -278,9 +372,37 @@ namespace DOTS.Terrain
             {
                 if (staleBlobs[i].IsCreated)
                 {
-                    staleBlobs[i].Dispose();
+                    try
+                    {
+                        staleBlobs[i].Dispose();
+                    }
+                    catch (InvalidOperationException)
+                    {
+                        // Blob was already disposed elsewhere; ignore to keep collider cleanup
+                        // resilient and avoid cascading physics-step failures.
+                    }
                 }
             }
+        }
+
+        private static void AddStaleBlobIfNeeded(
+            NativeList<BlobAssetReference<Unity.Physics.Collider>> staleBlobs,
+            BlobAssetReference<Unity.Physics.Collider> collider)
+        {
+            if (!collider.IsCreated)
+            {
+                return;
+            }
+
+            for (int i = 0; i < staleBlobs.Length; i++)
+            {
+                if (staleBlobs[i].Equals(collider))
+                {
+                    return;
+                }
+            }
+
+            staleBlobs.Add(collider);
         }
 
         private static bool IndicesWithinBounds(BlobAssetReference<TerrainChunkMeshBlob> mesh, int vertexCount)
