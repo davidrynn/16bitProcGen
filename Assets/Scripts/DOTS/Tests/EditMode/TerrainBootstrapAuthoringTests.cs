@@ -1,5 +1,6 @@
 using DOTS.Terrain.Bootstrap;
 using DOTS.Terrain;
+using DOTS.Terrain.LOD;
 using NUnit.Framework;
 using Unity.Collections;
 using Unity.Entities;
@@ -62,6 +63,40 @@ namespace DOTS.Terrain.Tests
             chunkQuery.Dispose();
             fieldSettingsQuery.Dispose();
 
+            Object.DestroyImmediate(go);
+        }
+
+        [Test]
+        public void RunBootstrap_InitialChunksIncludeLodState()
+        {
+            var go = new GameObject("TerrainBootstrapLodStateTest");
+            var authoring = go.AddComponent<TerrainBootstrapAuthoring>();
+
+            var result = authoring.RunBootstrap();
+
+            Assert.IsTrue(result, "Bootstrap should succeed when a world is provided.");
+
+            var entityManager = testWorld.EntityManager;
+            var chunkQuery = entityManager.CreateEntityQuery(ComponentType.ReadOnly<ChunkComponent>());
+            var chunkCount = chunkQuery.CalculateEntityCount();
+            Assert.Greater(chunkCount, 0, "Chunks should be spawned.");
+
+            var lodQuery = entityManager.CreateEntityQuery(
+                ComponentType.ReadOnly<ChunkComponent>(),
+                ComponentType.ReadOnly<TerrainChunkLodState>());
+
+            Assert.AreEqual(chunkCount, lodQuery.CalculateEntityCount(),
+                "Every bootstrap chunk should include TerrainChunkLodState so LOD-driven systems and tree rendering see the initial spawn area.");
+
+            using var lodStates = lodQuery.ToComponentDataArray<TerrainChunkLodState>(Allocator.Temp);
+            foreach (var lodState in lodStates)
+            {
+                Assert.AreEqual(0, lodState.CurrentLod);
+                Assert.AreEqual(0, lodState.TargetLod);
+            }
+
+            chunkQuery.Dispose();
+            lodQuery.Dispose();
             Object.DestroyImmediate(go);
         }
     }
