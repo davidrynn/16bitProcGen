@@ -1,5 +1,6 @@
 using DOTS.Terrain;
 using DOTS.Terrain.Core;
+using DOTS.Terrain.LOD;
 using Unity.Entities;
 using Unity.Mathematics;
 using Unity.Transforms;
@@ -26,6 +27,19 @@ namespace DOTS.Terrain.Bootstrap
         [SerializeField] private float amplitude = 4f;
         [SerializeField] private float frequency = 0.1f;
         [SerializeField] private float noiseValue = 0f;
+
+        [Header("World Generation")]
+        [SerializeField] private uint worldSeed = 12345u;
+        [SerializeField] private uint generationVersion = 1u;
+
+        [Header("Elevation Layers")]
+        [SerializeField] private float elevationLowFrequency  = 0.004f;
+        [SerializeField] private float elevationLowAmplitude  = 5.0f;
+        [SerializeField] private float elevationMidFrequency  = 0.018f;
+        [SerializeField] private float elevationMidAmplitude  = 1.2f;
+        [SerializeField] private float elevationHighFrequency = 0.07f;
+        [SerializeField] private float elevationHighAmplitude = 0.25f;
+        [SerializeField] private float elevationExponent      = 1.6f;
 
         private void Start()
         {
@@ -65,6 +79,37 @@ namespace DOTS.Terrain.Bootstrap
                 });
             }
             query.Dispose();
+
+            var contextQuery = entityManager.CreateEntityQuery(ComponentType.ReadOnly<TerrainGenerationContext>());
+            if (contextQuery.CalculateEntityCount() == 0)
+            {
+                var entity = entityManager.CreateEntity(typeof(TerrainGenerationContext));
+                entityManager.SetComponentData(entity, new TerrainGenerationContext
+                {
+                    WorldSeed         = worldSeed,
+                    GenerationVersion = generationVersion,
+                    GlobalHeightOffset = 0f
+                });
+            }
+            contextQuery.Dispose();
+
+            var fieldQuery = entityManager.CreateEntityQuery(ComponentType.ReadOnly<TerrainFieldSettings>());
+            if (fieldQuery.CalculateEntityCount() == 0)
+            {
+                var entity = entityManager.CreateEntity(typeof(TerrainFieldSettings));
+                entityManager.SetComponentData(entity, new TerrainFieldSettings
+                {
+                    BaseHeight             = baseHeight,
+                    ElevationLowFrequency  = elevationLowFrequency,
+                    ElevationLowAmplitude  = elevationLowAmplitude,
+                    ElevationMidFrequency  = elevationMidFrequency,
+                    ElevationMidAmplitude  = elevationMidAmplitude,
+                    ElevationHighFrequency = elevationHighFrequency,
+                    ElevationHighAmplitude = elevationHighAmplitude,
+                    ElevationExponent      = elevationExponent,
+                });
+            }
+            fieldQuery.Dispose();
         }
 
         private void SpawnChunkGrid(EntityManager entityManager)
@@ -97,6 +142,7 @@ namespace DOTS.Terrain.Bootstrap
                 {
                     var entity = entityManager.CreateEntity(
                         typeof(ChunkComponent),
+                        typeof(TerrainChunkLodState),
                         typeof(TerrainChunkGridInfo),
                         typeof(TerrainChunkBounds),
                         typeof(TerrainChunkNeedsDensityRebuild));
@@ -107,6 +153,16 @@ namespace DOTS.Terrain.Bootstrap
                     });
 
                     entityManager.SetComponentData(entity, TerrainChunkGridInfo.Create(resolution, voxelSize));
+
+                    // Bootstrap chunks must participate in the same LOD-driven lifecycle as streamed chunks.
+                    // Tree rendering now gates on TerrainChunkLodState, so omitting it here creates a visible
+                    // tree gap around the initial spawn area even though placement records exist.
+                    entityManager.SetComponentData(entity, new TerrainChunkLodState
+                    {
+                        CurrentLod = 0,
+                        TargetLod = 0,
+                        LastSwitchFrame = 0,
+                    });
 
                     var origin = new float3(x * chunkStride, originY, z * chunkStride);
                     entityManager.SetComponentData(entity, new TerrainChunkBounds

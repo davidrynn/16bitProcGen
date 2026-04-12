@@ -2,7 +2,9 @@ using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;
 using Unity.Physics;
+using DOTS.Player.Components;
 using DOTS.Terrain.Core;
+using Unity.Transforms;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -25,6 +27,11 @@ namespace DOTS.Terrain
 
         /// <summary>Minimum time (seconds) between edit operations to prevent spam and optimize performance.</summary>
         private const double EditCooldown = 0.15;
+
+        // Matches player capsule geometry from player bootstrap systems.
+        private static readonly float3 PlayerCapsuleVertex0 = new float3(0f, 0.5f, 0f);
+        private static readonly float3 PlayerCapsuleVertex1 = new float3(0f, 1.5f, 0f);
+        private const float PlayerCapsuleRadius = 0.5f;
 
         private EntityQuery _chunkQuery;
         private double _lastEditTime;
@@ -78,15 +85,55 @@ namespace DOTS.Terrain
             var entityManager = state.EntityManager;
             using var chunks = _chunkQuery.ToEntityArray(Allocator.Temp);
 
-            var edit = BuildEdit(
+            if (!TryBuildEdit(
                 entityManager,
                 chunks,
                 in command,
                 in settings,
+                out var edit,
                 out var usedSnapSpace,
                 out var cellSize,
                 out var hasChunkCoord,
-                out var chunkCoord);
+                out var chunkCoord,
+                out var rejectReason))
+            {
+                if (rejectReason == TerrainEditRejectReason.NoOwningChunk)
+                {
+                    DebugSettings.LogTerrainEditWarning(
+                        $"Edit blocked: no owning chunk found for chunk-local snapped edit at hitPos={command.HitPosition}.",
+                        forceLog: true);
+                }
+
+                return;
+            }
+
+            if (settings.EnablePlayerOverlapGuard && edit.Operation == SDFEditOperation.Add)
+            {
+                var blockedByPlayer = false;
+                var blockingPlayerPosition = float3.zero;
+
+                foreach (var playerTransform in SystemAPI.Query<RefRO<LocalTransform>>().WithAll<PlayerTag>())
+                {
+                    var playerOrigin = playerTransform.ValueRO.Position;
+                    if (!IsAddEditBlockedByPlayerSafetyVolume(in edit, playerOrigin, settings.PlayerEditClearance))
+                    {
+                        continue;
+                    }
+
+                    blockedByPlayer = true;
+                    blockingPlayerPosition = playerOrigin;
+                    break;
+                }
+
+                if (blockedByPlayer)
+                {
+                    // Current safety policy is block-only: reject overlap edits instead of relocating them.
+                    DebugSettings.LogTerrainEditWarning(
+                        $"Edit blocked: add edit overlaps player safety volume. hitPos={command.HitPosition} snappedPos={edit.Center} playerPos={blockingPlayerPosition}",
+                        forceLog: true);
+                    return;
+                }
+            }
 
             var editBuffer = SystemAPI.GetSingletonBuffer<SDFEdit>();
             editBuffer.Add(edit);
@@ -103,30 +150,42 @@ namespace DOTS.Terrain
             }
         }
 
-        private static SDFEdit BuildEdit(
+        private static bool TryBuildEdit(
             EntityManager entityManager,
             NativeArray<Entity> chunks,
             in TerrainBrushCommand command,
             in TerrainEditSettings settings,
+            out SDFEdit edit,
             out TerrainEditSnapSpace usedSnapSpace,
             out float cellSize,
             out bool hasChunkCoord,
-            out int3 chunkCoord)
+            out int3 chunkCoord,
+            out TerrainEditRejectReason rejectReason)
         {
+            edit = default;
             usedSnapSpace = settings.SnapSpace;
             cellSize = 0f;
             hasChunkCoord = false;
             chunkCoord = int3.zero;
+            rejectReason = TerrainEditRejectReason.None;
 
             if (settings.PlacementMode == TerrainEditPlacementMode.FreeSphere)
             {
-                return SDFEdit.Create(command.HitPosition, BrushRadius, command.Operation);
+                edit = SDFEdit.Create(command.HitPosition, BrushRadius, command.Operation);
+                return true;
             }
 
             if (!chunks.IsCreated || chunks.Length == 0)
             {
+                if (settings.LockChunkLocalSnap && settings.SnapSpace == TerrainEditSnapSpace.ChunkLocal)
+                {
+                    rejectReason = TerrainEditRejectReason.NoOwningChunk;
+                    return false;
+                }
+
                 usedSnapSpace = TerrainEditSnapSpace.Global;
-                return SDFEdit.Create(command.HitPosition, BrushRadius, command.Operation);
+                edit = SDFEdit.Create(command.HitPosition, BrushRadius, command.Operation);
+                return true;
             }
 
             var referenceGrid = entityManager.GetComponentData<TerrainChunkGridInfo>(chunks[0]);
@@ -144,19 +203,286 @@ namespace DOTS.Terrain
                     out var owningGrid))
             {
                 cellSize = TerrainChunkEditUtility.ComputeQuantizedCellSize(in owningGrid, settings.EditCellFraction);
-                snappedCenter = TerrainChunkEditUtility.SnapToChunkLocalLattice(command.HitPosition, owningBounds.WorldOrigin, cellSize);
+                var placementPoint = ResolvePlacementPoint(in command, cellSize, settings.CubeDepthCells);
+                snappedCenter = TerrainChunkEditUtility.SnapToChunkLocalLattice(placementPoint, owningBounds.WorldOrigin, cellSize);
                 usedSnapSpace = TerrainEditSnapSpace.ChunkLocal;
                 hasChunkCoord = true;
                 chunkCoord = owningChunk.ChunkCoord;
             }
             else
             {
-                snappedCenter = TerrainChunkEditUtility.SnapToGlobalLattice(command.HitPosition, settings.GlobalSnapAnchor, cellSize);
+                if (settings.LockChunkLocalSnap && settings.SnapSpace == TerrainEditSnapSpace.ChunkLocal)
+                {
+                    rejectReason = TerrainEditRejectReason.NoOwningChunk;
+                    return false;
+                }
+
+                var placementPoint = ResolvePlacementPoint(in command, cellSize, settings.CubeDepthCells);
+                snappedCenter = TerrainChunkEditUtility.SnapToGlobalLattice(placementPoint, settings.GlobalSnapAnchor, cellSize);
                 usedSnapSpace = TerrainEditSnapSpace.Global;
             }
 
             var halfExtents = BuildBoxHalfExtents(cellSize, settings.CubeDepthCells, command.RayDirection);
-            return SDFEdit.CreateBox(snappedCenter, halfExtents, command.Operation);
+
+            if (command.Operation == SDFEditOperation.Subtract &&
+                settings.PlacementMode == TerrainEditPlacementMode.SnappedCube &&
+                TryResolveEditColumn(
+                    entityManager,
+                    chunks,
+                    command.HitPosition,
+                    snappedCenter,
+                    hasChunkCoord,
+                    chunkCoord,
+                    out var columnCoord) &&
+                TryClampSubtractCenterToLoadedYLayers(
+                    entityManager,
+                    chunks,
+                    columnCoord,
+                    halfExtents,
+                    cellSize,
+                    ref snappedCenter,
+                    out var layerCount,
+                    out var minLayerOriginY))
+            {
+                DebugSettings.LogTerrainEdit(
+                    $"Subtract Y-layer clamp applied: column=({columnCoord.x},{columnCoord.y}) layers={layerCount} minLayerY={minLayerOriginY:F3} clampedCenterY={snappedCenter.y:F3}");
+            }
+
+            edit = SDFEdit.CreateBox(snappedCenter, halfExtents, command.Operation);
+            return true;
+        }
+
+        /// <summary>
+        /// Returns true when an additive edit intersects the player's safety capsule.
+        /// Current policy is block-only for overlap: no auto-relocation is applied.
+        /// </summary>
+        public static bool IsAddEditBlockedByPlayerSafetyVolume(in SDFEdit edit, float3 playerOrigin, float clearance)
+        {
+            if (edit.Operation != SDFEditOperation.Add)
+            {
+                return false;
+            }
+
+            return EditOverlapsPlayerCapsule(in edit, playerOrigin, clearance);
+        }
+
+        private static bool TryResolveEditColumn(
+            EntityManager entityManager,
+            NativeArray<Entity> chunks,
+            float3 hitPosition,
+            float3 snappedCenter,
+            bool hasChunkCoord,
+            int3 chunkCoord,
+            out int2 columnCoord)
+        {
+            if (hasChunkCoord)
+            {
+                columnCoord = new int2(chunkCoord.x, chunkCoord.z);
+                return true;
+            }
+
+            if (TerrainChunkEditUtility.TryFindOwningChunk(
+                    entityManager,
+                    chunks,
+                    hitPosition,
+                    out _,
+                    out var owningChunk,
+                    out _,
+                    out _))
+            {
+                columnCoord = new int2(owningChunk.ChunkCoord.x, owningChunk.ChunkCoord.z);
+                return true;
+            }
+
+            if (TerrainChunkEditUtility.TryFindOwningChunk(
+                    entityManager,
+                    chunks,
+                    snappedCenter,
+                    out _,
+                    out owningChunk,
+                    out _,
+                    out _))
+            {
+                columnCoord = new int2(owningChunk.ChunkCoord.x, owningChunk.ChunkCoord.z);
+                return true;
+            }
+
+            columnCoord = int2.zero;
+            return false;
+        }
+
+        private static bool TryClampSubtractCenterToLoadedYLayers(
+            EntityManager entityManager,
+            NativeArray<Entity> chunks,
+            int2 columnCoord,
+            float3 halfExtents,
+            float cellSize,
+            ref float3 snappedCenter,
+            out int layerCount,
+            out float minLayerOriginY)
+        {
+            layerCount = 0;
+            minLayerOriginY = 0f;
+
+            if (!chunks.IsCreated || chunks.Length == 0)
+            {
+                return false;
+            }
+
+            var minY = float.MaxValue;
+            for (int i = 0; i < chunks.Length; i++)
+            {
+                var chunkEntity = chunks[i];
+                if (!entityManager.HasComponent<TerrainChunk>(chunkEntity) ||
+                    !entityManager.HasComponent<TerrainChunkBounds>(chunkEntity))
+                {
+                    continue;
+                }
+
+                var chunk = entityManager.GetComponentData<TerrainChunk>(chunkEntity);
+                if (chunk.ChunkCoord.x != columnCoord.x || chunk.ChunkCoord.z != columnCoord.y)
+                {
+                    continue;
+                }
+
+                var bounds = entityManager.GetComponentData<TerrainChunkBounds>(chunkEntity);
+                minY = math.min(minY, bounds.WorldOrigin.y);
+                layerCount++;
+            }
+
+            if (layerCount == 0)
+            {
+                return false;
+            }
+
+            minLayerOriginY = minY;
+
+            // Keep subtraction edits inside the lowest loaded layer in this XZ column.
+            var safeCellSize = math.max(1e-5f, cellSize);
+            var minCenterY = minY + math.max(1e-5f, halfExtents.y) + safeCellSize * 0.001f;
+            if (snappedCenter.y >= minCenterY - 1e-6f)
+            {
+                return false;
+            }
+
+            var stepsUp = math.ceil((minCenterY - snappedCenter.y) / safeCellSize);
+            snappedCenter.y += stepsUp * safeCellSize;
+            return true;
+        }
+
+        private static float3 ResolvePlacementPoint(in TerrainBrushCommand command, float cellSize, int cubeDepthCells)
+        {
+            if (command.Operation != SDFEditOperation.Subtract)
+            {
+                return command.HitPosition;
+            }
+
+            var safeCellSize = math.max(1e-5f, cellSize);
+            var depthCells = math.max(1, cubeDepthCells);
+            var halfDepth = safeCellSize * 0.5f * depthCells;
+            var epsilon = safeCellSize * 0.001f;
+            var inwardDirection = ResolveSubtractInwardDirection(in command);
+            return command.HitPosition + inwardDirection * (halfDepth + epsilon);
+        }
+
+        private static float3 ResolveSubtractInwardDirection(in TerrainBrushCommand command)
+        {
+            if (command.HasHitSurfaceNormal && math.lengthsq(command.HitSurfaceNormal) > 1e-6f)
+            {
+                // Terrain collider normals point outward from solid volume, so subtraction
+                // should push opposite the normal to place the edit center inside terrain.
+                return math.normalizesafe(-command.HitSurfaceNormal, new float3(0f, -1f, 0f));
+            }
+
+            return math.normalizesafe(command.RayDirection, new float3(0f, -1f, 0f));
+        }
+
+        private static bool EditOverlapsPlayerCapsule(in SDFEdit edit, float3 playerOrigin, float clearance)
+        {
+            var capsuleStart = playerOrigin + PlayerCapsuleVertex0;
+            var capsuleEnd = playerOrigin + PlayerCapsuleVertex1;
+            var capsuleRadius = PlayerCapsuleRadius + math.max(0f, clearance);
+
+            if (edit.Shape == SDFEditShape.Box)
+            {
+                var boxMin = edit.Center - edit.HalfExtents;
+                var boxMax = edit.Center + edit.HalfExtents;
+                return CapsuleIntersectsAabb(capsuleStart, capsuleEnd, capsuleRadius, boxMin, boxMax);
+            }
+
+            var sphereRadius = math.max(1e-5f, edit.Radius);
+            var distanceSq = SegmentPointDistanceSq(capsuleStart, capsuleEnd, edit.Center);
+            var overlapDistance = capsuleRadius + sphereRadius;
+            return distanceSq <= overlapDistance * overlapDistance;
+        }
+
+        private static bool CapsuleIntersectsAabb(float3 segmentStart, float3 segmentEnd, float radius, float3 boxMin, float3 boxMax)
+        {
+            var radiusVec = new float3(radius);
+            var expandedMin = boxMin - radiusVec;
+            var expandedMax = boxMax + radiusVec;
+
+            if (SegmentIntersectsAabb(segmentStart, segmentEnd, expandedMin, expandedMax))
+            {
+                return true;
+            }
+
+            var radiusSq = radius * radius;
+            return PointAabbDistanceSq(segmentStart, boxMin, boxMax) <= radiusSq
+                   || PointAabbDistanceSq(segmentEnd, boxMin, boxMax) <= radiusSq;
+        }
+
+        private static float SegmentPointDistanceSq(float3 segmentStart, float3 segmentEnd, float3 point)
+        {
+            var segment = segmentEnd - segmentStart;
+            var lengthSq = math.dot(segment, segment);
+            if (lengthSq <= 1e-6f)
+            {
+                return math.lengthsq(point - segmentStart);
+            }
+
+            var t = math.saturate(math.dot(point - segmentStart, segment) / lengthSq);
+            var closest = segmentStart + segment * t;
+            return math.lengthsq(point - closest);
+        }
+
+        private static float PointAabbDistanceSq(float3 point, float3 min, float3 max)
+        {
+            var clamped = math.clamp(point, min, max);
+            return math.lengthsq(point - clamped);
+        }
+
+        private static bool SegmentIntersectsAabb(float3 segmentStart, float3 segmentEnd, float3 min, float3 max)
+        {
+            var direction = segmentEnd - segmentStart;
+            var tMin = 0f;
+            var tMax = 1f;
+
+            return UpdateSegmentInterval(segmentStart.x, direction.x, min.x, max.x, ref tMin, ref tMax)
+                   && UpdateSegmentInterval(segmentStart.y, direction.y, min.y, max.y, ref tMin, ref tMax)
+                   && UpdateSegmentInterval(segmentStart.z, direction.z, min.z, max.z, ref tMin, ref tMax);
+        }
+
+        private static bool UpdateSegmentInterval(float start, float direction, float min, float max, ref float tMin, ref float tMax)
+        {
+            if (math.abs(direction) <= 1e-6f)
+            {
+                return start >= min && start <= max;
+            }
+
+            var invDirection = 1f / direction;
+            var t1 = (min - start) * invDirection;
+            var t2 = (max - start) * invDirection;
+            if (t1 > t2)
+            {
+                var temp = t1;
+                t1 = t2;
+                t2 = temp;
+            }
+
+            tMin = math.max(tMin, t1);
+            tMax = math.min(tMax, t2);
+            return tMin <= tMax;
         }
 
         private static float3 BuildBoxHalfExtents(float cellSize, int cubeDepthCells, float3 rayDirection)
@@ -235,12 +561,16 @@ namespace DOTS.Terrain
             if (physicsWorld.CastRay(rayInput, out var hit))
             {
                 command.HitPosition = hit.Position;
+                command.HitSurfaceNormal = hit.SurfaceNormal;
+                command.HasHitSurfaceNormal = true;
                 DebugSettings.LogTerrainEdit(
                     $"Raycast hit: pos={hit.Position} fraction={hit.Fraction:F4}");
             }
             else
             {
                 command.HitPosition = origin + direction * BrushDistance;
+                command.HitSurfaceNormal = float3.zero;
+                command.HasHitSurfaceNormal = false;
                 DebugSettings.LogTerrainEdit(
                     $"Raycast miss, using fallback at {command.HitPosition}");
             }
@@ -286,10 +616,19 @@ namespace DOTS.Terrain
 
             if (keyboard.gKey.wasPressedThisFrame)
             {
-                settings.SnapSpace = settings.SnapSpace == TerrainEditSnapSpace.ChunkLocal
-                    ? TerrainEditSnapSpace.Global
-                    : TerrainEditSnapSpace.ChunkLocal;
-                changed = true;
+                if (settings.LockChunkLocalSnap)
+                {
+                    DebugSettings.LogTerrainEditWarning(
+                        "Snap-space toggle ignored: chunk-local snap lock is enabled.",
+                        forceLog: true);
+                }
+                else
+                {
+                    settings.SnapSpace = settings.SnapSpace == TerrainEditSnapSpace.ChunkLocal
+                        ? TerrainEditSnapSpace.Global
+                        : TerrainEditSnapSpace.ChunkLocal;
+                    changed = true;
+                }
             }
 
             if (keyboard[Key.LeftBracket].wasPressedThisFrame)
@@ -311,6 +650,7 @@ namespace DOTS.Terrain
         private static float GetNextFraction(float current)
         {
             var value = math.clamp(current, 0.25f, 1f);
+            if (value < 0.25f - 1e-4f) return 0.25f;
             if (value < 0.5f - 1e-4f) return 0.5f;
             if (value < 0.75f - 1e-4f) return 0.75f;
             if (value < 1f - 1e-4f) return 1f;
@@ -331,6 +671,14 @@ namespace DOTS.Terrain
             public int Operation;
             public float3 HitPosition;
             public float3 RayDirection;
+            public float3 HitSurfaceNormal;
+            public bool HasHitSurfaceNormal;
+        }
+
+        private enum TerrainEditRejectReason : byte
+        {
+            None = 0,
+            NoOwningChunk = 1
         }
     }
 }

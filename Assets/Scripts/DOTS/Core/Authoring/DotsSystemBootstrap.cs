@@ -8,6 +8,7 @@ using DOTS.Terrain.Meshing;
 using DOTS.Terrain.Modification;
 using DOTS.Terrain.Rendering;
 using DOTS.Terrain.Streaming;
+using DOTS.Terrain.Trees;
 using DOTS.Terrain.WFC;
 using DOTS.Terrain.Weather;
 using Unity.Entities;
@@ -40,6 +41,18 @@ public class DotsSystemBootstrap : MonoBehaviour
         {
             DebugSettings.LogWarning("Bootstrap: ProjectFeatureConfig not assigned. No systems will be enabled.");
             return;
+        }
+
+        // Diagnostic systems rely on fall-through/pipeline debug channels.
+        // Wire them from config so hypothesis testing does not require code changes.
+        if (config.EnablePlayerFallThroughDiagnosticSystem || config.EnableTerrainColliderTimingSystem)
+        {
+            DebugSettings.EnableFallThroughDebug = true;
+        }
+
+        if (config.EnableTerrainColliderTimingSystem)
+        {
+            DebugSettings.EnableTerrainColliderPipelineDebug = true;
         }
 
         if (config.EnableTerrainSystem)
@@ -157,6 +170,25 @@ public class DotsSystemBootstrap : MonoBehaviour
             var grassGenerationHandle = world.CreateSystem<GrassChunkGenerationSystem>();
             simGroup.AddSystemToUpdateList(grassGenerationHandle);
             DebugSettings.Log("Bootstrap: GrassChunkGenerationSystem enabled and added to SimulationSystemGroup.");
+
+            if (config.EnableTreePlacementSystem)
+            {
+                var invalidationHandle = world.CreateSystem<TreePlacementInvalidationSystem>();
+                simGroup.AddSystemToUpdateList(invalidationHandle);
+                DebugSettings.Log("Bootstrap: TreePlacementInvalidationSystem enabled and added to SimulationSystemGroup.");
+
+                var handle = world.CreateSystem<TreePlacementGenerationSystem>();
+                simGroup.AddSystemToUpdateList(handle);
+                DebugSettings.Log("Bootstrap: TreePlacementGenerationSystem enabled and added to SimulationSystemGroup.");
+            }
+
+            if (config.EnableTreeRenderSystem)
+            {
+                var presentationGroup = world.GetExistingSystemManaged<PresentationSystemGroup>();
+                var handle = world.CreateSystem<TreeChunkRenderSystem>();
+                presentationGroup.AddSystemToUpdateList(handle);
+                DebugSettings.Log("Bootstrap: TreeChunkRenderSystem enabled and added to PresentationSystemGroup.");
+            }
 
             if (config.EnableTerrainSeamValidatorSystem)
             {
@@ -378,7 +410,10 @@ public class DotsSystemBootstrap : MonoBehaviour
                 config.TerrainEditGlobalSnapAnchor.x,
                 config.TerrainEditGlobalSnapAnchor.y,
                 config.TerrainEditGlobalSnapAnchor.z,
-                config.TerrainEditCubeDepthCells);
+                config.TerrainEditCubeDepthCells,
+                config.TerrainEditEnablePlayerOverlapGuard,
+                config.TerrainEditPlayerClearance,
+                config.TerrainEditLockChunkLocalSnap);
         }
 
         var editQuery = entityManager.CreateEntityQuery(ComponentType.ReadOnly<TerrainEditSettings>());

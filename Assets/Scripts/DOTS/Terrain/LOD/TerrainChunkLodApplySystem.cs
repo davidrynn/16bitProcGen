@@ -1,5 +1,6 @@
 using DOTS.Terrain.Core;
 using DOTS.Terrain.Rendering;
+using DOTS.Terrain.Trees;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Physics;
@@ -111,6 +112,12 @@ namespace DOTS.Terrain.LOD
                 grassBuffer?.Dispose();
                 entityManager.RemoveComponent<GrassChunkBladeBuffer>(entity);
             }
+
+            if (entityManager.HasBuffer<TreePlacementRecord>(entity))
+                entityManager.RemoveComponent<TreePlacementRecord>(entity);
+
+            if (entityManager.HasComponent<ChunkTreePlacementTag>(entity))
+                entityManager.RemoveComponent<ChunkTreePlacementTag>(entity);
 
             // Keep collider components until TerrainChunkColliderBuildSystem processes LOD policy.
             // That system owns deferred blob disposal timing to avoid physics-world races.

@@ -7,6 +7,7 @@ using Unity.Physics.Systems;
 using Unity.Transforms;
 using DOTS.Player.Components;
 using DOTS.Terrain.Core;
+using System;
 
 namespace DOTS.Player.Systems
 {
@@ -27,14 +28,9 @@ namespace DOTS.Player.Systems
         // preventing the player from being driven through thin wall colliders.
         // At 25/s and 60 fps: ~42% per frame, reaches 93% in 5 frames (~83 ms).
         private const float GroundLerpRate = 25f;
-        /// <summary>
-        /// Ensures movement configuration data exists prior to running the system.
-        /// </summary>
-        public void OnCreate(ref SystemState state)
-        {
-            state.RequireForUpdate<PlayerMovementConfig>();
-        }
-
+        // Preserve responsive movement across brief grounding flicker windows
+        // on steep/edited terrain contacts.
+        private const float GroundControlGraceTime = 0.12f;
         /// <summary>
         /// Applies horizontal motion, air steering, and jump impulses based on the player's current input and movement state.
         /// </summary>
@@ -50,6 +46,13 @@ namespace DOTS.Player.Systems
         private const float WallProbeMinSpeed = 0.01f;
         private const uint TerrainLayerBit = 2u;
         private static readonly float3 CapsuleCenterOffset = new float3(0f, 1.0f, 0f);
+        private bool _hasLoggedInvalidColliderWallProbeRaycast;
+
+        public void OnCreate(ref SystemState state)
+        {
+            state.RequireForUpdate<PlayerMovementConfig>();
+            _hasLoggedInvalidColliderWallProbeRaycast = false;
+        }
 
         public void OnUpdate(ref SystemState state)
         {
@@ -104,7 +107,9 @@ namespace DOTS.Player.Systems
 
                 float3 currentVelocity = velocity.ValueRO.Linear;
 
-                if (movementState.ValueRO.IsGrounded)
+                var useGroundControl = movementState.ValueRO.IsGrounded ||
+                                       movementState.ValueRO.FallTime <= GroundControlGraceTime;
+                if (useGroundControl)
                 {
                     // Lerp toward desired ground speed instead of snapping.
                     // This allows physics solver wall-depenetration corrections to
@@ -182,15 +187,31 @@ namespace DOTS.Player.Systems
                             }
                         };
 
-                        if (physicsWorldSingleton.CastRay(probeInput, out var probeHit))
+                        if (TryCastRaySafe(
+                            in physicsWorldSingleton.PhysicsWorld,
+                            in probeInput,
+                            ref _hasLoggedInvalidColliderWallProbeRaycast,
+                            out var probeHit))
                         {
                             float velIntoWall = math.dot(horizontalVel, probeHit.SurfaceNormal);
                             if (velIntoWall < 0f)
                             {
+                                var horizontalSpeedBeforeClamp = horizontalSpeed;
                                 // Remove the into-wall component; player slides along surface.
                                 horizontalVel -= velIntoWall * probeHit.SurfaceNormal;
                                 currentVelocity.x = horizontalVel.x;
                                 currentVelocity.z = horizontalVel.z;
+
+                                if (DebugSettings.EnableFallThroughDebug && _frameCount % 10 == 0)
+                                {
+                                    var horizontalSpeedAfterClamp = math.length(horizontalVel);
+                                    var targetGroundSpeed = math.length(desiredHorizontal) * config.ValueRO.GroundSpeed;
+                                    DebugSettings.LogFallThrough(
+                                        $"WallClamp: grounded={movementState.ValueRO.IsGrounded} useGroundControl={useGroundControl} " +
+                                        $"fallTime={movementState.ValueRO.FallTime:F3} speedBefore={horizontalSpeedBeforeClamp:F3} " +
+                                        $"speedAfter={horizontalSpeedAfterClamp:F3} targetGround={targetGroundSpeed:F3} " +
+                                        $"normal={probeHit.SurfaceNormal} pos={transform.ValueRO.Position}");
+                                }
                             }
                         }
                     }
@@ -205,6 +226,30 @@ namespace DOTS.Player.Systems
             if (entityCount > 1 && _frameCount % 60 == 0) // Log every 60 frames
             {
                 DebugSettings.LogPlayerWarning($"Found {entityCount} player entities! This causes conflicts. Only one should exist.", forceLog: true);
+            }
+        }
+
+        private static bool TryCastRaySafe(
+            in PhysicsWorld physicsWorld,
+            in RaycastInput input,
+            ref bool hasLoggedInvalidColliderRaycast,
+            out RaycastHit hitInfo)
+        {
+            hitInfo = default;
+            try
+            {
+                return physicsWorld.CastRay(input, out hitInfo);
+            }
+            catch (InvalidOperationException ex)
+            {
+                if (!hasLoggedInvalidColliderRaycast)
+                {
+                    DebugSettings.LogFallThroughWarning(
+                        $"Wall probe raycast skipped due to invalid collider blob reference during collider rebuild. Details: {ex.Message}");
+                    hasLoggedInvalidColliderRaycast = true;
+                }
+
+                return false;
             }
         }
     }

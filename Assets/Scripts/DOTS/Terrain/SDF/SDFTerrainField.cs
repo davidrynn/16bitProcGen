@@ -10,14 +10,22 @@ namespace DOTS.Terrain
     [BurstCompile]
     public struct SDFTerrainField
     {
+        // Legacy fields — keep during Stage 1 migration, remove in Stage 3
         public float BaseHeight;
         public float Amplitude;
         public float Frequency;
         public float NoiseValue;
 
+        // New fields — populated when TerrainFieldSettings singleton is available
+        public bool UseLayeredNoise;
+        public uint WorldSeed;
+        public TerrainFieldSettings LayeredSettings;
+
         public float Sample(float3 worldPos, NativeArray<SDFEdit> edits)
         {
-            var density = SDFMath.SdGround(worldPos, Amplitude, Frequency, BaseHeight, NoiseValue);
+            var density = UseLayeredNoise
+                ? SDFMath.SdLayeredGround(worldPos, in LayeredSettings, WorldSeed)
+                : SDFMath.SdGround(worldPos, Amplitude, Frequency, BaseHeight, NoiseValue);
 
             if (!edits.IsCreated || edits.Length == 0)
             {

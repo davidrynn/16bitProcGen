@@ -1,6 +1,6 @@
 # Document Index
 
-**Last Updated:** 2026-04-07
+**Last Updated:** 2026-04-11
 
 > **New here?** Start with [MASTER_PLAN.md](MASTER_PLAN.md) — it has the project vision, current status, phase roadmap, and a curated document map.
 
@@ -14,8 +14,16 @@ Quick-reference index of all project documentation. Docs are organized by catego
 |----------|--------|-------------|
 | [KNOWN_ISSUES.md](KNOWN_ISSUES.md) | ACTIVE | Master bug/issue tracker |
 | [AI/TERRAIN_ECS_NEXT_STEPS_SPEC.md](AI/TERRAIN_ECS_NEXT_STEPS_SPEC.md) | ACTIVE | SDF + Surface Nets terrain implementation roadmap |
+| [AI/TerrainHeightMaps/TERRAIN_PLAINS_TREES_MVP_CHECKLIST.md](AI/TerrainHeightMaps/TERRAIN_PLAINS_TREES_MVP_CHECKLIST.md) | PHASE C IN PROGRESS | Phase A ✅ Phase B ✅ Phase C (visual) 🔄 — all systems implemented, awaiting Play Mode visual confirmation |
+| [AI/TerrainHeightMaps/TERRAIN_SURFACE_SCATTER_PLAN.md](AI/TerrainHeightMaps/TERRAIN_SURFACE_SCATTER_PLAN.md) | DESIGN | Rollout plan for generalizing tree-only placement into reusable surface scatter families |
+| [AI/TerrainHeightMaps/TERRAIN_SURFACE_SCATTER_SPEC.md](AI/TerrainHeightMaps/TERRAIN_SURFACE_SCATTER_SPEC.md) | DESIGN | Runtime contract for chunk-scattered trees, bushes, rocks, ore nodes, and similar discrete props |
+| [AI/TerrainHeightMaps/TERRAIN_SURFACE_SCATTER_SCHEMA.md](AI/TerrainHeightMaps/TERRAIN_SURFACE_SCATTER_SCHEMA.md) | DESIGN | First ECS/data breakdown for tree-plus-rock surface scatter lifecycle |
+| [AI/TerrainHeightMaps/TERRAIN_TREE_PLACEMENT_SPEC.md](AI/TerrainHeightMaps/TERRAIN_TREE_PLACEMENT_SPEC.md) | DESIGN | Tree-specific placement behavior within the broader surface scatter layer |
+| [AI/TERRAIN_EDIT_PLAYER_SAFETY_LOCAL_GRID_SPEC.md](AI/TERRAIN_EDIT_PLAYER_SAFETY_LOCAL_GRID_SPEC.md) | PROPOSED | Player-overlap edit guard + deterministic chunk-local grid guarantees |
+| [AI/PLAYER_PIT_MUDINESS_HYPOTHESIS_TEST_PLAN.md](AI/PLAYER_PIT_MUDINESS_HYPOTHESIS_TEST_PLAN.md) | ACTIVE | Test-first hypothesis matrix for pit-wall mudiness root-cause validation |
 | [AI/PERSISTENCE_SPEC.md](AI/PERSISTENCE_SPEC.md) | DESIGN | World persistence — edit journals, entity/NPC/player state (Phase 4) |
 | [AI/BIOME_GRASS_STREAMING_MVP_PLAN.md](AI/BIOME_GRASS_STREAMING_MVP_PLAN.md) | DESIGN | Biome-based grass streaming MVP plan for infinite terrain |
+| [AI/HORIZON_IMPOSTOR_SEED_DRIVEN_SPEC.md](AI/HORIZON_IMPOSTOR_SEED_DRIVEN_SPEC.md) | DESIGN (DEFERRED) | Seed-driven far-horizon impostor plan for mountain/hill/sea silhouette rendering |
 | [AI/PLAYER_TERRAIN_FALLTHROUGH_DEBUG_SPEC.md](AI/PLAYER_TERRAIN_FALLTHROUGH_DEBUG_SPEC.md) | ROOT CAUSE FIXED | Fall-through debug: missing PhysicsWorldIndex |
 | [AI/TERRAIN_EDIT_CONTROLS_SPEC.md](AI/TERRAIN_EDIT_CONTROLS_SPEC.md) | IMPLEMENTED | Terrain edit raycast fix, Input System migration, reticle |
 | [AI/PLAYER_BOOTSTRAP_FIX_SPEC.md](AI/PLAYER_BOOTSTRAP_FIX_SPEC.md) | ACTIVE | Player bootstrap reliability for DOTS tests |
@@ -30,6 +38,7 @@ Quick-reference index of all project documentation. Docs are organized by catego
 | Document | Description |
 |----------|-------------|
 | [MASTER_PLAN.md](MASTER_PLAN.md) | **Project overview — vision, status, phase roadmap, doc map** |
+| [DOCUMENTATION_SYSTEM_SPEC.md](DOCUMENTATION_SYSTEM_SPEC.md) | Canonical documentation structure, metadata, and AI-discovery rules |
 | [/CLAUDE.md](/CLAUDE.md) | Claude Code project instructions |
 | [/.github/copilot-instructions.md](/.github/copilot-instructions.md) | GitHub Copilot instructions |
 | [PROJECT_NOTES.md](PROJECT_NOTES.md) | Current work session notes and TODO |

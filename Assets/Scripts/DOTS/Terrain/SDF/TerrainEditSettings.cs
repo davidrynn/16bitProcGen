@@ -25,14 +25,20 @@ namespace DOTS.Terrain
         public float EditCellFraction;
         public float3 GlobalSnapAnchor;
         public int CubeDepthCells;
+        public bool EnablePlayerOverlapGuard;
+        public float PlayerEditClearance;
+        public bool LockChunkLocalSnap;
 
         public static TerrainEditSettings Default => new TerrainEditSettings
         {
             PlacementMode = TerrainEditPlacementMode.SnappedCube,
-            SnapSpace = TerrainEditSnapSpace.Global,
+            SnapSpace = TerrainEditSnapSpace.ChunkLocal,
             EditCellFraction = 0.25f,
             GlobalSnapAnchor = float3.zero,
-            CubeDepthCells = 1
+            CubeDepthCells = 1,
+            EnablePlayerOverlapGuard = true,
+            PlayerEditClearance = 0.15f,
+            LockChunkLocalSnap = true
         };
 
         public static TerrainEditSettings Clamp(in TerrainEditSettings settings)
@@ -40,6 +46,11 @@ namespace DOTS.Terrain
             var result = settings;
             result.EditCellFraction = math.clamp(result.EditCellFraction, 0.25f, 1f);
             result.CubeDepthCells = math.max(1, result.CubeDepthCells);
+            result.PlayerEditClearance = math.max(0f, result.PlayerEditClearance);
+            if (result.LockChunkLocalSnap)
+            {
+                result.SnapSpace = TerrainEditSnapSpace.ChunkLocal;
+            }
             return result;
         }
 
@@ -50,7 +61,10 @@ namespace DOTS.Terrain
             float anchorX,
             float anchorY,
             float anchorZ,
-            int cubeDepthCells)
+            int cubeDepthCells,
+            bool enablePlayerOverlapGuard,
+            float playerEditClearance,
+            bool lockChunkLocalSnap)
         {
             var settings = Default;
             settings.PlacementMode = placementMode;
@@ -58,6 +72,9 @@ namespace DOTS.Terrain
             settings.EditCellFraction = editCellFraction;
             settings.GlobalSnapAnchor = new float3(anchorX, anchorY, anchorZ);
             settings.CubeDepthCells = cubeDepthCells;
+            settings.EnablePlayerOverlapGuard = enablePlayerOverlapGuard;
+            settings.PlayerEditClearance = playerEditClearance;
+            settings.LockChunkLocalSnap = lockChunkLocalSnap;
             return Clamp(in settings);
         }
     }

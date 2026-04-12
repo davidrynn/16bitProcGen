@@ -66,12 +66,16 @@ public class ProjectFeatureConfig : ScriptableObject
 
     [Header("Terrain Edit Settings")]
     public TerrainEditPlacementMode TerrainEditPlacementMode = TerrainEditPlacementMode.SnappedCube;
-    public TerrainEditSnapSpace TerrainEditSnapSpace = TerrainEditSnapSpace.Global;
+    public TerrainEditSnapSpace TerrainEditSnapSpace = TerrainEditSnapSpace.ChunkLocal;
     [Range(0.25f, 1f)]
     public float TerrainEditCellFraction = 0.25f;
     public Vector3 TerrainEditGlobalSnapAnchor = Vector3.zero;
     [Min(1)]
     public int TerrainEditCubeDepthCells = 1;
+    public bool TerrainEditEnablePlayerOverlapGuard = true;
+    [Min(0f)]
+    public float TerrainEditPlayerClearance = 0.15f;
+    public bool TerrainEditLockChunkLocalSnap = true;
 
     [Header("Terrain Streaming")]
     public bool EnableTerrainChunkStreamingSystem = true;
@@ -112,6 +116,10 @@ public class ProjectFeatureConfig : ScriptableObject
     /// <summary>LOD2 ring radius in chunk units (matches streaming radius by default).</summary>
     public float DerivedLod2MaxDist =>
         Mathf.Max(DerivedLod1MaxDist + 1f, DerivedStreamingRadiusInChunks);
+
+    [Header("Tree Systems")]
+    public bool EnableTreePlacementSystem = true;
+    public bool EnableTreeRenderSystem = true;
 
     [Header("Terrain Debug Systems")]
     public bool EnableTerrainSeamValidatorSystem = false;

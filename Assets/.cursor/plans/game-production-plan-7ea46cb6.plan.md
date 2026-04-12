@@ -10,6 +10,9 @@
 - **Terrain Destruction**: Glob removal system with physics for terrain chunks
 - **Weather System**: Dynamic environmental effects (rain, sandstorms)
 - **Basic Player Controller**: Standard FPS movement (needs replacement with magic hand mechanics)
+- **Plains Terrain Shape (Phase A)**: Layered SDF noise (`SdLayeredGround`) with seed-driven per-layer offsets, redistribution exponent, `TerrainGenerationContext` + `TerrainFieldSettings` singletons — replaces sine-wave `SdGround`
+- **Sparse Tree Placement (Phase B)**: `TreePlacementAlgorithm` generates deterministic, seam-safe tree records per chunk; slope + probability + spacing filters; `ChunkTreePlacementTag` guards single-run semantics
+- **Instanced Tree Rendering (Phase C)**: `TreeChunkRenderSystem` renders via `Graphics.RenderMeshInstanced` (Unity 6 / URP-compatible); `TreeVisualBootstrap` for scene-side config — MVP visual placeholder confirmed rendering in-game. **Fix applied**: switched from legacy `DrawMeshInstanced` (not URP-compatible) to `RenderMeshInstanced`; also fixed `_BaseColor` on "Unlit green.mat" from white to forest green.
 
 ### 🔨 Prototype/Incomplete Systems
 
@@ -367,6 +370,24 @@
 3. **Resource Collection** - Complete the gameplay loop
 4. **Basic HUD** - Show player state
 
+### Active Hotfix/UX Track (Current Focus)
+
+1. **Pit Wall Movement Mudiness (Test-First)**
+- Validate hypotheses before additional movement changes:
+- H1: Grounding support loss after dig-through drives frequent air-control branch.
+- H2: Wall-probe velocity projection over-clamps horizontal speed when hugging pit walls.
+- H3: Collider rebuild latency around edited pits amplifies temporary support loss.
+- Run targeted PlayMode/runtime diagnostics first, then apply only the smallest confirmed fix.
+
+2. **Blocked Edit Visual Feedback**
+- Add explicit blocked-edit UX signal at reticle when edit overlaps player safety volume.
+- Preferred initial treatment: red X reticle state with short pulse and optional tooltip text.
+- Keep behavior deterministic and consistent with existing edit rejection logs.
+
+3. **Deeper Lower Y-Layer (Deferred)**
+- Defer vertical multi-layer terrain expansion until the above hotfix/UX work is complete.
+- Keep this item in backlog for post-hotfix implementation planning.
+
 ### Short Term (Weeks 5-8)
 
 5. **Enhanced Biomes** - Make world interesting
@@ -467,6 +488,9 @@
 - [ ] Implement Slingshot Movement System with grip, pull-back, trajectory preview, and launch mechanics
 - [ ] Implement Resource Collection System extending TerrainGlobComponent with automatic pickup
 - [ ] Create Basic HUD showing resources, hand charge, and slingshot charge indicators
+- [ ] Run pit-wall mudiness hypothesis tests (grounding, wall probe, collider timing) before new movement logic
+- [ ] Implement blocked-edit reticle feedback (red X + pulse) for player-overlap rejections
+- [ ] Keep deeper lower Y-layer terrain expansion in deferred backlog until hotfix/UX track closes
 - [ ] Expand biome system with 6+ distinct biomes including grasslands, desert, mountains, forest, snow, and corrupted areas
 - [ ] Implement procedural structure generation for ruins, caves, towers, shrines, and resource nodes
 - [ ] Create crafting system with recipes, crafting stations, and UI for tools, upgrades, and consumables

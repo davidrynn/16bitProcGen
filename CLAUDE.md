@@ -10,6 +10,13 @@ A 16-bit retro-style procedural terrain/dungeon sandbox game built in **Unity 6.
 
 If instructions conflict: **safety > architecture rules > performance > style > logging verbosity**.
 
+## Documentation Navigation
+
+- Start documentation discovery with `Assets/Docs/DOCUMENT_INDEX.md` before broad doc searches.
+- Prefer active/current docs over `Assets/Docs/Archives/` unless historical context is explicitly needed.
+- Documentation structure, metadata, and canonical-doc rules live in `Assets/Docs/DOCUMENTATION_SYSTEM_SPEC.md`.
+- For documentation creation, reorganization, indexing, or canonicalization tasks, use the `documentation-governance` skill in `.agents/skills/documentation-governance/`.
+
 ## Core Architecture Principles
 
 ### DOTS-First Development (Mandatory)
@@ -100,6 +107,19 @@ namespace DOTS.Player.Systems
 | Components | PascalCase, optional suffix | `PlayerInputComponent`, `TerrainData` |
 | Enums | PascalCase with `: byte` for ECS | `PlayerMovementMode : byte` |
 | Private fields | camelCase with underscore | `_cachedQuery` |
+
+### Code Documentation
+
+- Add XML `<summary>` comments to all new public types, components, and non-trivial public methods.
+- Prefer **why** comments over **what** comments — the code shows what; comments should explain constraints, trade-offs, ordering decisions, or intentional simplifications that aren't derivable from reading the code alone.
+- Always comment non-obvious DOTS/ECS constraints:
+  - System update ordering rationale (`[UpdateBefore]` / `[UpdateAfter]` choices)
+  - `WithoutBurst()` usage — explain why Burst doesn't apply
+  - Intentional `SystemBase` over `ISystem` (e.g. managed API required)
+  - `[DisableAutoCreation]` rationale
+  - BlobAsset lifecycle notes at disposal sites
+- Don't comment what the code obviously does.
+- Don't add comments to code you didn't change.
 
 ### Namespace Structure
 
@@ -233,6 +253,8 @@ public class PlayerCameraBootstrap : MonoBehaviour
 
 ## Related Documentation
 
+- `Assets/Docs/DOCUMENT_INDEX.md` - Canonical entry point for project documentation
+- `Assets/Docs/DOCUMENTATION_SYSTEM_SPEC.md` - Documentation structure and AI-discovery rules
 - `Assets/Docs/AI_Instructions.md` - Detailed AI assistant standards and DOTS-first workflow
 - `Assets/Docs/AI/TERRAIN_ECS_NEXT_STEPS_SPEC.md` - SDF terrain implementation roadmap
 - `Assets/Scripts/Player/Bootstrap/BOOTSTRAP_GUIDE.md` - Bootstrap pattern guide with physics setup

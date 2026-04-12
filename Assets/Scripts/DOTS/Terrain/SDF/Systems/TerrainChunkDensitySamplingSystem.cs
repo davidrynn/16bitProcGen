@@ -41,12 +41,27 @@ namespace DOTS.Terrain
             }
 
             var settings = SystemAPI.GetSingleton<SDFTerrainFieldSettings>();
+
+            var useLayeredNoise = false;
+            TerrainFieldSettings layeredSettings = default;
+            uint worldSeed = 0;
+
+            if (SystemAPI.HasSingleton<TerrainFieldSettings>() && SystemAPI.HasSingleton<TerrainGenerationContext>())
+            {
+                layeredSettings = SystemAPI.GetSingleton<TerrainFieldSettings>();
+                worldSeed = SystemAPI.GetSingleton<TerrainGenerationContext>().WorldSeed;
+                useLayeredNoise = true;
+            }
+
             var field = new SDFTerrainField
             {
-                BaseHeight = settings.BaseHeight,
-                Amplitude = settings.Amplitude,
-                Frequency = settings.Frequency,
-                NoiseValue = settings.NoiseValue
+                BaseHeight      = settings.BaseHeight,
+                Amplitude       = settings.Amplitude,
+                Frequency       = settings.Frequency,
+                NoiseValue      = settings.NoiseValue,
+                UseLayeredNoise = useLayeredNoise,
+                WorldSeed       = worldSeed,
+                LayeredSettings = layeredSettings
             };
 
             var maxDensityRebuilds = int.MaxValue;

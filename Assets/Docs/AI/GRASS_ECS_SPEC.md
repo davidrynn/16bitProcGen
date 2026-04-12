@@ -1,8 +1,12 @@
 # GPU-Instanced Grass System — ECS Spec
 
-**Status:** Planning
+**Status:** Planning — post-MVP / deferred behind core terrain and trees
 **Replaces:** BruteForce GrassShader POC (`GrassChunkRenderSystem` + `TerrainChunkGrassMaterial`)
-**Design Goal:** Highly configurable, biome-aware, edit-reactive grass rendered via `DrawMeshInstancedIndirect`
+**Design Goal:** Highly configurable, edit-reactive grass rendered via `DrawMeshInstancedIndirect`, with multi-biome support staged after MVP.
+
+**Priority Decision:** Grass is not part of the core terrain MVP. Core terrain and tree placement come first.
+
+**When grass work starts:** first implementation should be one biome only (`Plains`, `BiomeTypeId = 0`). Multi-biome behavior is deferred.
 
 ---
 
@@ -11,11 +15,13 @@
 | Goal | Notes |
 |------|-------|
 | Configurable density | 0 (bare rock) → 1 (dense meadow), per chunk |
-| Biome color/style | ScriptableObject settings per biome type |
+| Biome color/style | MVP: Plains-only profile. Future: ScriptableObject settings per biome type |
 | Edit reactivity | Grass removed wherever terrain SDF is modified |
 | ECS-native | ISystem, no MonoBehaviour rendering logic |
 | No geometry shader | Vertex shader only → GPU instancing viable |
 | Sparse clumps | Deferred; defined as a separate grass type / shader variant — not in this phase |
+
+This spec should be read as a deferred implementation design, not as the current terrain MVP priority.
 
 ---
 
@@ -41,8 +47,8 @@ GrassChunkRenderSystem (ISystem, PresentationSystemGroup)  ← replaces current
     Issues: Graphics.DrawMeshInstancedIndirect per chunk (1 draw call per chunk,
             thousands of blades per call — vs. geometry shader per-triangle cost)
 
-GrassBiomeSettings (ScriptableObject, per biome)
-    Color, density multiplier, blade height range, wind strength, texture
+GrassBiomeSettings (ScriptableObject)
+    MVP: one Plains profile. Future: per-biome array
 
 GrassSystemSettings (ScriptableObject singleton)
     Global: max blades per chunk, blade mesh ref, base material, fade distances
@@ -60,7 +66,7 @@ namespace DOTS.Terrain.Rendering
     public struct TerrainChunkGrassSurface : IComponentData
     {
         public float   Density;       // 0..1. 0 = no grass, 1 = full density
-        public int     BiomeTypeId;   // Index into GrassBiomeSettings[] on GrassSystemSettings
+        public int     BiomeTypeId;   // MVP: fixed to Plains (0). Future: index into GrassBiomeSettings[]
         public byte    GrassType;     // 0 = standard blades (this spec), 1 = sparse clumps (future)
         public bool    IsDirty;       // Set true to request buffer rebuild (avoids extra tag component)
     }
@@ -327,9 +333,7 @@ Assets/
 │   │   └── GrassBlades.shader                  NEW
 │   ├── GrassSystemSettings.asset               NEW (ScriptableObject)
 │   └── Biomes/
-│       ├── GrassBiome_Plains.asset             NEW
-│       ├── GrassBiome_Rocky.asset              NEW
-│       └── GrassBiome_Tundra.asset             NEW (examples)
+│       └── GrassBiome_Plains.asset             NEW (MVP)
 ├── Scripts/DOTS/Terrain/Rendering/
 │   ├── TerrainChunkGrassSurface.cs             MODIFY (add BiomeTypeId, GrassType, IsDirty)
 │   ├── GrassChunkBladeBuffer.cs                NEW
@@ -358,10 +362,10 @@ Assets/
 
 ### Phase 2 — Configurability
 - [ ] `TerrainChunkGrassSurface.Density` consumed (varies blade count per chunk)
-- [ ] `BiomeTypeId` → `GrassBiomeSettings` lookup (color, height range, density multiplier)
-- [ ] `MaterialPropertyBlock` per-chunk wind strength from biome settings
+- [ ] `BiomeTypeId` → `GrassBiomeSettings` lookup (MVP: fixed `BiomeTypeId=0` Plains)
+- [ ] `MaterialPropertyBlock` per-chunk wind strength from Plains settings
 - [ ] Fade in/out at `FadeStart / FadeEnd` distances (in vertex shader alpha)
-- [ ] Editor: "Tag chunks with biome" menu item to test multiple biomes side-by-side
+- [ ] Editor: keep biome-tagging utility deferred until multi-biome phase
 
 ### Phase 3 — Terrain edit reactivity
 - [ ] Extend `TerrainChunkEditUtility.MarkChunksDirty` to set `IsDirty = true` on grass surface
@@ -398,9 +402,9 @@ Per the project's **SPEC → TEST → CODE** convention. All tests live under
 | `BladeCount_ZeroAtDensityZero` | `Density=0` → exactly 0 blades, no buffer allocated |
 | `BladePositions_WithinTriangleBounds` | All `WorldPosition` values lie within AABB of the input triangle |
 | `BladeGeneration_IsDeterministic` | Running twice with same chunk position seed produces identical `NativeArray<GrassBladeData>` |
-| `BiomeDensityMultiplier_Applied` | `DensityMultiplier=0.5` on biome settings halves blade count vs multiplier=1 |
-| `BladeHeight_WithinBiomeRange` | All `Height` values satisfy `MinBladeHeight ≤ h ≤ MaxBladeHeight` |
-| `ColorTint_WithinBiomeNoiseRange` | Each channel of `ColorTint` within `BaseColor ± ColorNoiseScale` |
+| `PlainsDensityMultiplier_Applied` | `DensityMultiplier=0.5` on Plains settings halves blade count vs multiplier=1 |
+| `BladeHeight_WithinPlainsRange` | All `Height` values satisfy `MinBladeHeight ≤ h ≤ MaxBladeHeight` in Plains settings |
+| `ColorTint_WithinPlainsNoiseRange` | Each channel of `ColorTint` within `BaseColor ± ColorNoiseScale` in Plains settings |
 
 **File:** `TerrainChunkGrassSurfaceTests.cs`
 
@@ -432,7 +436,7 @@ Run these by eye in Play mode after Phase 1 and Phase 2 are complete:
 - [ ] Grass blades visible on tagged surface chunks
 - [ ] Blades face camera as player rotates around them (billboard)
 - [ ] Wind animation visible and not "swirling" (uniform patches)
-- [ ] Two chunks with different `BiomeTypeId` show different colors
+- [ ] Plains chunks render consistent color/height profile across streamed areas
 - [ ] Low-density chunk visibly sparser than high-density neighbor
 - [ ] Carving terrain → grass disappears in the carved region within one frame
 - [ ] Frame time acceptable: Profiler shows grass draw calls < 5% of frame budget on 10-chunk view

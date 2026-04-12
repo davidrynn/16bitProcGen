@@ -17,6 +17,13 @@ Unity 6.2+ (2022 LTS only if explicitly needed). Entities 1.3+, Entities Graphic
 **Production Roadmap**
 Assets/.cursor/plans/game-production-plan-7ea46cb6.plan.md drives priorities. Review "Immediate Next Steps" before work.
 
+## Documentation Navigation
+
+- Start documentation discovery with `Assets/Docs/DOCUMENT_INDEX.md` before broad doc searches.
+- Prefer docs marked active/current/implemented over `Archives/` or obsolete docs when multiple files overlap.
+- Documentation structure, metadata, and canonical-doc rules live in `Assets/Docs/DOCUMENTATION_SYSTEM_SPEC.md`.
+- For documentation creation, reorganization, indexing, or canonicalization tasks, use the `documentation-governance` skill in `.agents/skills/documentation-governance/`.
+
 ## Core Architecture
 
 **Terrain Generation (Heightmap path)**
@@ -89,6 +96,8 @@ Architecture principle: if legacy code conflicts with DOTS-first, prefer pure DO
 
 ## Reference Docs
 
+- Assets/Docs/DOCUMENT_INDEX.md — canonical entry point for project documentation
+- Assets/Docs/DOCUMENTATION_SYSTEM_SPEC.md — documentation structure and AI-discovery rules
 - Assets/Scripts/DOTS/Test/Testing_Documentation.md — test harness catalog
 - Assets/Docs/AI_Instructions.md — SPEC → TEST → CODE workflow
 - Assets/Scripts/Player/Bootstrap/BOOTSTRAP_GUIDE.md — pure-code DOTS scene setup patterns

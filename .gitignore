@@ -477,3 +477,10 @@ skills-lock.json
 ugs_installer
 # Windows reserved name accidentally created as a file (e.g. bad -logFile nul)
 /nul
+
+# MCP/AI tool screenshots (debug captures, not project assets)
+/Assets/Screenshots/
+
+# Unity Test Runner log output files
+TestLog-*.txt
+TestResults-*.xml

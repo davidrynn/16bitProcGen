@@ -153,6 +153,81 @@ namespace DOTS.Player.Test
         }
 
         [UnityTest]
+        public IEnumerator CeilingOnly_EmbeddedRecovery_DoesNotGroundPlayer()
+        {
+            wallColliderBlob = Unity.Physics.BoxCollider.Create(
+                new BoxGeometry
+                {
+                    Center = float3.zero,
+                    Size = new float3(4f, 0.2f, 4f),
+                    Orientation = quaternion.identity,
+                    BevelRadius = 0f
+                },
+                CollisionFilter.Default);
+
+            var ceiling = entityManager.CreateEntity(typeof(LocalTransform), typeof(PhysicsCollider), typeof(PhysicsWorldIndex));
+            entityManager.SetComponentData(ceiling, LocalTransform.FromPosition(new float3(0f, 2.3f, 0f)));
+            entityManager.SetComponentData(ceiling, new PhysicsCollider { Value = wallColliderBlob });
+
+            var player = CreateTerrainDriverPlayer(new float3(0f, 0f, 0f), PlayerMovementMode.Ground, isGrounded: false);
+            entityManager.SetComponentData(player, new PhysicsGravityFactor { Value = 0f });
+            entityManager.SetComponentData(player, new PhysicsVelocity
+            {
+                Linear = float3.zero,
+                Angular = float3.zero
+            });
+            entityManager.SetComponentData(player, new PlayerInputComponent
+            {
+                Move = float2.zero,
+                Look = float2.zero,
+                JumpPressed = false
+            });
+            entityManager.SetComponentData(player, new PlayerMovementState
+            {
+                Mode = PlayerMovementMode.Ground,
+                IsGrounded = false,
+                FallTime = 0.25f,
+                PreviousPosition = float3.zero
+            });
+
+            TickWorldOnce();
+
+            using var worldQuery = entityManager.CreateEntityQuery(ComponentType.ReadOnly<PhysicsWorldSingleton>());
+            Assert.IsFalse(worldQuery.IsEmpty, "Expected PhysicsWorldSingleton to exist.");
+
+            var physicsWorld = worldQuery.GetSingleton<PhysicsWorldSingleton>().PhysicsWorld;
+            var downProbe = new RaycastInput
+            {
+                Start = float3.zero,
+                End = new float3(0f, -1.3f, 0f),
+                Filter = CollisionFilter.Default
+            };
+            var upProbe = new RaycastInput
+            {
+                Start = float3.zero,
+                End = new float3(0f, 2.6f, 0f),
+                Filter = CollisionFilter.Default
+            };
+
+            Assert.IsFalse(physicsWorld.CastRay(downProbe),
+                "Test setup invalid: downward grounding probe unexpectedly hit something.");
+            Assert.IsTrue(physicsWorld.CastRay(upProbe, out var upHit),
+                "Test setup invalid: upward embedded-recovery probe should hit the ceiling.");
+            Assert.Less(upHit.SurfaceNormal.y, 0f,
+                "Test setup invalid: ceiling underside should produce a downward-facing normal.");
+
+            var movementState = entityManager.GetComponentData<PlayerMovementState>(player);
+            Assert.IsFalse(movementState.IsGrounded,
+                "Embedded recovery must not classify an overhead ceiling hit as valid ground.");
+            Assert.Greater(movementState.FallTime, 0.25f,
+                "Without a valid ground-like recovery hit, fall time should continue increasing.");
+
+            entityManager.DestroyEntity(player);
+            entityManager.DestroyEntity(ceiling);
+            yield return null;
+        }
+
+        [UnityTest]
         public IEnumerator OverlappedWall_UngroundedGroundMode_CommandsAirControlLerp()
         {
             // When IsGrounded=false, the movement system uses the air-control path
