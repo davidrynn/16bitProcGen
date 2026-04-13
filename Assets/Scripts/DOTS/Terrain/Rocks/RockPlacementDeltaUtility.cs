@@ -1,15 +1,15 @@
 using Unity.Collections;
 
-namespace DOTS.Terrain.Trees
+namespace DOTS.Terrain.Rocks
 {
     /// <summary>
-    /// Applies sparse tree-state deltas to regenerated placement records.
+    /// Applies sparse rock-state deltas to regenerated placement records.
     /// </summary>
-    public static class TreePlacementDeltaUtility
+    public static class RockPlacementDeltaUtility
     {
         public static void ApplyStateDeltas(
-            ref NativeList<TreePlacementRecord> placements,
-            NativeArray<TreeStateDelta> deltas)
+            ref NativeList<RockPlacementRecord> placements,
+            NativeArray<RockStateDelta> deltas)
         {
             if (!deltas.IsCreated || deltas.Length == 0 || placements.Length == 0)
             {
@@ -18,7 +18,7 @@ namespace DOTS.Terrain.Trees
 
             for (int i = 0; i < deltas.Length; i++)
             {
-                if (!HidesFullTreeVisual(deltas[i].Stage))
+                if (!HidesFullRockVisual(deltas[i].Stage))
                 {
                     continue;
                 }
@@ -30,15 +30,13 @@ namespace DOTS.Terrain.Trees
             SortByStableLocalId(ref placements);
         }
 
-        public static bool HidesFullTreeVisual(TreeStateStage stage)
+        public static bool HidesFullRockVisual(RockStateStage stage)
         {
-            return stage == TreeStateStage.Stump
-                || stage == TreeStateStage.Sapling
-                || stage == TreeStateStage.Growing;
+            return stage == RockStateStage.Depleted;
         }
 
         private static void RemoveByStableLocalId(
-            ref NativeList<TreePlacementRecord> placements,
+            ref NativeList<RockPlacementRecord> placements,
             ushort stableLocalId)
         {
             for (int i = 0; i < placements.Length; i++)
@@ -53,7 +51,7 @@ namespace DOTS.Terrain.Trees
             }
         }
 
-        private static void SortByStableLocalId(ref NativeList<TreePlacementRecord> placements)
+        private static void SortByStableLocalId(ref NativeList<RockPlacementRecord> placements)
         {
             for (int i = 1; i < placements.Length; i++)
             {

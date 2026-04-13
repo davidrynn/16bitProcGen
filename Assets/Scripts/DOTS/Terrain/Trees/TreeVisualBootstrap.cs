@@ -1,5 +1,6 @@
 using Unity.Entities;
 using UnityEngine;
+using DOTS.Terrain.SurfaceScatter;
 
 namespace DOTS.Terrain.Trees
 {
@@ -19,14 +20,16 @@ namespace DOTS.Terrain.Trees
             var world = World.DefaultGameObjectInjectionWorld;
             if (world == null) return;
 
-            var em     = world.EntityManager;
-            var entity = em.CreateEntity();
-            em.AddComponentObject(entity, new TreeRenderConfig
-            {
-                Mesh         = treeMesh,
-                Material     = treeMaterial,
-                UniformScale = treeScale,
-            });
+            var em = world.EntityManager;
+            SurfaceScatterRenderConfigBootstrapUtility.SetOrCreateManagedSingleton(
+                em,
+                new TreeRenderConfig
+                {
+                    Mesh = treeMesh,
+                    Material = treeMaterial,
+                    UniformScale = treeScale,
+                },
+                nameof(TreeRenderConfig));
         }
     }
 }

@@ -1,4 +1,5 @@
 using DOTS.Terrain.Core;
+using DOTS.Terrain.Rocks;
 using DOTS.Terrain.Rendering;
 using DOTS.Terrain.Trees;
 using Unity.Collections;
@@ -118,6 +119,12 @@ namespace DOTS.Terrain.LOD
 
             if (entityManager.HasComponent<ChunkTreePlacementTag>(entity))
                 entityManager.RemoveComponent<ChunkTreePlacementTag>(entity);
+
+            if (entityManager.HasBuffer<RockPlacementRecord>(entity))
+                entityManager.RemoveComponent<RockPlacementRecord>(entity);
+
+            if (entityManager.HasComponent<ChunkRockPlacementTag>(entity))
+                entityManager.RemoveComponent<ChunkRockPlacementTag>(entity);
 
             // Keep collider components until TerrainChunkColliderBuildSystem processes LOD policy.
             // That system owns deferred blob disposal timing to avoid physics-world races.

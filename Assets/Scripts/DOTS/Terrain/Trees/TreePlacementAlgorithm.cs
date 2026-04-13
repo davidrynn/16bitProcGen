@@ -119,7 +119,8 @@ namespace DOTS.Terrain.Trees
             h *= 0x9e3779b9u;
 
             var jx = ((h >> 8)  & 0xFFFFu) * (1f / 65535f) * 2f - 1f; // → [-1, 1]
-            var jz = ((h >> 20) & 0xFFFFu) * (1f / 65535f) * 2f - 1f;
+            // Only 12 bits remain after shifting 20 positions in a 32-bit hash.
+            var jz = ((h >> 20) & 0xFFFu) * (1f / 4095f) * 2f - 1f;
             return new float2(jx, jz) * CellJitterRadius;
         }
 

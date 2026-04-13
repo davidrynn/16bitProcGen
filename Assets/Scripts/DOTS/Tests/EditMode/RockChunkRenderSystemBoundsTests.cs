@@ -1,11 +1,11 @@
-using DOTS.Terrain.Trees;
+using DOTS.Terrain.Rocks;
 using NUnit.Framework;
 using UnityEngine;
 
 namespace DOTS.Terrain.Tests
 {
     [TestFixture]
-    public class TreeChunkRenderSystemBoundsTests : SurfaceScatterRenderSystemContractTestsBase<TreeRenderConfig>
+    public class RockChunkRenderSystemBoundsTests : SurfaceScatterRenderSystemContractTestsBase<RockRenderConfig>
     {
         protected override bool TryBuildWorldBounds(
             System.Collections.Generic.IReadOnlyList<Matrix4x4> matrices,
@@ -13,31 +13,31 @@ namespace DOTS.Terrain.Tests
             float uniformScale,
             out Bounds worldBounds)
         {
-            return TreeChunkRenderSystem.TryBuildWorldBounds(
+            return RockChunkRenderSystem.TryBuildWorldBounds(
                 matrices,
                 in meshBounds,
                 uniformScale,
                 out worldBounds);
         }
 
-        protected override bool TryPrepareSubmissionFrame(TreeRenderConfig config)
+        protected override bool TryPrepareSubmissionFrame(RockRenderConfig config)
         {
-            return TreeChunkRenderSystem.TryPrepareSubmissionFrame(config);
+            return RockChunkRenderSystem.TryPrepareSubmissionFrame(config);
         }
 
         protected override void AddPendingMatrixForTests(in Matrix4x4 matrix)
         {
-            TreeChunkRenderSystem.AddPendingMatrixForTests(matrix);
+            RockChunkRenderSystem.AddPendingMatrixForTests(matrix);
         }
 
         protected override bool HasPendingSubmissionDataForTests()
         {
-            return TreeChunkRenderSystem.HasPendingSubmissionDataForTests();
+            return RockChunkRenderSystem.HasPendingSubmissionDataForTests();
         }
 
-        protected override TreeRenderConfig CreateValidConfig(Mesh mesh, Material material, float uniformScale)
+        protected override RockRenderConfig CreateValidConfig(Mesh mesh, Material material, float uniformScale)
         {
-            return new TreeRenderConfig
+            return new RockRenderConfig
             {
                 Mesh = mesh,
                 Material = material,
@@ -47,7 +47,7 @@ namespace DOTS.Terrain.Tests
 
         protected override void ClearPendingSubmissionStateForTests()
         {
-            TreeChunkRenderSystem.TryPrepareSubmissionFrame(null);
+            RockChunkRenderSystem.TryPrepareSubmissionFrame(null);
         }
     }
 }

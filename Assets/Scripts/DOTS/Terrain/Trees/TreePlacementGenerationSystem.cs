@@ -2,6 +2,7 @@ using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;
+using DOTS.Terrain.SurfaceScatter;
 
 namespace DOTS.Terrain.Trees
 {
@@ -73,27 +74,23 @@ namespace DOTS.Terrain.Trees
                         deltaLookup[entity].AsNativeArray());
                 }
 
-                var buf = placementLookup.HasBuffer(entity)
-                    ? ecb.SetBuffer<TreePlacementRecord>(entity)
-                    : ecb.AddBuffer<TreePlacementRecord>(entity);
+                var buf = SurfaceScatterLifecycleUtility.SetOrAddPlacementBuffer<TreePlacementRecord>(
+                    entity,
+                    ref placementLookup,
+                    ref ecb);
 
                 for (int i = 0; i < accepted.Length; i++)
                     buf.Add(accepted[i]);
 
-                if (tagLookup.HasComponent(entity))
+                var newTag = new ChunkTreePlacementTag
                 {
-                    ecb.SetComponent(entity, new ChunkTreePlacementTag
-                    {
-                        GenerationVersion = context.GenerationVersion
-                    });
-                }
-                else
-                {
-                    ecb.AddComponent(entity, new ChunkTreePlacementTag
-                    {
-                        GenerationVersion = context.GenerationVersion
-                    });
-                }
+                    GenerationVersion = context.GenerationVersion
+                };
+                SurfaceScatterLifecycleUtility.SetOrAddGenerationTag(
+                    entity,
+                    in newTag,
+                    ref tagLookup,
+                    ref ecb);
 
                 accepted.Dispose();
             }

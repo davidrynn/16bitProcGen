@@ -6,42 +6,25 @@ using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Rendering;
 
-namespace DOTS.Terrain.Trees
+namespace DOTS.Terrain.Rocks
 {
     /// <summary>
-    /// Renders accepted tree placements as instanced mesh draw calls each frame.
-    ///
-    /// Architecture note — why beginCameraRendering:
-    /// Graphics.RenderMeshInstanced called directly from PresentationSystemGroup.OnUpdate
-    /// (which runs in PreLateUpdate) is NOT picked up by the URP Game camera. URP renders
-    /// Game cameras in PostLateUpdate via its own SRP render pass, and draw calls submitted
-    /// outside of a RenderPipelineManager callback are dropped for those cameras. Scene View
-    /// cameras are handled separately by the editor and happen to see the queued calls, which
-    /// is why trees appeared in Scene View only.
-    ///
-    /// Fix: collect matrices during OnUpdate, then flush to each camera inside
-    /// RenderPipelineManager.beginCameraRendering — the callback guaranteed to fire just
-    /// before URP executes the render pass for that camera.
-    ///
-    /// This is an intentional MVP simplification. Replace with Entities Graphics
-    /// (RenderMeshArray + MaterialMeshInfo per entity) post-MVP if tree counts grow
-    /// beyond ~4000 visible at once, or if per-tree LOD/culling is needed.
+    /// Renders accepted rock placements as instanced mesh draw calls each frame.
+    /// Uses the same beginCameraRendering submission timing used by tree rendering.
     /// </summary>
+    // SystemBase (not ISystem) is required: RenderPipelineManager.beginCameraRendering subscription
+    // needs managed OnCreate/OnDestroy lifecycle. Mirrors TreeChunkRenderSystem.
     [DisableAutoCreation]
     [UpdateInGroup(typeof(PresentationSystemGroup))]
-    public partial class TreeChunkRenderSystem : SystemBase
+    public partial class RockChunkRenderSystem : SystemBase
     {
         private const int CulledScatterLod = 3;
 
-        // RenderMeshInstanced batch limit is 1023.
-        private static readonly Matrix4x4[] _instanceBuffer = new Matrix4x4[1023];
-
-        // Matrices collected each OnUpdate, flushed per-camera in SubmitToCamera.
-        // Static so the camera callback (a static delegate) can access without a closure.
-        private static readonly List<Matrix4x4> _pendingMatrices = new List<Matrix4x4>(4096);
+        private static readonly Matrix4x4[] InstanceBuffer = new Matrix4x4[1023];
+        private static readonly List<Matrix4x4> PendingMatrices = new List<Matrix4x4>(4096);
         private static Material _pendingMaterial;
-        private static Mesh    _pendingMesh;
-        private static Bounds  _pendingWorldBounds;
+        private static Mesh _pendingMesh;
+        private static Bounds _pendingWorldBounds;
 
         protected override void OnCreate()
         {
@@ -54,34 +37,34 @@ namespace DOTS.Terrain.Trees
             ClearPendingSubmissionState();
         }
 
-        // Called by URP once per camera, just before it executes its render pass.
         private static void SubmitToCamera(ScriptableRenderContext ctx, Camera camera)
         {
-            if (_pendingMesh == null || _pendingMaterial == null || _pendingMatrices.Count == 0)
+            if (_pendingMesh == null || _pendingMaterial == null || PendingMatrices.Count == 0)
+            {
                 return;
+            }
 
             var rp = new RenderParams(_pendingMaterial)
             {
                 worldBounds = _pendingWorldBounds,
             };
 
-            int remaining = _pendingMatrices.Count;
-            int offset    = 0;
+            int remaining = PendingMatrices.Count;
+            int offset = 0;
             while (remaining > 0)
             {
                 int batch = Mathf.Min(remaining, 1023);
                 for (int i = 0; i < batch; i++)
-                    _instanceBuffer[i] = _pendingMatrices[offset + i];
-                Graphics.RenderMeshInstanced(rp, _pendingMesh, 0, _instanceBuffer, batch);
-                offset    += batch;
+                {
+                    InstanceBuffer[i] = PendingMatrices[offset + i];
+                }
+
+                Graphics.RenderMeshInstanced(rp, _pendingMesh, 0, InstanceBuffer, batch);
+                offset += batch;
                 remaining -= batch;
             }
         }
 
-        /// <summary>
-        /// Builds a conservative world-space AABB for all pending instances so SRP batch culling
-        /// does not incorrectly reject draws when the world streams far from (0,0,0).
-        /// </summary>
         public static bool TryBuildWorldBounds(
             IReadOnlyList<Matrix4x4> matrices,
             in Bounds meshBounds,
@@ -95,11 +78,7 @@ namespace DOTS.Terrain.Trees
                 out worldBounds);
         }
 
-        /// <summary>
-        /// Initializes a render-submission frame from config and clears stale static state
-        /// when config is missing/invalid.
-        /// </summary>
-        public static bool TryPrepareSubmissionFrame(TreeRenderConfig config)
+        public static bool TryPrepareSubmissionFrame(RockRenderConfig config)
         {
             if (config == null || config.Mesh == null || config.Material == null)
             {
@@ -109,7 +88,7 @@ namespace DOTS.Terrain.Trees
 
             _pendingMesh = config.Mesh;
             _pendingMaterial = config.Material;
-            _pendingMatrices.Clear();
+            PendingMatrices.Clear();
             return true;
         }
 
@@ -118,7 +97,7 @@ namespace DOTS.Terrain.Trees
         /// </summary>
         public static void AddPendingMatrixForTests(in Matrix4x4 matrix)
         {
-            _pendingMatrices.Add(matrix);
+            PendingMatrices.Add(matrix);
         }
 
         /// <summary>
@@ -128,20 +107,20 @@ namespace DOTS.Terrain.Trees
         {
             return _pendingMesh != null
                    && _pendingMaterial != null
-                   && _pendingMatrices.Count > 0;
+                   && PendingMatrices.Count > 0;
         }
 
         private static void ClearPendingSubmissionState()
         {
+            PendingMatrices.Clear();
             _pendingMesh = null;
             _pendingMaterial = null;
-            _pendingMatrices.Clear();
             _pendingWorldBounds = new Bounds(Vector3.zero, Vector3.one * 0.01f);
         }
 
         protected override void OnUpdate()
         {
-            if (!SystemAPI.ManagedAPI.TryGetSingleton<TreeRenderConfig>(out var config))
+            if (!SystemAPI.ManagedAPI.TryGetSingleton<RockRenderConfig>(out var config))
             {
                 ClearPendingSubmissionState();
                 return;
@@ -152,8 +131,8 @@ namespace DOTS.Terrain.Trees
                 return;
             }
 
-            foreach (var (lodStateRO, records) in SystemAPI.Query<RefRO<TerrainChunkLodState>, DynamicBuffer<TreePlacementRecord>>()
-                .WithAll<TerrainChunk>())
+            foreach (var (lodStateRO, records) in SystemAPI.Query<RefRO<TerrainChunkLodState>, DynamicBuffer<RockPlacementRecord>>()
+                         .WithAll<TerrainChunk>())
             {
                 // LOD3 is fully culled by policy; draw only LOD0-2 scatter instances.
                 if (lodStateRO.ValueRO.CurrentLod >= CulledScatterLod)
@@ -163,15 +142,16 @@ namespace DOTS.Terrain.Trees
 
                 foreach (var record in records)
                 {
-                    _pendingMatrices.Add(Matrix4x4.TRS(
+                    var scale = math.max(0.01f, record.UniformScale * config.UniformScale);
+                    PendingMatrices.Add(Matrix4x4.TRS(
                         record.WorldPosition,
-                        Quaternion.identity,
-                        Vector3.one * config.UniformScale));
+                        Quaternion.Euler(0f, math.degrees(record.YawRadians), 0f),
+                        Vector3.one * scale));
                 }
             }
 
             // Per-instance matrices already contain full scale, so use neutral external scale.
-            if (!TryBuildWorldBounds(_pendingMatrices, config.Mesh.bounds, 1f, out _pendingWorldBounds))
+            if (!TryBuildWorldBounds(PendingMatrices, config.Mesh.bounds, 1f, out _pendingWorldBounds))
             {
                 _pendingWorldBounds = new Bounds(Vector3.zero, Vector3.one * 0.01f);
             }

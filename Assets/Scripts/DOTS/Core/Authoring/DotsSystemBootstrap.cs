@@ -6,6 +6,7 @@ using DOTS.Terrain.Generation;
 using DOTS.Terrain.LOD;
 using DOTS.Terrain.Meshing;
 using DOTS.Terrain.Modification;
+using DOTS.Terrain.Rocks;
 using DOTS.Terrain.Rendering;
 using DOTS.Terrain.Streaming;
 using DOTS.Terrain.Trees;
@@ -188,6 +189,25 @@ public class DotsSystemBootstrap : MonoBehaviour
                 var handle = world.CreateSystem<TreeChunkRenderSystem>();
                 presentationGroup.AddSystemToUpdateList(handle);
                 DebugSettings.Log("Bootstrap: TreeChunkRenderSystem enabled and added to PresentationSystemGroup.");
+            }
+
+            if (config.EnableRockPlacementSystem)
+            {
+                var invalidationHandle = world.CreateSystem<RockPlacementInvalidationSystem>();
+                simGroup.AddSystemToUpdateList(invalidationHandle);
+                DebugSettings.Log("Bootstrap: RockPlacementInvalidationSystem enabled and added to SimulationSystemGroup.");
+
+                var handle = world.CreateSystem<RockPlacementGenerationSystem>();
+                simGroup.AddSystemToUpdateList(handle);
+                DebugSettings.Log("Bootstrap: RockPlacementGenerationSystem enabled and added to SimulationSystemGroup.");
+            }
+
+            if (config.EnableRockRenderSystem)
+            {
+                var presentationGroup = world.GetExistingSystemManaged<PresentationSystemGroup>();
+                var handle = world.CreateSystem<RockChunkRenderSystem>();
+                presentationGroup.AddSystemToUpdateList(handle);
+                DebugSettings.Log("Bootstrap: RockChunkRenderSystem enabled and added to PresentationSystemGroup.");
             }
 
             if (config.EnableTerrainSeamValidatorSystem)

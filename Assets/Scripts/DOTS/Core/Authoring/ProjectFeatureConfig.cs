@@ -121,6 +121,10 @@ public class ProjectFeatureConfig : ScriptableObject
     public bool EnableTreePlacementSystem = true;
     public bool EnableTreeRenderSystem = true;
 
+    [Header("Rock Systems")]
+    public bool EnableRockPlacementSystem = true;
+    public bool EnableRockRenderSystem = true;
+
     [Header("Terrain Debug Systems")]
     public bool EnableTerrainSeamValidatorSystem = false;
     public bool EnableTerrainMeshSeamValidatorSystem = false;
