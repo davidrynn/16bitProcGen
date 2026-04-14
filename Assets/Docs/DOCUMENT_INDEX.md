@@ -1,6 +1,6 @@
 # Document Index
 
-**Last Updated:** 2026-04-11
+**Last Updated:** 2026-04-14
 
 > **New here?** Start with [MASTER_PLAN.md](MASTER_PLAN.md) — it has the project vision, current status, phase roadmap, and a curated document map.
 
@@ -15,12 +15,14 @@ Quick-reference index of all project documentation. Docs are organized by catego
 | [KNOWN_ISSUES.md](KNOWN_ISSUES.md) | ACTIVE | Master bug/issue tracker |
 | [AI/TERRAIN_ECS_NEXT_STEPS_SPEC.md](AI/TERRAIN_ECS_NEXT_STEPS_SPEC.md) | ACTIVE | SDF + Surface Nets terrain implementation roadmap |
 | [AI/TerrainHeightMaps/TERRAIN_PLAINS_TREES_MVP_CHECKLIST.md](AI/TerrainHeightMaps/TERRAIN_PLAINS_TREES_MVP_CHECKLIST.md) | PHASE C IN PROGRESS | Phase A ✅ Phase B ✅ Phase C (visual) 🔄 — all systems implemented, awaiting Play Mode visual confirmation |
+| [AI/TerrainHeightMaps/TERRAIN_PLAINS_TREE_VARIANT_YAW_SPEC.md](AI/TerrainHeightMaps/TERRAIN_PLAINS_TREE_VARIANT_YAW_SPEC.md) | ACTIVE | Deterministic 3-variant plains tree mesh selection plus per-instance Y-axis yaw rotation |
 | [AI/TerrainHeightMaps/TERRAIN_SURFACE_SCATTER_PLAN.md](AI/TerrainHeightMaps/TERRAIN_SURFACE_SCATTER_PLAN.md) | DESIGN | Rollout plan for generalizing tree-only placement into reusable surface scatter families |
 | [AI/TerrainHeightMaps/TERRAIN_SURFACE_SCATTER_SPEC.md](AI/TerrainHeightMaps/TERRAIN_SURFACE_SCATTER_SPEC.md) | DESIGN | Runtime contract for chunk-scattered trees, bushes, rocks, ore nodes, and similar discrete props |
 | [AI/TerrainHeightMaps/TERRAIN_SURFACE_SCATTER_SCHEMA.md](AI/TerrainHeightMaps/TERRAIN_SURFACE_SCATTER_SCHEMA.md) | DESIGN | First ECS/data breakdown for tree-plus-rock surface scatter lifecycle |
 | [AI/TerrainHeightMaps/TERRAIN_TREE_PLACEMENT_SPEC.md](AI/TerrainHeightMaps/TERRAIN_TREE_PLACEMENT_SPEC.md) | DESIGN | Tree-specific placement behavior within the broader surface scatter layer |
 | [AI/TERRAIN_EDIT_PLAYER_SAFETY_LOCAL_GRID_SPEC.md](AI/TERRAIN_EDIT_PLAYER_SAFETY_LOCAL_GRID_SPEC.md) | PROPOSED | Player-overlap edit guard + deterministic chunk-local grid guarantees |
 | [AI/PLAYER_PIT_MUDINESS_HYPOTHESIS_TEST_PLAN.md](AI/PLAYER_PIT_MUDINESS_HYPOTHESIS_TEST_PLAN.md) | ACTIVE | Test-first hypothesis matrix for pit-wall mudiness root-cause validation |
+| [AI/THIRD_PARTY_ASSET_EVALUATION_PLAYBOOK.md](AI/THIRD_PARTY_ASSET_EVALUATION_PLAYBOOK.md) | ACTIVE | Asset pre-screen, sandbox validation, and fit scoring workflow for third-party content |
 | [AI/PERSISTENCE_SPEC.md](AI/PERSISTENCE_SPEC.md) | DESIGN | World persistence — edit journals, entity/NPC/player state (Phase 4) |
 | [AI/BIOME_GRASS_STREAMING_MVP_PLAN.md](AI/BIOME_GRASS_STREAMING_MVP_PLAN.md) | DESIGN | Biome-based grass streaming MVP plan for infinite terrain |
 | [AI/HORIZON_IMPOSTOR_SEED_DRIVEN_SPEC.md](AI/HORIZON_IMPOSTOR_SEED_DRIVEN_SPEC.md) | DESIGN (DEFERRED) | Seed-driven far-horizon impostor plan for mountain/hill/sea silhouette rendering |
@@ -32,6 +34,14 @@ Quick-reference index of all project documentation. Docs are organized by catego
 | [AI/TERRAIN_SEAM_DEBUG_SPEC_v1.md](AI/TERRAIN_SEAM_DEBUG_SPEC_v1.md) | COMPLETE | Terrain seam/ring pattern investigation |
 | [AI/TERRAIN_SEAM_DEBUG_MESH_SPEC.md](AI/TERRAIN_SEAM_DEBUG_MESH_SPEC.md) | COMPLETE | Mesh seam validator findings |
 | [SDF_SurfaceNets_ECS_Overview.md](SDF_SurfaceNets_ECS_Overview.md) | CURRENT | SDF terrain architecture overview |
+
+## MVP Movement
+
+| Document | Status | Description |
+|----------|--------|-------------|
+| [MVP Movement/MOVEMENT_PLANNING.md](MVP%20Movement/MOVEMENT_PLANNING.md) | ACTIVE | Movement system design spec — slingshot, glide, thermals, visual feedback, camera behavior, prototype order |
+| [MVP Movement/AAA_MOVEMENT_CHECKLIST.md](MVP%20Movement/AAA_MOVEMENT_CHECKLIST.md) | ACTIVE | 21-point playtest evaluation rubric for traversal feel |
+| [MVP Movement/MOVEMENT_TECHNICAL_ARCHITECTURE_SPEC.md](MVP%20Movement/MOVEMENT_TECHNICAL_ARCHITECTURE_SPEC.md) | PROPOSED | ECS components, systems, update ordering, camera resolver architecture |
 
 ## Project-Level Docs
 
