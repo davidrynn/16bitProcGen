@@ -70,7 +70,7 @@ namespace DOTS.Player.Test
             var expected = math.lerp(initialX, groundSpeed, math.saturate(25f * FixedDeltaTime));
 
             var entity = CreateMovementEntity(
-                mode: PlayerMovementMode.Ground,
+                mode: PlayerMovementMode.Grounded,
                 isGrounded: true,
                 initialLinearVelocity: new float3(initialX, 0f, 0f),
                 moveInput: new float2(1f, 0f),
@@ -97,8 +97,10 @@ namespace DOTS.Player.Test
             const float groundSpeed = 10f;
             const float initialX = 2f;
 
+            // Use Ballistic (airborne after slingshot launch) rather than SlingshotCharging
+            // because SlingshotCharging now suppresses WASD input (player is stationary while charging).
             var entity = CreateMovementEntity(
-                mode: PlayerMovementMode.Slingshot,
+                mode: PlayerMovementMode.Ballistic,
                 isGrounded: false,
                 initialLinearVelocity: new float3(initialX, 0f, 0f),
                 moveInput: new float2(1f, 0f),
@@ -160,7 +162,9 @@ namespace DOTS.Player.Test
             {
                 Mode = mode,
                 IsGrounded = isGrounded,
-                FallTime = 0f,
+                // Set FallTime beyond GroundControlGraceTime (0.12s) for airborne entities
+                // so the movement system uses the air-control path, not the ground grace path.
+                FallTime = isGrounded ? 0f : 0.2f,
                 PreviousPosition = float3.zero
             });
 

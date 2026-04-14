@@ -86,7 +86,7 @@ namespace DOTS.Player.Systems
                 }
 
                 float2 moveInput = input.ValueRO.Move;
-                
+
                 // Debug: Log first movement to see which entity is moving
                 if (math.lengthsq(moveInput) > 0.01f && !_hasLoggedMovementOnce)
                 {
@@ -98,6 +98,12 @@ namespace DOTS.Player.Systems
                     moveInput = math.normalize(moveInput);
                 }
 
+                // Suppress WASD movement during slingshot charge — player should be stationary
+                if (movementState.ValueRO.Mode == PlayerMovementMode.SlingshotCharging)
+                {
+                    moveInput = float2.zero;
+                }
+
                 // Calculate camera-relative movement using yaw from PlayerViewComponent
                 // This ensures movement is relative to where the camera is looking, not world axes
                 float yawRadians = math.radians(view.ValueRO.YawDegrees);
@@ -107,8 +113,14 @@ namespace DOTS.Player.Systems
 
                 float3 currentVelocity = velocity.ValueRO.Linear;
 
-                var useGroundControl = movementState.ValueRO.IsGrounded ||
-                                       movementState.ValueRO.FallTime <= GroundControlGraceTime;
+                // Only use ground control when in Grounded mode. Traversal modes (Ballistic,
+                // Gliding, etc.) always use air control — even when the grounding raycast
+                // still hits the surface the player just launched from. Without this check,
+                // the ground-lerp kills horizontal launch impulse on the same frame.
+                var isGroundMode = movementState.ValueRO.Mode == PlayerMovementMode.Grounded;
+                var useGroundControl = isGroundMode &&
+                                       (movementState.ValueRO.IsGrounded ||
+                                        movementState.ValueRO.FallTime <= GroundControlGraceTime);
                 if (useGroundControl)
                 {
                     // Lerp toward desired ground speed instead of snapping.
@@ -122,8 +134,27 @@ namespace DOTS.Player.Systems
                 }
                 else
                 {
-                    // In the air we gradually steer toward the ground-speed target using the configured air control factor.
-                    float lerpFactor = math.saturate(config.ValueRO.AirControl * deltaTime);
+                    // Per-mode air control: different steering rates per movement state.
+                    // Ballistic gets weaker control (0.25) so launches feel committed;
+                    // Gliding gets stronger control (0.35) for trajectory shaping.
+                    float airRate = config.ValueRO.AirControl; // fallback
+                    if (state.EntityManager.HasComponent<SlingshotConfig>(entity))
+                    {
+                        var slingshotCfg = state.EntityManager.GetComponentData<SlingshotConfig>(entity);
+                        var glideConfigExists = state.EntityManager.HasComponent<GlideConfig>(entity);
+
+                        airRate = movementState.ValueRO.Mode switch
+                        {
+                            PlayerMovementMode.Ballistic => slingshotCfg.AirControlBallistic,
+                            PlayerMovementMode.Gliding when glideConfigExists =>
+                                state.EntityManager.GetComponentData<GlideConfig>(entity).AirControlGlide,
+                            PlayerMovementMode.GlideCharging => slingshotCfg.AirControlBallistic,
+                            PlayerMovementMode.ThermalBoost => slingshotCfg.AirControlBallistic,
+                            _ => config.ValueRO.AirControl
+                        };
+                    }
+
+                    float lerpFactor = math.saturate(airRate * deltaTime);
                     float3 horizontal = new float3(currentVelocity.x, 0f, currentVelocity.z);
                     float3 target = desiredHorizontal * config.ValueRO.GroundSpeed;
                     horizontal = math.lerp(horizontal, target, lerpFactor);

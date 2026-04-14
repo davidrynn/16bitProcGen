@@ -46,9 +46,20 @@ public class ProjectFeatureConfig : ScriptableObject
     public bool EnablePlayerMovementSystem = true;
     public bool EnablePlayerGroundingSystem = true;
     public bool EnablePlayerTerrainSafetySystem = true;
-    public bool EnablePlayerCameraSystem = true;
-    public bool EnablePlayerCinemachineCameraSystem = true;
-    public bool EnableCameraFollowSystem = true;
+    public bool EnablePlayerCameraSystem = false;  // Replaced by CameraEffectResolverSystem for third-person orbit
+    public bool EnablePlayerCinemachineCameraSystem = false;  // Replaced by CameraEffectResolverSystem
+    public bool EnableCameraFollowSystem = false;  // Replaced by CameraEffectResolverSystem
+
+    [Header("Player Movement MVP Systems")]
+    public bool EnableSlingshotChargeSystem = true;
+    public bool EnableSlingshotLaunchSystem = true;
+    public bool EnableMovementStateBookkeepingSystem = true;
+    public bool EnableLandingDetectionSystem = true;
+    public bool EnableCameraEffectResolverSystem = true;
+    public bool EnableCameraChargeFeedbackSystem = true;
+    public bool EnableCameraSpeedFeedbackSystem = true;
+    public bool EnableCameraLandingFeedbackSystem = true;
+    public bool EnableCameraGlideFeedbackSystem = true;
 
     [Header("Player Legacy/Test Systems")]
     public bool EnableSimplePlayerMovementSystem = false;

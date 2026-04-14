@@ -155,7 +155,23 @@ namespace DOTS.Player.Systems
                 movementState.ValueRW.IsGrounded = hit;
                 if (hit)
                 {
-                    movementState.ValueRW.Mode = PlayerMovementMode.Ground;
+                    // Don't overwrite modes that own the player's trajectory while
+                    // the player still has significant velocity from that traversal.
+                    // Once speed drops below the threshold, the mode transitions to
+                    // Grounded naturally (player has "landed" and slowed down).
+                    var currentMode = movementState.ValueRO.Mode;
+                    bool isActiveTraversal =
+                        currentMode == PlayerMovementMode.Ballistic ||
+                        currentMode == PlayerMovementMode.Gliding ||
+                        currentMode == PlayerMovementMode.GlideCharging ||
+                        currentMode == PlayerMovementMode.ThermalBoost;
+                    float speed = math.length(velocity.ValueRO.Linear);
+                    bool preserveMode = currentMode == PlayerMovementMode.SlingshotCharging ||
+                                        (isActiveTraversal && speed > 2f);
+                    if (!preserveMode)
+                    {
+                        movementState.ValueRW.Mode = PlayerMovementMode.Grounded;
+                    }
                     movementState.ValueRW.FallTime = 0f;
                 }
                 else

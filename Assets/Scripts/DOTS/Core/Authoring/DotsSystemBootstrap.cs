@@ -344,6 +344,71 @@ public class DotsSystemBootstrap : MonoBehaviour
                 DebugSettings.Log("Bootstrap: CameraFollowSystem enabled and added to SimulationSystemGroup.");
             }
 
+            // ── Movement MVP systems ──
+
+            if (config.EnableSlingshotChargeSystem)
+            {
+                var handle = world.CreateSystem<SlingshotChargeSystem>();
+                physicsGroup.AddSystemToUpdateList(handle);
+                DebugSettings.Log("Bootstrap: SlingshotChargeSystem enabled and added to PhysicsSystemGroup.");
+            }
+
+            if (config.EnableSlingshotLaunchSystem)
+            {
+                var handle = world.CreateSystem<SlingshotLaunchSystem>();
+                physicsGroup.AddSystemToUpdateList(handle);
+                DebugSettings.Log("Bootstrap: SlingshotLaunchSystem enabled and added to PhysicsSystemGroup.");
+            }
+
+            if (config.EnableMovementStateBookkeepingSystem)
+            {
+                var handle = world.CreateSystem<MovementStateBookkeepingSystem>();
+                simGroup.AddSystemToUpdateList(handle);
+                DebugSettings.Log("Bootstrap: MovementStateBookkeepingSystem enabled and added to SimulationSystemGroup.");
+            }
+
+            if (config.EnableLandingDetectionSystem)
+            {
+                var handle = world.CreateSystem<LandingDetectionSystem>();
+                simGroup.AddSystemToUpdateList(handle);
+                DebugSettings.Log("Bootstrap: LandingDetectionSystem enabled and added to SimulationSystemGroup.");
+            }
+
+            if (config.EnableCameraChargeFeedbackSystem)
+            {
+                var handle = world.CreateSystem<CameraChargeFeedbackSystem>();
+                simGroup.AddSystemToUpdateList(handle);
+                DebugSettings.Log("Bootstrap: CameraChargeFeedbackSystem enabled and added to SimulationSystemGroup.");
+            }
+
+            if (config.EnableCameraSpeedFeedbackSystem)
+            {
+                var handle = world.CreateSystem<CameraSpeedFeedbackSystem>();
+                simGroup.AddSystemToUpdateList(handle);
+                DebugSettings.Log("Bootstrap: CameraSpeedFeedbackSystem enabled and added to SimulationSystemGroup.");
+            }
+
+            if (config.EnableCameraLandingFeedbackSystem)
+            {
+                var handle = world.CreateSystem<CameraLandingFeedbackSystem>();
+                simGroup.AddSystemToUpdateList(handle);
+                DebugSettings.Log("Bootstrap: CameraLandingFeedbackSystem enabled and added to SimulationSystemGroup.");
+            }
+
+            if (config.EnableCameraGlideFeedbackSystem)
+            {
+                var handle = world.CreateSystem<CameraGlideFeedbackSystem>();
+                simGroup.AddSystemToUpdateList(handle);
+                DebugSettings.Log("Bootstrap: CameraGlideFeedbackSystem enabled and added to SimulationSystemGroup.");
+            }
+
+            if (config.EnableCameraEffectResolverSystem)
+            {
+                var handle = world.CreateSystem<CameraEffectResolverSystem>();
+                presentationGroup.AddSystemToUpdateList(handle);
+                DebugSettings.Log("Bootstrap: CameraEffectResolverSystem enabled and added to PresentationSystemGroup.");
+            }
+
 #if SIMPLE_PLAYER_MOVEMENT_ENABLED
             if (config.EnableSimplePlayerMovementSystem)
             {

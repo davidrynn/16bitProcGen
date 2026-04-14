@@ -54,6 +54,13 @@ namespace DOTS.Terrain
 
         public void OnUpdate(ref SystemState state)
         {
+            // Only process terrain edits when the player is in edit mode (Tab toggle).
+            // Mouse buttons route to slingshot traversal otherwise.
+            if (!IsPlayerInEditMode(ref state))
+            {
+                return;
+            }
+
             if (!SystemAPI.TryGetSingletonRW<TerrainEditSettings>(out var settingsRW))
             {
                 return;
@@ -509,6 +516,23 @@ namespace DOTS.Terrain
 
             half.z *= depthCells;
             return half;
+        }
+
+        /// <summary>
+        /// Returns true if the player entity has IsEditMode set (Tab toggle).
+        /// Falls back to true if no player entity exists, so terrain editing still works
+        /// in test scenes without a player.
+        /// Uses EntityManager query instead of SystemAPI.Query because this system's
+        /// source-generated fields don't support additional SystemAPI.Query sites in helper methods.
+        /// </summary>
+        private static bool IsPlayerInEditMode(ref SystemState state)
+        {
+            var query = state.EntityManager.CreateEntityQuery(ComponentType.ReadOnly<PlayerInputComponent>());
+            if (query.IsEmpty)
+                return true; // No player entity — allow edits (test/editor scenarios)
+
+            var input = query.GetSingleton<PlayerInputComponent>();
+            return input.IsEditMode;
         }
 
         private static bool TryGetBrushCommand(in PhysicsWorld physicsWorld, ref bool hasLoggedAimDiag, out TerrainBrushCommand command)

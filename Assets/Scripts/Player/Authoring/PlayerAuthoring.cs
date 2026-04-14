@@ -85,7 +85,7 @@ namespace DOTS.Player.Authoring
                 // Add movement state
                 AddComponent(entity, new PlayerMovementState
                 {
-                    Mode = PlayerMovementMode.Ground,
+                    Mode = PlayerMovementMode.Grounded,
                     IsGrounded = false,
                     FallTime = 0f
                 });

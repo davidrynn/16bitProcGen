@@ -80,7 +80,7 @@ namespace DOTS.Player.Bootstrap
 
             entityManager.AddComponentData(entity, new PlayerMovementState
             {
-                Mode = PlayerMovementMode.Ground,
+                Mode = PlayerMovementMode.Grounded,
                 IsGrounded = false,
                 FallTime = 0f,
                 PreviousPosition = spawnPos
@@ -91,6 +91,23 @@ namespace DOTS.Player.Bootstrap
                 YawDegrees = 0f,
                 PitchDegrees = 0f
             });
+
+            // Movement MVP config components
+            entityManager.AddComponentData(entity, SlingshotConfig.Default);
+            entityManager.AddComponentData(entity, GlideConfig.Default);
+            entityManager.AddComponentData(entity, ThermalConfig.Default);
+            entityManager.AddComponentData(entity, LandingConfig.Default);
+            entityManager.AddComponentData(entity, CameraEffectConfig.Default);
+            entityManager.AddComponentData(entity, new CameraEffectState
+            {
+                TargetFOV = CameraEffectConfig.Default.BaseFOV,
+                TargetDistance = CameraEffectConfig.Default.BaseDistance,
+                Damping = CameraEffectConfig.Default.GroundedDamping,
+                RotationDamping = 16f
+            });
+            // LandingImpactEvent: enableable component, starts disabled
+            entityManager.AddComponentData(entity, new LandingImpactEvent());
+            entityManager.SetComponentEnabled<LandingImpactEvent>(entity, false);
 
             // Add transform
             entityManager.AddComponentData(entity, new LocalTransform
@@ -210,21 +227,21 @@ namespace DOTS.Player.Bootstrap
                 
                 entityManager.AddComponentData(entity, new PlayerCameraSettings
                 {
-                    FirstPersonOffset = new float3(0f, 1.6f, 0f),        // Camera at eye level
-                    ThirdPersonPivotOffset = new float3(0f, 1.5f, 0f),   // Shoulder height pivot
-                    ThirdPersonDistance = 3.5f,
-                    IsThirdPerson = false
+                    FirstPersonOffset = new float3(0f, 1.6f, 0f),
+                    ThirdPersonPivotOffset = new float3(0f, 1.5f, 0f),
+                    ThirdPersonDistance = 4.0f,
+                    IsThirdPerson = true          // Third-person for slingshot visibility
                 });
 
             }
             else
             {
-                entityManager.AddComponentData  (entity, new PlayerCameraSettings
+                entityManager.AddComponentData(entity, new PlayerCameraSettings
                 {
                     FirstPersonOffset = new float3(0f, 1.6f, 0f),
                     ThirdPersonPivotOffset = new float3(0f, 1.5f, 0f),
-                    ThirdPersonDistance = 3.5f,
-                    IsThirdPerson = false
+                    ThirdPersonDistance = 4.0f,
+                    IsThirdPerson = true
                 });
 
                 Debug.LogWarning("[PlayerBootstrap] Failed to create camera entity - camera system may not work");
@@ -286,24 +303,17 @@ namespace DOTS.Player.Bootstrap
                 }
             }
 
-            // Get camera settings (use default values that match PlayerCameraSettings)
-            var cameraSettings = new PlayerCameraSettings
-            {
-                FirstPersonOffset = new float3(0f, 1.6f, 0f),        // Camera at eye level
-                ThirdPersonPivotOffset = new float3(0f, 1.5f, 0f),   // Shoulder height pivot
-                ThirdPersonDistance = 3.5f,
-                IsThirdPerson = false
-            };
+            // Third-person orbit: place camera behind and above the player at BaseDistance
+            var pivotOffset = new float3(0f, 1.5f, 0f);
+            float orbitDistance = CameraEffectConfig.Default.BaseDistance;
             
-            // Calculate camera position: player position + first person offset
-            // This matches the logic in PlayerCameraSystem
-            float3 cameraPosition = playerPosition + cameraSettings.FirstPersonOffset;
-            
-            // Calculate camera rotation from player view (same formula as PlayerCameraSystem)
-            // Combine player yaw rotation with camera pitch rotation
-            quaternion playerRotation = quaternion.AxisAngle(math.up(), math.radians(playerView.YawDegrees));
-            quaternion pitchRotation = quaternion.AxisAngle(math.right(), math.radians(playerView.PitchDegrees));
-            quaternion combinedRotation = math.mul(playerRotation, pitchRotation);
+            // Third-person orbit: camera behind player along yaw direction
+            float yaw = math.radians(playerView.YawDegrees);
+            float3 pivotPos = playerPosition + pivotOffset;
+            float3 orbitOffset = new float3(-math.sin(yaw), 0.3f, -math.cos(yaw)) * orbitDistance;
+            float3 cameraPosition = pivotPos + orbitOffset;
+            float3 lookDir = math.normalizesafe(pivotPos - cameraPosition);
+            quaternion combinedRotation = quaternion.LookRotation(lookDir, math.up());
 
             // Create Unity Camera GameObject (required for rendering)
             var cameraGO = new GameObject("Main Camera (ECS Player)");
@@ -311,6 +321,7 @@ namespace DOTS.Player.Bootstrap
             camera.tag = "MainCamera";
             camera.clearFlags = CameraClearFlags.Skybox;
             camera.nearClipPlane = 0.3f;
+            camera.fieldOfView = CameraEffectConfig.Default.BaseFOV;
 
             // Derive far clip from TerrainRenderDistance via the config singleton
             float farClip = 300f;
@@ -349,7 +360,7 @@ namespace DOTS.Player.Bootstrap
                 Value = float4x4.TRS(cameraPosition, combinedRotation, new float3(1f))
             });
             
-            // CRITICAL: Link the Camera GameObject to the entity so PlayerCameraSystem can update it
+            // CRITICAL: Link the Camera GameObject to the entity so CameraEffectResolverSystem can update it
             entityManager.AddComponentObject(cameraEntity, camera);
 
             return cameraEntity;

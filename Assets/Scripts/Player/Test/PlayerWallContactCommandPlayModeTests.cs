@@ -169,7 +169,7 @@ namespace DOTS.Player.Test
             entityManager.SetComponentData(ceiling, LocalTransform.FromPosition(new float3(0f, 2.3f, 0f)));
             entityManager.SetComponentData(ceiling, new PhysicsCollider { Value = wallColliderBlob });
 
-            var player = CreateTerrainDriverPlayer(new float3(0f, 0f, 0f), PlayerMovementMode.Ground, isGrounded: false);
+            var player = CreateTerrainDriverPlayer(new float3(0f, 0f, 0f), PlayerMovementMode.Grounded, isGrounded: false);
             entityManager.SetComponentData(player, new PhysicsGravityFactor { Value = 0f });
             entityManager.SetComponentData(player, new PhysicsVelocity
             {
@@ -184,7 +184,7 @@ namespace DOTS.Player.Test
             });
             entityManager.SetComponentData(player, new PlayerMovementState
             {
-                Mode = PlayerMovementMode.Ground,
+                Mode = PlayerMovementMode.Grounded,
                 IsGrounded = false,
                 FallTime = 0.25f,
                 PreviousPosition = float3.zero
@@ -235,7 +235,7 @@ namespace DOTS.Player.Test
             // On the first tick with zero initial velocity, the air-control lerp produces a
             // small fraction of GroundSpeed. The wall probe may further clamp the into-wall
             // component if the physics world is ready.
-            var player = CreateWallOverlapScenario(PlayerMovementMode.Ground, isGrounded: false);
+            var player = CreateWallOverlapScenario(PlayerMovementMode.Grounded, isGrounded: false);
 
             TickWorldOnce();
 
@@ -257,7 +257,9 @@ namespace DOTS.Player.Test
         [UnityTest]
         public IEnumerator OverlappedWall_UngroundedNonGroundMode_CommandsAirControlLerp()
         {
-            var player = CreateWallOverlapScenario(PlayerMovementMode.Slingshot, isGrounded: false);
+            // Use Ballistic (airborne after slingshot launch), not SlingshotCharging,
+            // because SlingshotCharging suppresses WASD input and would pass trivially.
+            var player = CreateWallOverlapScenario(PlayerMovementMode.Ballistic, isGrounded: false);
 
             TickWorldOnce();
 
@@ -310,7 +312,7 @@ namespace DOTS.Player.Test
 
                 playerEntity = CreateTerrainDriverPlayer(
                     position: new float3(2f, 4.2f, 8f),
-                    mode: PlayerMovementMode.Ground,
+                    mode: PlayerMovementMode.Grounded,
                     isGrounded: false);
 
                 var colliderReady = TickUntil(300, () =>
@@ -514,7 +516,9 @@ namespace DOTS.Player.Test
             {
                 Mode = mode,
                 IsGrounded = isGrounded,
-                FallTime = 0f,
+                // Set FallTime beyond GroundControlGraceTime (0.12s) for airborne entities
+                // so the movement system uses the air-control path, not the ground grace path.
+                FallTime = isGrounded ? 0f : 0.2f,
                 PreviousPosition = new float3(1.45f, 0f, 0f)
             });
             entityManager.SetComponentData(player, new PlayerViewComponent

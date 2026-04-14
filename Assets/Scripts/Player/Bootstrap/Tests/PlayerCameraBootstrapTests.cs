@@ -168,13 +168,18 @@ namespace DOTS.Player.Tests.Bootstrap
             using var playerQuery = entityManager.CreateEntityQuery(typeof(PlayerTag));
             var playerEntity = playerQuery.GetSingletonEntity();
             var playerTransform = entityManager.GetComponentData<LocalTransform>(playerEntity);
-            var cameraSettings = entityManager.GetComponentData<PlayerCameraSettings>(playerEntity);
 
-            var expectedOffsetPosition = playerTransform.Position + cameraSettings.FirstPersonOffset;
+            // Camera is now in third-person orbit behind the player.
+            // Verify it's at approximately the right distance from the pivot point.
+            var pivotOffset = new float3(0f, 1.5f, 0f);
+            var pivotPos = playerTransform.Position + pivotOffset;
+            float distToPivot = math.length(transform.Position - pivotPos);
+            float expectedDistance = CameraEffectConfig.Default.BaseDistance;
 
-            Assert.AreEqual(expectedOffsetPosition.x, transform.Position.x, 0.01f, "Camera X position should match player offset");
-            Assert.AreEqual(expectedOffsetPosition.y, transform.Position.y, 0.01f, "Camera Y position should match player offset");
-            Assert.AreEqual(expectedOffsetPosition.z, transform.Position.z, 0.01f, "Camera Z position should match player offset");
+            Assert.AreEqual(expectedDistance, distToPivot, 0.5f,
+                "Camera should be approximately BaseDistance from pivot");
+            Assert.Greater(transform.Position.y, playerTransform.Position.y,
+                "Camera should be above the player");
         }
 
         [UnityTest]
@@ -183,19 +188,20 @@ namespace DOTS.Player.Tests.Bootstrap
             yield return null;
             using var query = entityManager.CreateEntityQuery(typeof(MainCameraTag));
             var cameraEntity = query.GetSingletonEntity();
-            var transform = entityManager.GetComponentData<LocalTransform>(cameraEntity);
+            var camTransform = entityManager.GetComponentData<LocalTransform>(cameraEntity);
 
             using var playerQuery = entityManager.CreateEntityQuery(typeof(PlayerTag));
             var playerEntity = playerQuery.GetSingletonEntity();
-            var view = entityManager.GetComponentData<PlayerViewComponent>(playerEntity);
+            var playerTransform = entityManager.GetComponentData<LocalTransform>(playerEntity);
 
-            quaternion expectedRotation = math.mul(
-                quaternion.AxisAngle(math.up(), math.radians(view.YawDegrees)),
-                quaternion.AxisAngle(math.right(), math.radians(view.PitchDegrees))
-            );
+            // In third-person orbit, the camera should be looking toward the player's pivot.
+            var pivotOffset = new float3(0f, 1.5f, 0f);
+            var pivotPos = playerTransform.Position + pivotOffset;
+            float3 camForward = math.mul(camTransform.Rotation, math.forward());
+            float3 toPivot = math.normalizesafe(pivotPos - camTransform.Position);
 
-            var rotationDiff = math.length(expectedRotation.value - transform.Rotation.value);
-            Assert.Less(rotationDiff, 0.001f, $"Camera rotation should match player view rotation (diff: {rotationDiff})");
+            float dot = math.dot(camForward, toPivot);
+            Assert.Greater(dot, 0.9f, $"Camera should face toward the player pivot (dot={dot})");
         }
 
         [UnityTest]
@@ -491,8 +497,8 @@ namespace DOTS.Player.Tests.Bootstrap
             Assert.AreEqual(1.5f, settings.ThirdPersonPivotOffset.y, 0.001f, "Third-person pivot offset Y should default to 1.5");
             Assert.AreEqual(0f, settings.ThirdPersonPivotOffset.z, 0.001f, "Third-person pivot offset Z should default to 0");
 
-            Assert.AreEqual(3.5f, settings.ThirdPersonDistance, 0.001f, "Third-person distance should default to 3.5");
-            Assert.IsFalse(settings.IsThirdPerson, "Default camera mode should be first-person");
+            Assert.AreEqual(4.0f, settings.ThirdPersonDistance, 0.001f, "Third-person distance should default to 4.0");
+            Assert.IsTrue(settings.IsThirdPerson, "Default camera mode should be third-person for slingshot visibility");
         }
 
         [UnityTest]

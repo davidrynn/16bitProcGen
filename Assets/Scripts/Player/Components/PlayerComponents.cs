@@ -5,10 +5,13 @@ namespace DOTS.Player.Components
 {
     public enum PlayerMovementMode : byte
     {
-        Ground = 0,
-        Slingshot = 1,
-        Swim = 2,
-        ZeroG = 3
+        Grounded = 0,
+        SlingshotCharging = 1,
+        Ballistic = 2,
+        GlideCharging = 3,
+        Gliding = 4,
+        ThermalBoost = 5,
+        Grappling = 6        // Layer 2, post-MVP
     }
 
     public struct PlayerMovementConfig : IComponentData
@@ -29,6 +32,20 @@ namespace DOTS.Player.Components
         public float2 Move;
         public float2 Look;
         public bool JumpPressed;
+
+        // Slingshot input: LMB + RMB both held
+        public bool SlingshotHeld;
+        // Accumulated mouse delta during slingshot charge
+        public float2 SlingshotDrag;
+        // One-frame release event when both buttons released during charge
+        public bool SlingshotReleased;
+
+        /// <summary>
+        /// When true, mouse buttons route to terrain editing (LMB=subtract, RMB=add).
+        /// When false, mouse buttons route to traversal (LMB+RMB=slingshot).
+        /// Toggled by Tab key.
+        /// </summary>
+        public bool IsEditMode;
     }
 
     public struct PlayerMovementState : IComponentData
@@ -37,6 +54,11 @@ namespace DOTS.Player.Components
         public bool IsGrounded;
         public float FallTime;
         public float3 PreviousPosition;
+        /// <summary>
+        /// Cached copy of PhysicsVelocity.Linear, written each frame by MovementStateBookkeepingSystem.
+        /// Allows camera feedback systems to read speed without requiring PhysicsVelocity access.
+        /// </summary>
+        public float3 Velocity;
     }
 
     public struct PlayerViewComponent : IComponentData
