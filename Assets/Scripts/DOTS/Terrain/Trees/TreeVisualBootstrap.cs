@@ -11,6 +11,7 @@ namespace DOTS.Terrain.Trees
     /// </summary>
     public class TreeVisualBootstrap : MonoBehaviour
     {
+        [SerializeField] private Mesh[]   treeMeshVariants;
         [SerializeField] private Mesh     treeMesh;
         [SerializeField] private Material treeMaterial;
         [SerializeField] private float    treeScale = 1f;
@@ -25,6 +26,7 @@ namespace DOTS.Terrain.Trees
                 em,
                 new TreeRenderConfig
                 {
+                    MeshVariants = treeMeshVariants,
                     Mesh = treeMesh,
                     Material = treeMaterial,
                     UniformScale = treeScale,

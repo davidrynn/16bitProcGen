@@ -12,7 +12,8 @@ namespace DOTS.Terrain.Trees
     {
         public float3 WorldPosition;
         public float  GroundNormalY;  // dot(surface normal, up) — retained for visual tilt later
-        public byte   TreeTypeId;     // 0 = generic plains tree (MVP)
+        public float  YawRadians;
+        public byte   TreeTypeId;     // 0..2 = plains tree mesh variant index
         public ushort StableLocalId;
     }
 }

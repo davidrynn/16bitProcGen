@@ -10,6 +10,7 @@ namespace DOTS.Terrain.Rocks
     /// </summary>
     public class RockVisualBootstrap : MonoBehaviour
     {
+        [SerializeField] private Mesh[] rockMeshVariants;
         [SerializeField] private Mesh rockMesh;
         [SerializeField] private Material rockMaterial;
         [SerializeField] private float rockScale = 1f;
@@ -27,6 +28,7 @@ namespace DOTS.Terrain.Rocks
                 em,
                 new RockRenderConfig
                 {
+                    MeshVariants = rockMeshVariants,
                     Mesh = rockMesh,
                     Material = rockMaterial,
                     UniformScale = rockScale,

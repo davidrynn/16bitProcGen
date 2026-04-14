@@ -14,9 +14,10 @@ namespace DOTS.Terrain.Rocks
         public const float MinRockSpacing    = 4.0f;
         public const float CellJitterRadius  = 1.2f;
         public const float MinGroundNormalY  = 0.70f;
-        public const float RockProbability   = 0.45f;
+        public const float RockProbability   = 0.05f;
         public const float MinUniformScale   = 0.80f;
         public const float MaxUniformScale   = 1.35f;
+        public const byte RockVariantCount   = 6;
 
         public static void GeneratePlacements(
             ref TerrainChunkDensityBlob blob,
@@ -82,7 +83,7 @@ namespace DOTS.Terrain.Rocks
                     GroundNormalY = normalY,
                     UniformScale = math.lerp(MinUniformScale, MaxUniformScale, scale01),
                     YawRadians = yaw01 * math.PI * 2f,
-                    RockTypeId = 0, // single type for now; extend here when multi-type meshes are supported
+                    RockTypeId = (byte)(hash % RockVariantCount),
                     StableLocalId = stableLocalId,
                 });
             }

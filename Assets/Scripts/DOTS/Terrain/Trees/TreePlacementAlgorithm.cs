@@ -16,8 +16,24 @@ namespace DOTS.Terrain.Trees
         public const int CandidateGridSize      = 3;
         public const float MinTreeSpacing        = 5.0f;
         public const float CellJitterRadius      = 1.5f;
-        public const float PlainsSlopeMinNormalY = 0.85f;
-        public const float PlainsProbability     = 0.35f;
+        public const float PlainsSlopeMinNormalY         = 0.85f;
+        // Two-layer probability: sparse base keeps most terrain open; a coarse cluster
+        // noise (layer 5) boosts local acceptance to form natural groves. The effective
+        // threshold at any candidate = Base + clusterMask * ClusterBoost, ranging from
+        // ~0.05 (open ground) to ~0.60 (grove centre).
+        //
+        // Tuning guide:
+        //   PlainsProbabilityBase         — overall sparseness outside groves.
+        //                                   Raise (e.g. 0.10f) for more scattered trees everywhere.
+        //   PlainsProbabilityClusterBoost — how dense grove centres get.
+        //                                   Raise to pack groves tighter without affecting open areas.
+        //   TreeClusterNoiseScale         — grove patch size.
+        //                                   Decrease (e.g. 0.012f) for larger, wider groves.
+        //                                   Increase (e.g. 0.030f) for smaller, tighter clumps.
+        public const float PlainsProbabilityBase         = 0.01f;
+        public const float PlainsProbabilityClusterBoost = 0.15f;
+        public const float TreeClusterNoiseScale          = 0.020f; // ~50 world-unit wavelength → 3–4 chunk wide groves
+        public const byte PlainsTreeVariantCount          = 3;
 
         /// <summary>
         /// Core placement algorithm.
@@ -43,7 +59,8 @@ namespace DOTS.Terrain.Trees
                 float localX = (cellX + 0.5f) * MinTreeSpacing;
                 float localZ = (cellZ + 0.5f) * MinTreeSpacing;
 
-                var jitter   = CandidateJitter(worldSeed, chunkCoord, cellX, cellZ);
+                uint candidateHash = CandidateHash(worldSeed, chunkCoord, cellX, cellZ);
+                var jitter   = CandidateJitterFromHash(candidateHash);
                 float worldX = worldOrigin.x + localX + jitter.x;
                 float worldZ = worldOrigin.z + localZ + jitter.y;
 
@@ -65,12 +82,19 @@ namespace DOTS.Terrain.Trees
                 // d. Slope filter — reject steep terrain.
                 if (normalY < PlainsSlopeMinNormalY) continue;
 
-                // e. Probability noise (layer index 3 is reserved for tree placement — never
-                //    reuse for terrain elevation layers 0–2, to prevent correlation artifacts).
+                // e. Two-layer probability filter.
+                //    Layer 3: per-candidate noise gates individual tree acceptance.
+                //    Layer 5: coarse cluster noise boosts the threshold in grove regions.
+                //    Never reuse layers 0–2 (terrain elevation) to avoid correlation.
                 var candidate2D      = new float2(worldX, worldZ);
                 float probNoise      = snoise((candidate2D + SDFMath.SeedLayerOffset(worldSeed, 3u)) * 0.06f);
                 float normalizedProb = probNoise * 0.5f + 0.5f; // → [0, 1]
-                if (normalizedProb > PlainsProbability) continue;
+
+                float clusterNoise     = snoise((candidate2D + SDFMath.SeedLayerOffset(worldSeed, 5u)) * TreeClusterNoiseScale);
+                float clusterMask      = clusterNoise * 0.5f + 0.5f; // → [0, 1]
+                float effectiveThreshold = PlainsProbabilityBase + clusterMask * PlainsProbabilityClusterBoost;
+
+                if (normalizedProb > effectiveThreshold) continue;
 
                 // f. Spacing check — reject if too close to any already-accepted site.
                 var worldPos3 = new float3(worldX, surfaceY, worldZ);
@@ -85,12 +109,17 @@ namespace DOTS.Terrain.Trees
                 }
                 if (tooClose) continue;
 
+                var stableLocalId = CandidateLocalId(cellX, cellZ);
+                var variantIndex  = (byte)(candidateHash % PlainsTreeVariantCount);
+                var yaw01         = ((candidateHash >> 2) & 0xFFFFu) * (1f / 65536f);
+
                 output.Add(new TreePlacementRecord
                 {
                     WorldPosition = worldPos3,
                     GroundNormalY = normalY,
-                    TreeTypeId    = 0,
-                    StableLocalId = CandidateLocalId(cellX, cellZ),
+                    YawRadians    = yaw01 * math.PI * 2f,
+                    TreeTypeId    = variantIndex,
+                    StableLocalId = stableLocalId,
                 });
             }
         }
@@ -111,17 +140,26 @@ namespace DOTS.Terrain.Trees
         /// </summary>
         public static float2 CandidateJitter(uint worldSeed, int3 chunkCoord, int cellX, int cellZ)
         {
-            var h = worldSeed;
-            h ^= (uint)chunkCoord.x * 2654435761u;
-            h ^= (uint)chunkCoord.z * 1013904223u;
-            h ^= (uint)cellX * 374761393u;
-            h ^= (uint)cellZ * 668265263u;
-            h *= 0x9e3779b9u;
+            return CandidateJitterFromHash(CandidateHash(worldSeed, chunkCoord, cellX, cellZ));
+        }
 
-            var jx = ((h >> 8)  & 0xFFFFu) * (1f / 65535f) * 2f - 1f; // → [-1, 1]
+        private static float2 CandidateJitterFromHash(uint hash)
+        {
+            var jx = ((hash >> 8)  & 0xFFFFu) * (1f / 65535f) * 2f - 1f; // → [-1, 1]
             // Only 12 bits remain after shifting 20 positions in a 32-bit hash.
-            var jz = ((h >> 20) & 0xFFFu) * (1f / 4095f) * 2f - 1f;
+            var jz = ((hash >> 20) & 0xFFFu) * (1f / 4095f) * 2f - 1f;
             return new float2(jx, jz) * CellJitterRadius;
+        }
+
+        private static uint CandidateHash(uint worldSeed, int3 chunkCoord, int cellX, int cellZ)
+        {
+            var hash = worldSeed;
+            hash ^= (uint)chunkCoord.x * 2654435761u;
+            hash ^= (uint)chunkCoord.z * 1013904223u;
+            hash ^= (uint)cellX * 374761393u;
+            hash ^= (uint)cellZ * 668265263u;
+            hash *= 0x9e3779b9u;
+            return hash;
         }
 
         // ── Private helpers ───────────────────────────────────────────────────

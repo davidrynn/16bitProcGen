@@ -19,12 +19,32 @@ namespace DOTS.Terrain.Rocks
     public partial class RockChunkRenderSystem : SystemBase
     {
         private const int CulledScatterLod = 3;
+        private const int MaxRockVariants = 8;
+
+        private static readonly int BaseColorId = Shader.PropertyToID("_BaseColor");
+        private static readonly int CutoffId = Shader.PropertyToID("_Cutoff");
+        private const string ErrorShaderName = "Hidden/InternalErrorShader";
+        private const string PreferredFallbackShaderName = "DOTS/VertexColorUnlitClip";
+        private static readonly Bounds TinyBounds = new Bounds(Vector3.zero, Vector3.one * 0.01f);
 
         private static readonly Matrix4x4[] InstanceBuffer = new Matrix4x4[1023];
-        private static readonly List<Matrix4x4> PendingMatrices = new List<Matrix4x4>(4096);
+        private static readonly List<Matrix4x4>[] PendingMatricesByVariant = CreateMatrixBuckets(MaxRockVariants);
+        private static readonly Mesh[] PendingMeshesByVariant = new Mesh[MaxRockVariants];
+        private static readonly Bounds[] PendingWorldBoundsByVariant = new Bounds[MaxRockVariants];
         private static Material _pendingMaterial;
-        private static Mesh _pendingMesh;
-        private static Bounds _pendingWorldBounds;
+        private static Material _runtimeFallbackMaterial;
+        private static int _pendingVariantCount;
+
+        private static List<Matrix4x4>[] CreateMatrixBuckets(int count)
+        {
+            var buckets = new List<Matrix4x4>[count];
+            for (int i = 0; i < count; i++)
+            {
+                buckets[i] = new List<Matrix4x4>(1024);
+            }
+
+            return buckets;
+        }
 
         protected override void OnCreate()
         {
@@ -35,33 +55,49 @@ namespace DOTS.Terrain.Rocks
         {
             RenderPipelineManager.beginCameraRendering -= SubmitToCamera;
             ClearPendingSubmissionState();
+
+            if (_runtimeFallbackMaterial != null)
+            {
+                Object.Destroy(_runtimeFallbackMaterial);
+                _runtimeFallbackMaterial = null;
+            }
         }
 
         private static void SubmitToCamera(ScriptableRenderContext ctx, Camera camera)
         {
-            if (_pendingMesh == null || _pendingMaterial == null || PendingMatrices.Count == 0)
+            if (_pendingMaterial == null || _pendingVariantCount == 0)
             {
                 return;
             }
 
-            var rp = new RenderParams(_pendingMaterial)
+            for (int variantIndex = 0; variantIndex < _pendingVariantCount; variantIndex++)
             {
-                worldBounds = _pendingWorldBounds,
-            };
-
-            int remaining = PendingMatrices.Count;
-            int offset = 0;
-            while (remaining > 0)
-            {
-                int batch = Mathf.Min(remaining, 1023);
-                for (int i = 0; i < batch; i++)
+                var mesh = PendingMeshesByVariant[variantIndex];
+                var matrices = PendingMatricesByVariant[variantIndex];
+                if (mesh == null || matrices.Count == 0)
                 {
-                    InstanceBuffer[i] = PendingMatrices[offset + i];
+                    continue;
                 }
 
-                Graphics.RenderMeshInstanced(rp, _pendingMesh, 0, InstanceBuffer, batch);
-                offset += batch;
-                remaining -= batch;
+                var rp = new RenderParams(_pendingMaterial)
+                {
+                    worldBounds = PendingWorldBoundsByVariant[variantIndex],
+                };
+
+                int remaining = matrices.Count;
+                int offset = 0;
+                while (remaining > 0)
+                {
+                    int batch = Mathf.Min(remaining, 1023);
+                    for (int i = 0; i < batch; i++)
+                    {
+                        InstanceBuffer[i] = matrices[offset + i];
+                    }
+
+                    Graphics.RenderMeshInstanced(rp, mesh, 0, InstanceBuffer, batch);
+                    offset += batch;
+                    remaining -= batch;
+                }
             }
         }
 
@@ -80,16 +116,134 @@ namespace DOTS.Terrain.Rocks
 
         public static bool TryPrepareSubmissionFrame(RockRenderConfig config)
         {
-            if (config == null || config.Mesh == null || config.Material == null)
+            if (config == null || config.Material == null)
             {
                 ClearPendingSubmissionState();
                 return false;
             }
 
-            _pendingMesh = config.Mesh;
-            _pendingMaterial = config.Material;
-            PendingMatrices.Clear();
+            var material = ResolveRenderableMaterial(config.Material);
+            if (material == null)
+            {
+                ClearPendingSubmissionState();
+                return false;
+            }
+
+            if (!EnsureMaterialInstancing(material))
+            {
+                ClearPendingSubmissionState();
+                return false;
+            }
+
+            ResetPendingVariantState();
+
+            var variantCount = CollectVariantMeshes(config);
+            if (variantCount == 0)
+            {
+                ClearPendingSubmissionState();
+                return false;
+            }
+
+            _pendingMaterial = material;
+            _pendingVariantCount = variantCount;
             return true;
+        }
+
+        private static Material ResolveRenderableMaterial(Material sourceMaterial)
+        {
+            if (!UsesErrorShader(sourceMaterial))
+            {
+                return sourceMaterial;
+            }
+
+            if (_runtimeFallbackMaterial == null)
+            {
+                var fallbackShader = Shader.Find(PreferredFallbackShaderName)
+                    ?? Shader.Find("Universal Render Pipeline/Lit")
+                    ?? Shader.Find("Standard")
+                    ?? Shader.Find("Unlit/Color")
+                    ?? Shader.Find("Sprites/Default");
+
+                if (fallbackShader == null)
+                {
+                    return null;
+                }
+
+                _runtimeFallbackMaterial = new Material(fallbackShader)
+                {
+                    name = "RockRuntimeFallbackMaterial",
+                };
+
+                if (_runtimeFallbackMaterial.HasProperty(BaseColorId))
+                {
+                    _runtimeFallbackMaterial.SetColor(BaseColorId, Color.white);
+                }
+
+                if (_runtimeFallbackMaterial.HasProperty(CutoffId))
+                {
+                    _runtimeFallbackMaterial.SetFloat(CutoffId, 0.5f);
+                }
+            }
+
+            return _runtimeFallbackMaterial;
+        }
+
+        private static bool UsesErrorShader(Material material)
+        {
+            if (material == null)
+            {
+                return true;
+            }
+
+            var shader = material.shader;
+            return shader == null || shader.name == ErrorShaderName;
+        }
+
+        private static bool EnsureMaterialInstancing(Material material)
+        {
+            if (material == null)
+            {
+                return false;
+            }
+
+            if (!material.enableInstancing)
+            {
+                material.enableInstancing = true;
+            }
+
+            return material.enableInstancing;
+        }
+
+        private static int CollectVariantMeshes(RockRenderConfig config)
+        {
+            var variantCount = 0;
+            if (config.MeshVariants != null)
+            {
+                for (int i = 0; i < config.MeshVariants.Length; i++)
+                {
+                    var mesh = config.MeshVariants[i];
+                    if (mesh == null)
+                    {
+                        continue;
+                    }
+
+                    if (variantCount >= MaxRockVariants)
+                    {
+                        break;
+                    }
+
+                    PendingMeshesByVariant[variantCount] = mesh;
+                    variantCount++;
+                }
+            }
+
+            if (variantCount == 0 && config.Mesh != null)
+            {
+                PendingMeshesByVariant[0] = config.Mesh;
+                variantCount = 1;
+            }
+
+            return variantCount;
         }
 
         /// <summary>
@@ -97,7 +251,12 @@ namespace DOTS.Terrain.Rocks
         /// </summary>
         public static void AddPendingMatrixForTests(in Matrix4x4 matrix)
         {
-            PendingMatrices.Add(matrix);
+            if (_pendingVariantCount == 0)
+            {
+                return;
+            }
+
+            PendingMatricesByVariant[0].Add(matrix);
         }
 
         /// <summary>
@@ -105,17 +264,37 @@ namespace DOTS.Terrain.Rocks
         /// </summary>
         public static bool HasPendingSubmissionDataForTests()
         {
-            return _pendingMesh != null
-                   && _pendingMaterial != null
-                   && PendingMatrices.Count > 0;
+            if (_pendingMaterial == null)
+            {
+                return false;
+            }
+
+            for (int i = 0; i < _pendingVariantCount; i++)
+            {
+                if (PendingMeshesByVariant[i] != null && PendingMatricesByVariant[i].Count > 0)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private static void ResetPendingVariantState()
+        {
+            _pendingVariantCount = 0;
+            for (int i = 0; i < MaxRockVariants; i++)
+            {
+                PendingMeshesByVariant[i] = null;
+                PendingMatricesByVariant[i].Clear();
+                PendingWorldBoundsByVariant[i] = TinyBounds;
+            }
         }
 
         private static void ClearPendingSubmissionState()
         {
-            PendingMatrices.Clear();
-            _pendingMesh = null;
             _pendingMaterial = null;
-            _pendingWorldBounds = new Bounds(Vector3.zero, Vector3.one * 0.01f);
+            ResetPendingVariantState();
         }
 
         protected override void OnUpdate()
@@ -131,6 +310,8 @@ namespace DOTS.Terrain.Rocks
                 return;
             }
 
+            int variantCount = _pendingVariantCount;
+
             foreach (var (lodStateRO, records) in SystemAPI.Query<RefRO<TerrainChunkLodState>, DynamicBuffer<RockPlacementRecord>>()
                          .WithAll<TerrainChunk>())
             {
@@ -142,18 +323,38 @@ namespace DOTS.Terrain.Rocks
 
                 foreach (var record in records)
                 {
+                    int variantIndex = variantCount == 1
+                        ? 0
+                        : record.RockTypeId % variantCount;
+
+                    var mesh = PendingMeshesByVariant[variantIndex];
+                    if (mesh == null)
+                    {
+                        continue;
+                    }
+
                     var scale = math.max(0.01f, record.UniformScale * config.UniformScale);
-                    PendingMatrices.Add(Matrix4x4.TRS(
+                    PendingMatricesByVariant[variantIndex].Add(Matrix4x4.TRS(
                         record.WorldPosition,
                         Quaternion.Euler(0f, math.degrees(record.YawRadians), 0f),
                         Vector3.one * scale));
                 }
             }
 
-            // Per-instance matrices already contain full scale, so use neutral external scale.
-            if (!TryBuildWorldBounds(PendingMatrices, config.Mesh.bounds, 1f, out _pendingWorldBounds))
+            for (int variantIndex = 0; variantIndex < variantCount; variantIndex++)
             {
-                _pendingWorldBounds = new Bounds(Vector3.zero, Vector3.one * 0.01f);
+                var mesh = PendingMeshesByVariant[variantIndex];
+                if (mesh == null)
+                {
+                    PendingWorldBoundsByVariant[variantIndex] = TinyBounds;
+                    continue;
+                }
+
+                // Per-instance matrices already contain full scale, so use neutral external scale.
+                if (!TryBuildWorldBounds(PendingMatricesByVariant[variantIndex], mesh.bounds, 1f, out PendingWorldBoundsByVariant[variantIndex]))
+                {
+                    PendingWorldBoundsByVariant[variantIndex] = TinyBounds;
+                }
             }
         }
     }

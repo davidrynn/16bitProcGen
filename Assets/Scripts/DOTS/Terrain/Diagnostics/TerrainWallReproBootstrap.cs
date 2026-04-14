@@ -108,7 +108,7 @@ namespace DOTS.Terrain.Debug
                 var playerTransform = entityManager.GetComponentData<LocalTransform>(playerEntity);
                 var movementMode = entityManager.HasComponent<PlayerMovementState>(playerEntity)
                     ? entityManager.GetComponentData<PlayerMovementState>(playerEntity).Mode
-                    : PlayerMovementMode.Ground;
+                    : PlayerMovementMode.Grounded;
 
                 if (!crossingDetected && playerTransform.Position.x > CrossingThresholdX)
                 {
@@ -378,7 +378,7 @@ namespace DOTS.Terrain.Debug
                            entityManager.GetComponentData<PlayerMovementState>(playerEntity).IsGrounded;
             var movementMode = entityManager.HasComponent<PlayerMovementState>(playerEntity)
                 ? entityManager.GetComponentData<PlayerMovementState>(playerEntity).Mode
-                : PlayerMovementMode.Ground;
+                : PlayerMovementMode.Grounded;
 
             ProbeWallFaces(position.z, out var hitFromLeft, out var hitFromRight, out var leftHitPosition, out var rightHitPosition);
 

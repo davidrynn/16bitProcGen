@@ -37,6 +37,8 @@ namespace DOTS.Terrain.Tests
                 for (int i = 0; i < out1.Length; i++)
                 {
                     Assert.AreEqual(out1[i].StableLocalId, out2[i].StableLocalId);
+                    Assert.AreEqual(out1[i].TreeTypeId, out2[i].TreeTypeId);
+                    Assert.AreEqual(out1[i].YawRadians, out2[i].YawRadians, 1e-6f);
                     Assert.AreEqual(out1[i].WorldPosition.x, out2[i].WorldPosition.x, 1e-5f);
                     Assert.AreEqual(out1[i].WorldPosition.z, out2[i].WorldPosition.z, 1e-5f);
                 }
@@ -85,6 +87,62 @@ namespace DOTS.Terrain.Tests
                 "normalY=1.0 (flat) should satisfy the slope threshold.");
             Assert.IsFalse(0.5f >= TreePlacementAlgorithm.PlainsSlopeMinNormalY,
                 "normalY=0.5 (steep) should fail the slope threshold.");
+        }
+
+        [Test]
+        public void GeneratePlacements_VariantAndYaw_AssignedWithinExpectedRange()
+        {
+            using var blob = BuildFlatTerrainBlob();
+            ref var blobVal = ref blob.Value;
+            var origin = new float3(0f, -8f, 0f);
+
+            bool sawNonZeroVariant = false;
+            bool sawNonZeroYaw = false;
+            int totalAccepted = 0;
+
+            for (int seedIdx = 0; seedIdx < 12; seedIdx++)
+            {
+                uint seed = (uint)(12345 + seedIdx * 7919);
+                var coord = new int3(seedIdx, 0, seedIdx + 1);
+
+                var output = new NativeList<TreePlacementRecord>(16, Allocator.Temp);
+                try
+                {
+                    TreePlacementAlgorithm.GeneratePlacements(ref blobVal, coord, origin, seed, ref output);
+                    totalAccepted += output.Length;
+
+                    foreach (var record in output)
+                    {
+                        Assert.Less(record.TreeTypeId, TreePlacementAlgorithm.PlainsTreeVariantCount,
+                            "TreeTypeId must map to an available plains variant index.");
+                        Assert.GreaterOrEqual(record.YawRadians, 0f,
+                            "YawRadians must never be negative.");
+                        Assert.Less(record.YawRadians, math.PI * 2f,
+                            "YawRadians must stay within [0, 2pi). ");
+
+                        if (record.TreeTypeId != 0)
+                        {
+                            sawNonZeroVariant = true;
+                        }
+
+                        if (record.YawRadians > 1e-4f)
+                        {
+                            sawNonZeroYaw = true;
+                        }
+                    }
+                }
+                finally
+                {
+                    output.Dispose();
+                }
+            }
+
+            Assert.Greater(totalAccepted, 0,
+                "Expected at least one accepted placement while validating variant/yaw assignment.");
+            Assert.IsTrue(sawNonZeroVariant,
+                "Expected at least one accepted placement to select a non-zero tree variant.");
+            Assert.IsTrue(sawNonZeroYaw,
+                "Expected at least one accepted placement to have non-zero yaw.");
         }
 
         // ── Test 3: Plains sparsity ───────────────────────────────────────────
@@ -281,6 +339,10 @@ namespace DOTS.Terrain.Tests
                     {
                         Assert.AreEqual(pass1[i].StableLocalId, pass2[i].StableLocalId,
                             $"Record {i} StableLocalId must match after re-stream.");
+                        Assert.AreEqual(pass1[i].TreeTypeId, pass2[i].TreeTypeId,
+                            $"Record {i} TreeTypeId must match after re-stream.");
+                        Assert.AreEqual(pass1[i].YawRadians, pass2[i].YawRadians, 1e-6f,
+                            $"Record {i} YawRadians must match after re-stream.");
                         Assert.AreEqual(pass1[i].WorldPosition.x, pass2[i].WorldPosition.x, 1e-5f,
                             $"Record {i} WorldPosition.x must match after re-stream.");
                         Assert.AreEqual(pass1[i].WorldPosition.z, pass2[i].WorldPosition.z, 1e-5f,

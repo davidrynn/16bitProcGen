@@ -484,3 +484,7 @@ ugs_installer
 # Unity Test Runner log output files
 TestLog-*.txt
 TestResults-*.xml
+
+# Third-party imported art packs (do not vendor binaries/textures)
+/Assets/Synty/
+/Assets/Synty.meta
