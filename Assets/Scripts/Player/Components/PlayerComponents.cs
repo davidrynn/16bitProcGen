@@ -32,6 +32,11 @@ namespace DOTS.Player.Components
         public float2 Move;
         public float2 Look;
         public bool JumpPressed;
+        /// <summary>
+        /// True while space is physically held. Used by GlideSystem for charge timing.
+        /// Unlike JumpPressed (one-frame event consumed by jump), this persists while held.
+        /// </summary>
+        public bool JumpHeld;
 
         // Slingshot input: LMB + RMB both held
         public bool SlingshotHeld;

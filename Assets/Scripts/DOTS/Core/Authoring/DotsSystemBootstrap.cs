@@ -360,6 +360,13 @@ public class DotsSystemBootstrap : MonoBehaviour
                 DebugSettings.Log("Bootstrap: SlingshotLaunchSystem enabled and added to PhysicsSystemGroup.");
             }
 
+            if (config.EnableGlideSystem)
+            {
+                var handle = world.CreateSystem<GlideSystem>();
+                physicsGroup.AddSystemToUpdateList(handle);
+                DebugSettings.Log("Bootstrap: GlideSystem enabled and added to PhysicsSystemGroup.");
+            }
+
             if (config.EnableMovementStateBookkeepingSystem)
             {
                 var handle = world.CreateSystem<MovementStateBookkeepingSystem>();

@@ -12,6 +12,11 @@ namespace DOTS.Player.Systems
     /// Adds SlingshotChargeState when charge begins, computes ChargeNormalized using
     /// a power curve, and removes the component on cancel.
     /// </summary>
+    /// <remarks>
+    /// Uses single-component query + manual GetComponent to work around a known Unity
+    /// source-generator caching issue where multi-component queries can return empty
+    /// results after struct layout changes.
+    /// </remarks>
     [DisableAutoCreation]
     [BurstCompile]
     [UpdateInGroup(typeof(PhysicsSystemGroup))]
@@ -23,26 +28,38 @@ namespace DOTS.Player.Systems
         {
             state.RequireForUpdate<PlayerMovementState>();
             state.RequireForUpdate<SlingshotConfig>();
+            state.RequireForUpdate<PlayerInputComponent>();
+            state.RequireForUpdate<PlayerViewComponent>();
         }
 
-        [BurstCompile]
+        /// <remarks>
+        /// WithoutBurst: Burst silently breaks the .WithAll filter + GetComponentRO
+        /// pattern used to work around the source-generator query caching issue.
+        /// Runs once per frame on a single entity so managed overhead is negligible.
+        /// </remarks>
         public void OnUpdate(ref SystemState state)
         {
             var ecb = new EntityCommandBuffer(Unity.Collections.Allocator.Temp);
             float elapsedTime = (float)SystemAPI.Time.ElapsedTime;
 
-            foreach (var (movementState, input, view, slingshotConfig, entity) in
-                     SystemAPI.Query<RefRW<PlayerMovementState>, RefRO<PlayerInputComponent>,
-                                     RefRO<PlayerViewComponent>, RefRO<SlingshotConfig>>()
+            foreach (var (movementState, entity) in
+                     SystemAPI.Query<RefRW<PlayerMovementState>>()
+                             .WithAll<PlayerInputComponent, PlayerViewComponent, SlingshotConfig>()
                              .WithEntityAccess())
             {
+                var input = SystemAPI.GetComponentRO<PlayerInputComponent>(entity);
+                var view = SystemAPI.GetComponentRO<PlayerViewComponent>(entity);
+                var slingshotConfig = SystemAPI.GetComponentRO<SlingshotConfig>(entity);
+
                 bool hasChargeState = SystemAPI.HasComponent<SlingshotChargeState>(entity);
-                // Begin charging when Grounded, continue when SlingshotCharging — but only
-                // while the player is still on the ground. If they walk off an edge mid-charge,
-                // IsGrounded goes false and the cancel branch fires.
-                bool canCharge = movementState.ValueRO.IsGrounded &&
-                                 (movementState.ValueRO.Mode == PlayerMovementMode.Grounded ||
-                                  movementState.ValueRO.Mode == PlayerMovementMode.SlingshotCharging);
+                // Begin charging when Grounded (Mode==Grounded implies the grounding system
+                // detected ground contact — no separate IsGrounded check needed for entry).
+                // Continue charging in SlingshotCharging only while IsGrounded remains true,
+                // so walking off an edge mid-charge cancels correctly.
+                var mode = movementState.ValueRO.Mode;
+                bool canCharge = mode == PlayerMovementMode.Grounded ||
+                                 (mode == PlayerMovementMode.SlingshotCharging &&
+                                  movementState.ValueRO.IsGrounded);
                 bool slingshotHeld = input.ValueRO.SlingshotHeld;
 
                 if (slingshotHeld && canCharge)

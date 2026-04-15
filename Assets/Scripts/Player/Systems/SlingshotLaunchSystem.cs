@@ -26,6 +26,7 @@ namespace DOTS.Player.Systems
         public void OnCreate(ref SystemState state)
         {
             state.RequireForUpdate<SlingshotConfig>();
+            state.RequireForUpdate<SlingshotChargeState>();
         }
 
         /// <remarks>WithoutBurst: uses DebugSettings string logging on the infrequent launch frame.</remarks>
@@ -33,12 +34,16 @@ namespace DOTS.Player.Systems
         {
             var ecb = new EntityCommandBuffer(Unity.Collections.Allocator.Temp);
 
-            foreach (var (chargeState, input, movementState, slingshotConfig, velocity, entity) in
-                     SystemAPI.Query<RefRO<SlingshotChargeState>, RefRO<PlayerInputComponent>,
-                                     RefRW<PlayerMovementState>, RefRO<SlingshotConfig>,
+            foreach (var (chargeState, movementState, velocity, entity) in
+                     SystemAPI.Query<RefRO<SlingshotChargeState>,
+                                     RefRW<PlayerMovementState>,
                                      RefRW<PhysicsVelocity>>()
+                             .WithAll<PlayerInputComponent, SlingshotConfig>()
                              .WithEntityAccess())
             {
+                var input = SystemAPI.GetComponentRO<PlayerInputComponent>(entity);
+                var slingshotConfig = SystemAPI.GetComponentRO<SlingshotConfig>(entity);
+
                 if (!input.ValueRO.SlingshotReleased)
                     continue;
 

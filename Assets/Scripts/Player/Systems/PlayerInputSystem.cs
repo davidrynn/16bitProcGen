@@ -74,6 +74,7 @@ namespace DOTS.Player.Systems
             // Only capture look input when cursor is locked
             float2 lookDelta = _cursorLocked ? mouse.delta.ReadValue() : float2.zero;
             bool jumpPressed = keyboard.spaceKey.wasPressedThisFrame;
+            bool jumpHeld = keyboard.spaceKey.isPressed;
 
             // Tab toggles between movement mode and terrain-edit mode.
             // In edit mode, mouse buttons route to TerrainEditInputSystem instead of slingshot.
@@ -101,6 +102,7 @@ namespace DOTS.Player.Systems
                 // Lock camera during slingshot charge so drag doesn't rotate the view
                 input.ValueRW.Look = slingshotHeld ? float2.zero : lookDelta;
                 input.ValueRW.JumpPressed = input.ValueRO.JumpPressed || jumpPressed;
+                input.ValueRW.JumpHeld = jumpHeld;
                 input.ValueRW.IsEditMode = _isEditMode;
 
                 // Slingshot: accumulate drag while held, reset on release

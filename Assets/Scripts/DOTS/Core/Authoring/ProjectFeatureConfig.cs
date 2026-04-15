@@ -60,6 +60,7 @@ public class ProjectFeatureConfig : ScriptableObject
     public bool EnableCameraSpeedFeedbackSystem = true;
     public bool EnableCameraLandingFeedbackSystem = true;
     public bool EnableCameraGlideFeedbackSystem = true;
+    public bool EnableGlideSystem = true;
 
     [Header("Player Legacy/Test Systems")]
     public bool EnableSimplePlayerMovementSystem = false;

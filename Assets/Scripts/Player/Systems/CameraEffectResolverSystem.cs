@@ -27,6 +27,7 @@ namespace DOTS.Player.Systems
         private float _currentDip;
         private float3 _currentShake;
         private float _currentPitchOffset; // for horizon stabilization
+        private bool _wasHorizonStabilizing; // tracks whether stabilization was active last frame
         private bool _initialized;
 
         public void OnCreate(ref SystemState state)
@@ -89,15 +90,24 @@ namespace DOTS.Player.Systems
                 _currentDip = math.lerp(_currentDip, es.CameraDip, 0.5f);
                 _currentDip *= (1f - dipDecay); // fade toward zero
 
-                // Horizon stabilization: slowly blend pitch toward 0
+                // Horizon stabilization: gradually blend effective pitch toward horizon (0°).
+                // On first frame of stabilization, seed the offset from the player's current
+                // pitch so the lerp-to-zero actually has something to blend away.
                 if (es.HorizonStabilize)
                 {
+                    if (!_wasHorizonStabilizing)
+                    {
+                        // Entering stabilization: offset cancels current pitch
+                        _currentPitchOffset = -view.ValueRO.PitchDegrees;
+                        _wasHorizonStabilizing = true;
+                    }
                     float horizonRate = math.saturate(0.8f * dt);
                     _currentPitchOffset = math.lerp(_currentPitchOffset, 0f, horizonRate);
                 }
                 else
                 {
                     _currentPitchOffset = 0f;
+                    _wasHorizonStabilizing = false;
                 }
 
                 float3 playerPos = playerTransform.ValueRO.Position;
