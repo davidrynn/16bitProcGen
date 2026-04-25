@@ -1,6 +1,6 @@
 # Document Index
 
-**Last Updated:** 2026-04-14
+**Last Updated:** 2026-04-23
 
 > **New here?** Start with [MASTER_PLAN.md](MASTER_PLAN.md) — it has the project vision, current status, phase roadmap, and a curated document map.
 
@@ -18,6 +18,12 @@ Quick-reference index of all project documentation. Docs are organized by catego
 | [AI/TerrainHeightMaps/TERRAIN_PLAINS_TREE_VARIANT_YAW_SPEC.md](AI/TerrainHeightMaps/TERRAIN_PLAINS_TREE_VARIANT_YAW_SPEC.md) | ACTIVE | Deterministic 3-variant plains tree mesh selection plus per-instance Y-axis yaw rotation |
 | [AI/TerrainHeightMaps/TERRAIN_SURFACE_SCATTER_PLAN.md](AI/TerrainHeightMaps/TERRAIN_SURFACE_SCATTER_PLAN.md) | DESIGN | Rollout plan for generalizing tree-only placement into reusable surface scatter families |
 | [AI/TerrainHeightMaps/TERRAIN_SURFACE_SCATTER_SPEC.md](AI/TerrainHeightMaps/TERRAIN_SURFACE_SCATTER_SPEC.md) | DESIGN | Runtime contract for chunk-scattered trees, bushes, rocks, ore nodes, and similar discrete props |
+| [AI/MVP_VISTA_MOMENT_SPEC.md](AI/MVP_VISTA_MOMENT_SPEC.md) | **ACTIVE — MVP PRIORITY** | Vista discovery experience: atmospheric haze + mountain horizon + relic hand; gap analysis + ordered implementation |
+| [AI/STRUCTURE PLACEMENT/STRUCTURE_PLACEMENT_PLAN.md](AI/STRUCTURE%20PLACEMENT/STRUCTURE_PLACEMENT_PLAN.md) | DESIGN | Rollout plan for deterministic semantic structure placement (dungeons, villages, relics, ruins) |
+| [AI/STRUCTURE PLACEMENT/STRUCTURE_PLACEMENT_SPEC.md](AI/STRUCTURE%20PLACEMENT/STRUCTURE_PLACEMENT_SPEC.md) | DESIGN | Runtime contract for region-scale anchors, hard spacing constraints, and structure-family realization |
+| [AI/STRUCTURE PLACEMENT/RELIC_RENDER_REFACTOR_SPEC.md](AI/STRUCTURE%20PLACEMENT/RELIC_RENDER_REFACTOR_SPEC.md) | IMPLEMENTED | Replace batch RenderMeshInstanced relic path with per-entity Entities Graphics rendering (fixes BUG-016 frustum culling) |
+| [AI/STRUCTURE PLACEMENT/RELIC_LOD_IMPOSTOR_SPEC.md](AI/STRUCTURE%20PLACEMENT/RELIC_LOD_IMPOSTOR_SPEC.md) | IMPLEMENTED | Distance-based full-mesh ↔ impostor swap for large relics; supersedes RELIC_RENDER_REFACTOR_SPEC §8. Far-plane clipping now masked by distance fog. |
+| [AI/STRUCTURE PLACEMENT/RELIC_BILLBOARD_IMPOSTOR_SPEC.md](AI/STRUCTURE%20PLACEMENT/RELIC_BILLBOARD_IMPOSTOR_SPEC.md) | DESIGN | Pre-baked camera-facing billboard as LOD 1 impostor for relics (atlas bake tool + Y-axis facing system); future work for distant vistas |
 | [AI/TerrainHeightMaps/TERRAIN_SURFACE_SCATTER_SCHEMA.md](AI/TerrainHeightMaps/TERRAIN_SURFACE_SCATTER_SCHEMA.md) | DESIGN | First ECS/data breakdown for tree-plus-rock surface scatter lifecycle |
 | [AI/TerrainHeightMaps/TERRAIN_TREE_PLACEMENT_SPEC.md](AI/TerrainHeightMaps/TERRAIN_TREE_PLACEMENT_SPEC.md) | DESIGN | Tree-specific placement behavior within the broader surface scatter layer |
 | [AI/TERRAIN_EDIT_PLAYER_SAFETY_LOCAL_GRID_SPEC.md](AI/TERRAIN_EDIT_PLAYER_SAFETY_LOCAL_GRID_SPEC.md) | PROPOSED | Player-overlap edit guard + deterministic chunk-local grid guarantees |

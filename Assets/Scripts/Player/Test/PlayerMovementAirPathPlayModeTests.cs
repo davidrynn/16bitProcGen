@@ -122,6 +122,41 @@ namespace DOTS.Player.Test
             yield return null;
         }
 
+        [UnityTest]
+        public IEnumerator BallisticWithZeroFallTime_StillUsesAirControlLerp()
+        {
+            const float airControl = 0.2f;
+            const float groundSpeed = 10f;
+            const float initialX = 2f;
+
+            var entity = CreateMovementEntity(
+                mode: PlayerMovementMode.Ballistic,
+                isGrounded: false,
+                initialLinearVelocity: new float3(initialX, 0f, 0f),
+                moveInput: new float2(1f, 0f),
+                groundSpeed: groundSpeed,
+                airControl: airControl);
+
+            // Regression guard: airborne traversal should not depend on FallTime
+            // clearing GroundControlGraceTime.
+            var movementState = entityManager.GetComponentData<PlayerMovementState>(entity);
+            movementState.FallTime = 0f;
+            entityManager.SetComponentData(entity, movementState);
+
+            TickPhysicsGroupOnce();
+
+            var velocity = entityManager.GetComponentData<PhysicsVelocity>(entity);
+            var expected = math.lerp(initialX, groundSpeed, math.saturate(airControl * FixedDeltaTime));
+
+            Assert.AreEqual(expected, velocity.Linear.x, 1e-4f,
+                "Ballistic mode should immediately use air-control even when FallTime is zero.");
+            Assert.Less(velocity.Linear.x, groundSpeed - 1e-3f,
+                "Air-control branch should not snap to full ground speed in one tick.");
+
+            entityManager.DestroyEntity(entity);
+            yield return null;
+        }
+
         private Entity CreateMovementEntity(
             PlayerMovementMode mode,
             bool isGrounded,

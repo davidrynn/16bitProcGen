@@ -324,7 +324,7 @@ namespace DOTS.Player.Bootstrap
             camera.fieldOfView = CameraEffectConfig.Default.BaseFOV;
 
             // Derive far clip from TerrainRenderDistance via the config singleton
-            float farClip = 300f;
+            float farClip = 2000f;
             if (SystemAPI.TryGetSingleton<Terrain.Streaming.ProjectFeatureConfigSingleton>(out var cfgSingleton)
                 && cfgSingleton.CameraFarClipPlane > 0f)
             {

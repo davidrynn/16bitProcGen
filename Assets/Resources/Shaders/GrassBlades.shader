@@ -43,6 +43,7 @@ Shader "DOTS/GrassBlades"
             HLSLPROGRAM
             #pragma vertex   vert
             #pragma fragment frag
+            #pragma multi_compile_fog
 
             // No multi_compile_instancing — we read instance data directly from
             // _BladeBuffer via SV_InstanceID, bypassing Unity's instancing macros.
@@ -93,6 +94,7 @@ Shader "DOTS/GrassBlades"
                 float2 uv            : TEXCOORD0;
                 float3 color         : TEXCOORD1;
                 float  distanceFade  : TEXCOORD2;
+                float  fogCoord      : TEXCOORD3;
             };
 
             // ── Vertex shader ────────────────────────────────────────────────────────
@@ -144,6 +146,7 @@ Shader "DOTS/GrassBlades"
                 output.uv           = TRANSFORM_TEX(input.uv, _MainTex);
                 output.color        = blade.ColorTint * mainLight.color.rgb * NdotL;
                 output.distanceFade = fade;
+                output.fogCoord     = ComputeFogFactor(output.positionCS.z);
                 return output;
             }
 
@@ -155,7 +158,8 @@ Shader "DOTS/GrassBlades"
                 // Alpha cutout: discard transparent parts of blade texture, and fade at distance.
                 clip(tex.a * input.distanceFade - _AlphaCutoff);
 
-                return half4(tex.rgb * input.color, 1.0);
+                half3 color = MixFog(tex.rgb * input.color, input.fogCoord);
+                return half4(color, 1.0);
             }
 
             ENDHLSL

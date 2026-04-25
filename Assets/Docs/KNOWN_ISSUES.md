@@ -1,6 +1,6 @@
 # Known Issues
 
-**Last Updated:** 2026-04-10
+**Last Updated:** 2026-04-16
 
 Master tracker for active bugs, investigations, and resolved issues. Link to detailed specs rather than duplicating analysis here.
 
@@ -287,6 +287,41 @@ Replace `mesh.RecalculateNormals()` with **SDF-gradient-based analytical normals
 - `Assets/Scripts/DOTS/Terrain/Meshing/SurfaceNets.cs` — `GradientAt` already computes SDF gradient per cell; needs to store per-vertex normals
 - `Assets/Scripts/DOTS/Terrain/Meshing/TerrainChunkMeshUploadSystem.cs` — `UploadMesh` currently calls `RecalculateNormals()`; needs to write stored normals instead
 - `Assets/Scripts/DOTS/Terrain/Meshing/TerrainChunkMeshBlob.cs` — needs `Normals` array added to blob
+
+---
+
+### BUG-016: Relic mesh partially disappears at distance — "globe eating" frustum culling artifact
+
+**Status:** RESOLVED — per-entity rendering + LOD impostor swap implemented (2026-04-24). Billboard impostor mesh not yet authored; full-mesh fallback active until art asset lands.
+**Severity:** Medium (visual)
+**Affected Systems:** `RelicRealizationSystem`, `RelicLodSelectionSystem`, `DotsSystemBootstrap` (fog)
+**Specs:** [RELIC_RENDER_REFACTOR_SPEC.md](AI/STRUCTURE%20PLACEMENT/RELIC_RENDER_REFACTOR_SPEC.md), [RELIC_LOD_IMPOSTOR_SPEC.md](AI/STRUCTURE%20PLACEMENT/RELIC_LOD_IMPOSTOR_SPEC.md)
+
+**Symptoms:**
+- At moderate-to-far camera distance, the relic mesh partially disappears in a spherical clipping pattern
+- Rotating the camera slightly can restore the full mesh
+- The artifact is angle-dependent and distance-dependent
+- Visually appears as if the mesh is being "eaten by a globe"
+
+**Root Cause (two layers):**
+1. **Original:** `RelicRenderSystem` used `Graphics.RenderMeshInstanced` with a single shared `worldBounds` AABB per batch; URP's bounding-sphere frustum test rejected the whole draw call as the camera moved.
+2. **Residual:** After per-entity rendering landed, the GPU rasterizer clips individual triangles against the camera's far clip plane because the relic's world-space bounding radius exceeds `farClipPlane − cameraDistance`. This is fundamental projection behaviour, not a bug.
+
+**Fix (layered):**
+- **Per-entity rendering:** Replaced batch `RenderMeshInstanced` with per-entity Entities Graphics in `RelicRealizationSystem`. Each relic has its own `RenderBounds`. Resolves the first artifact (batch-wide frustum culling).
+- **Distance fog:** Linear `RenderSettings.fog` applied at bootstrap with start/end distances derived from the camera far clip (`ProjectFeatureConfig.FogStartRatio` / `FogEndRatio`). Provides atmospheric depth but does **not** hide the far-plane clipping — the relic mesh spans such a wide distance range that clipped geometry is still in the un-fogged near field.
+- **LOD swap infrastructure:** `RelicLodSelectionSystem` exists and can swap to a billboard impostor. Billboard is the correct fix: a small flat quad never extends past the far clip. See [RELIC_BILLBOARD_IMPOSTOR_SPEC.md](AI/STRUCTURE%20PLACEMENT/RELIC_BILLBOARD_IMPOSTOR_SPEC.md).
+
+**Remaining work:** Implement the billboard impostor (pre-baked atlas quad) so the relic swaps to a small flat representation before far-plane clipping distance. The LOD swap machinery is in place; the billboard slots into the existing LOD 1 mesh/material pair.
+
+**Files:**
+- `Assets/Scripts/DOTS/Structures/RelicRealizationSystem.cs`
+- `Assets/Scripts/DOTS/Structures/RelicLodSelectionSystem.cs`
+- `Assets/Scripts/DOTS/Structures/RelicLodState.cs`
+- `Assets/Scripts/DOTS/Structures/RelicRenderConfig.cs`
+- `Assets/Scripts/DOTS/Structures/RelicVisualBootstrap.cs`
+- `Assets/Scripts/DOTS/Core/Authoring/ProjectFeatureConfig.cs` — fog config fields + derived distances
+- `Assets/Scripts/DOTS/Core/Authoring/DotsSystemBootstrap.cs` — `ApplyDistanceFog()`
 
 ---
 

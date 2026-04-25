@@ -28,6 +28,7 @@ Shader "DOTS/VertexColorUnlitClip"
             #pragma fragment Frag
             #pragma target 3.5
             #pragma multi_compile_instancing
+            #pragma multi_compile_fog
 
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
 
@@ -41,7 +42,8 @@ Shader "DOTS/VertexColorUnlitClip"
             struct Varyings
             {
                 float4 positionCS : SV_POSITION;
-                half4 color : COLOR;
+                half4  color      : COLOR;
+                float  fogCoord   : TEXCOORD1;
                 UNITY_VERTEX_INPUT_INSTANCE_ID
             };
 
@@ -58,7 +60,8 @@ Shader "DOTS/VertexColorUnlitClip"
 
                 VertexPositionInputs posInputs = GetVertexPositionInputs(IN.positionOS.xyz);
                 OUT.positionCS = posInputs.positionCS;
-                OUT.color = IN.color * _BaseColor;
+                OUT.color      = IN.color * _BaseColor;
+                OUT.fogCoord   = ComputeFogFactor(OUT.positionCS.z);
                 return OUT;
             }
 
@@ -66,7 +69,8 @@ Shader "DOTS/VertexColorUnlitClip"
             {
                 UNITY_SETUP_INSTANCE_ID(IN);
                 clip(IN.color.a - _Cutoff);
-                return half4(IN.color.rgb, 1.0h);
+                half3 color = MixFog(IN.color.rgb, IN.fogCoord);
+                return half4(color, 1.0h);
             }
             ENDHLSL
         }

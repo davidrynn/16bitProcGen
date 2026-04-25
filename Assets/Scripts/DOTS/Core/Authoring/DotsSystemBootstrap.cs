@@ -210,6 +210,31 @@ public class DotsSystemBootstrap : MonoBehaviour
                 DebugSettings.Log("Bootstrap: RockChunkRenderSystem enabled and added to PresentationSystemGroup.");
             }
 
+            if (config.EnableStructurePlacementSystem)
+            {
+                var handle = world.CreateSystem<DOTS.Structures.StructureAnchorPlanningSystem>();
+                simGroup.AddSystemToUpdateList(handle);
+                DebugSettings.Log("Bootstrap: StructureAnchorPlanningSystem enabled and added to SimulationSystemGroup.");
+            }
+
+            if (config.EnableRelicRealizationSystem)
+            {
+                var handle = world.CreateSystem<DOTS.Structures.RelicRealizationSystem>();
+                simGroup.AddSystemToUpdateList(handle);
+                DebugSettings.Log("Bootstrap: RelicRealizationSystem enabled and added to SimulationSystemGroup.");
+            }
+
+            // RelicLodSelectionSystem runs in PresentationSystemGroup so LocalToWorldSystem
+            // has already flushed transform writes before Entities Graphics submits draws.
+            // Disabling the flag leaves all relics in LOD 0 (useful for debugging/repro).
+            if (config.EnableRelicLodSelectionSystem)
+            {
+                var presentationGroup = world.GetExistingSystemManaged<PresentationSystemGroup>();
+                var handle = world.CreateSystem<DOTS.Structures.RelicLodSelectionSystem>();
+                presentationGroup.AddSystemToUpdateList(handle);
+                DebugSettings.Log("Bootstrap: RelicLodSelectionSystem enabled and added to PresentationSystemGroup.");
+            }
+
             if (config.EnableTerrainSeamValidatorSystem)
             {
                 var handle = world.CreateSystem<DOTS.Terrain.Debug.TerrainSeamValidatorSystem>();
@@ -448,6 +473,8 @@ public class DotsSystemBootstrap : MonoBehaviour
                 DebugSettings.Log("Bootstrap: HybridWeatherSystem enabled via config.");
             }
         }
+
+        ApplyDistanceFog();
     }
 
     private void EnsureConfigSingleton(World world)
@@ -520,5 +547,43 @@ public class DotsSystemBootstrap : MonoBehaviour
             entityManager.SetComponentData(settingsEntity, editSettings);
         }
         editQuery.Dispose();
+    }
+
+    /// <summary>
+    /// Applies distance fog via <see cref="RenderSettings"/> so geometry fades into atmospheric
+    /// haze before the camera far clip plane. Exponential mode (default) produces the natural
+    /// depth-haze feel required for the vista discovery moment; Linear is a fallback for hard
+    /// far-clip masking when exponential feel isn't wanted.
+    /// </summary>
+    private void ApplyDistanceFog()
+    {
+        if (!config.EnableDistanceFog)
+        {
+            RenderSettings.fog = false;
+            DebugSettings.Log("Bootstrap: Distance fog disabled via config.");
+            return;
+        }
+
+        RenderSettings.fog = true;
+        RenderSettings.fogMode = config.FogMode;
+        RenderSettings.fogColor = config.FogColor;
+
+        if (config.FogMode == FogMode.Linear)
+        {
+            RenderSettings.fogStartDistance = config.DerivedFogStartDistance;
+            RenderSettings.fogEndDistance = config.DerivedFogEndDistance;
+        }
+        else
+        {
+            RenderSettings.fogDensity = config.FogDensity;
+        }
+
+        string fogDetail = config.FogMode == FogMode.Linear
+            ? $"start={config.DerivedFogStartDistance:0.0}, end={config.DerivedFogEndDistance:0.0}"
+            : $"density={config.FogDensity:0.4f}";
+
+        DebugSettings.LogRendering(
+            $"Bootstrap: Distance fog enabled — mode={config.FogMode}, {fogDetail}, farClip={config.DerivedCameraFarClip:0.0}",
+            forceLog: true);
     }
 }

@@ -113,10 +113,6 @@ public class ProjectFeatureConfig : ScriptableObject
     public int DerivedStreamingRadiusInChunks =>
         Mathf.Max(1, Mathf.CeilToInt(TerrainRenderDistance / DefaultChunkStride));
 
-    /// <summary>Camera far clip plane, derived from TerrainRenderDistance with headroom.</summary>
-    public float DerivedCameraFarClip =>
-        Mathf.Max(100f, TerrainRenderDistance * 1.5f);
-
     /// <summary>LOD0 ring radius in chunk units (~1/3 of streaming radius).</summary>
     public float DerivedLod0MaxDist =>
         Mathf.Max(1f, DerivedStreamingRadiusInChunks / 3f);
@@ -144,9 +140,65 @@ public class ProjectFeatureConfig : ScriptableObject
     public bool EnablePlayerFallThroughDiagnosticSystem = false;
     public bool EnableTerrainColliderTimingSystem = false;
 
+    [Header("Structure Placement")]
+    public bool EnableStructurePlacementSystem = true;
+    public bool EnableRelicRealizationSystem = true;
+    public bool EnableRelicLodSelectionSystem = true;
+
     [Header("Dungeon Systems")]
     public bool EnableDungeonRenderingSystem = false;
 
     [Header("Weather Systems")]
     public bool EnableHybridWeatherSystem = false;
+
+    // ── Vista / Camera ──
+
+    [Header("Vista / Camera")]
+    [Tooltip("Camera far clip override for vista rendering. When > 0, overrides the terrain-derived far clip. " +
+             "600 lets the player see relics at 200–400 world units without increasing terrain streaming cost.")]
+    [Min(0f)]
+    public float VistaCameraFarClip = 600f;
+
+    // ── Distance Fog ──
+
+    [Header("Distance Fog")]
+    [Tooltip("Enable distance fog that fades geometry into a haze before the camera far clip plane.")]
+    public bool EnableDistanceFog = true;
+
+    [Tooltip("Fog rendering mode. ExponentialSquared keeps near objects crisp and builds haze toward the horizon. " +
+             "Linear is a flat ramp useful mainly for hard far-clip masking.")]
+    public FogMode FogMode = FogMode.ExponentialSquared;
+
+    [Tooltip("Fog colour — should match the sky horizon tint so haze blends naturally rather than creating a stripe.")]
+    public Color FogColor = new Color(0.80f, 0.68f, 0.60f, 1f);
+
+    [Tooltip("Density for Exponential / ExponentialSquared fog modes. " +
+             "ExponentialSquared at 0.007 keeps nearby objects crisp and builds visible haze at 150–300 world units.")]
+    [Range(0.001f, 0.05f)]
+    public float FogDensity = 0.007f;
+
+    [Tooltip("(Linear mode only) Fog start as a fraction of the camera far clip.")]
+    [Range(0f, 1f)]
+    public float FogStartRatio = 0.4f;
+
+    [Tooltip("(Linear mode only) Fog end as a fraction of the camera far clip. " +
+             "0.95 means fully opaque just before the far clip plane.")]
+    [Range(0.1f, 1f)]
+    public float FogEndRatio = 0.95f;
+
+    /// <summary>
+    /// Camera far clip distance. Returns <see cref="VistaCameraFarClip"/> when set (> 0),
+    /// otherwise derives from terrain render distance with 1.5× headroom.
+    /// The vista override decouples visual range from terrain streaming radius.
+    /// </summary>
+    public float DerivedCameraFarClip =>
+        VistaCameraFarClip > 0f
+            ? VistaCameraFarClip
+            : Mathf.Max(100f, TerrainRenderDistance * 1.5f);
+
+    /// <summary>Absolute fog start distance (Linear mode). Derived from <see cref="DerivedCameraFarClip"/> × <see cref="FogStartRatio"/>.</summary>
+    public float DerivedFogStartDistance => DerivedCameraFarClip * FogStartRatio;
+
+    /// <summary>Absolute fog end distance (Linear mode). Derived from <see cref="DerivedCameraFarClip"/> × <see cref="FogEndRatio"/>.</summary>
+    public float DerivedFogEndDistance => DerivedCameraFarClip * FogEndRatio;
 }

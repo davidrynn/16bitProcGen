@@ -1,8 +1,8 @@
 # Seed-Driven Far Horizon Impostor Spec
 
-**Status:** DESIGN (Deferred, Low Priority)  
+**Status:** DESIGN (Phase 2 — deferred from MVP; see `MVP_VISTA_MOMENT_SPEC.md` for MVP path)  
 **Phase Fit:** Phase 2 (world streaming + LOD)  
-**Last Updated:** 2026-04-09
+**Last Updated:** 2026-04-23
 
 ---
 
@@ -262,6 +262,8 @@ Future extension:
 
 ## 17. Priority and Scheduling Note
 
-This feature is explicitly low priority.
+This feature is Phase 2. It is the *correct* long-term solution for the horizon but is explicitly deferred from MVP.
 
-Implement only after current Phase 1 player-critical work is complete and Phase 2 optimization/streaming tasks are actively scheduled.
+**MVP path:** `MVP_VISTA_MOMENT_SPEC.md` §2.3 — a painted skybox mountain silhouette panel achieves the same visual goal in hours vs. days. Ship that first.
+
+Implement this system only after MVP vista moment is complete and Phase 2 streaming/optimization work is actively scheduled.

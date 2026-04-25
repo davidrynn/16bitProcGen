@@ -1,6 +1,6 @@
 # World Persistence Spec
-_Status: DESIGN — Phase 4 implementation target_  
-_Last updated: 2026-03-01_
+_Status: DESIGN — staged rollout (Layer 2 baseline required before structure realizers)_  
+_Last updated: 2026-04-15_
 
 ---
 
@@ -14,7 +14,7 @@ The core principle is **deterministic regeneration + sparse deltas**:
 Loaded World State =
     Deterministic generation from (seed + chunk coords)
   + Terrain edit journal       (CSG ops, SDF modifications)
-  + Structure placement record (WFC outputs + player builds)  
+    + Structure placement record (seeded anchors/WFC + player builds)  
   + Entity state deltas        (trees, chests, interactive objects)
   + NPC history records        (only divergence from seeded defaults)
   + Player data                (inventory, progression, position)
@@ -102,28 +102,71 @@ em.AddComponent<ChunkEditJournalDirty>(entity); // dirty flag, no journal yet
 ## Layer 2 — Structure Placements
 
 ### What It Stores
-The outputs of WFC generation (dungeon layouts, surface ruins) and all player-placed structures. Both are stored the same way — a prefab reference + transform.
+The outputs of deterministic structure anchor generation (including WFC realizers) and all player-placed structures.
+
+Records must include deterministic identity and lock-state metadata so modified/discovered structures do not silently reroll.
 
 ### Data Model
 ```csharp
-public struct StructurePlacementRecord
+public enum StructureFamilyId : byte
 {
-    public FixedString64Bytes PrefabId;  // matches DungeonPrefabRegistry key
-    public float3             WorldPos;
-    public quaternion         Rotation;
-    public PlacementSource    Source;    // WFC, PlayerBuilt
-    public uint               PlacedAtTick;
+    Dungeon = 0,
+    Relic = 1,
+    // Village and Ruin deferred to post-MVP
 }
 
-public enum PlacementSource : byte { WFC = 0, PlayerBuilt = 1 }
+/// Persistence-layer view of a structure anchor. Fields are a strict subset
+/// of StructureAnchorRecord (defined in STRUCTURE_PLACEMENT_SPEC); only
+/// records that diverge from seeded defaults are serialized.
+public struct StructurePlacementRecord
+{
+    public uint               StableAnchorId;    // deterministic candidate identity
+    public uint               GenerationVersion; // structure generation version
+    public StructureFamilyId  Family;
+    public FixedString64Bytes TemplateId;        // prefab key or generator template key
+    public float3             WorldPosition;     // canonical field name (matches anchor record)
+    public quaternion         Rotation;
+    public StructurePlacementSource Source;      // SeededAnchor, WFC, PlayerBuilt
+    public StructurePersistenceFlags Flags;      // Locked/Modified/Destroyed/Discovered
+    public uint               PlacedAtTick;
+    public uint               ModifiedAtTick;
+}
+
+/// Canonical enum — shared with STRUCTURE_PLACEMENT_SPEC.
+public enum StructurePlacementSource : byte
+{
+    SeededAnchor = 0,
+    WFC = 1,
+    PlayerBuilt = 2,
+}
+
+[Flags]
+public enum StructurePersistenceFlags : byte
+{
+    None = 0,
+    Locked = 1 << 0,
+    Modified = 1 << 1,
+    Destroyed = 1 << 2,
+    Discovered = 1 << 3,
+}
 ```
 
 ### On Save
-WFC outputs are already deterministic from seed — only save them if the player has **destroyed or modified** any part. Player-built structures always saved.
+- Save generated seeded and WFC structures only when they diverge from seeded defaults.
+- Persist `StableAnchorId`, `GenerationVersion`, `Source`, and `Flags` for every divergent structure record.
+- Player-built structures are always saved and should be marked `Locked`.
+- Phase 1-2 baseline: maintain this record contract in ECS apply/record systems even if disk writes are still stubbed.
 
 ### On Load
-For WFC structures: regenerate from seed, then apply any deletion/modification records on top.  
-For player structures: instantiate directly from placement records.
+- Regenerate anchors deterministically from seed and generation version.
+- Apply structure placement records by `StableAnchorId`.
+- If a record is `Locked` or `Modified`, do not reroll or relocate that structure during regeneration.
+- Instantiate player-built structures directly from placement records.
+
+### Phase Sequencing Requirement
+Structure persistence identity and apply/record hooks are a prerequisite for structure family realizers.
+
+Family realization systems should not ship before this Layer 2 baseline is active.
 
 ---
 

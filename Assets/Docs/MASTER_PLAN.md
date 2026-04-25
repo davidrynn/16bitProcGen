@@ -1,5 +1,5 @@
 # 16-BitCraft — Master Plan
-_Last updated: 2026-03-01_
+_Last updated: 2026-04-23_
 
 > **Start here.** This document is the authoritative project overview: vision, current status, phase roadmap, and document map.  
 > Sprint-level task detail lives in [`Assets/.cursor/plans/game-production-plan-7ea46cb6.plan.md`](../.cursor/plans/game-production-plan-7ea46cb6.plan.md).
@@ -18,6 +18,19 @@ A deterministic, stylized **16-bit retro sandbox** built in **Unity 6.2 / DOTS**
 | **Crafting** | Meaningful resource gathering and item creation |
 | **Minimalism** | Low-poly flat-shaded aesthetic, clear visual communication |
 
+### The MVP "Wow Moment" — Vista Discovery
+
+> *The player crests a rise in a grassy plain. In the far distance, a massive ancient stone hand — four fingers — reaches from the earth. Mountains rim the horizon. The air hazes with distance.*
+
+See: [`AI/MVP_VISTA_MOMENT_SPEC.md`](AI/MVP_VISTA_MOMENT_SPEC.md) and reference image [`ChatGPT Image Apr 22, 2026, 09_34_36 PM.png`](../ChatGPT%20Image%20Apr%2022%2C%202026%2C%2009_34_36%20PM.png).
+
+This single moment — player sees a strange, gigantic, ancient relic across an atmospheric plain — is the target feeling for MVP. The hand contains a maze interior accessible via WFC dungeon generation. Every visual system should be evaluated against whether it serves this moment.
+
+Three technical requirements block it:
+1. **Atmospheric haze** (URP global volume fog, ½ day)
+2. **Mountain horizon** (painted skybox panel for MVP; full seed-driven system is Phase 2)
+3. **4-finger hand mesh** (art task — no suitable asset exists yet)
+
 Long-term the world features biome fields, river networks, constraint-based flora placement, WFC surface ruins, 3D cave networks, and persistent world state via append-only edit journals.  
 Full design: [`Archives/TerrainDesign/Stylized_Procedural_Terrain_System_Design.md`](Archives/TerrainDesign/Stylized_Procedural_Terrain_System_Design.md)
 
@@ -34,14 +47,27 @@ Full design: [`Archives/TerrainDesign/Stylized_Procedural_Terrain_System_Design.
 - Terrain destruction (glob removal + TerrainGlobPhysicsSystem)
 - Camera follow system (CameraFollowSystem, PlayerCameraSystem)
 - GPU-instanced grass baseline (chunk tagging, deterministic scatter tests, indirect render path)
+- Slingshot + glide movement MVP (slingshot launch, air path, glide, landing)
+- Structure placement pipeline (`Scripts/DOTS/Structures/`) — deterministic anchor planning, relic LOD/impostor, family realization
 - 85+ automated NUnit tests (EditMode + PlayMode)
 
 ### 🔨 Phase 1 — In Progress (CRITICAL)
 
+**MVP Vista Moment** (see [`AI/MVP_VISTA_MOMENT_SPEC.md`](AI/MVP_VISTA_MOMENT_SPEC.md)) — ordered by impact-per-hour:
+
+| Feature | Target Location | Status |
+|---------|----------------|--------|
+| Atmospheric fog (URP volume) | URP Global Volume | ❌ Not tuned |
+| Mountain skybox silhouette | Skybox material/texture | ❌ Not started |
+| 4-finger hand mesh | `Assets/Models/` | ❌ Missing (art task) |
+| Wire hand to structure placement | `Scripts/DOTS/Structures/` | ❌ Not started |
+| Relic → WFC interior connection | `Scripts/DOTS/WFC/` | ❌ Not started |
+
+**Other Phase 1 work:**
+
 | Feature | Target Location | Status |
 |---------|----------------|--------|
 | Magic Hand System | `Scripts/Player/MagicHand/` | ❌ Not started |
-| Slingshot Movement | `Scripts/Player/Movement/` | ❌ Not started |
 | Resource Collection | `Scripts/Resources/` | ❌ Not started |
 | Basic HUD | `Scripts/UI/HUD/` | ❌ Not started |
 
@@ -127,14 +153,21 @@ public partial struct MySystem : ISystem
 
 ## 5. Immediate Next Steps
 
-From the production plan — **Weeks 1–4:**
+**MVP Vista Moment — do these first (ordered by impact-per-hour):**
 
-1. **Magic Hand System** — raycast targeting, charge mechanic, visual feedback, integrate with `TerrainModificationSystem`
-2. **Slingshot Movement** — grip → pull-back → trajectory preview → launch physics, replace FPS controller
-3. **Resource Collection** — extend `TerrainGlobComponent`, automatic pickup, inventory component
-4. **Basic HUD** — resource counters, hand charge indicator, slingshot charge indicator
+1. **Atmospheric fog** — tune URP Global Volume: Exponential Height Fog, blue-grey color, density ~0.004. Half-day, immediate mood payoff.
+2. **Mountain skybox panel** — paint or source a mountain silhouette texture into the skybox. Sells horizon depth.
+3. **4-finger hand mesh** — model the relic hand (art task, can run parallel to #1–2)
+4. **Wire hand to structure placement** — use `RelicVisualBootstrap` + `StructureAnchorPlanningSystem` in `Scripts/DOTS/Structures/`
+5. **Relic → WFC maze interior** — connect relic anchor to WFC dungeon interior generation
 
-**Before starting any feature:** review `Assets/Docs/AI_Instructions.md` workflow (SPEC → TEST → CODE).
+**Then continue Phase 1:**
+
+6. **Magic Hand System** — raycast targeting, charge mechanic, visual feedback, integrate with `TerrainModificationSystem`
+7. **Resource Collection** — extend `TerrainGlobComponent`, automatic pickup, inventory component
+8. **Basic HUD** — resource counters, hand charge indicator, slingshot charge indicator
+
+**Before starting any feature:** follow SPEC → TEST → CODE workflow (see `CLAUDE.md`).
 
 ---
 

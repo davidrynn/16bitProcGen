@@ -60,6 +60,9 @@ namespace DOTS.Player.Systems
                     velocity.ValueRW.Linear = impulse;
                     movementState.ValueRW.Mode = PlayerMovementMode.Ballistic;
                     movementState.ValueRW.IsGrounded = false;
+                    // Seed fall time beyond the ground-control grace window so launch
+                    // momentum is not immediately damped by grounded smoothing.
+                   movementState.ValueRW.FallTime = 0.2f;
 
                     DebugSettings.LogPlayer(
                         $"Slingshot launched: charge={charge}, impulse={impulseStrength}, " +
