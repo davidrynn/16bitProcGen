@@ -3,6 +3,7 @@ using Unity.Mathematics;
 using Unity.Physics;
 using Unity.Transforms;
 using UnityEngine;
+using UnityEngine.Rendering.Universal;
 using DOTS.Player.Components;
 using DOTS.Terrain.Core;
 
@@ -17,8 +18,15 @@ namespace DOTS.Player.Bootstrap
     public partial struct PlayerEntityBootstrap : ISystem
     {
         private bool _hasSpawned;
-        // Player spawn configuration — high enough for terrain colliders to build before landing
+
+        // Default ground-level spawn height — gives terrain colliders time to build before landing.
         public const float PlayerStartHeight = 20f;
+
+        // Set by DotsSystemBootstrap before the first OnUpdate to opt into sky-drop mode.
+        // Avoids TryGetSingleton timing issues (Awake → InitGroup ordering is frame-dependent).
+        public bool SkyDropEnabled;
+        public float SkyDropSpawnHeight;
+        public float SkyDropGravityHoldSeconds;
 
         public void OnCreate(ref SystemState state)
         {
@@ -55,7 +63,12 @@ namespace DOTS.Player.Bootstrap
         {
             var entityManager = state.EntityManager;
             var entity = entityManager.CreateEntity();
-            var spawnPos = new float3(0, PlayerStartHeight, 0);
+
+            // Spawn height set by DotsSystemBootstrap.Awake before this system first runs.
+            float spawnY = SkyDropEnabled ? SkyDropSpawnHeight : PlayerStartHeight;
+            float readinessTimeout = SkyDropEnabled ? SkyDropGravityHoldSeconds : 3f;
+
+            var spawnPos = new float3(0, spawnY, 0);
 
             // Add core player components
             entityManager.AddComponentData(entity, new PlayerMovementConfig
@@ -94,10 +107,13 @@ namespace DOTS.Player.Bootstrap
 
             // Movement MVP config components
             entityManager.AddComponentData(entity, SlingshotConfig.Default);
+            entityManager.AddComponentData(entity, new ChainSlingshotState());
             entityManager.AddComponentData(entity, GlideConfig.Default);
             entityManager.AddComponentData(entity, ThermalConfig.Default);
             entityManager.AddComponentData(entity, LandingConfig.Default);
             entityManager.AddComponentData(entity, CameraEffectConfig.Default);
+            entityManager.AddComponentData(entity, ScreenEffectConfig.Default);
+            entityManager.AddComponentData(entity, new ScreenEffectState());
             entityManager.AddComponentData(entity, new CameraEffectState
             {
                 TargetFOV = CameraEffectConfig.Default.BaseFOV,
@@ -187,7 +203,8 @@ namespace DOTS.Player.Bootstrap
             entityManager.AddComponent<PlayerTag>(entity);
 
             // Startup readiness gate: hold player physics until nearby terrain colliders are ready.
-            // This is only enabled when terrain streaming is active.
+            // Sky-drop uses a longer timeout (SkyDropGravityHoldSeconds) so ground-level chunks
+            // have time to build colliders before the player arrives after freefall.
             if (SystemAPI.TryGetSingleton<DOTS.Terrain.Streaming.ProjectFeatureConfigSingleton>(out var cfg)
                 && cfg.TerrainStreamingEnabled
                 && cfg.TerrainStreamingRadiusInChunks > 0)
@@ -195,7 +212,7 @@ namespace DOTS.Player.Bootstrap
                 entityManager.AddComponentData(entity, new PlayerStartupReadinessGate
                 {
                     StartTime = -1d,
-                    TimeoutSeconds = 3f,
+                    TimeoutSeconds = readinessTimeout,
                     ProbeDistance = 96f,
                     ReleasedGravityFactor = 1f
                 });
@@ -205,7 +222,9 @@ namespace DOTS.Player.Bootstrap
                     Value = 0f
                 });
 
-                DebugSettings.LogPlayer("Player startup readiness gate enabled (waiting for nearby terrain collider).");
+                DebugSettings.LogPlayer(SkyDropEnabled
+                    ? $"Player sky-drop spawn at Y={spawnY:0.0}; gravity held for {readinessTimeout:0.0}s."
+                    : "Player startup readiness gate enabled (waiting for nearby terrain collider).");
             }
 
             // Get player position and view for camera setup
@@ -335,6 +354,11 @@ namespace DOTS.Player.Bootstrap
             // Set position and rotation based on calculated values
             cameraGO.transform.position = (Vector3)cameraPosition;
             cameraGO.transform.rotation = (Quaternion)combinedRotation;
+
+            // Enable URP post-processing on this camera so ScreenEffectResolverSystem's
+            // Volume overrides (lens distortion, chromatic aberration, vignette) take effect.
+            var urpCameraData = cameraGO.AddComponent<UniversalAdditionalCameraData>();
+            urpCameraData.renderPostProcessing = true;
 
             // Add AudioListener (required for 3D audio)
             cameraGO.AddComponent<AudioListener>();

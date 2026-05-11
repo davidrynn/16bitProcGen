@@ -284,6 +284,48 @@ public struct LandingConfig : IComponentData
 }
 ```
 
+### ChainSlingshotState
+
+```csharp
+/// <summary>
+/// Tracks the active slingshot chain window. Added to the player entity at bootstrap.
+/// WindowRemaining counts down each frame; when it reaches zero the chain sequence resets.
+/// </summary>
+public struct ChainSlingshotState : IComponentData
+{
+    /// <summary>Seconds until the chain opportunity expires. 0 = no active chain.</summary>
+    public float WindowRemaining;
+
+    /// <summary>
+    /// Number of consecutive chains fired in this sequence.
+    /// 0 = next launch is the first (normal impulse).
+    /// 1+ = additive bonus multiplier applies.
+    /// </summary>
+    public int ChainCount;
+}
+```
+
+### ChainSlingshotState in SlingshotConfig (additional fields)
+
+Add these fields to `SlingshotConfig`:
+
+```csharp
+/// <summary>Seconds the chain window stays open after each launch. Default: 2.0</summary>
+public float ChainWindowDuration;
+
+/// <summary>
+/// Fraction of existing velocity preserved when a chained launch fires.
+/// velocity_out = velocity_existing * this + newImpulse. Default: 0.85
+/// </summary>
+public float ChainVelocityPreservation;
+
+/// <summary>Additional impulse multiplier added per chain level. Default: 0.25</summary>
+public float ChainImpulseMultiplierStep;
+
+/// <summary>Max chain levels that grant bonus (chain beyond this still works but no extra bonus). Default: 3</summary>
+public int ChainMaxCount;
+```
+
 ### LandingImpactEvent (enableable component)
 
 ```csharp
@@ -345,14 +387,15 @@ InitializationSystemGroup
 
 PhysicsSystemGroup
   ├─ PlayerGroundingSystem          [existing, minor modifications]
-  ├─ SlingshotChargeSystem          [NEW]
-  ├─ SlingshotLaunchSystem          [NEW]
+  ├─ SlingshotChargeSystem          [NEW — chain-aware: allows charge during Ballistic when window active]
+  ├─ SlingshotLaunchSystem          [NEW — chain-aware: additive impulse when ChainCount > 0]
   ├─ PlayerMovementSystem           [existing, extended for ballistic/glide/thermal]
   ├─ GlideSystem                    [NEW]
   └─ ThermalColumnSystem            [NEW]
 
 SimulationSystemGroup
   ├─ MovementStateBookkeepingSystem  [NEW - caches Velocity, resets CameraEffectState]
+  ├─ ChainWindowSystem              [NEW - ticks ChainSlingshotState.WindowRemaining, resets on expiry]
   ├─ LandingDetectionSystem         [NEW - fires LandingImpactEvent]
   ├─ CameraChargeFeedbackSystem     [NEW - writes CameraEffectState during charge]
   ├─ CameraSpeedFeedbackSystem      [NEW - writes CameraEffectState based on velocity]
@@ -369,15 +412,24 @@ PresentationSystemGroup
 #### SlingshotChargeSystem
 
 - **Runs in:** PhysicsSystemGroup, after PlayerGroundingSystem
-- **Requires:** PlayerMovementState (Grounded), PlayerInputComponent (SlingshotHeld)
-- **Behavior:** When player is grounded and SlingshotHeld is true, transitions Mode to SlingshotCharging. Accumulates DragDelta from mouse input. Computes ChargeNormalized using the power curve. Adds SlingshotChargeState if not present.
-- **On cancel** (SlingshotHeld becomes false while below MinLaunchThreshold or on explicit cancel): removes SlingshotChargeState, returns Mode to Grounded.
+- **Requires:** PlayerMovementState, PlayerInputComponent (SlingshotHeld), ChainSlingshotState
+- **Behavior:** When SlingshotHeld is true AND (`IsGrounded` OR `ChainSlingshotState.WindowRemaining > 0`), transitions Mode to SlingshotCharging. Accumulates DragDelta from mouse input. Computes ChargeNormalized using the power curve. Adds SlingshotChargeState if not present.
+- **Chain entry:** If charging begins while Ballistic (window is active), the mode transitions from Ballistic → SlingshotCharging. The player loses ballistic air control during charge but retains momentum until release.
+- **On cancel** (SlingshotHeld becomes false while below MinLaunchThreshold or on explicit cancel): removes SlingshotChargeState, returns Mode to Grounded (or Ballistic if still airborne), chain window is NOT consumed.
 
 #### SlingshotLaunchSystem
 
 - **Runs in:** PhysicsSystemGroup, after SlingshotChargeSystem
-- **Requires:** SlingshotChargeState, PlayerInputComponent (SlingshotReleased)
-- **Behavior:** When SlingshotReleased fires and ChargeNormalized >= MinLaunchThreshold: computes impulse from AimDirection * MaxForce * charge, writes to PhysicsVelocity. Removes SlingshotChargeState. Transitions Mode to Ballistic.
+- **Requires:** SlingshotChargeState, PlayerInputComponent (SlingshotReleased), ChainSlingshotState
+- **Normal launch** (ChainCount == 0): impulse replaces velocity: `velocity = AimDirection * MaxForce * charge`
+- **Chained launch** (ChainCount > 0): impulse is additive:
+  ```
+  chainBonus = 1.0 + min(ChainCount, ChainMaxCount) * ChainImpulseMultiplierStep
+  velocity   = velocity * ChainVelocityPreservation
+             + AimDirection * MaxForce * charge * chainBonus
+  ```
+- **On any valid launch:** increments `ChainSlingshotState.ChainCount`, resets `WindowRemaining` to `ChainWindowDuration`, transitions Mode to Ballistic, removes SlingshotChargeState.
+- **Below-threshold release:** cancels without launch, chain state unchanged.
 
 #### PlayerMovementSystem (existing — extension guidance)
 
@@ -428,6 +480,16 @@ if (!movementState.IsGrounded)
   1. Copies `PhysicsVelocity.Linear` into `PlayerMovementState.Velocity` so downstream feedback systems can read velocity without requiring `PhysicsVelocity` access.
   2. Resets `CameraEffectState` to config defaults (BaseFOV, BaseDistance, zero ShakeOffset, zero CameraDip, GroundedDamping, HorizonStabilize = false). This guarantees a clean slate each frame — subsequent feedback systems overwrite only the fields they own.
 - **Why this system exists:** Without an explicit owner, both responsibilities (velocity caching and camera reset) would be duplicated across multiple systems or left to implicit ordering. A single bookkeeping system at the top of SimulationSystemGroup eliminates stale-state bugs and makes the data flow auditable.
+
+#### ChainWindowSystem
+
+- **Runs in:** SimulationSystemGroup, after MovementStateBookkeepingSystem
+- **Requires:** ChainSlingshotState
+- **Behavior:**
+  1. Each frame, decrements `WindowRemaining` by `DeltaTime`.
+  2. When `WindowRemaining` reaches zero: resets `ChainCount` to 0.
+  3. Does NOT close the window on landing — the grounded transition is intentionally transparent to the chain window. This allows post-landing chains within the remaining window time.
+- **Does not write Mode.** Mode transitions are owned by SlingshotChargeSystem and SlingshotLaunchSystem.
 
 #### LandingDetectionSystem
 
@@ -621,6 +683,34 @@ Test files follow existing project conventions:
 |---|---|---|
 | Ballistic air control uses correct rate | Mode=Ballistic, IsGrounded=false, AirControlBallistic=0.25 | Horizontal velocity lerps at 0.25 rate, not GroundLerpRate |
 | Grounded movement unchanged | Existing tests pass with new MovementMode enum | Regression: existing `GroundedWithGroundMode_UsesGroundLerpRate` still passes |
+
+#### ChainWindowSystem Tests (EditMode)
+
+| Test | Setup | Assertion |
+|---|---|---|
+| Window counts down | WindowRemaining=2.0, tick with dt=0.1 | WindowRemaining == 1.9 |
+| Window expiry resets ChainCount | WindowRemaining=0.05, ChainCount=2, tick with dt=0.1 | ChainCount == 0, WindowRemaining == 0 |
+| Window survives landing | WindowRemaining=1.5, mode transitions Ballistic→Grounded mid-tick | WindowRemaining still counting down, ChainCount unchanged |
+| Zero window does nothing | WindowRemaining=0, ChainCount=0, tick | No state change |
+
+#### Chain SlingshotChargeSystem Tests (EditMode)
+
+| Test | Setup | Assertion |
+|---|---|---|
+| Charge allowed while Ballistic with active window | Mode=Ballistic, WindowRemaining=1.0, SlingshotHeld=true | Mode transitions to SlingshotCharging |
+| Charge blocked while Ballistic with expired window | Mode=Ballistic, WindowRemaining=0, SlingshotHeld=true | Mode unchanged, no SlingshotChargeState added |
+| Cancel during airborne chain does not consume window | Charging, cancel (below threshold) while airborne | WindowRemaining unchanged, ChainCount unchanged |
+
+#### Chain SlingshotLaunchSystem Tests (EditMode)
+
+| Test | Setup | Assertion |
+|---|---|---|
+| First launch is non-additive | ChainCount=0, velocity=(0,0,0), charge=1.0, aim=forward | velocity == AimDirection * MaxForce (no preservation term) |
+| Second launch is additive | ChainCount=1, velocity=(20,0,0), charge=1.0, aim=forward | velocity.z > MaxForce (existing + boosted impulse) |
+| Chain bonus scales with count | ChainCount=2 vs ChainCount=1, same charge and aim | ChainCount=2 produces higher speed |
+| Bonus capped at ChainMaxCount | ChainCount=5, ChainMaxCount=3 | chainBonus == 1.0 + 3 * Step (not 1.0 + 5 * Step) |
+| ChainCount increments on launch | ChainCount=1, valid launch | ChainCount == 2 after launch |
+| WindowRemaining resets on launch | WindowRemaining=0.3, valid launch | WindowRemaining == ChainWindowDuration after launch |
 
 #### GlideSystem Tests (EditMode)
 
@@ -838,6 +928,7 @@ Each prototype step has a manual visual test card. Run these in Play Mode with t
 Assets/Scripts/Player/Tests/
 ├── EditMode/
 │   ├── MovementStateBookkeepingSystemTests.cs
+│   ├── ChainWindowSystemTests.cs
 │   ├── SlingshotChargeSystemTests.cs
 │   ├── SlingshotLaunchSystemTests.cs
 │   ├── GlideSystemTests.cs
@@ -910,9 +1001,14 @@ Phase B (Air Control + Glide) is complete when:
 
 Phase C (Thermals + Chaining) is complete when:
 
+- [ ] All ChainWindowSystem EditMode tests pass (Section 13.1)
+- [ ] Chain SlingshotChargeSystem EditMode tests pass (Section 13.1)
+- [ ] Chain SlingshotLaunchSystem EditMode tests pass (Section 13.1)
 - [ ] All ThermalColumnSystem EditMode tests pass (Section 13.1)
 - [ ] All LandingDetectionSystem EditMode tests pass (Section 13.1)
 - [ ] SlingshotFullChainPlayModeTests pass (slingshot → glide → thermal without velocity resets)
 - [ ] MovementStateTransitionPlayModeTests pass (valid transitions only)
-- [ ] Visual test cards for Steps 14–18 all checked (Section 13.2)
+- [ ] Visual test cards for Steps 13.5–18 all checked (Section 13.2)
+- [ ] Chain 2 launch is visibly faster than chain 1 (manual playtest)
+- [ ] Mid-air chain (airborne charge + release before landing) works correctly
 - [ ] Camera transitions between all states are smooth (per timing table in MOVEMENT_PLANNING.md)

@@ -2,7 +2,8 @@
 
 **Status:** DESIGN (Phase 2 — deferred from MVP; see `MVP_VISTA_MOMENT_SPEC.md` for MVP path)  
 **Phase Fit:** Phase 2 (world streaming + LOD)  
-**Last Updated:** 2026-04-23
+**Last Updated:** 2026-04-26  
+**See also:** [`GROUND_PLANE_IMPOSTOR_SPEC.md`](GROUND_PLANE_IMPOSTOR_SPEC.md) — horizontal ground-plane impostor (MVP priority, builds before this system)
 
 ---
 

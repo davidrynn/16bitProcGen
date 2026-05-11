@@ -8,7 +8,8 @@ using DOTS.Terrain.Core;
 namespace DOTS.Player.Systems
 {
     /// <summary>
-    /// Manages slingshot charge accumulation while the player holds LMB+RMB on the ground.
+    /// Manages slingshot charge accumulation while the player holds LMB+RMB.
+    /// Charging is allowed when grounded OR when a chain window is active (mid-air chain entry).
     /// Adds SlingshotChargeState when charge begins, computes ChargeNormalized using
     /// a power curve, and removes the component on cancel.
     /// </summary>
@@ -52,14 +53,21 @@ namespace DOTS.Player.Systems
                 var slingshotConfig = SystemAPI.GetComponentRO<SlingshotConfig>(entity);
 
                 bool hasChargeState = SystemAPI.HasComponent<SlingshotChargeState>(entity);
-                // Begin charging when Grounded (Mode==Grounded implies the grounding system
-                // detected ground contact — no separate IsGrounded check needed for entry).
-                // Continue charging in SlingshotCharging only while IsGrounded remains true,
-                // so walking off an edge mid-charge cancels correctly.
                 var mode = movementState.ValueRO.Mode;
+
+                // Chain window allows mid-air charging when an active chain is in progress.
+                bool hasActiveWindow = SystemAPI.HasComponent<ChainSlingshotState>(entity) &&
+                                       SystemAPI.GetComponent<ChainSlingshotState>(entity).WindowRemaining > 0f;
+
+                // canCharge conditions:
+                //   - Grounded: normal ground entry
+                //   - Ballistic + active window: chain mid-air entry
+                //   - SlingshotCharging + (grounded or active window): continue charging without cancelling
+                //     (walking off an edge still cancels when the window is also expired)
                 bool canCharge = mode == PlayerMovementMode.Grounded ||
+                                 (mode == PlayerMovementMode.Ballistic && hasActiveWindow) ||
                                  (mode == PlayerMovementMode.SlingshotCharging &&
-                                  movementState.ValueRO.IsGrounded);
+                                  (movementState.ValueRO.IsGrounded || hasActiveWindow));
                 bool slingshotHeld = input.ValueRO.SlingshotHeld;
 
                 if (slingshotHeld && canCharge)
@@ -107,11 +115,15 @@ namespace DOTS.Player.Systems
                 }
                 else if (hasChargeState && !input.ValueRO.SlingshotReleased)
                 {
-                    // Cancel: slingshot released without explicit release event, or player left ground
+                    // Cancel: slingshot released without explicit release event, or player left ground/lost window
                     ecb.RemoveComponent<SlingshotChargeState>(entity);
                     if (movementState.ValueRO.Mode == PlayerMovementMode.SlingshotCharging)
                     {
-                        movementState.ValueRW.Mode = PlayerMovementMode.Grounded;
+                        // Return to Ballistic if airborne (e.g. cancelled mid-air chain),
+                        // otherwise Grounded. Chain window is intentionally not consumed on cancel.
+                        movementState.ValueRW.Mode = movementState.ValueRO.IsGrounded
+                            ? PlayerMovementMode.Grounded
+                            : PlayerMovementMode.Ballistic;
                     }
                 }
             }

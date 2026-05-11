@@ -1,6 +1,6 @@
 # Document Index
 
-**Last Updated:** 2026-04-23
+**Last Updated:** 2026-04-26
 
 > **New here?** Start with [MASTER_PLAN.md](MASTER_PLAN.md) — it has the project vision, current status, phase roadmap, and a curated document map.
 
@@ -29,9 +29,12 @@ Quick-reference index of all project documentation. Docs are organized by catego
 | [AI/TERRAIN_EDIT_PLAYER_SAFETY_LOCAL_GRID_SPEC.md](AI/TERRAIN_EDIT_PLAYER_SAFETY_LOCAL_GRID_SPEC.md) | PROPOSED | Player-overlap edit guard + deterministic chunk-local grid guarantees |
 | [AI/PLAYER_PIT_MUDINESS_HYPOTHESIS_TEST_PLAN.md](AI/PLAYER_PIT_MUDINESS_HYPOTHESIS_TEST_PLAN.md) | ACTIVE | Test-first hypothesis matrix for pit-wall mudiness root-cause validation |
 | [AI/THIRD_PARTY_ASSET_EVALUATION_PLAYBOOK.md](AI/THIRD_PARTY_ASSET_EVALUATION_PLAYBOOK.md) | ACTIVE | Asset pre-screen, sandbox validation, and fit scoring workflow for third-party content |
+| [AI/MULTIPLAYER_SPEC.md](AI/MULTIPLAYER_SPEC.md) | DESIGN | Multiplayer readiness: Pre-MVP hygiene, MVP command architecture, Post-MVP arena PvP path. Supersedes multiplayer_evaluation_spec.md |
 | [AI/PERSISTENCE_SPEC.md](AI/PERSISTENCE_SPEC.md) | DESIGN | World persistence — edit journals, entity/NPC/player state (Phase 4) |
+| [AI/BIOME_TERRAIN_FIELD_SPEC.md](AI/BIOME_TERRAIN_FIELD_SPEC.md) | DESIGN | Phase 2 world-field driven terrain: WorldSample, region classifier, per-region shaping, rare features |
 | [AI/BIOME_GRASS_STREAMING_MVP_PLAN.md](AI/BIOME_GRASS_STREAMING_MVP_PLAN.md) | DESIGN | Biome-based grass streaming MVP plan for infinite terrain |
-| [AI/HORIZON_IMPOSTOR_SEED_DRIVEN_SPEC.md](AI/HORIZON_IMPOSTOR_SEED_DRIVEN_SPEC.md) | DESIGN (DEFERRED) | Seed-driven far-horizon impostor plan for mountain/hill/sea silhouette rendering |
+| [AI/GROUND_PLANE_IMPOSTOR_SPEC.md](AI/GROUND_PLANE_IMPOSTOR_SPEC.md) | **ACTIVE — MVP PRIORITY** | Horizontal ground-plane impostor for sky-drop sequence; terrain-colored flat disc beyond chunk radius |
+| [AI/HORIZON_IMPOSTOR_SEED_DRIVEN_SPEC.md](AI/HORIZON_IMPOSTOR_SEED_DRIVEN_SPEC.md) | DESIGN (DEFERRED) | Seed-driven far-horizon impostor plan for mountain/hill/sea silhouette rendering (Phase 2; builds after ground plane) |
 | [AI/PLAYER_TERRAIN_FALLTHROUGH_DEBUG_SPEC.md](AI/PLAYER_TERRAIN_FALLTHROUGH_DEBUG_SPEC.md) | ROOT CAUSE FIXED | Fall-through debug: missing PhysicsWorldIndex |
 | [AI/TERRAIN_EDIT_CONTROLS_SPEC.md](AI/TERRAIN_EDIT_CONTROLS_SPEC.md) | IMPLEMENTED | Terrain edit raycast fix, Input System migration, reticle |
 | [AI/PLAYER_BOOTSTRAP_FIX_SPEC.md](AI/PLAYER_BOOTSTRAP_FIX_SPEC.md) | ACTIVE | Player bootstrap reliability for DOTS tests |

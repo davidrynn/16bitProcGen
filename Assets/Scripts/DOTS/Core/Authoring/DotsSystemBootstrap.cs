@@ -295,6 +295,11 @@ public class DotsSystemBootstrap : MonoBehaviour
             if (config.EnablePlayerEntityBootstrap)
             {
                 var handle = world.CreateSystem<PlayerEntityBootstrap>();
+                // Write sky-drop params directly — avoids TryGetSingleton timing issues.
+                ref var bootstrap = ref world.Unmanaged.GetUnsafeSystemRef<PlayerEntityBootstrap>(handle);
+                bootstrap.SkyDropEnabled = config.EnableSkyDropSpawn;
+                bootstrap.SkyDropSpawnHeight = config.SkyDropSpawnHeight;
+                bootstrap.SkyDropGravityHoldSeconds = config.SkyDropGravityHoldSeconds;
                 initGroup.AddSystemToUpdateList(handle);
                 DebugSettings.Log("Bootstrap: PlayerEntityBootstrap enabled and added to InitializationSystemGroup.");
             }
@@ -392,6 +397,13 @@ public class DotsSystemBootstrap : MonoBehaviour
                 DebugSettings.Log("Bootstrap: GlideSystem enabled and added to PhysicsSystemGroup.");
             }
 
+            if (config.EnableChainWindowSystem)
+            {
+                var handle = world.CreateSystem<ChainWindowSystem>();
+                simGroup.AddSystemToUpdateList(handle);
+                DebugSettings.Log("Bootstrap: ChainWindowSystem enabled and added to SimulationSystemGroup.");
+            }
+
             if (config.EnableMovementStateBookkeepingSystem)
             {
                 var handle = world.CreateSystem<MovementStateBookkeepingSystem>();
@@ -441,6 +453,13 @@ public class DotsSystemBootstrap : MonoBehaviour
                 DebugSettings.Log("Bootstrap: CameraEffectResolverSystem enabled and added to PresentationSystemGroup.");
             }
 
+            if (config.EnableScreenEffectResolverSystem)
+            {
+                var handle = world.CreateSystem<ScreenEffectResolverSystem>();
+                presentationGroup.AddSystemToUpdateList(handle);
+                DebugSettings.Log("Bootstrap: ScreenEffectResolverSystem enabled and added to PresentationSystemGroup.");
+            }
+
 #if SIMPLE_PLAYER_MOVEMENT_ENABLED
             if (config.EnableSimplePlayerMovementSystem)
             {
@@ -474,6 +493,16 @@ public class DotsSystemBootstrap : MonoBehaviour
             }
         }
 
+        // Ground-plane impostor is independent of the terrain pipeline — it reads
+        // only the player transform, so it registers outside the terrain block.
+        if (config.EnableGroundPlaneImpostor)
+        {
+            var presentationGroup = world.GetExistingSystemManaged<PresentationSystemGroup>();
+            var handle = world.CreateSystem<DOTS.Impostors.GroundPlaneImpostorSystem>();
+            presentationGroup.AddSystemToUpdateList(handle);
+            DebugSettings.Log("Bootstrap: GroundPlaneImpostorSystem enabled and added to PresentationSystemGroup.");
+        }
+
         ApplyDistanceFog();
     }
 
@@ -494,7 +523,10 @@ public class DotsSystemBootstrap : MonoBehaviour
             {
                 TerrainStreamingRadiusInChunks = config != null ? config.DerivedStreamingRadiusInChunks : 0,
                 CameraFarClipPlane = config != null ? config.DerivedCameraFarClip : 300f,
-                TerrainStreamingEnabled = config != null && config.EnableTerrainChunkStreamingSystem
+                TerrainStreamingEnabled = config != null && config.EnableTerrainChunkStreamingSystem,
+                SkyDropEnabled = config != null && config.EnableSkyDropSpawn,
+                SkyDropSpawnHeight = config != null ? config.SkyDropSpawnHeight : 400f,
+                SkyDropGravityHoldSeconds = config != null ? config.SkyDropGravityHoldSeconds : 8f,
             });
         }
         query.Dispose();

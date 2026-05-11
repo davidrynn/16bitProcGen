@@ -260,5 +260,8 @@ namespace DOTS.Terrain.Streaming
         public int TerrainStreamingRadiusInChunks;
         public float CameraFarClipPlane;
         public bool TerrainStreamingEnabled;
+        public bool SkyDropEnabled;
+        public float SkyDropSpawnHeight;
+        public float SkyDropGravityHoldSeconds;
     }
 }

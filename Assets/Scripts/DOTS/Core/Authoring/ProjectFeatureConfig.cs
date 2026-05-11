@@ -53,6 +53,7 @@ public class ProjectFeatureConfig : ScriptableObject
     [Header("Player Movement MVP Systems")]
     public bool EnableSlingshotChargeSystem = true;
     public bool EnableSlingshotLaunchSystem = true;
+    public bool EnableChainWindowSystem = true;
     public bool EnableMovementStateBookkeepingSystem = true;
     public bool EnableLandingDetectionSystem = true;
     public bool EnableCameraEffectResolverSystem = true;
@@ -61,6 +62,7 @@ public class ProjectFeatureConfig : ScriptableObject
     public bool EnableCameraLandingFeedbackSystem = true;
     public bool EnableCameraGlideFeedbackSystem = true;
     public bool EnableGlideSystem = true;
+    public bool EnableScreenEffectResolverSystem = true;
 
     [Header("Player Legacy/Test Systems")]
     public bool EnableSimplePlayerMovementSystem = false;
@@ -139,6 +141,24 @@ public class ProjectFeatureConfig : ScriptableObject
     public bool EnableTerrainMeshBorderDebugSystem = false;
     public bool EnablePlayerFallThroughDiagnosticSystem = false;
     public bool EnableTerrainColliderTimingSystem = false;
+
+    [Header("World Impostors")]
+    [Tooltip("Render a terrain-coloured flat disc beyond the SDF chunk radius so the world " +
+             "appears to extend to the horizon during sky-drop and high-altitude camera views.")]
+    public bool EnableGroundPlaneImpostor = true;
+
+    [Header("Sky-Drop Intro")]
+    [Tooltip("Spawn the player at SkyDropSpawnHeight instead of the default ground-level position. " +
+             "The readiness gate holds gravity until terrain colliders are ready or the timeout fires, " +
+             "then the player falls through the disc onto the terrain below.")]
+    public bool EnableSkyDropSpawn = false;
+    [Tooltip("World-space Y position for the sky-drop spawn. 400 gives ~10–15 s of freefall before landing.")]
+    [Min(50f)]
+    public float SkyDropSpawnHeight = 400f;
+    [Tooltip("Seconds to hold gravity before releasing for the sky-drop. Gives terrain chunks time to " +
+             "build colliders at ground level before the player arrives. Ignored when EnableSkyDropSpawn is false.")]
+    [Range(1f, 20f)]
+    public float SkyDropGravityHoldSeconds = 8f;
 
     [Header("Structure Placement")]
     public bool EnableStructurePlacementSystem = true;

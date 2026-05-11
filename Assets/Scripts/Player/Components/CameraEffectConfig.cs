@@ -33,6 +33,13 @@ namespace DOTS.Player.Components
         // Thermal
         public float ThermalFOVAdd;         // 4
 
+        // Speed shake (continuous, airborne)
+        public float ShakeSpeedThreshold;   // 15 m/s — below this, no shake
+        public float ShakeAmplitudeScale;   // amplitude per m/s above threshold
+        public float ShakeAmplitudeMax;     // clamp on amplitude
+        public float ShakeFrequency;        // base oscillation Hz
+        public float ShakeFrequencyScale;   // additional Hz per m/s above threshold
+
         // Landing
         public float LandingShakeScale;     // 0.01 per m/s
         public float LandingShakeMax;       // 0.20
@@ -64,6 +71,11 @@ namespace DOTS.Player.Components
             GlideFOVAdd = 3f,
             GlideDistanceAdd = 0.5f,
             ThermalFOVAdd = 4f,
+            ShakeSpeedThreshold = 15f,
+            ShakeAmplitudeScale = 0.0012f,
+            ShakeAmplitudeMax = 0.06f,
+            ShakeFrequency = 18f,
+            ShakeFrequencyScale = 0.15f,
             LandingShakeScale = 0.01f,
             LandingShakeMax = 0.20f,
             LandingFOVDip = 3f,

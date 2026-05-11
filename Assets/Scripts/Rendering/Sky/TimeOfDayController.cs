@@ -12,6 +12,11 @@ namespace DOTS.Rendering.Sky
         [Tooltip("Full day-night cycle duration in seconds. 0 = paused.")]
         [SerializeField] private float cycleDurationSeconds = 600f;
 
+        [Tooltip("Maps raw cycle time (X 0-1) to apparent sky time (Y 0-1). " +
+                 "Steep slope = fast transition (dawn/dusk). Shallow slope = long phase (day/night). " +
+                 "Leave empty to use the built-in default (dawn/dusk ~8%, day/night ~42% of cycle).")]
+        [SerializeField] private AnimationCurve _timeRemapCurve;
+
         [Header("References")]
         [SerializeField] private SkyController skyController;
         [SerializeField] private SkyPreset activePreset;
@@ -56,6 +61,9 @@ namespace DOTS.Rendering.Sky
         {
             if (skyController == null)
                 skyController = GetComponent<SkyController>();
+
+            if (_timeRemapCurve == null || _timeRemapCurve.length == 0)
+                _timeRemapCurve = BuildDefaultTimeRemap();
 
             _activeCloudSettings = defaultCloudSettings;
 
@@ -172,16 +180,18 @@ namespace DOTS.Rendering.Sky
             SkySettings evaluated;
             CloudSettings evaluatedClouds;
 
+            float remappedTime = RemapTime(normalizedTime);
+
             if (_transitionProgress < 1f && _transitionFrom != null && _transitionTo != null)
             {
-                var fromSettings = _transitionFrom.Evaluate(normalizedTime);
-                var toSettings = _transitionTo.Evaluate(normalizedTime);
+                var fromSettings = _transitionFrom.Evaluate(remappedTime);
+                var toSettings = _transitionTo.Evaluate(remappedTime);
                 evaluated = SkySettings.Lerp(fromSettings, toSettings, _transitionProgress);
                 evaluatedClouds = CloudSettings.Lerp(_transitionFromClouds, _transitionToClouds, _transitionProgress);
             }
             else
             {
-                evaluated = activePreset.Evaluate(normalizedTime);
+                evaluated = activePreset.Evaluate(remappedTime);
                 evaluatedClouds = _activeCloudSettings;
             }
 
@@ -196,16 +206,41 @@ namespace DOTS.Rendering.Sky
 
         private void UpdateSunRotation()
         {
-            // Sun arc: rises at dawn (0.0), peaks at noon (0.25), sets at dusk (0.5), below horizon at night
-            // Map normalizedTime to sun angle: 0→sunrise, 0.25→peak, 0.5→sunset
-            float sunPhase = normalizedTime * 360f;
-            float elevation = Mathf.Sin(normalizedTime * Mathf.PI * 2f) * sunMaxElevation;
+            // Sun arc: rises at dawn (0.0), peaks at noon (0.25), sets at dusk (0.5), below horizon at night.
+            // Remapped time keeps sun position in sync with the sky preset evaluation.
+            float t = RemapTime(normalizedTime);
+            float sunPhase = t * 360f;
+            float elevation = Mathf.Sin(t * Mathf.PI * 2f) * sunMaxElevation;
 
             directionalLight.transform.rotation = Quaternion.Euler(elevation, sunPhase, 0f);
 
-            // Dim the light at night
-            float intensity = Mathf.Clamp01(Mathf.Sin(normalizedTime * Mathf.PI * 2f) + 0.1f);
+            float intensity = Mathf.Clamp01(Mathf.Sin(t * Mathf.PI * 2f) + 0.1f);
             directionalLight.intensity = Mathf.Max(intensity, 0.05f);
+        }
+
+        private float RemapTime(float t) =>
+            _timeRemapCurve != null && _timeRemapCurve.length > 0
+                ? _timeRemapCurve.Evaluate(t)
+                : t;
+
+        /// <summary>
+        /// Default remap: dawn and dusk each occupy ~8% of real cycle time;
+        /// day and night each occupy ~42%. Smooth tangents for natural transitions.
+        /// </summary>
+        private static AnimationCurve BuildDefaultTimeRemap()
+        {
+            var keys = new[]
+            {
+                new Keyframe(0.00f, 0.00f),  // dawn start
+                new Keyframe(0.08f, 0.25f),  // dawn end / day start  (steep — 8% real time)
+                new Keyframe(0.50f, 0.50f),  // noon                  (shallow — 42% real time)
+                new Keyframe(0.58f, 0.75f),  // dusk end / night start (steep — 8% real time)
+                new Keyframe(1.00f, 1.00f),  // night end              (shallow — 42% real time)
+            };
+            var curve = new AnimationCurve(keys);
+            for (int i = 0; i < curve.length; i++)
+                curve.SmoothTangents(i, 0f);
+            return curve;
         }
     }
 }

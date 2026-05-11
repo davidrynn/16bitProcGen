@@ -30,10 +30,10 @@ namespace DOTS.Player.Systems
                 movementState.ValueRW.Velocity = velocity.ValueRO.Linear;
             }
 
-            // Reset CameraEffectState to config defaults so each feedback system
-            // writes only the fields it owns on top of a clean slate.
-            foreach (var (effectState, config) in
-                     SystemAPI.Query<RefRW<CameraEffectState>, RefRO<CameraEffectConfig>>())
+            // Reset CameraEffectState and ScreenEffectState to clean defaults so each feedback
+            // system writes only the fields it owns on top of a fresh slate each frame.
+            foreach (var (effectState, screenEffect, config) in
+                     SystemAPI.Query<RefRW<CameraEffectState>, RefRW<ScreenEffectState>, RefRO<CameraEffectConfig>>())
             {
                 effectState.ValueRW = new CameraEffectState
                 {
@@ -47,6 +47,7 @@ namespace DOTS.Player.Systems
                     HorizonStabilize = false,
                     CameraDip = 0f
                 };
+                screenEffect.ValueRW = default;
             }
         }
     }

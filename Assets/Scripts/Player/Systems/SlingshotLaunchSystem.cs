@@ -12,6 +12,7 @@ namespace DOTS.Player.Systems
     /// Applies the slingshot launch impulse when the player releases the charge.
     /// Reads SlingshotChargeState and SlingshotReleased, writes to PhysicsVelocity,
     /// transitions Mode to Ballistic, and removes the charge state.
+    /// Chain launches (ChainCount > 0) use an additive velocity formula with a bonus multiplier.
     /// </summary>
     /// <remarks>
     /// Not Burst-compiled because it uses DebugSettings string logging on the launch frame.
@@ -52,25 +53,53 @@ namespace DOTS.Player.Systems
 
                 if (charge >= slingshotConfig.ValueRO.MinLaunchThreshold)
                 {
-                    // Apply launch impulse
                     float impulseStrength = slingshotConfig.ValueRO.MaxForce *
                                             math.pow(charge, slingshotConfig.ValueRO.CurveExponent);
-                    float3 impulse = aimDirection * impulseStrength;
 
-                    velocity.ValueRW.Linear = impulse;
+                    bool hasChain = SystemAPI.HasComponent<ChainSlingshotState>(entity);
+                    var chainState = hasChain
+                        ? SystemAPI.GetComponent<ChainSlingshotState>(entity)
+                        : default;
+
+                    if (hasChain && chainState.ChainCount > 0)
+                    {
+                        // Chained launch: preserve existing velocity and add boosted impulse.
+                        // chainBonus caps at ChainMaxCount levels so escalation stays bounded.
+                        float chainBonus = 1f + math.min(chainState.ChainCount, slingshotConfig.ValueRO.ChainMaxCount)
+                                               * slingshotConfig.ValueRO.ChainImpulseMultiplierStep;
+                        velocity.ValueRW.Linear = velocity.ValueRW.Linear * slingshotConfig.ValueRO.ChainVelocityPreservation
+                                                 + aimDirection * impulseStrength * chainBonus;
+                        DebugSettings.LogPlayer(
+                            $"Chain launch x{chainState.ChainCount + 1}: bonus={chainBonus:F2}, " +
+                            $"impulse={impulseStrength:F1}, vel={velocity.ValueRW.Linear}");
+                    }
+                    else
+                    {
+                        velocity.ValueRW.Linear = aimDirection * impulseStrength;
+                        DebugSettings.LogPlayer(
+                            $"Slingshot launched: charge={charge:F2}, impulse={impulseStrength:F1}, " +
+                            $"dir={aimDirection}, vel={velocity.ValueRW.Linear}");
+                    }
+
+                    // Advance chain state: increment count and reset the window for the next chain.
+                    if (hasChain)
+                    {
+                        ecb.SetComponent(entity, new ChainSlingshotState
+                        {
+                            ChainCount = chainState.ChainCount + 1,
+                            WindowRemaining = slingshotConfig.ValueRO.ChainWindowDuration,
+                        });
+                    }
+
                     movementState.ValueRW.Mode = PlayerMovementMode.Ballistic;
                     movementState.ValueRW.IsGrounded = false;
                     // Seed fall time beyond the ground-control grace window so launch
                     // momentum is not immediately damped by grounded smoothing.
-                   movementState.ValueRW.FallTime = 0.2f;
-
-                    DebugSettings.LogPlayer(
-                        $"Slingshot launched: charge={charge}, impulse={impulseStrength}, " +
-                        $"dir={aimDirection}, vel={impulse}");
+                    movementState.ValueRW.FallTime = 0.2f;
                 }
                 else
                 {
-                    // Below threshold: cancel, no velocity change
+                    // Below threshold: cancel, no velocity change. Not a chain launch, window unchanged.
                     movementState.ValueRW.Mode = PlayerMovementMode.Grounded;
                 }
 

@@ -36,9 +36,9 @@ namespace DOTS.Player.Systems
         {
             float dt = SystemAPI.Time.DeltaTime;
 
-            foreach (var (effectState, config, movementState) in
-                     SystemAPI.Query<RefRW<CameraEffectState>, RefRO<CameraEffectConfig>,
-                                     RefRO<PlayerMovementState>>())
+            foreach (var (effectState, screenEffect, config, movementState) in
+                     SystemAPI.Query<RefRW<CameraEffectState>, RefRW<ScreenEffectState>,
+                                     RefRO<CameraEffectConfig>, RefRO<PlayerMovementState>>())
             {
                 var mode = movementState.ValueRO.Mode;
                 var velocity = movementState.ValueRO.Velocity;
@@ -57,12 +57,18 @@ namespace DOTS.Player.Systems
                         _launchFOVPunchRemaining - config.ValueRO.LaunchFOVDecayRate * dt);
                 }
 
-                bool isAirborne = mode == PlayerMovementMode.Ballistic ||
-                                  mode == PlayerMovementMode.Gliding ||
-                                  mode == PlayerMovementMode.GlideCharging ||
-                                  mode == PlayerMovementMode.ThermalBoost;
+                // Intentional flight: slingshot, glide, thermal — drives FOV/distance/damping.
+                bool isIntentionalFlight = mode == PlayerMovementMode.Ballistic ||
+                                           mode == PlayerMovementMode.Gliding ||
+                                           mode == PlayerMovementMode.GlideCharging ||
+                                           mode == PlayerMovementMode.ThermalBoost;
 
-                if (isAirborne)
+                // Freefall: physically airborne with no input-driven mode (e.g. sky-drop spawn).
+                // Mode stays Grounded because the player hasn't slingshotted, but IsGrounded is
+                // false because the ground probe found nothing within range.
+                bool isFreefall = mode == PlayerMovementMode.Grounded && !movementState.ValueRO.IsGrounded;
+
+                if (isIntentionalFlight)
                 {
                     // Speed-based FOV addition
                     float speedAboveThreshold = math.max(0f, horizontalSpeed - config.ValueRO.SpeedFOVThreshold);
@@ -80,10 +86,36 @@ namespace DOTS.Player.Systems
                     effectState.ValueRW.Damping = mode switch
                     {
                         PlayerMovementMode.Ballistic => config.ValueRO.BallisticDamping,
-                        PlayerMovementMode.Gliding => config.ValueRO.GlideDamping,
+                        PlayerMovementMode.Gliding    => config.ValueRO.GlideDamping,
                         PlayerMovementMode.ThermalBoost => config.ValueRO.ThermalDamping,
                         _ => config.ValueRO.BallisticDamping
                     };
+                }
+
+                // Shake and screen effects apply to both intentional flight and freefall so the
+                // sky-drop feels physical as vertical speed builds toward terminal velocity.
+                if (isIntentionalFlight || isFreefall)
+                {
+                    float totalSpeed = math.length(velocity);
+                    float speedAboveShakeThreshold = math.max(0f, totalSpeed - config.ValueRO.ShakeSpeedThreshold);
+                    float shakeAmp = math.min(
+                        speedAboveShakeThreshold * config.ValueRO.ShakeAmplitudeScale,
+                        config.ValueRO.ShakeAmplitudeMax);
+
+                    if (shakeAmp > 0f)
+                    {
+                        float freq = config.ValueRO.ShakeFrequency
+                                   + speedAboveShakeThreshold * config.ValueRO.ShakeFrequencyScale;
+                        float t = (float)SystemAPI.Time.ElapsedTime * freq;
+                        // Two orthogonal sinusoids at slightly different frequencies give organic feel
+                        effectState.ValueRW.ShakeOffset += new float3(
+                            math.sin(t * 1.00f) * shakeAmp,
+                            math.sin(t * 1.37f) * shakeAmp * 0.6f,
+                            0f);
+
+                        // Normalise shake amplitude to 0–1 as the speed signal for screen effects
+                        screenEffect.ValueRW.SpeedLineIntensity = shakeAmp / config.ValueRO.ShakeAmplitudeMax;
+                    }
                 }
 
                 _previousMode = mode;
