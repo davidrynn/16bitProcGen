@@ -81,13 +81,14 @@ namespace DOTS.Player.Systems
                             $"dir={aimDirection}, vel={velocity.ValueRW.Linear}");
                     }
 
-                    // Advance chain state: increment count and reset the window for the next chain.
+                    // Increment chain count. Window opens on landing (ChainWindowSystem reads
+                    // LandingImpactEvent and sets WindowRemaining then, not here).
                     if (hasChain)
                     {
                         ecb.SetComponent(entity, new ChainSlingshotState
                         {
                             ChainCount = chainState.ChainCount + 1,
-                            WindowRemaining = slingshotConfig.ValueRO.ChainWindowDuration,
+                            WindowRemaining = 0f,
                         });
                     }
 

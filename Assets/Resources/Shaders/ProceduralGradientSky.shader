@@ -16,6 +16,12 @@ Shader "ProceduralGradientSky"
         _CoverageThreshold  ("Coverage Threshold", Range(0, 1)) = 0.45
         _EdgeSoftness       ("Edge Softness", Range(0.01, 1))  = 0.15
         _Opacity            ("Opacity", Range(0, 1))        = 0.6
+
+        [Header(Mountains)]
+        _MountainColor      ("Mountain Color", Color)               = (0.22, 0.25, 0.20, 1.0)
+        _MountainBaseHeight ("Base Height", Range(-0.1, 0.3))       = 0.02
+        _MountainVariation  ("Height Variation", Range(0.0, 0.15))  = 0.04
+        _MountainSoftness   ("Edge Softness", Range(0.001, 0.05))   = 0.008
     }
 
     SubShader
@@ -54,6 +60,11 @@ Shader "ProceduralGradientSky"
                 half   _CoverageThreshold;
                 half   _EdgeSoftness;
                 half   _Opacity;
+
+                half4  _MountainColor;
+                half   _MountainBaseHeight;
+                half   _MountainVariation;
+                half   _MountainSoftness;
             CBUFFER_END
 
             struct Attributes
@@ -153,6 +164,22 @@ Shader "ProceduralGradientSky"
                     color.rgb = lerp(color.rgb, cloudColor, cloudAlpha);
                 }
                 #endif
+
+                // ── Mountain silhouette ──────────────────────────────────
+                // Overlapping sine harmonics produce a gentle rolling ridge that
+                // wraps seamlessly at ±PI — no texture assets required.
+                float az = atan2(viewDir.x, viewDir.z);
+                float hills = 0.60 * sin(az * 1.00 + 0.53)
+                            + 0.30 * sin(az * 2.30 + 1.21)
+                            + 0.10 * sin(az * 4.70 + 0.87);
+                hills = hills * 0.5 + 0.5; // remap -1..1 → 0..1
+
+                float mtnHeight = _MountainBaseHeight + _MountainVariation * (hills - 0.5);
+                float mtnAlpha  = 1.0 - smoothstep(mtnHeight - _MountainSoftness, mtnHeight + _MountainSoftness, viewDir.y);
+                mtnAlpha *= smoothstep(-0.05, 0.0, viewDir.y); // dissolve into horizon haze at base
+                mtnAlpha *= _MountainColor.a;
+
+                color.rgb = lerp(color.rgb, _MountainColor.rgb, saturate(mtnAlpha));
 
                 // Anti-banding: interleaved gradient noise (Jimenez 2014)
                 float dither = frac(52.9829189 * frac(dot(input.positionCS.xy, float2(0.06711056, 0.00583715))));

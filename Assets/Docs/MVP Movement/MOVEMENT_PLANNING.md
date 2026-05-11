@@ -234,18 +234,17 @@ maintain momentum after landing
 
 ## Description
 
-After any slingshot launch, a chain window opens and stays open through landing and briefly after. If the player triggers a slingshot charge within the window — even before landing, or immediately on landing — the new impulse is **additive** to the existing velocity rather than replacing it. Each successive chain in the same sequence adds a multiplied bonus, making the player go progressively faster.
+After any slingshot launch, a chain window opens **on landing** and stays briefly open. If the player triggers a slingshot charge within the window the new impulse is **additive** to the existing velocity rather than replacing it. Each successive chain in the same sequence adds a multiplied bonus, making the player go progressively faster.
 
-This rewards rhythm and timing without requiring perfect execution: a wide landing window means the player can feel the chain opportunity even if they land before recharging.
+This rewards rhythm and timing without requiring perfect execution: the window opens the moment the player touches down, giving them time to charge and re-launch before it expires.
 
 ---
 
 ## Chain Window
 
 ```
-window opens:    on slingshot launch (immediately)
-window stays open through landing (IsGrounded transition does NOT close it)
-window closes:   ChainWindowDuration seconds after the most recent launch
+window opens:    on landing after a slingshot launch (LandingImpactEvent fires with ChainCount > 0)
+window closes:   ChainWindowDuration seconds after landing
                  OR if player stays grounded past the window without relaunching
 ```
 
@@ -257,9 +256,8 @@ The window is long enough to allow a full charge cycle even after touching down,
 
 ## Chain Input
 
-During the window, the slingshot input (`LMB + RMB hold`) is accepted regardless of `IsGrounded`. The player can begin charging:
+During the window, the slingshot input (`LMB + RMB hold`) is accepted while grounded. The player can begin charging:
 
-- Mid-air (still Ballistic / Gliding)
 - On the exact landing frame
 - Briefly after landing (within the remaining window)
 
@@ -343,14 +341,14 @@ Maximum chained speed should be exhilarating but not uncontrollable. Cap total l
 |---|---|
 | Low | Single launch, ignores chain window |
 | Medium | Notices chain opportunity on landing, attempts a second launch |
-| High | Pre-charges during landing approach, instant chain on touch |
-| Expert | Mid-air chain (charges while still Ballistic, re-launches before landing) |
+| High | Charges immediately on landing, near-instant chain re-launch |
+| Expert | Mid-air chain — future feature (ground proximity window) |
 
 ---
 
 ## Design Constraints
 
-- Chain does NOT require grounded state — airborne chain is valid and intentional
+- Chain requires landing: window opens on `LandingImpactEvent` after a launch (mid-air chain is a future ground-proximity feature)
 - Chain does NOT require completing a full landing — barely-touching terrain counts
 - Chain counter resets if the window expires (staying grounded too long) or on cancel
 - Charge/cancel rules are identical to normal slingshot (cancel below MinLaunchThreshold still cancels)
@@ -864,7 +862,7 @@ slingshot → glide → chain slingshot on landing
 
 high skill:
 
-mid-air chain (charges during Ballistic, relaunches before touching ground)
+chain slingshot on landing (window opens on touch-down, re-launch before it expires)
 
 expert skill:
 
@@ -1040,15 +1038,13 @@ Full test specifications: [MOVEMENT_TECHNICAL_ARCHITECTURE_SPEC.md § 13](MOVEME
 ## Phase C: Thermals + Chaining
 
 **13.5. Implement chain slingshot**
-- ChainWindowSystem: opens and ticks down window on launch, resets ChainCount on expiry
-- SlingshotChargeSystem: allow charge from Ballistic when WindowRemaining > 0
+- ChainWindowSystem: opens window on landing when ChainCount > 0, ticks down, resets ChainCount on expiry
 - SlingshotLaunchSystem: additive velocity formula + chain bonus multiplier when ChainCount > 0
-- *Test (EditMode):* ChainWindowSystem opens window on launch, counts down, resets ChainCount at expiry
-- *Test (EditMode):* SlingshotChargeSystem allows charge during Ballistic when window active
+- *Test (EditMode):* ChainWindowSystem opens window on LandingImpactEvent when ChainCount > 0, counts down, resets ChainCount at expiry
+- *Test (EditMode):* ChainWindowSystem does NOT open window on landing if ChainCount == 0
 - *Test (EditMode):* Launch velocity is additive (chain 2 speed > chain 1 speed)
 - *Test (EditMode):* Bonus multiplier scales correctly with ChainCount (capped at ChainMaxCount)
-- *Visual:* Launch → touch ground briefly → relaunch — speed noticeably higher on chain
-- *Visual:* Pre-charge mid-air → land → release — chain fires on landing frame
+- *Visual:* Launch → touch ground → charge → relaunch — speed noticeably higher on chain
 
 **14. Implement thermal columns**
 - ThermalColumnSystem: volumes that apply vertical boost to player

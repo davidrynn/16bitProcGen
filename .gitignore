@@ -9,6 +9,7 @@
 *.user
 *.userosscache
 *.sln.docstates
+Temp_*
 
 # User-specific files (MonoDevelop/Xamarin Studio)
 *.userprefs
@@ -473,6 +474,8 @@ ConsoleLogs.txt
 # AI Assistant folders
 .claude/
 .agents/
+.vscode/mcp*
+.mcp*
 skills-lock.json
 ugs_installer
 # Windows reserved name accidentally created as a file (e.g. bad -logFile nul)

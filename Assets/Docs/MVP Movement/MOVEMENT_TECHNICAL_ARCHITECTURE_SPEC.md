@@ -310,7 +310,7 @@ public struct ChainSlingshotState : IComponentData
 Add these fields to `SlingshotConfig`:
 
 ```csharp
-/// <summary>Seconds the chain window stays open after each launch. Default: 2.0</summary>
+/// <summary>Seconds the chain window stays open after landing following a launch. Default: 2.0</summary>
 public float ChainWindowDuration;
 
 /// <summary>
@@ -387,7 +387,7 @@ InitializationSystemGroup
 
 PhysicsSystemGroup
   ├─ PlayerGroundingSystem          [existing, minor modifications]
-  ├─ SlingshotChargeSystem          [NEW — chain-aware: allows charge during Ballistic when window active]
+  ├─ SlingshotChargeSystem          [NEW — grounded-only charge; chain bonus applied at launch when window active]
   ├─ SlingshotLaunchSystem          [NEW — chain-aware: additive impulse when ChainCount > 0]
   ├─ PlayerMovementSystem           [existing, extended for ballistic/glide/thermal]
   ├─ GlideSystem                    [NEW]
@@ -395,7 +395,7 @@ PhysicsSystemGroup
 
 SimulationSystemGroup
   ├─ MovementStateBookkeepingSystem  [NEW - caches Velocity, resets CameraEffectState]
-  ├─ ChainWindowSystem              [NEW - ticks ChainSlingshotState.WindowRemaining, resets on expiry]
+  ├─ ChainWindowSystem              [NEW - opens window on landing when ChainCount > 0, ticks down, resets on expiry]
   ├─ LandingDetectionSystem         [NEW - fires LandingImpactEvent]
   ├─ CameraChargeFeedbackSystem     [NEW - writes CameraEffectState during charge]
   ├─ CameraSpeedFeedbackSystem      [NEW - writes CameraEffectState based on velocity]
@@ -413,9 +413,8 @@ PresentationSystemGroup
 
 - **Runs in:** PhysicsSystemGroup, after PlayerGroundingSystem
 - **Requires:** PlayerMovementState, PlayerInputComponent (SlingshotHeld), ChainSlingshotState
-- **Behavior:** When SlingshotHeld is true AND (`IsGrounded` OR `ChainSlingshotState.WindowRemaining > 0`), transitions Mode to SlingshotCharging. Accumulates DragDelta from mouse input. Computes ChargeNormalized using the power curve. Adds SlingshotChargeState if not present.
-- **Chain entry:** If charging begins while Ballistic (window is active), the mode transitions from Ballistic → SlingshotCharging. The player loses ballistic air control during charge but retains momentum until release.
-- **On cancel** (SlingshotHeld becomes false while below MinLaunchThreshold or on explicit cancel): removes SlingshotChargeState, returns Mode to Grounded (or Ballistic if still airborne), chain window is NOT consumed.
+- **Behavior:** When SlingshotHeld is true AND `IsGrounded`, transitions Mode to SlingshotCharging. Accumulates DragDelta from mouse input. Computes ChargeNormalized using the power curve. Adds SlingshotChargeState if not present.
+- **On cancel** (SlingshotHeld becomes false while below MinLaunchThreshold or on explicit cancel): removes SlingshotChargeState, returns Mode to Grounded, chain window is NOT consumed.
 
 #### SlingshotLaunchSystem
 
@@ -428,7 +427,7 @@ PresentationSystemGroup
   velocity   = velocity * ChainVelocityPreservation
              + AimDirection * MaxForce * charge * chainBonus
   ```
-- **On any valid launch:** increments `ChainSlingshotState.ChainCount`, resets `WindowRemaining` to `ChainWindowDuration`, transitions Mode to Ballistic, removes SlingshotChargeState.
+- **On any valid launch:** increments `ChainSlingshotState.ChainCount`, leaves `WindowRemaining` at 0 (window opens on next landing via `ChainWindowSystem`), transitions Mode to Ballistic, removes SlingshotChargeState.
 - **Below-threshold release:** cancels without launch, chain state unchanged.
 
 #### PlayerMovementSystem (existing — extension guidance)
@@ -486,9 +485,9 @@ if (!movementState.IsGrounded)
 - **Runs in:** SimulationSystemGroup, after MovementStateBookkeepingSystem
 - **Requires:** ChainSlingshotState
 - **Behavior:**
-  1. Each frame, decrements `WindowRemaining` by `DeltaTime`.
-  2. When `WindowRemaining` reaches zero: resets `ChainCount` to 0.
-  3. Does NOT close the window on landing — the grounded transition is intentionally transparent to the chain window. This allows post-landing chains within the remaining window time.
+  1. When `LandingImpactEvent` is enabled on the entity and `ChainCount > 0` and `WindowRemaining == 0`: sets `WindowRemaining = ChainWindowDuration` (opens the post-landing chain window).
+  2. Each frame, decrements `WindowRemaining` by `DeltaTime`.
+  3. When `WindowRemaining` reaches zero: resets `ChainCount` to 0.
 - **Does not write Mode.** Mode transitions are owned by SlingshotChargeSystem and SlingshotLaunchSystem.
 
 #### LandingDetectionSystem
@@ -688,18 +687,19 @@ Test files follow existing project conventions:
 
 | Test | Setup | Assertion |
 |---|---|---|
+| Window opens on landing when ChainCount > 0 | ChainCount=1, WindowRemaining=0, LandingImpactEvent enabled | WindowRemaining == ChainWindowDuration |
+| Window does NOT open if ChainCount == 0 | ChainCount=0, WindowRemaining=0, LandingImpactEvent enabled | WindowRemaining == 0 |
 | Window counts down | WindowRemaining=2.0, tick with dt=0.1 | WindowRemaining == 1.9 |
 | Window expiry resets ChainCount | WindowRemaining=0.05, ChainCount=2, tick with dt=0.1 | ChainCount == 0, WindowRemaining == 0 |
-| Window survives landing | WindowRemaining=1.5, mode transitions Ballistic→Grounded mid-tick | WindowRemaining still counting down, ChainCount unchanged |
 | Zero window does nothing | WindowRemaining=0, ChainCount=0, tick | No state change |
 
 #### Chain SlingshotChargeSystem Tests (EditMode)
 
 | Test | Setup | Assertion |
 |---|---|---|
-| Charge allowed while Ballistic with active window | Mode=Ballistic, WindowRemaining=1.0, SlingshotHeld=true | Mode transitions to SlingshotCharging |
-| Charge blocked while Ballistic with expired window | Mode=Ballistic, WindowRemaining=0, SlingshotHeld=true | Mode unchanged, no SlingshotChargeState added |
-| Cancel during airborne chain does not consume window | Charging, cancel (below threshold) while airborne | WindowRemaining unchanged, ChainCount unchanged |
+| Charge blocked while Ballistic (post-landing only) | Mode=Ballistic, WindowRemaining=1.0, SlingshotHeld=true | Mode unchanged, no SlingshotChargeState added |
+| Charge allowed when grounded within window | Mode=Grounded, WindowRemaining=1.0, SlingshotHeld=true | Mode transitions to SlingshotCharging |
+| Cancel while grounded does not consume window | Charging, cancel (below threshold) while grounded | WindowRemaining unchanged, ChainCount unchanged |
 
 #### Chain SlingshotLaunchSystem Tests (EditMode)
 
@@ -1010,5 +1010,5 @@ Phase C (Thermals + Chaining) is complete when:
 - [ ] MovementStateTransitionPlayModeTests pass (valid transitions only)
 - [ ] Visual test cards for Steps 13.5–18 all checked (Section 13.2)
 - [ ] Chain 2 launch is visibly faster than chain 1 (manual playtest)
-- [ ] Mid-air chain (airborne charge + release before landing) works correctly
+- [ ] Post-landing chain fires correctly (launch → land → charge → re-launch is additive)
 - [ ] Camera transitions between all states are smooth (per timing table in MOVEMENT_PLANNING.md)
