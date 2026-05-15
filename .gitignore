@@ -484,6 +484,9 @@ ugs_installer
 # MCP/AI tool screenshots (debug captures, not project assets)
 /Assets/Screenshots/
 
+# Unity Profiler captures (binary session data, not source)
+/ProfilerCaptures/
+
 # Unity Test Runner log output files
 TestLog-*.txt
 TestResults-*.xml
