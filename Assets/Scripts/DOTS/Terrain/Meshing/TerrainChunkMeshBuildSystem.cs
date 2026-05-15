@@ -1,5 +1,7 @@
 using Unity.Burst;
+using Unity.Collections;
 using Unity.Entities;
+using Unity.Jobs;
 using Unity.Mathematics;
 using DOTS.Terrain;
 using DOTS.Terrain.Debug;
@@ -21,7 +23,6 @@ namespace DOTS.Terrain.Meshing
         public void OnUpdate(ref SystemState state)
         {
             var entityManager = state.EntityManager;
-            var ecb = new EntityCommandBuffer(Unity.Collections.Allocator.Temp);
             var maxMeshBuilds = int.MaxValue;
 
             if (SystemAPI.TryGetSingleton<DOTS.Terrain.LOD.TerrainLodSettings>(out var lodSettings)
@@ -30,86 +31,116 @@ namespace DOTS.Terrain.Meshing
                 maxMeshBuilds = lodSettings.MaxMeshRebuildsPerFrame;
             }
 
-            var builtCount = 0;
+            var debugEnabled = SystemAPI.HasSingleton<TerrainDebugConfig>() &&
+                               SystemAPI.GetSingleton<TerrainDebugConfig>().Enabled;
 
-            // Check if debug mode is enabled
-            var debugEnabled = false;
-            if (SystemAPI.HasSingleton<TerrainDebugConfig>())
+            // Gather all chunks eligible this frame.
+            var query = SystemAPI.QueryBuilder()
+                .WithAll<TerrainChunkNeedsMeshBuild, TerrainChunkDensity, TerrainChunkGridInfo,
+                         TerrainChunkDensityGridInfo, TerrainChunkBounds>()
+                .Build();
+
+            int capacity = math.min(query.CalculateEntityCount(), maxMeshBuilds);
+            if (capacity == 0) return;
+
+            var scheduledEntities = new Entity[capacity];
+            var jobDataArray      = new SurfaceNetsJobData[capacity];
+            var handles           = new NativeArray<JobHandle>(capacity, Allocator.Temp);
+            var gridInfos         = new TerrainChunkGridInfo[capacity];
+            int scheduledCount    = 0;
+
+            try
             {
-                var debugConfig = SystemAPI.GetSingleton<TerrainDebugConfig>();
-                debugEnabled = debugConfig.Enabled;
-            }
+                // ── Phase 1: schedule all SurfaceNets jobs (worker threads) ────────────
+                foreach (var (density, grid, densityGrid, bounds, entity) in SystemAPI
+                             .Query<RefRW<TerrainChunkDensity>, RefRO<TerrainChunkGridInfo>,
+                                    RefRO<TerrainChunkDensityGridInfo>, RefRO<TerrainChunkBounds>>()
+                             .WithAll<TerrainChunkNeedsMeshBuild>()
+                             .WithEntityAccess())
+                {
+                    if (scheduledCount >= maxMeshBuilds) break;
 
-            foreach (var (density, grid, densityGrid, bounds, entity) in SystemAPI
-                         .Query<RefRW<TerrainChunkDensity>, RefRO<TerrainChunkGridInfo>, RefRO<TerrainChunkDensityGridInfo>, RefRO<TerrainChunkBounds>>()
-                         .WithAll<TerrainChunkNeedsMeshBuild>()
-                         .WithEntityAccess())
+                    var (data, handle) = TerrainChunkMeshBuilder.ScheduleSurfaceNetsJob(
+                        ref density.ValueRW, grid.ValueRO, densityGrid.ValueRO);
+
+                    if (!data.IsValid) continue;
+
+                    scheduledEntities[scheduledCount] = entity;
+                    jobDataArray[scheduledCount]      = data;
+                    handles[scheduledCount]           = handle;
+                    gridInfos[scheduledCount]         = grid.ValueRO;
+                    scheduledCount++;
+                }
+
+                // ── Phase 2: complete all jobs (run concurrently on worker threads) ────
+                if (scheduledCount > 0)
+                    JobHandle.CompleteAll(handles.GetSubArray(0, scheduledCount));
+
+                // ── Phase 3: build blobs and issue ECB commands (main thread) ─────────
+                var ecb = new EntityCommandBuffer(Allocator.Temp);
+                try
+                {
+                    for (int i = 0; i < scheduledCount; i++)
+                    {
+                        var entity  = scheduledEntities[i];
+                        var data    = jobDataArray[i];
+                        var meshBlob = TerrainChunkMeshBuilder.BuildBlobFromJobData(ref data);
+                        jobDataArray[i] = default; // mark consumed so finally skips it
+
+                        if (!meshBlob.IsCreated) continue;
+
+                        if (entityManager.HasComponent<TerrainChunkMeshData>(entity))
+                        {
+                            var existing = entityManager.GetComponentData<TerrainChunkMeshData>(entity);
+                            existing.Dispose();
+                            ecb.SetComponent(entity, new TerrainChunkMeshData { Mesh = meshBlob });
+                        }
+                        else
+                        {
+                            ecb.AddComponent(entity, new TerrainChunkMeshData { Mesh = meshBlob });
+                        }
+
+                        if (debugEnabled)
+                        {
+                            var meshDebugData = ComputeMeshDebugData(ref meshBlob, gridInfos[i]);
+                            if (entityManager.HasComponent<TerrainChunkMeshDebugData>(entity))
+                                ecb.SetComponent(entity, meshDebugData);
+                            else
+                                ecb.AddComponent(entity, meshDebugData);
+                        }
+
+                        if (!entityManager.HasComponent<TerrainChunkNeedsRenderUpload>(entity))
+                            ecb.AddComponent<TerrainChunkNeedsRenderUpload>(entity);
+
+                        if (!entityManager.HasComponent<TerrainChunkNeedsColliderBuild>(entity))
+                            ecb.AddComponent<TerrainChunkNeedsColliderBuild>(entity);
+
+                        if (entityManager.HasComponent<TerrainChunkNeedsMeshBuild>(entity))
+                            ecb.RemoveComponent<TerrainChunkNeedsMeshBuild>(entity);
+
+                        if (entityManager.HasComponent<TerrainChunkDebugState>(entity))
+                        {
+                            var debugState = entityManager.GetComponentData<TerrainChunkDebugState>(entity);
+                            debugState.Stage = TerrainChunkDebugState.StageMeshReady;
+                            ecb.SetComponent(entity, debugState);
+                        }
+                    }
+
+                    ecb.Playback(entityManager);
+                }
+                finally
+                {
+                    ecb.Dispose();
+                }
+            }
+            finally
             {
-                if (builtCount >= maxMeshBuilds)
-                {
-                    break;
-                }
+                // Dispose any job data not consumed in Phase 3 (e.g. on exception or zero-vertex mesh).
+                for (int i = 0; i < scheduledCount; i++)
+                    if (jobDataArray[i].IsValid) jobDataArray[i].Dispose();
 
-                var meshBlob = TerrainChunkMeshBuilder.BuildMeshBlob(ref density.ValueRW, grid.ValueRO, densityGrid.ValueRO, bounds.ValueRO);
-
-                if (!meshBlob.IsCreated)
-                {
-                    continue;
-                }
-
-                if (entityManager.HasComponent<TerrainChunkMeshData>(entity))
-                {
-                    var existing = entityManager.GetComponentData<TerrainChunkMeshData>(entity);
-                    existing.Dispose();
-                    ecb.SetComponent(entity, new TerrainChunkMeshData { Mesh = meshBlob });
-                }
-                else
-                {
-                    ecb.AddComponent(entity, new TerrainChunkMeshData { Mesh = meshBlob });
-                }
-
-                // Populate mesh debug data if debug is enabled
-                if (debugEnabled)
-                {
-                    var meshDebugData = ComputeMeshDebugData(ref meshBlob, grid.ValueRO);
-                    if (entityManager.HasComponent<TerrainChunkMeshDebugData>(entity))
-                    {
-                        ecb.SetComponent(entity, meshDebugData);
-                    }
-                    else
-                    {
-                        ecb.AddComponent(entity, meshDebugData);
-                    }
-                }
-
-                if (!entityManager.HasComponent<TerrainChunkNeedsRenderUpload>(entity))
-                {
-                    ecb.AddComponent<TerrainChunkNeedsRenderUpload>(entity);
-                }
-
-                if (!entityManager.HasComponent<TerrainChunkNeedsColliderBuild>(entity))
-                {
-                    ecb.AddComponent<TerrainChunkNeedsColliderBuild>(entity);
-                }
-
-                if (entityManager.HasComponent<TerrainChunkNeedsMeshBuild>(entity))
-                {
-                    ecb.RemoveComponent<TerrainChunkNeedsMeshBuild>(entity);
-                }
-
-                // Update debug state if present
-                if (entityManager.HasComponent<TerrainChunkDebugState>(entity))
-                {
-                    var debugState = entityManager.GetComponentData<TerrainChunkDebugState>(entity);
-                    debugState.Stage = TerrainChunkDebugState.StageMeshReady;
-                    ecb.SetComponent(entity, debugState);
-                }
-
-                builtCount++;
+                handles.Dispose();
             }
-
-            ecb.Playback(entityManager);
-            ecb.Dispose();
         }
 
         private static TerrainChunkMeshDebugData ComputeMeshDebugData(

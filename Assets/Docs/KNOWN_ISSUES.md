@@ -1,12 +1,94 @@
 # Known Issues
 
-**Last Updated:** 2026-04-16
+**Last Updated:** 2026-05-13
 
 Master tracker for active bugs, investigations, and resolved issues. Link to detailed specs rather than duplicating analysis here.
 
 ---
 
 ## Open Issues
+
+### BUG-017: Low FPS — sub-20 in BasicTerrainScene, 40–70 in Smoke_BasicPlayable
+
+**Status:** PARTIAL (2026-05-13) — primary hotspot confirmed and fixed; further profiling needed to assess remaining cost
+**Severity:** High (gameplay / development experience)
+**Affected Systems:** `TerrainChunkMeshUploadSystem`, `TerrainChunkDensitySamplingSystem`, `TerrainChunkMeshBuildSystem`, `TerrainChunkColliderBuildSystem`, `TerrainChunkStreamingSystem`, LOD pipeline, potentially HybridTerrainGenerationSystem
+**Related:** BUG-008 (SDFEdit buffer O(N×V)), BUG-012 (RecalculateNormals hotspot)
+
+**Observed Metrics:**
+- `Basic Terrain Scene.unity`: **< 20 FPS** (measured in Play mode)
+- `Assets/Scenes/Tests/Smoke_BasicPlayable.unity`: **40–70 FPS**
+
+The 2–3× scene gap suggests features unique to BasicTerrainScene account for a large share of the cost. The absolute numbers are surprising given DOTS/ECS + Burst + Job System usage.
+
+**Confirmed Root Causes and Fixes (2026-05-13 profiler):**
+
+1. **(Fixed) `TerrainChunkRenderPrepSystem` iterating all chunks every frame — 27ms/frame.** Query had no filter, iterating every active chunk (400–600 at Medium render distance) recalculating AABB and calling `EntityManager.HasComponent` three times per chunk on the main thread. Fix: added `.WithAll<TerrainChunkNeedsRenderUpload>()` filter and `[UpdateBefore(TerrainChunkMeshUploadSystem)]` ordering. Main thread dropped from 33ms → 17.8ms.
+
+2. **(Fixed) SSAO enabled — 3.3ms `DrawDepthNormalPrepass` every frame.** `ScreenSpaceAmbientOcclusion` renderer feature was active in `PC_Renderer`. Disabled via MCP.
+
+3. **(Fixed) Shadow map: 4 cascades at 2048 resolution with soft shadows — 4.15ms/frame.** Reduced to 2 cascades, 1024 resolution, soft shadows off in `PC_RPAsset`. GPU dropped from 4.1ms → 2.4ms.
+
+**Combined result:** Main thread 33ms → 15.1ms (under 60fps budget). GPU 8ms → 2.4ms. Editor IMGUI overhead (~14ms) accounts for remaining Editor-mode frame time; a standalone build should comfortably hit 60fps.
+
+**Remaining Suspects (ranked by likelihood, not yet profiler-confirmed):**
+
+1. **`RecalculateNormals()` on main thread per upload** — `TerrainChunkMeshUploadSystem.UploadMesh` calls `mesh.RecalculateNormals()` for every chunk that has a new mesh blob. Unity's built-in implementation is single-threaded and O(V+T). With 16 mesh uploads/frame at the default budget, this alone can cost 5–15 ms/frame. This is the same hotspot targeted by the BUG-012 fix (SDF-gradient analytical normals); fixing BUG-012 would eliminate this cost.
+
+2. **Rebuild budgets saturated every frame** — `TerrainLodSettings.Default` sets `MaxDensityRebuildsPerFrame = 16`, `MaxMeshRebuildsPerFrame = 16`, `MaxColliderRebuildsPerFrame = 8`. At Medium render distance (180 world units → streaming radius = 12 chunks), the initial streaming burst generates a large rebuild queue. If the queue never drains to zero (i.e., budgets are hit every frame during normal play), the pipeline runs at maximum throughput permanently, keeping all three rebuild systems active every frame.
+
+3. **SDFEdit buffer O(N×V) cost (BUG-008)** — After the player makes edits, density sampling replays all historical edits on every rebuild. This is a multiplier on suspect #2: each of the 16 density rebuilds/frame scales with edit history length E. At `EditCooldown = 0.15s`, E ≈ 400 after one minute of digging.
+
+4. **HybridTerrainGenerationSystem enabled alongside SDF pipeline** — `ProjectFeatureConfig.EnableHybridTerrainGenerationSystem = true` by default. The heightmap pipeline runs every frame and queries for `TerrainData` entities (none present in the SDF scene), so it likely no-ops — but the system itself is scheduled and may still impose ECS overhead. Worth disabling in SDF scenes to confirm.
+
+5. **Managed allocations in hot paths** — `TerrainChunkMeshUploadSystem.OnUpdate` creates a `new List<UploadItem>()` every frame on the main thread. With 16 uploads/frame this is a minor GC contributor, but the pattern suggests other similar allocations may exist in the pipeline (check the GC Alloc column in Profiler).
+
+6. **Grass / tree / rock render systems running per frame** — `GrassChunkRenderSystem`, `TreeChunkRenderSystem`, `RockChunkRenderSystem` all issue draw calls or schedule jobs each frame. On large terrain footprints, these can compete with terrain systems for job threads.
+
+7. **Burst compilation not active or partially disabled** — Burst jobs degrade to managed code if Burst compilation is disabled (Jobs > Burst > Enable Compilation). Partial failures (e.g., a job with an unsupported type) silently fall back. This should be ruled out first before blaming the algorithm.
+
+**Investigation Plan:**
+
+*Step 1 — Establish baselines with Unity Profiler (do this first)*
+- Open `Window > Analysis > Profiler`. Record 3–5 seconds in both scenes.
+- Sort the CPU timeline by "Self ms" on the main thread. Identify top 5 costs.
+- Check the GC Alloc column — any per-frame allocations in terrain systems are a quick win.
+- Check `Jobs > Burst > Enable Compilation` is on. In the Profiler, Burst jobs show as `(Burst)` label; managed fallbacks show without it.
+
+*Step 2 — Confirm or rule out RecalculateNormals hotspot*
+- In the Profiler timeline, look for `Mesh.RecalculateNormals` on the main thread. Note its duration and how many times it fires per frame.
+- If it exceeds 2 ms/frame, implementing the BUG-012 fix (SDF-gradient analytical normals) should be next.
+
+*Step 3 — Measure rebuild queue depth*
+- Enable `DebugSettings.EnableTerrainColliderPipelineDebug` to log backlog counts each frame.
+- If collider backlog is > 0 on most frames (not just the initial streaming burst), the rebuild budget needs tuning or the streaming radius needs reducing.
+- Try setting `TerrainLodSettings.MaxDensityRebuildsPerFrame = 4` and `MaxMeshRebuildsPerFrame = 4` to see whether FPS improves. Lower throughput = longer drain time but less per-frame spike.
+
+*Step 4 — Disable HybridTerrainGenerationSystem*
+- Set `ProjectFeatureConfig.EnableHybridTerrainGenerationSystem = false` in BasicTerrainScene.
+- If FPS improves noticeably, the heightmap pipeline has hidden per-frame cost even when no TerrainData entities exist.
+
+*Step 5 — Reduce streaming radius*
+- Switch `ProjectFeatureConfig.TerrainRenderDistancePreset` from `Medium` (12 chunk radius) to `Low` (8 chunk radius).
+- Measure FPS delta. If significant, chunk count is the primary driver and LOD coarsening or streaming throttle is the solution.
+
+*Step 6 — Profile grass/tree/rock systems independently*
+- Temporarily set `EnableGrassChunkRenderSystem`, `EnableTreeRenderSystem`, `EnableRockRenderSystem` to `false`.
+- Measure FPS delta to isolate their contribution.
+
+*Step 7 — Fix allocation hotspot (low-hanging fruit)*
+- Pre-allocate `List<UploadItem>` as a persistent field in `TerrainChunkMeshUploadSystem` and `Clear()` it each frame instead of allocating a new one. Similar pattern for any other per-frame managed collections found in Step 1.
+
+**Files:**
+- `Assets/Scripts/DOTS/Terrain/Meshing/TerrainChunkMeshUploadSystem.cs` — `RecalculateNormals` + managed List alloc
+- `Assets/Scripts/DOTS/Terrain/Meshing/SurfaceNets.cs` — `GradientAt` (BUG-012 fix supply)
+- `Assets/Scripts/DOTS/Terrain/SDF/Systems/TerrainChunkDensitySamplingSystem.cs` — density rebuild budget
+- `Assets/Scripts/DOTS/Terrain/Physics/TerrainChunkColliderBuildSystem.cs` — collider rebuild budget
+- `Assets/Scripts/DOTS/Terrain/LOD/TerrainLodSettings.cs` — `MaxDensityRebuildsPerFrame`, `MaxMeshRebuildsPerFrame`, `MaxColliderRebuildsPerFrame`
+- `Assets/Scripts/DOTS/Core/Authoring/ProjectFeatureConfig.cs` — `TerrainRenderDistancePreset`, `EnableHybridTerrainGenerationSystem`
+- `Assets/Scripts/DOTS/Core/DebugSettings.cs` — `EnableTerrainColliderPipelineDebug`
+
+---
 
 ### BUG-004: Add/remove action throws BlobAssetReference error during physics raycast
 

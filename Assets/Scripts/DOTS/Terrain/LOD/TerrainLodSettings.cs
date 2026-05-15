@@ -47,8 +47,11 @@ namespace DOTS.Terrain.LOD
             ColliderMaxLod = 1,
             GrassMaxLod = 0,
             ShadowMaxLod = 1,
-            MaxDensityRebuildsPerFrame = 6,
-            MaxMeshRebuildsPerFrame = 6,
+            // Capped at 8/8/4 to bound per-frame main-thread stall during active streaming.
+            // Density jobs now run in parallel (see TerrainChunkDensitySamplingSystem), so
+            // raising this cap costs less than it did when jobs ran sequentially.
+            MaxDensityRebuildsPerFrame = 8,
+            MaxMeshRebuildsPerFrame = 8,
             MaxColliderRebuildsPerFrame = 4,
             UseStreamingAsCullBoundary = true,
         };

@@ -13,7 +13,7 @@ public class ProjectFeatureConfig : ScriptableObject
 {
     private const float LowRenderDistance = 120f;
     private const float MediumRenderDistance = 180f;
-    private const float HighRenderDistance = 240f;
+    private const float HighRenderDistance = 300f;
 
     [Header("Terrain Render Distance")]
     [Tooltip("Preset render-distance quality. Drives streaming radius, LOD thresholds, and camera far clip automatically.")]

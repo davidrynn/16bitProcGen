@@ -1,6 +1,6 @@
 # Document Index
 
-**Last Updated:** 2026-04-26
+**Last Updated:** 2026-05-14
 
 > **New here?** Start with [MASTER_PLAN.md](MASTER_PLAN.md) — it has the project vision, current status, phase roadmap, and a curated document map.
 
@@ -14,6 +14,7 @@ Quick-reference index of all project documentation. Docs are organized by catego
 |----------|--------|-------------|
 | [KNOWN_ISSUES.md](KNOWN_ISSUES.md) | ACTIVE | Master bug/issue tracker |
 | [AI/TERRAIN_ECS_NEXT_STEPS_SPEC.md](AI/TERRAIN_ECS_NEXT_STEPS_SPEC.md) | ACTIVE | SDF + Surface Nets terrain implementation roadmap |
+| [AI/UNDERGROUND_VERTICAL_STREAMING_SPEC.md](AI/UNDERGROUND_VERTICAL_STREAMING_SPEC.md) | DESIGN | Vertical chunk streaming for underground caves, tunnels, and dungeons — tiered Level 1–3 roadmap |
 | [AI/TerrainHeightMaps/TERRAIN_PLAINS_TREES_MVP_CHECKLIST.md](AI/TerrainHeightMaps/TERRAIN_PLAINS_TREES_MVP_CHECKLIST.md) | PHASE C IN PROGRESS | Phase A ✅ Phase B ✅ Phase C (visual) 🔄 — all systems implemented, awaiting Play Mode visual confirmation |
 | [AI/TerrainHeightMaps/TERRAIN_PLAINS_TREE_VARIANT_YAW_SPEC.md](AI/TerrainHeightMaps/TERRAIN_PLAINS_TREE_VARIANT_YAW_SPEC.md) | ACTIVE | Deterministic 3-variant plains tree mesh selection plus per-instance Y-axis yaw rotation |
 | [AI/TerrainHeightMaps/TERRAIN_SURFACE_SCATTER_PLAN.md](AI/TerrainHeightMaps/TERRAIN_SURFACE_SCATTER_PLAN.md) | DESIGN | Rollout plan for generalizing tree-only placement into reusable surface scatter families |

@@ -13,11 +13,16 @@ namespace DOTS.Terrain.Meshing
     [DisableAutoCreation]
     [BurstCompile]
     [UpdateInGroup(typeof(SimulationSystemGroup))]
+    // Must run after MeshBuildSystem (which adds TerrainChunkNeedsRenderUpload via ECB — not tracked by the
+    // ECS scheduler, so ordering must be explicit) and before UploadSystem (which removes the tag same frame).
+    [UpdateAfter(typeof(TerrainChunkMeshBuildSystem))]
+    [UpdateBefore(typeof(TerrainChunkMeshUploadSystem))]
     public partial struct TerrainChunkRenderPrepSystem : ISystem
     {
         public void OnCreate(ref SystemState state)
         {
-            state.RequireForUpdate<TerrainChunkMeshData>();
+            // Only run when at least one chunk is awaiting its first render upload.
+            state.RequireForUpdate<TerrainChunkNeedsRenderUpload>();
         }
 
         public void OnUpdate(ref SystemState state)
@@ -25,7 +30,10 @@ namespace DOTS.Terrain.Meshing
 #if UNITY_ENTITIES_GRAPHICS
             var ecb = new EntityCommandBuffer(Allocator.Temp);
 
-            foreach (var (meshData, bounds, entity) in SystemAPI.Query<RefRO<TerrainChunkMeshData>, RefRO<TerrainChunkBounds>>().WithEntityAccess())
+            // Filter to only chunks whose mesh just rebuilt — avoids iterating every active chunk every frame.
+            foreach (var (meshData, bounds, entity) in SystemAPI.Query<RefRO<TerrainChunkMeshData>, RefRO<TerrainChunkBounds>>()
+                         .WithAll<TerrainChunkNeedsRenderUpload>()
+                         .WithEntityAccess())
             {
                 var mesh = meshData.ValueRO.Mesh;
                 if (!mesh.IsCreated || mesh.Value.Vertices.Length == 0)

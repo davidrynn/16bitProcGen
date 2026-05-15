@@ -19,6 +19,41 @@ Lightweight scratchpad for current session notes, quick TODOs, and observations 
 
 ---
 
+## Terrain Render Configuration (2026-05-12)
+
+Configuration decisions made to align terrain rendering with industry standard open-world games.
+
+### Render Distance
+
+`ProjectFeatureConfig.HighRenderDistance`: **240u → 300u** (the High preset is the only preset used in the asset).
+
+- 20-chunk streaming radius (was 16)
+- ~1681 active chunks (was ~1089)
+- LOD0: 0–100u · LOD1: 100–200u · LOD2: 200–300u
+- Camera far clip: 600u — terrain covers 50% of camera range (was 40%)
+- Gap from 300–600u is covered by ground plane impostor + fog
+
+**Rationale:** Industry standard puts LOD2 at 400–800m, but the tree/rock render systems submit one `RenderMeshInstanced` batch per chunk (not per mesh type globally), so chunk count directly drives draw call overhead. At 4225 chunks (480u), FPS dropped to ~18 with 98.5% CPU main-thread usage and terrain edit raycasts failed (collider build queue overwhelmed). 300u is the practical ceiling for the current per-chunk rendering architecture. Fix: consolidate tree/rock instancing into a global pool per mesh type; then revisit pushing to 480u.
+
+### Rebuild Budgets
+
+`TerrainLodSettings.Default` changes:
+- `MaxDensityRebuildsPerFrame`: **6 → 16**
+- `MaxMeshRebuildsPerFrame`: **6 → 16**
+- `MaxColliderRebuildsPerFrame`: **4 → 8**
+
+At 16/frame and 60fps, the full 4225-chunk world can fill density in ~4.4s and mesh in another ~4.4s, fitting within the 8s sky-drop gravity hold. Center chunks (player landing zone) build first.
+
+### Current Asset State (`ProjectFeatureConfig.asset`)
+- `TerrainRenderDistancePreset: 2` (High = 480u)
+- `VistaCameraFarClip: 600`
+- `FogMode: 3` (ExponentialSquared), `FogDensity: 0.005`
+- `FogColor: {r: 0.56, g: 0.66, b: 0.75}` (blue-grey, matches horizon haze)
+- `EnableGroundPlaneImpostor: 1` (fills 480–1500u gap)
+- `EnableSkyDropSpawn: 1`, `SkyDropSpawnHeight: 400`, `SkyDropGravityHoldSeconds: 8`
+
+---
+
 ## Current Session (2026-04-23)
 
 **MVP Vista Moment — vision captured and set as top priority.**
