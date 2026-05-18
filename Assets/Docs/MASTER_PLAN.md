@@ -1,5 +1,5 @@
 # 16-BitCraft — Master Plan
-_Last updated: 2026-04-26_
+_Last updated: 2026-05-14_
 
 > **Start here.** This document is the authoritative project overview: vision, current status, phase roadmap, and document map.  
 > Sprint-level task detail lives in [`Assets/.cursor/plans/game-production-plan-7ea46cb6.plan.md`](../.cursor/plans/game-production-plan-7ea46cb6.plan.md).
@@ -69,7 +69,7 @@ Full design: [`Archives/TerrainDesign/Stylized_Procedural_Terrain_System_Design.
 
 | Feature | Target Location | Status |
 |---------|----------------|--------|
-| Magic Hand System | `Scripts/Player/MagicHand/` | ❌ Not started |
+| Magic Hand System | `Scripts/Player/MagicHand/` | ❌ Not started — use binary edit layer for terrain interaction; see [`AI/TERRAIN_BINARY_EDIT_LAYER_SPEC.md`](AI/TERRAIN_BINARY_EDIT_LAYER_SPEC.md) |
 | Resource Collection | `Scripts/Resources/` | ❌ Not started |
 | Basic HUD | `Scripts/UI/HUD/` | ❌ Not started |
 
@@ -91,6 +91,7 @@ Full design: [`Archives/TerrainDesign/Stylized_Procedural_Terrain_System_Design.
 |----------|---------|
 | [`Assets/.cursor/plans/game-production-plan-7ea46cb6.plan.md`](../.cursor/plans/game-production-plan-7ea46cb6.plan.md) | **Sprint priorities, phase detail, to-do checklist — primary task driver** |
 | [`Assets/Docs/AI/TERRAIN_ECS_NEXT_STEPS_SPEC.md`](AI/TERRAIN_ECS_NEXT_STEPS_SPEC.md) | Active SDF + Surface Nets terrain implementation spec |
+| [`Assets/Docs/AI/TERRAIN_BINARY_EDIT_LAYER_SPEC.md`](AI/TERRAIN_BINARY_EDIT_LAYER_SPEC.md) | Binary voxel edit layer — hard-edged boxy terrain edits for Magic Hand; additive to SDF pipeline, no density rebuild on edit |
 | [`Assets/Docs/AI/PERSISTENCE_SPEC.md`](AI/PERSISTENCE_SPEC.md) | World persistence design — edit journals, entity state, NPC history, player data |
 | [`Assets/Docs/AI/BIOME_GRASS_STREAMING_MVP_PLAN.md`](AI/BIOME_GRASS_STREAMING_MVP_PLAN.md) | Biome-based, infinite-terrain-safe grass streaming plan (MVP path, future-safe hooks) |
 | [`Assets/Docs/DOCUMENT_INDEX.md`](DOCUMENT_INDEX.md) | Full index of all spec/debug/audit docs |
@@ -165,7 +166,7 @@ public partial struct MySystem : ISystem
 
 **Then continue Phase 1:**
 
-6. **Magic Hand System** — raycast targeting, charge mechanic, visual feedback, integrate with `TerrainModificationSystem`
+6. **Magic Hand System** — raycast targeting, charge mechanic, visual feedback. Terrain interaction should use the binary edit layer ([`AI/TERRAIN_BINARY_EDIT_LAYER_SPEC.md`](AI/TERRAIN_BINARY_EDIT_LAYER_SPEC.md)) for hard-edged retro edits rather than the legacy `TerrainModificationSystem`.
 7. **Resource Collection** — extend `TerrainGlobComponent`, automatic pickup, inventory component
 8. **Basic HUD** — resource counters, hand charge indicator, slingshot charge indicator
 

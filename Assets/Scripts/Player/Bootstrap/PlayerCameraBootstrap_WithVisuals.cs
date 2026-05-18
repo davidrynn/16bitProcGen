@@ -19,8 +19,10 @@ namespace DOTS.Player.Bootstrap
         [SerializeField] private Vector3 cameraStartPosition = new Vector3(0, 3, -4);
 
         [Header("Visual Representation")]
-        [SerializeField] private Mesh playerMesh; // Assign a cube or sphere mesh
-        [SerializeField] private UnityEngine.Material playerMaterial; // Assign a material
+        [Tooltip("Assign the character FBX or prefab to use as the player visual (e.g. Assets/Models/Rigged Humanoid.heavier.fbx)")]
+        [SerializeField] private GameObject characterPrefab;
+        [Tooltip("Matches PlayerMovementConfig.GroundSpeed — used to normalize the Speed animator parameter.")]
+        [SerializeField] private float runSpeed = 10f;
         [SerializeField] private bool createPlayerVisuals = true;
 
         [Header("Ground Plane")]
@@ -85,7 +87,7 @@ namespace DOTS.Player.Bootstrap
 
             entityManager.AddComponentData(playerEntity, new PlayerMovementConfig
             {
-                GroundSpeed = 10f,
+                GroundSpeed = runSpeed,
                 JumpImpulse = 5f,
                 AirControl = 0.2f,
                 SlingshotImpulse = 30f,
@@ -139,28 +141,50 @@ namespace DOTS.Player.Bootstrap
 
         private void CreatePlayerVisualGameObject(Entity playerEntity, LocalTransform transform)
         {
-            // Create a simple cube to represent the player
-            var playerGO = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            playerGO.name = "Player Visual (Debug)";
-            playerGO.transform.position = transform.Position;
-            playerGO.transform.rotation = transform.Rotation;
-            playerGO.transform.localScale = new Vector3(1f, 2f, 1f); // Make it look like a character
+            GameObject root;
 
-            // Apply material if provided
-            if (playerMaterial != null)
+            if (characterPrefab != null)
             {
-                playerGO.GetComponent<Renderer>().material = playerMaterial;
+                // Instantiate Synty character as child of a root sync object
+                root = new GameObject("Player Visual");
+                root.transform.SetPositionAndRotation(transform.Position, transform.Rotation);
+
+                var character = Instantiate(characterPrefab, root.transform);
+                character.name = characterPrefab.name;
+                // Synty characters have their root at hip height; feet should sit at entity origin
+                character.transform.localPosition = Vector3.zero;
+                character.transform.localRotation = Quaternion.identity;
+
+                // Wire animator bridge if an Animator is present
+                var animator = character.GetComponentInChildren<Animator>();
+                if (animator != null)
+                {
+                    var bridge = root.AddComponent<PlayerAnimatorBridge>();
+                    bridge.TargetEntity = playerEntity;
+                    bridge.CharacterAnimator = animator;
+                    bridge.RunSpeed = runSpeed;
+                }
+                else
+                {
+                    Debug.LogWarning("[PlayerCameraBootstrap] No Animator found on character prefab — bridge not wired. Assign an Animator Controller to the prefab.");
+                }
             }
             else
             {
-                // Default blue color for player
-                playerGO.GetComponent<Renderer>().material.color = Color.blue;
+                // Fallback: blue capsule so the project still runs without the prefab assigned
+                root = GameObject.CreatePrimitive(PrimitiveType.Capsule);
+                root.name = "Player Visual (Capsule Fallback)";
+                root.transform.SetPositionAndRotation(transform.Position, transform.Rotation);
+                root.GetComponent<Renderer>().material.color = Color.blue;
+                Destroy(root.GetComponent<UnityEngine.Collider>());
+                Debug.LogWarning("[PlayerCameraBootstrap] characterPrefab not assigned — using capsule fallback. Assign a character FBX or prefab in the Inspector.");
             }
 
-            // Store entity reference (for syncing in Update if needed)
-            var sync = playerGO.AddComponent<EntityVisualSync>();
-            sync.entity = playerEntity;
-            
+            // PlayerVisualSync keeps the root locked to the ECS entity transform
+            var sync = root.AddComponent<PlayerVisualSync>();
+            sync.targetEntity = playerEntity;
+            sync.visualOffset = Vector3.zero;
+
             Debug.Log("[PlayerCameraBootstrap] Created player visual GameObject");
         }
 

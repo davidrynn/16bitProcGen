@@ -272,29 +272,9 @@ namespace DOTS.Player.Bootstrap
             return entity;
         }
 
-        private void CreatePlayerVisual(Entity playerEntity, float3 position)
-        {
-            // Create a capsule to represent the player
-            var visual = GameObject.CreatePrimitive(PrimitiveType.Capsule);
-            visual.name = "Player Visual (ECS Synced)";
-            visual.transform.position = position;
-            visual.transform.localScale = new Vector3(1f, 2f, 1f); // Taller capsule for player
-
-            // Make it blue to distinguish from ground
-            var renderer = visual.GetComponent<Renderer>();
-            if (renderer != null)
-            {
-                renderer.material.color = new Color(0.2f, 0.4f, 1f); // Blue player
-            }
-
-            // Remove GameObject collider - physics is handled by ECS
-            Object.Destroy(visual.GetComponent<UnityEngine.Collider>());
-
-            // Add sync component to follow ECS entity
-            var sync = visual.AddComponent<PlayerVisualSync>();
-            sync.targetEntity = playerEntity;
-
-        }
+        // Visual creation is handled by PlayerVisualSpawner MonoBehaviour on the Bootstrap GameObject,
+        // which waits for this entity to exist and then instantiates the character prefab.
+        private void CreatePlayerVisual(Entity playerEntity, float3 position) { }
 
         private Entity CreateMainCameraAndEntity(ref SystemState state, Entity playerEntity, float3 playerPosition, PlayerViewComponent playerView)
         {

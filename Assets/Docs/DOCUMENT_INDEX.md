@@ -13,6 +13,7 @@ Quick-reference index of all project documentation. Docs are organized by catego
 | Document | Status | Description |
 |----------|--------|-------------|
 | [KNOWN_ISSUES.md](KNOWN_ISSUES.md) | ACTIVE | Master bug/issue tracker |
+| [AI/PLAYER_CHARACTER_VISUAL_SWAP_SPEC.md](AI/PLAYER_CHARACTER_VISUAL_SWAP_SPEC.md) | PROPOSED | Synty SM_Chr_Male_01 + Kevin Iglesias animations — capsule visual swap, Animator bridge, per-state clip mapping |
 | [AI/TERRAIN_ECS_NEXT_STEPS_SPEC.md](AI/TERRAIN_ECS_NEXT_STEPS_SPEC.md) | ACTIVE | SDF + Surface Nets terrain implementation roadmap |
 | [AI/UNDERGROUND_VERTICAL_STREAMING_SPEC.md](AI/UNDERGROUND_VERTICAL_STREAMING_SPEC.md) | DESIGN | Vertical chunk streaming for underground caves, tunnels, and dungeons — tiered Level 1–3 roadmap |
 | [AI/TerrainHeightMaps/TERRAIN_PLAINS_TREES_MVP_CHECKLIST.md](AI/TerrainHeightMaps/TERRAIN_PLAINS_TREES_MVP_CHECKLIST.md) | PHASE C IN PROGRESS | Phase A ✅ Phase B ✅ Phase C (visual) 🔄 — all systems implemented, awaiting Play Mode visual confirmation |
@@ -28,6 +29,7 @@ Quick-reference index of all project documentation. Docs are organized by catego
 | [AI/TerrainHeightMaps/TERRAIN_SURFACE_SCATTER_SCHEMA.md](AI/TerrainHeightMaps/TERRAIN_SURFACE_SCATTER_SCHEMA.md) | DESIGN | First ECS/data breakdown for tree-plus-rock surface scatter lifecycle |
 | [AI/TerrainHeightMaps/TERRAIN_TREE_PLACEMENT_SPEC.md](AI/TerrainHeightMaps/TERRAIN_TREE_PLACEMENT_SPEC.md) | DESIGN | Tree-specific placement behavior within the broader surface scatter layer |
 | [AI/TERRAIN_EDIT_PLAYER_SAFETY_LOCAL_GRID_SPEC.md](AI/TERRAIN_EDIT_PLAYER_SAFETY_LOCAL_GRID_SPEC.md) | PROPOSED | Player-overlap edit guard + deterministic chunk-local grid guarantees |
+| [AI/TERRAIN_BINARY_EDIT_LAYER_SPEC.md](AI/TERRAIN_BINARY_EDIT_LAYER_SPEC.md) | PROPOSED | Binary voxel edit layer: hard-edged boxy edits via separate mask + face extraction, no SDF density rebuild, additive to existing SDF pipeline. |
 | [AI/PLAYER_PIT_MUDINESS_HYPOTHESIS_TEST_PLAN.md](AI/PLAYER_PIT_MUDINESS_HYPOTHESIS_TEST_PLAN.md) | ACTIVE | Test-first hypothesis matrix for pit-wall mudiness root-cause validation |
 | [AI/THIRD_PARTY_ASSET_EVALUATION_PLAYBOOK.md](AI/THIRD_PARTY_ASSET_EVALUATION_PLAYBOOK.md) | ACTIVE | Asset pre-screen, sandbox validation, and fit scoring workflow for third-party content |
 | [AI/MULTIPLAYER_SPEC.md](AI/MULTIPLAYER_SPEC.md) | DESIGN | Multiplayer readiness: Pre-MVP hygiene, MVP command architecture, Post-MVP arena PvP path. Supersedes multiplayer_evaluation_spec.md |

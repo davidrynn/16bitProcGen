@@ -112,3 +112,8 @@ _Items noticed during work that deserve follow-up but aren't urgent._
 - More ideas for structures - towers, one semi-invisible or mirror or both. Other structures are just odd pulsing disturbances in view but nothing there. Underground mine.
 
 - A big idea is indication of something of interest. How to do this without being too obvious but giving an idea. And at the same time not being annoying, having to make player go through an entire rig-a-ma-roll just to get a map or something. I think LoZ did something with wind, or a slight flame in the correct direction, or bell sounds.  Are can be case by case - sounds of deep rushing air coming from an underground mine for example. but how to indicate that more closely? Maybe resource indicator? For large object that's obvious. Difficult because some of the joy is the searching, like in minecraft you just have to dig, there's no way around it, and sometimes it works and sometimes it doesn't.
+
+- How to make progression feel worthwhile. Games that fail: Conan exiles, LOTR Moria. Games that succeed: Minecraft, Planet Crafters. Make it off planet? Get to the core?
+
+- How silly is the game? Should guy put him in bunny suit?
+
