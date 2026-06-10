@@ -58,7 +58,10 @@ namespace DOTS.Player.Systems
                 // Gate on IsGrounded rather than Mode == Grounded. PlayerGroundingSystem keeps
                 // Mode = Ballistic while speed > 2 m/s even after ground contact, so checking Mode
                 // would silently block charging for several seconds after landing at high speed.
-                bool canCharge = movementState.ValueRO.IsGrounded ||
+                // Landing recovery suppresses starting a new charge but not continuing one already
+                // in progress (SlingshotCharging mode is already past the start gate).
+                bool inLandingRecovery = movementState.ValueRO.LandingRecoveryTime > 0f;
+                bool canCharge = (movementState.ValueRO.IsGrounded && !inLandingRecovery) ||
                                  mode == PlayerMovementMode.SlingshotCharging;
                 bool slingshotHeld = input.ValueRO.SlingshotHeld;
 

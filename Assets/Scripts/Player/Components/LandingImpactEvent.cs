@@ -11,5 +11,6 @@ namespace DOTS.Player.Components
     {
         public float VerticalSpeed;     // abs(velocity.y) at impact
         public float HorizontalSpeed;   // horizontal speed at impact
+        public float GroundContactY;    // world-Y of entity position on the contact frame; used by PlayerVisualSync floor clamp
     }
 }

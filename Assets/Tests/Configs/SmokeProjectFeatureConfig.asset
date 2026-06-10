@@ -1,0 +1,48 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2af171b8878b81e4e8e58c8be280cdf6, type: 3}
+  m_Name: SmokeProjectFeatureConfig
+  m_EditorClassIdentifier: DOTS.Core.Authoring::ProjectFeatureConfig
+  TerrainRenderDistancePreset: 1
+  EnablePlayerSystem: 1
+  EnableTerrainSystem: 1
+  EnableDungeonSystem: 0
+  EnableWeatherSystem: 0
+  EnableRenderingSystem: 1
+  EnableTestSystems: 1
+  EnablePlayerBootstrapFixedRateInstaller: 1
+  EnablePlayerEntityBootstrap: 1
+  EnablePlayerEntityBootstrapPureEcs: 0
+  EnablePlayerInputSystem: 1
+  EnablePlayerLookSystem: 1
+  EnablePlayerMovementSystem: 1
+  EnablePlayerGroundingSystem: 1
+  EnablePlayerCameraSystem: 1
+  EnablePlayerCinemachineCameraSystem: 0
+  EnableCameraFollowSystem: 1
+  EnableSimplePlayerMovementSystem: 0
+  EnableHybridTerrainGenerationSystem: 1
+  EnableTerrainCleanupSystem: 1
+  EnableChunkProcessor: 1
+  EnableTerrainModificationSystem: 1
+  EnableTerrainGlobPhysicsSystem: 1
+  EnableTerrainChunkDensitySamplingSystem: 1
+  EnableTerrainEditInputSystem: 0
+  EnableTerrainChunkStreamingSystem: 1
+  TerrainStreamingRadiusInChunks: 2
+  EnableTerrainChunkMeshBuildSystem: 1
+  EnableTerrainChunkRenderPrepSystem: 1
+  EnableTerrainChunkMeshUploadSystem: 1
+  EnableTerrainChunkColliderBuildSystem: 1
+  EnableTerrainColliderSettingsBootstrapSystem: 1
+  EnableDungeonRenderingSystem: 0
+  EnableHybridWeatherSystem: 0

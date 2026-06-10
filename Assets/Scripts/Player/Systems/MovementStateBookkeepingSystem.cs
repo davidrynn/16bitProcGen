@@ -24,10 +24,13 @@ namespace DOTS.Player.Systems
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
+            float deltaTime = SystemAPI.Time.DeltaTime;
             foreach (var (movementState, velocity) in
                      SystemAPI.Query<RefRW<PlayerMovementState>, RefRO<PhysicsVelocity>>())
             {
                 movementState.ValueRW.Velocity = velocity.ValueRO.Linear;
+                movementState.ValueRW.LandingRecoveryTime =
+                    math.max(0f, movementState.ValueRO.LandingRecoveryTime - deltaTime);
             }
 
             // Reset CameraEffectState and ScreenEffectState to clean defaults so each feedback

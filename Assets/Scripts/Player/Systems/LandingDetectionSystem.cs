@@ -1,18 +1,20 @@
 using Unity.Burst;
 using Unity.Entities;
 using Unity.Mathematics;
+using Unity.Transforms;
 using DOTS.Player.Components;
 
 namespace DOTS.Player.Systems
 {
     /// <summary>
-    /// Detects the frame a player transitions from airborne to grounded and fires
-    /// a one-frame LandingImpactEvent with speed data. The event is disabled the next frame.
+    /// Detects the frame a player transitions from airborne to grounded and fires a one-frame
+    /// LandingImpactEvent with speed and contact-height data. Also writes LandingRecoveryTime
+    /// and LandingRecoveryDuration to PlayerMovementState for input gating and animation blending.
     /// </summary>
     /// <remarks>
-    /// Uses the previous frame's Mode (tracked internally) vs current Mode to detect transitions.
-    /// Reads velocity from PlayerMovementState.Velocity (cached by MovementStateBookkeepingSystem)
-    /// so this system does not require PhysicsVelocity access.
+    /// Fires on the IsGrounded edge (false → true) rather than the Mode edge. The Mode edge
+    /// lagged by several frames on high-speed slingshot landings because PlayerGroundingSystem
+    /// holds Mode = Ballistic while speed is above 2 m/s, even after ground contact.
     /// </remarks>
     [DisableAutoCreation]
     [BurstCompile]
@@ -20,18 +22,14 @@ namespace DOTS.Player.Systems
     [UpdateAfter(typeof(MovementStateBookkeepingSystem))]
     public partial struct LandingDetectionSystem : ISystem
     {
-        /// <summary>
-        /// Stored per-entity previous mode. Since we only have one player,
-        /// a single field suffices. If multiple players are needed, use a component.
-        /// </summary>
-        private PlayerMovementMode _previousMode;
+        private bool _previousIsGrounded;
         private float3 _previousVelocity;
         private bool _eventWasFiredLastFrame;
 
         public void OnCreate(ref SystemState state)
         {
             state.RequireForUpdate<PlayerMovementState>();
-            _previousMode = PlayerMovementMode.Grounded;
+            _previousIsGrounded = true;
             _previousVelocity = float3.zero;
             _eventWasFiredLastFrame = false;
         }
@@ -39,34 +37,38 @@ namespace DOTS.Player.Systems
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
-            foreach (var (movementState, entity) in
-                     SystemAPI.Query<RefRO<PlayerMovementState>>().WithEntityAccess())
+            foreach (var (movementState, transform, entity) in
+                     SystemAPI.Query<RefRW<PlayerMovementState>, RefRO<LocalTransform>>().WithEntityAccess())
             {
                 bool hasEvent = SystemAPI.HasComponent<LandingImpactEvent>(entity);
 
-                // Disable the event if it was fired last frame (one-frame event)
+                // Disable the one-frame event from the previous frame.
                 if (_eventWasFiredLastFrame && hasEvent)
                 {
                     SystemAPI.SetComponentEnabled<LandingImpactEvent>(entity, false);
                     _eventWasFiredLastFrame = false;
                 }
 
-                var currentMode = movementState.ValueRO.Mode;
-                bool wasAirborne = IsAirborne(_previousMode);
-                bool isGrounded = currentMode == PlayerMovementMode.Grounded;
+                bool currentIsGrounded = movementState.ValueRO.IsGrounded;
 
-                if (wasAirborne && isGrounded)
+                if (!_previousIsGrounded && currentIsGrounded)
                 {
-                    // Landing transition detected — use previous frame's velocity
-                    float verticalSpeed = math.abs(_previousVelocity.y);
+                    float verticalSpeed   = math.abs(_previousVelocity.y);
                     float horizontalSpeed = math.length(new float2(_previousVelocity.x, _previousVelocity.z));
+                    float groundContactY  = transform.ValueRO.Position.y;
+
+                    // LandingRecoveryTime/Duration and LandingIsSlide are written by
+                    // PlayerGroundingSystem in PhysicsSystemGroup so input gating applies on
+                    // the same physics tick as touchdown. This system only fires the
+                    // LandingImpactEvent for camera and VFX consumers in SimulationSystemGroup.
 
                     if (hasEvent)
                     {
                         SystemAPI.SetComponent(entity, new LandingImpactEvent
                         {
-                            VerticalSpeed = verticalSpeed,
-                            HorizontalSpeed = horizontalSpeed
+                            VerticalSpeed   = verticalSpeed,
+                            HorizontalSpeed = horizontalSpeed,
+                            GroundContactY  = groundContactY
                         });
                         SystemAPI.SetComponentEnabled<LandingImpactEvent>(entity, true);
                     }
@@ -74,14 +76,9 @@ namespace DOTS.Player.Systems
                     _eventWasFiredLastFrame = true;
                 }
 
-                _previousMode = currentMode;
-                _previousVelocity = movementState.ValueRO.Velocity;
+                _previousIsGrounded = currentIsGrounded;
+                _previousVelocity   = movementState.ValueRO.Velocity;
             }
-        }
-
-        private static bool IsAirborne(PlayerMovementMode mode)
-        {
-            return mode != PlayerMovementMode.Grounded && mode != PlayerMovementMode.SlingshotCharging;
         }
     }
 }

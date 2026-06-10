@@ -177,6 +177,12 @@ namespace DOTS.Player.Systems
                 else
                 {
                     movementState.ValueRW.FallTime += deltaTime;
+
+                    // Promote Grounded → Ballistic on first frame of free fall so the
+                    // animator bridge sees the correct mode and triggers the fall clip.
+                    // Other airborne modes (Ballistic, Gliding, etc.) own their own transitions.
+                    if (movementState.ValueRO.Mode == PlayerMovementMode.Grounded)
+                        movementState.ValueRW.Mode = PlayerMovementMode.Ballistic;
                 }
             }
         }

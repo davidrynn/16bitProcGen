@@ -1,0 +1,24 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 571ff308732cf8547ba8450f3496741a, type: 3}
+  m_Name: Dungeon
+  m_EditorClassIdentifier: DOTS.Terrain::DOTS.Structures.StructureFamilyRuleset
+  Family: 0
+  MinSpacing: 400
+  MaxSpacing: 900
+  CandidatesPerCell: 1
+  MinSlopeNormalY: 0.8
+  MinElevation: 5
+  MaxElevation: 150
+  FootprintExtents: {x: 25, y: 15, z: 25}
+  DefaultTemplateId: Dungeon_WFC
+  RealizationScale: 1

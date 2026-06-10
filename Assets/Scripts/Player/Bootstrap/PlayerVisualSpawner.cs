@@ -25,6 +25,9 @@ namespace DOTS.Player.Bootstrap
         [Tooltip("Animator Controller to drive character animations. Build via Tools > Player > Build Animator Controller.")]
         [SerializeField] private RuntimeAnimatorController animatorController;
 
+        [Tooltip("When enabled, the runtime animator bridge logs parameter writes, trigger dispatches, and state transitions.")]
+        [SerializeField] private bool enableAnimatorDebugLogging;
+
         private IEnumerator Start()
         {
             // PlayerEntityBootstrap runs in InitializationSystemGroup on the first ECS update,
@@ -113,6 +116,7 @@ namespace DOTS.Player.Bootstrap
                     bridge.TargetEntity = playerEntity;
                     bridge.CharacterAnimator = animator;
                     bridge.RunSpeed = runSpeed;
+                    bridge.EnableDebugLogging = enableAnimatorDebugLogging;
                 }
                 else
                 {

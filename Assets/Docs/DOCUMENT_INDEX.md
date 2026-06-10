@@ -14,6 +14,7 @@ Quick-reference index of all project documentation. Docs are organized by catego
 |----------|--------|-------------|
 | [KNOWN_ISSUES.md](KNOWN_ISSUES.md) | ACTIVE | Master bug/issue tracker |
 | [AI/PLAYER_CHARACTER_VISUAL_SWAP_SPEC.md](AI/PLAYER_CHARACTER_VISUAL_SWAP_SPEC.md) | PROPOSED | Synty SM_Chr_Male_01 + Kevin Iglesias animations — capsule visual swap, Animator bridge, per-state clip mapping |
+| [AI/PLAYER_LANDING_ANIMATION_SPEC.md](AI/PLAYER_LANDING_ANIMATION_SPEC.md) | PROPOSED | Tiered landing animations (light/hard/slide) + visual floor clamp to fix slingshot terrain clipping |
 | [AI/TERRAIN_ECS_NEXT_STEPS_SPEC.md](AI/TERRAIN_ECS_NEXT_STEPS_SPEC.md) | ACTIVE | SDF + Surface Nets terrain implementation roadmap |
 | [AI/UNDERGROUND_VERTICAL_STREAMING_SPEC.md](AI/UNDERGROUND_VERTICAL_STREAMING_SPEC.md) | DESIGN | Vertical chunk streaming for underground caves, tunnels, and dungeons — tiered Level 1–3 roadmap |
 | [AI/TerrainHeightMaps/TERRAIN_PLAINS_TREES_MVP_CHECKLIST.md](AI/TerrainHeightMaps/TERRAIN_PLAINS_TREES_MVP_CHECKLIST.md) | PHASE C IN PROGRESS | Phase A ✅ Phase B ✅ Phase C (visual) 🔄 — all systems implemented, awaiting Play Mode visual confirmation |

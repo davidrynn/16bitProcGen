@@ -23,6 +23,8 @@ namespace DOTS.Player.Bootstrap
         [SerializeField] private GameObject characterPrefab;
         [Tooltip("Matches PlayerMovementConfig.GroundSpeed — used to normalize the Speed animator parameter.")]
         [SerializeField] private float runSpeed = 10f;
+        [Tooltip("When enabled, the runtime animator bridge logs parameter writes, trigger dispatches, and state transitions.")]
+        [SerializeField] private bool enableAnimatorDebugLogging;
         [SerializeField] private bool createPlayerVisuals = true;
 
         [Header("Ground Plane")]
@@ -163,6 +165,7 @@ namespace DOTS.Player.Bootstrap
                     bridge.TargetEntity = playerEntity;
                     bridge.CharacterAnimator = animator;
                     bridge.RunSpeed = runSpeed;
+                    bridge.EnableDebugLogging = enableAnimatorDebugLogging;
                 }
                 else
                 {

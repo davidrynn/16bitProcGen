@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="utf-8"?>
+<test-run id="2" testcasecount="11" result="Passed" total="11" passed="11" failed="0" inconclusive="0" skipped="0" asserts="0" engine-version="3.5.0.0" clr-version="4.0.30319.42000" start-time="2026-04-12 05:05:44Z" end-time="2026-04-12 05:05:44Z" duration="0.2644483">
+  <test-suite type="TestSuite" id="1000" name="16bitProcGen" fullname="16bitProcGen" runstate="Runnable" testcasecount="170" result="Passed" start-time="2026-04-12 05:05:44Z" end-time="2026-04-12 05:05:44Z" duration="0.264448" total="11" passed="11" failed="0" inconclusive="0" skipped="0" asserts="0">
+    <properties>
+      <property name="platform" value="EditMode" />
+    </properties>
+    <test-suite type="Assembly" id="1202" name="DOTS.Terrain.EditModeTests.dll" fullname="C:/UnityWorkspace/16bitProcGen/Library/ScriptAssemblies/DOTS.Terrain.EditModeTests.dll" runstate="Runnable" testcasecount="170" result="Passed" start-time="2026-04-12 05:05:44Z" end-time="2026-04-12 05:05:44Z" duration="0.256181" total="11" passed="11" failed="0" inconclusive="0" skipped="0" asserts="0">
+      <properties>
+        <property name="_PID" value="16940" />
+        <property name="_APPDOMAIN" value="Unity Child Domain" />
+        <property name="platform" value="EditMode" />
+        <property name="EditorOnly" value="True" />
+      </properties>
+      <test-suite type="TestSuite" id="1203" name="DOTS" fullname="DOTS" runstate="Runnable" testcasecount="170" result="Passed" start-time="2026-04-12 05:05:44Z" end-time="2026-04-12 05:05:44Z" duration="0.254264" total="11" passed="11" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-suite type="TestSuite" id="1204" name="Terrain" fullname="DOTS.Terrain" runstate="Runnable" testcasecount="170" result="Passed" start-time="2026-04-12 05:05:44Z" end-time="2026-04-12 05:05:44Z" duration="0.252523" total="11" passed="11" failed="0" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <test-suite type="TestSuite" id="1205" name="Tests" fullname="DOTS.Terrain.Tests" runstate="Runnable" testcasecount="170" result="Passed" start-time="2026-04-12 05:05:44Z" end-time="2026-04-12 05:05:44Z" duration="0.250738" total="11" passed="11" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-suite type="TestFixture" id="1057" name="RockChunkRenderSystemBoundsTests" fullname="DOTS.Terrain.Tests.RockChunkRenderSystemBoundsTests" classname="DOTS.Terrain.Tests.RockChunkRenderSystemBoundsTests" runstate="Runnable" testcasecount="4" result="Passed" start-time="2026-04-12 05:05:44Z" end-time="2026-04-12 05:05:44Z" duration="0.033136" total="4" passed="4" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <test-case id="1059" name="TryBuildWorldBounds_EmptyInput_ReturnsFalse" fullname="DOTS.Terrain.Tests.RockChunkRenderSystemBoundsTests.TryBuildWorldBounds_EmptyInput_ReturnsFalse" methodname="TryBuildWorldBounds_EmptyInput_ReturnsFalse" classname="DOTS.Terrain.Tests.SurfaceScatterRenderSystemContractTestsBase`1" runstate="Runnable" seed="1501659257" result="Passed" start-time="2026-04-12 05:05:44Z" end-time="2026-04-12 05:05:44Z" duration="0.009528" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1060" name="TryBuildWorldBounds_RotatedInstance_UsesRotationAwareExtents" fullname="DOTS.Terrain.Tests.RockChunkRenderSystemBoundsTests.TryBuildWorldBounds_RotatedInstance_UsesRotationAwareExtents" methodname="TryBuildWorldBounds_RotatedInstance_UsesRotationAwareExtents" classname="DOTS.Terrain.Tests.SurfaceScatterRenderSystemContractTestsBase`1" runstate="Runnable" seed="1678038675" result="Passed" start-time="2026-04-12 05:05:44Z" end-time="2026-04-12 05:05:44Z" duration="0.004707" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1058" name="TryBuildWorldBounds_UsesInstancePositions_NotWorldOrigin" fullname="DOTS.Terrain.Tests.RockChunkRenderSystemBoundsTests.TryBuildWorldBounds_UsesInstancePositions_NotWorldOrigin" methodname="TryBuildWorldBounds_UsesInstancePositions_NotWorldOrigin" classname="DOTS.Terrain.Tests.SurfaceScatterRenderSystemContractTestsBase`1" runstate="Runnable" seed="1122838677" result="Passed" start-time="2026-04-12 05:05:44Z" end-time="2026-04-12 05:05:44Z" duration="0.003594" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1061" name="TryPrepareSubmissionFrame_InvalidConfig_ClearsPreviouslyQueuedPendingState" fullname="DOTS.Terrain.Tests.RockChunkRenderSystemBoundsTests.TryPrepareSubmissionFrame_InvalidConfig_ClearsPreviouslyQueuedPendingState" methodname="TryPrepareSubmissionFrame_InvalidConfig_ClearsPreviouslyQueuedPendingState" classname="DOTS.Terrain.Tests.SurfaceScatterRenderSystemContractTestsBase`1" runstate="Runnable" seed="623906659" result="Passed" start-time="2026-04-12 05:05:44Z" end-time="2026-04-12 05:05:44Z" duration="0.003127" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+            </test-suite>
+            <test-suite type="TestFixture" id="1105" name="SurfaceScatterRenderConfigBootstrapUtilityTests" fullname="DOTS.Terrain.Tests.SurfaceScatterRenderConfigBootstrapUtilityTests" classname="DOTS.Terrain.Tests.SurfaceScatterRenderConfigBootstrapUtilityTests" runstate="Runnable" testcasecount="3" result="Passed" start-time="2026-04-12 05:05:44Z" end-time="2026-04-12 05:05:44Z" duration="0.205269" total="3" passed="3" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <test-case id="1106" name="SetOrCreateManagedSingleton_CreatesConfig_WhenMissing" fullname="DOTS.Terrain.Tests.SurfaceScatterRenderConfigBootstrapUtilityTests.SetOrCreateManagedSingleton_CreatesConfig_WhenMissing" methodname="SetOrCreateManagedSingleton_CreatesConfig_WhenMissing" classname="DOTS.Terrain.Tests.SurfaceScatterRenderConfigBootstrapUtilityTests" runstate="Runnable" seed="1073031531" result="Passed" start-time="2026-04-12 05:05:44Z" end-time="2026-04-12 05:05:44Z" duration="0.199006" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1108" name="SetOrCreateManagedSingleton_RemovesDuplicates_KeepingSingleUpdatedConfig" fullname="DOTS.Terrain.Tests.SurfaceScatterRenderConfigBootstrapUtilityTests.SetOrCreateManagedSingleton_RemovesDuplicates_KeepingSingleUpdatedConfig" methodname="SetOrCreateManagedSingleton_RemovesDuplicates_KeepingSingleUpdatedConfig" classname="DOTS.Terrain.Tests.SurfaceScatterRenderConfigBootstrapUtilityTests" runstate="Runnable" seed="1834593243" result="Passed" start-time="2026-04-12 05:05:44Z" end-time="2026-04-12 05:05:44Z" duration="0.004006" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[Removed duplicate DummyRenderConfig singleton components during bootstrap; keeping the first instance.
+]]></output>
+              </test-case>
+              <test-case id="1107" name="SetOrCreateManagedSingleton_UpdatesExistingSingleton_InPlace" fullname="DOTS.Terrain.Tests.SurfaceScatterRenderConfigBootstrapUtilityTests.SetOrCreateManagedSingleton_UpdatesExistingSingleton_InPlace" methodname="SetOrCreateManagedSingleton_UpdatesExistingSingleton_InPlace" classname="DOTS.Terrain.Tests.SurfaceScatterRenderConfigBootstrapUtilityTests" runstate="Runnable" seed="1316652376" result="Passed" start-time="2026-04-12 05:05:44Z" end-time="2026-04-12 05:05:44Z" duration="0.000800" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+            </test-suite>
+            <test-suite type="TestFixture" id="1182" name="TreeChunkRenderSystemBoundsTests" fullname="DOTS.Terrain.Tests.TreeChunkRenderSystemBoundsTests" classname="DOTS.Terrain.Tests.TreeChunkRenderSystemBoundsTests" runstate="Runnable" testcasecount="4" result="Passed" start-time="2026-04-12 05:05:44Z" end-time="2026-04-12 05:05:44Z" duration="0.002420" total="4" passed="4" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <test-case id="1184" name="TryBuildWorldBounds_EmptyInput_ReturnsFalse" fullname="DOTS.Terrain.Tests.TreeChunkRenderSystemBoundsTests.TryBuildWorldBounds_EmptyInput_ReturnsFalse" methodname="TryBuildWorldBounds_EmptyInput_ReturnsFalse" classname="DOTS.Terrain.Tests.SurfaceScatterRenderSystemContractTestsBase`1" runstate="Runnable" seed="718873771" result="Passed" start-time="2026-04-12 05:05:44Z" end-time="2026-04-12 05:05:44Z" duration="0.000655" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1185" name="TryBuildWorldBounds_RotatedInstance_UsesRotationAwareExtents" fullname="DOTS.Terrain.Tests.TreeChunkRenderSystemBoundsTests.TryBuildWorldBounds_RotatedInstance_UsesRotationAwareExtents" methodname="TryBuildWorldBounds_RotatedInstance_UsesRotationAwareExtents" classname="DOTS.Terrain.Tests.SurfaceScatterRenderSystemContractTestsBase`1" runstate="Runnable" seed="863441429" result="Passed" start-time="2026-04-12 05:05:44Z" end-time="2026-04-12 05:05:44Z" duration="0.000077" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1183" name="TryBuildWorldBounds_UsesInstancePositions_NotWorldOrigin" fullname="DOTS.Terrain.Tests.TreeChunkRenderSystemBoundsTests.TryBuildWorldBounds_UsesInstancePositions_NotWorldOrigin" methodname="TryBuildWorldBounds_UsesInstancePositions_NotWorldOrigin" classname="DOTS.Terrain.Tests.SurfaceScatterRenderSystemContractTestsBase`1" runstate="Runnable" seed="1563652518" result="Passed" start-time="2026-04-12 05:05:44Z" end-time="2026-04-12 05:05:44Z" duration="0.000080" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1186" name="TryPrepareSubmissionFrame_InvalidConfig_ClearsPreviouslyQueuedPendingState" fullname="DOTS.Terrain.Tests.TreeChunkRenderSystemBoundsTests.TryPrepareSubmissionFrame_InvalidConfig_ClearsPreviouslyQueuedPendingState" methodname="TryPrepareSubmissionFrame_InvalidConfig_ClearsPreviouslyQueuedPendingState" classname="DOTS.Terrain.Tests.SurfaceScatterRenderSystemContractTestsBase`1" runstate="Runnable" seed="1052922032" result="Passed" start-time="2026-04-12 05:05:44Z" end-time="2026-04-12 05:05:44Z" duration="0.000375" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[<b><color=#2EA3FF>MCP-FOR-UNITY</color></b>: [TestRunnerNoThrottle] Restored Interaction Mode after test run.
+Saving results to: C:/Users/david/AppData/LocalLow/DefaultCompany/16bitProcGen\TestResults.xml
+]]></output>
+              </test-case>
+            </test-suite>
+          </test-suite>
+        </test-suite>
+      </test-suite>
+    </test-suite>
+  </test-suite>
+</test-run>

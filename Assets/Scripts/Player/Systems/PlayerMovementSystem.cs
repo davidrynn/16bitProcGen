@@ -164,7 +164,10 @@ namespace DOTS.Player.Systems
 
                 if (input.ValueRO.JumpPressed)
                 {
-                    if (movementState.ValueRO.IsGrounded)
+                    // Landing recovery suppresses jump until the character has finished the
+                    // landing animation. This prevents instant re-launch from a hard impact.
+                    bool inLandingRecovery = movementState.ValueRO.LandingRecoveryTime > 0f;
+                    if (movementState.ValueRO.IsGrounded && !inLandingRecovery)
                     {
                         // Inject an upward impulse, preserving any existing upward motion if it is already higher.
                         currentVelocity.y = math.max(currentVelocity.y, config.ValueRO.JumpImpulse);

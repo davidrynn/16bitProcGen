@@ -2,6 +2,7 @@ using System.Diagnostics;
 using Unity.Entities;
 using Unity.Transforms;
 using UnityEngine;
+using DOTS.Player.Components;
 
 namespace DOTS.Player.Bootstrap
 {
@@ -16,6 +17,9 @@ namespace DOTS.Player.Bootstrap
         public Entity targetEntity;
         [Tooltip("World-space visual offset from the ECS entity origin. Use Y=1 for feet-origin capsule bodies.")]
         public Vector3 visualOffset = new Vector3(0f, 1f, 0f);
+
+        [Tooltip("Visual is lifted at least this far above the physics contact point on landing frames to prevent mesh clipping during physics penetration resolution.")]
+        [SerializeField] private float _visualFloorOffset = 0.05f;
 
         private EntityManager _entityManager;
         private World _cachedWorld;
@@ -65,6 +69,20 @@ namespace DOTS.Player.Bootstrap
             var worldRotation = new Quaternion(entityTransform.Rotation.value.x, entityTransform.Rotation.value.y, entityTransform.Rotation.value.z, entityTransform.Rotation.value.w);
             var rotatedOffset = worldRotation * visualOffset;
             transform.SetPositionAndRotation(worldPosition + rotatedOffset, worldRotation);
+
+            if (entityManager.HasComponent<PlayerMovementState>(targetEntity))
+            {
+                // On landing frames, clamp visual Y so physics penetration during bounce
+                // resolution never shows the character mesh bisected by the terrain surface.
+                if (entityManager.HasComponent<LandingImpactEvent>(targetEntity) &&
+                    entityManager.IsComponentEnabled<LandingImpactEvent>(targetEntity))
+                {
+                    var evt = entityManager.GetComponentData<LandingImpactEvent>(targetEntity);
+                    var pos = transform.position;
+                    pos.y = Mathf.Max(pos.y, evt.GroundContactY + _visualFloorOffset);
+                    transform.position = pos;
+                }
+            }
 
             var uniformScale = entityTransform.Scale;
             if (!Mathf.Approximately(transform.localScale.x, uniformScale) ||

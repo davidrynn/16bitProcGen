@@ -1,0 +1,93 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2af171b8878b81e4e8e58c8be280cdf6, type: 3}
+  m_Name: ProjectFeatureConfig
+  m_EditorClassIdentifier: DOTS.Core.Authoring::ProjectFeatureConfig
+  TerrainRenderDistancePreset: 2
+  EnablePlayerSystem: 1
+  EnableTerrainSystem: 1
+  EnableDungeonSystem: 0
+  EnableWeatherSystem: 0
+  EnableRenderingSystem: 1
+  EnableTestSystems: 0
+  EnablePlayerBootstrapFixedRateInstaller: 1
+  EnablePlayerEntityBootstrap: 1
+  EnablePlayerEntityBootstrapPureEcs: 0
+  EnablePlayerInputSystem: 1
+  EnablePlayerLookSystem: 1
+  EnablePlayerMovementSystem: 1
+  EnablePlayerGroundingSystem: 1
+  EnablePlayerTerrainSafetySystem: 1
+  EnablePlayerCameraSystem: 0
+  EnablePlayerCinemachineCameraSystem: 0
+  EnableCameraFollowSystem: 0
+  EnableSlingshotChargeSystem: 1
+  EnableSlingshotLaunchSystem: 1
+  EnableChainWindowSystem: 1
+  EnableMovementStateBookkeepingSystem: 1
+  EnableLandingDetectionSystem: 1
+  EnableCameraEffectResolverSystem: 1
+  EnableCameraChargeFeedbackSystem: 1
+  EnableCameraSpeedFeedbackSystem: 1
+  EnableCameraLandingFeedbackSystem: 1
+  EnableCameraGlideFeedbackSystem: 1
+  EnableGlideSystem: 1
+  EnableScreenEffectResolverSystem: 1
+  EnableSimplePlayerMovementSystem: 0
+  EnableHybridTerrainGenerationSystem: 1
+  EnableTerrainCleanupSystem: 1
+  EnableChunkProcessor: 1
+  EnableTerrainModificationSystem: 1
+  EnableTerrainGlobPhysicsSystem: 1
+  EnableTerrainChunkDensitySamplingSystem: 1
+  EnableTerrainEditInputSystem: 1
+  TerrainEditPlacementMode: 1
+  TerrainEditSnapSpace: 1
+  TerrainEditCellFraction: 0.25
+  TerrainEditGlobalSnapAnchor: {x: 0, y: 0, z: 0}
+  TerrainEditCubeDepthCells: 1
+  TerrainEditEnablePlayerOverlapGuard: 0
+  TerrainEditPlayerClearance: 0.15
+  TerrainEditLockChunkLocalSnap: 0
+  EnableTerrainChunkStreamingSystem: 1
+  EnableTerrainChunkMeshBuildSystem: 1
+  EnableTerrainChunkRenderPrepSystem: 1
+  EnableTerrainChunkMeshUploadSystem: 1
+  EnableTerrainChunkColliderBuildSystem: 1
+  EnableTerrainColliderSettingsBootstrapSystem: 1
+  EnableTerrainLodSelectionSystem: 1
+  EnableTerrainLodApplySystem: 1
+  EnableTreePlacementSystem: 1
+  EnableTreeRenderSystem: 1
+  EnableRockPlacementSystem: 1
+  EnableRockRenderSystem: 1
+  EnableTerrainSeamValidatorSystem: 0
+  EnableTerrainMeshSeamValidatorSystem: 0
+  EnableTerrainMeshBorderDebugSystem: 0
+  EnablePlayerFallThroughDiagnosticSystem: 0
+  EnableTerrainColliderTimingSystem: 0
+  EnableGroundPlaneImpostor: 1
+  EnableSkyDropSpawn: 0
+  SkyDropSpawnHeight: 400
+  SkyDropGravityHoldSeconds: 8
+  EnableStructurePlacementSystem: 1
+  EnableRelicRealizationSystem: 1
+  EnableRelicLodSelectionSystem: 1
+  EnableDungeonRenderingSystem: 0
+  EnableHybridWeatherSystem: 0
+  VistaCameraFarClip: 600
+  EnableDistanceFog: 1
+  FogMode: 3
+  FogColor: {r: 0.56, g: 0.66, b: 0.75, a: 1}
+  FogDensity: 0.005
+  FogStartRatio: 0.14
+  FogEndRatio: 0.308
