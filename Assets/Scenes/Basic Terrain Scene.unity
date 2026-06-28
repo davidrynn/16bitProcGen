@@ -165,6 +165,14 @@ MonoBehaviour:
     impostorMesh: {fileID: 0}
     impostorMaterial: {fileID: 0}
     impostorScale: 30
+  - templateId: stone_outcrop
+    mesh: {fileID: -4804188280682736287, guid: c01f9324f8658d24fb1f51911a35a6b4, type: 3}
+    material: {fileID: 2100000, guid: 253b677f6571a984189bdc09e54ce177, type: 2}
+    scale: 1
+    yOffset: -5
+    impostorMesh: {fileID: 0}
+    impostorMaterial: {fileID: 0}
+    impostorScale: 30
   lodSwapDistance: 1000
   lodHysteresis: 0
 --- !u!4 &116130347
@@ -417,11 +425,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c7532df3f7443104d8550b59b69197db, type: 3}
   m_Name: 
   m_EditorClassIdentifier: DOTS.Player.Bootstrap::DOTS.Player.Bootstrap.PlayerVisualSpawner
-  characterPrefab: {fileID: 919132149155446097, guid: 2216da9c942218a4da66bcea3401b70f, type: 3}
+  characterPrefab: {fileID: 919132149155446097, guid: e1eebba8da0215847bb4df6cd5dea758, type: 3}
   runSpeed: 10
   characterRotationOffset: {x: 0, y: 0, z: 0}
   animatorController: {fileID: 9100000, guid: 2ce74787eaa3020488ce9b3e6c8768b6, type: 2}
-  enableAnimatorDebugLogging: 0
+  enableAnimatorDebugLogging: 1
 --- !u!1 &769482723
 GameObject:
   m_ObjectHideFlags: 0
@@ -451,13 +459,15 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 553fd2891038e8f428aa05c4ff877705, type: 3}
   m_Name: 
   m_EditorClassIdentifier: DOTS.Terrain::DOTS.Terrain.Trees.TreeVisualBootstrap
+  featureEnabled: 1
   treeMeshVariants:
-  - {fileID: -2763038995239707894, guid: a72ca66bf87bcd34db41af5038c18f49, type: 3}
-  - {fileID: 4740938080591924505, guid: e2e60a97507aac14a8f616d5f5076d94, type: 3}
-  - {fileID: 5547058260946125495, guid: c8d19469054ca2045afbdcd3bf307ba1, type: 3}
+  - {fileID: -3954977221551236702, guid: 90120975a58c1dd4297f73505a5f227b, type: 3}
   treeMesh: {fileID: 10208, guid: 0000000000000000e000000000000000, type: 0}
   treeMaterial: {fileID: 2100000, guid: 2a95f9ff80948c643a57b9e94a98eb3f, type: 2}
   treeScale: 1
+  treeLodMeshVariants:
+  - {fileID: 0}
+  treeLodSwapDistance: 0
 --- !u!4 &769482725
 Transform:
   m_ObjectHideFlags: 0
@@ -735,6 +745,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1976500102}
   - component: {fileID: 1976500101}
+  - component: {fileID: 1976500103}
   m_Layer: 0
   m_Name: RockVisualBootstrap
   m_TagString: Untagged
@@ -754,16 +765,19 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3adaa84b8ec2482ca03677ab0237dd85, type: 3}
   m_Name: 
   m_EditorClassIdentifier: DOTS.Terrain::DOTS.Terrain.Rocks.RockVisualBootstrap
+  featureEnabled: 1
   rockMeshVariants:
-  - {fileID: -498289647395715129, guid: edb485689282d364aac3d3ab935406c7, type: 3}
-  - {fileID: 2474330172864793191, guid: 4ed96cc9ba2a79f4e9dfd39cfa0bcf9c, type: 3}
-  - {fileID: -3237569059301971343, guid: 693f4be257e206e4aaa7513672d4a19b, type: 3}
-  - {fileID: 7813778543297892209, guid: 99a1d4493dc20ea43a51561c33721535, type: 3}
-  - {fileID: 4440882382793424988, guid: fbac42a6223f54646a9e7d95be0db2f1, type: 3}
-  - {fileID: -4106602636705394821, guid: 3c57b5d93072ee1448c2fd6fa88086f0, type: 3}
+  - {fileID: -6345869575742490316, guid: 21af017136d9d62479fa90fa0ea02f6a, type: 3}
+  - {fileID: 4882680859622051250, guid: 21af017136d9d62479fa90fa0ea02f6a, type: 3}
+  - {fileID: 8506796916958765556, guid: 21af017136d9d62479fa90fa0ea02f6a, type: 3}
   rockMesh: {fileID: 10208, guid: 0000000000000000e000000000000000, type: 0}
-  rockMaterial: {fileID: 2100000, guid: 2a95f9ff80948c643a57b9e94a98eb3f, type: 2}
+  rockMaterial: {fileID: 4629909962477906845, guid: 21af017136d9d62479fa90fa0ea02f6a, type: 3}
   rockScale: 1
+  rockLodMeshVariants:
+  - {fileID: 7187442154164557769, guid: 21af017136d9d62479fa90fa0ea02f6a, type: 3}
+  - {fileID: -8045992387848245354, guid: 21af017136d9d62479fa90fa0ea02f6a, type: 3}
+  - {fileID: -8805215328190312368, guid: 21af017136d9d62479fa90fa0ea02f6a, type: 3}
+  rockLodSwapDistance: 60
 --- !u!4 &1976500102
 Transform:
   m_ObjectHideFlags: 0
@@ -779,6 +793,37 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1976500103
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1976500100}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ce1e44e8780f9fb49b0f9e47e2946b0e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: DOTS.Terrain::DOTS.Terrain.Pebbles.PebbleVisualBootstrap
+  featureEnabled: 1
+  pebbleMeshVariants:
+  - {fileID: -6657928952025510006, guid: 5b5298a0d52d20a4c8369ce4204ee171, type: 3}
+  - {fileID: -5327521306051403954, guid: 5b5298a0d52d20a4c8369ce4204ee171, type: 3}
+  - {fileID: 1926966568750058069, guid: 5b5298a0d52d20a4c8369ce4204ee171, type: 3}
+  pebbleMaterial: {fileID: 4629909962477906845, guid: 5b5298a0d52d20a4c8369ce4204ee171, type: 3}
+  pebbleScale: 1
+  pebbleLodMeshVariants:
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  pebbleLodSwapDistance: 0
+  zoneNoiseFrequency: 0.012
+  zoneThreshold: 0.55
+  inZoneProbability: 0.421
+  minSpacing: 3
+  minGroundNormalY: 0.7
+  minUniformScale: 0.8
+  maxUniformScale: 1.3
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0

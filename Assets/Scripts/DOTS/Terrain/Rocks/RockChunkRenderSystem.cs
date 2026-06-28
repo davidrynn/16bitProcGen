@@ -21,6 +21,10 @@ namespace DOTS.Terrain.Rocks
         private const int CulledScatterLod = 3;
         private const int MaxRockVariants = 8;
 
+        // Bucket layout: near meshes [0..MaxRockVariants-1], far-LOD meshes
+        // [MaxRockVariants..TotalMeshBuckets-1]. See SURFACE_SCATTER_LOD_SPEC.md.
+        private const int TotalMeshBuckets = MaxRockVariants * SurfaceScatterLodUtility.LodLevelCount;
+
         private static readonly int BaseColorId = Shader.PropertyToID("_BaseColor");
         private static readonly int CutoffId = Shader.PropertyToID("_Cutoff");
         private const string ErrorShaderName = "Hidden/InternalErrorShader";
@@ -28,9 +32,9 @@ namespace DOTS.Terrain.Rocks
         private static readonly Bounds TinyBounds = new Bounds(Vector3.zero, Vector3.one * 0.01f);
 
         private static readonly Matrix4x4[] InstanceBuffer = new Matrix4x4[1023];
-        private static readonly List<Matrix4x4>[] PendingMatricesByVariant = CreateMatrixBuckets(MaxRockVariants);
-        private static readonly Mesh[] PendingMeshesByVariant = new Mesh[MaxRockVariants];
-        private static readonly Bounds[] PendingWorldBoundsByVariant = new Bounds[MaxRockVariants];
+        private static readonly List<Matrix4x4>[] PendingMatricesByVariant = CreateMatrixBuckets(TotalMeshBuckets);
+        private static readonly Mesh[] PendingMeshesByVariant = new Mesh[TotalMeshBuckets];
+        private static readonly Bounds[] PendingWorldBoundsByVariant = new Bounds[TotalMeshBuckets];
         private static Material _pendingMaterial;
         private static Material _runtimeFallbackMaterial;
         private static int _pendingVariantCount;
@@ -70,10 +74,11 @@ namespace DOTS.Terrain.Rocks
                 return;
             }
 
-            for (int variantIndex = 0; variantIndex < _pendingVariantCount; variantIndex++)
+            // Iterate every bucket (near + far blocks); empties are skipped below.
+            for (int bucketIndex = 0; bucketIndex < TotalMeshBuckets; bucketIndex++)
             {
-                var mesh = PendingMeshesByVariant[variantIndex];
-                var matrices = PendingMatricesByVariant[variantIndex];
+                var mesh = PendingMeshesByVariant[bucketIndex];
+                var matrices = PendingMatricesByVariant[bucketIndex];
                 if (mesh == null || matrices.Count == 0)
                 {
                     continue;
@@ -81,7 +86,7 @@ namespace DOTS.Terrain.Rocks
 
                 var rp = new RenderParams(_pendingMaterial)
                 {
-                    worldBounds = PendingWorldBoundsByVariant[variantIndex],
+                    worldBounds = PendingWorldBoundsByVariant[bucketIndex],
                 };
 
                 int remaining = matrices.Count;
@@ -233,6 +238,10 @@ namespace DOTS.Terrain.Rocks
                     }
 
                     PendingMeshesByVariant[variantCount] = mesh;
+                    // Far mesh is looked up by SOURCE index i (not the compacted slot) so a
+                    // null near entry cannot misalign the near/far pairing.
+                    PendingMeshesByVariant[variantCount + MaxRockVariants] =
+                        GetLodMeshForSourceIndex(config.LodMeshVariants, i);
                     variantCount++;
                 }
             }
@@ -240,10 +249,22 @@ namespace DOTS.Terrain.Rocks
             if (variantCount == 0 && config.Mesh != null)
             {
                 PendingMeshesByVariant[0] = config.Mesh;
+                PendingMeshesByVariant[MaxRockVariants] =
+                    GetLodMeshForSourceIndex(config.LodMeshVariants, 0);
                 variantCount = 1;
             }
 
             return variantCount;
+        }
+
+        private static Mesh GetLodMeshForSourceIndex(Mesh[] lodMeshVariants, int sourceIndex)
+        {
+            if (lodMeshVariants == null || sourceIndex >= lodMeshVariants.Length)
+            {
+                return null;
+            }
+
+            return lodMeshVariants[sourceIndex];
         }
 
         /// <summary>
@@ -269,7 +290,7 @@ namespace DOTS.Terrain.Rocks
                 return false;
             }
 
-            for (int i = 0; i < _pendingVariantCount; i++)
+            for (int i = 0; i < TotalMeshBuckets; i++)
             {
                 if (PendingMeshesByVariant[i] != null && PendingMatricesByVariant[i].Count > 0)
                 {
@@ -280,10 +301,19 @@ namespace DOTS.Terrain.Rocks
             return false;
         }
 
+        /// <summary>
+        /// Test-only hook to inspect which mesh is registered for a (variant, lodLevel) bucket.
+        /// </summary>
+        public static Mesh GetPendingMeshForTests(int variantIndex, int lodLevel)
+        {
+            return PendingMeshesByVariant[
+                SurfaceScatterLodUtility.GetBucketIndex(variantIndex, lodLevel, MaxRockVariants)];
+        }
+
         private static void ResetPendingVariantState()
         {
             _pendingVariantCount = 0;
-            for (int i = 0; i < MaxRockVariants; i++)
+            for (int i = 0; i < TotalMeshBuckets; i++)
             {
                 PendingMeshesByVariant[i] = null;
                 PendingMatricesByVariant[i].Clear();
@@ -312,6 +342,15 @@ namespace DOTS.Terrain.Rocks
 
             int variantCount = _pendingVariantCount;
 
+            // LOD buckets are selected once per frame against Camera.main, not per rendering camera.
+            // This is correct for the single gameplay camera (cheaper than re-bucketing per camera),
+            // but secondary cameras (scene view, split-screen) get near/far chosen for the main camera's
+            // viewpoint. Acceptable for the single-camera MVP; revisit if multi-camera ships.
+            // No camera (headless/tests) → LOD disabled for the frame; all instances stay near.
+            var lodCamera = Camera.main;
+            bool lodActive = config.LodSwapDistance > 0f && lodCamera != null;
+            float3 cameraPosition = lodActive ? (float3)lodCamera.transform.position : float3.zero;
+
             foreach (var (lodStateRO, records) in SystemAPI.Query<RefRO<TerrainChunkLodState>, DynamicBuffer<RockPlacementRecord>>()
                          .WithAll<TerrainChunk>())
             {
@@ -327,33 +366,47 @@ namespace DOTS.Terrain.Rocks
                         ? 0
                         : record.RockTypeId % variantCount;
 
-                    var mesh = PendingMeshesByVariant[variantIndex];
+                    int bucketIndex = variantIndex;
+                    if (lodActive
+                        && SurfaceScatterLodUtility.SelectLodLevel(
+                            math.distancesq(record.WorldPosition, cameraPosition),
+                            config.LodSwapDistance) == SurfaceScatterLodUtility.FarLod)
+                    {
+                        // Variants without an authored far mesh fall back to near.
+                        int farBucket = variantIndex + MaxRockVariants;
+                        if (PendingMeshesByVariant[farBucket] != null)
+                        {
+                            bucketIndex = farBucket;
+                        }
+                    }
+
+                    var mesh = PendingMeshesByVariant[bucketIndex];
                     if (mesh == null)
                     {
                         continue;
                     }
 
                     var scale = math.max(0.01f, record.UniformScale * config.UniformScale);
-                    PendingMatricesByVariant[variantIndex].Add(Matrix4x4.TRS(
+                    PendingMatricesByVariant[bucketIndex].Add(Matrix4x4.TRS(
                         record.WorldPosition,
                         Quaternion.Euler(0f, math.degrees(record.YawRadians), 0f),
                         Vector3.one * scale));
                 }
             }
 
-            for (int variantIndex = 0; variantIndex < variantCount; variantIndex++)
+            for (int bucketIndex = 0; bucketIndex < TotalMeshBuckets; bucketIndex++)
             {
-                var mesh = PendingMeshesByVariant[variantIndex];
+                var mesh = PendingMeshesByVariant[bucketIndex];
                 if (mesh == null)
                 {
-                    PendingWorldBoundsByVariant[variantIndex] = TinyBounds;
+                    PendingWorldBoundsByVariant[bucketIndex] = TinyBounds;
                     continue;
                 }
 
                 // Per-instance matrices already contain full scale, so use neutral external scale.
-                if (!TryBuildWorldBounds(PendingMatricesByVariant[variantIndex], mesh.bounds, 1f, out PendingWorldBoundsByVariant[variantIndex]))
+                if (!TryBuildWorldBounds(PendingMatricesByVariant[bucketIndex], mesh.bounds, 1f, out PendingWorldBoundsByVariant[bucketIndex]))
                 {
-                    PendingWorldBoundsByVariant[variantIndex] = TinyBounds;
+                    PendingWorldBoundsByVariant[bucketIndex] = TinyBounds;
                 }
             }
         }

@@ -210,6 +210,25 @@ public class DotsSystemBootstrap : MonoBehaviour
                 DebugSettings.Log("Bootstrap: RockChunkRenderSystem enabled and added to PresentationSystemGroup.");
             }
 
+            if (config.EnablePebblePlacementSystem)
+            {
+                var invalidationHandle = world.CreateSystem<DOTS.Terrain.Pebbles.PebblePlacementInvalidationSystem>();
+                simGroup.AddSystemToUpdateList(invalidationHandle);
+                DebugSettings.Log("Bootstrap: PebblePlacementInvalidationSystem enabled and added to SimulationSystemGroup.");
+
+                var handle = world.CreateSystem<DOTS.Terrain.Pebbles.PebblePlacementGenerationSystem>();
+                simGroup.AddSystemToUpdateList(handle);
+                DebugSettings.Log("Bootstrap: PebblePlacementGenerationSystem enabled and added to SimulationSystemGroup.");
+            }
+
+            if (config.EnablePebbleRenderSystem)
+            {
+                var presentationGroup = world.GetExistingSystemManaged<PresentationSystemGroup>();
+                var handle = world.CreateSystem<DOTS.Terrain.Pebbles.PebbleChunkRenderSystem>();
+                presentationGroup.AddSystemToUpdateList(handle);
+                DebugSettings.Log("Bootstrap: PebbleChunkRenderSystem enabled and added to PresentationSystemGroup.");
+            }
+
             if (config.EnableStructurePlacementSystem)
             {
                 var handle = world.CreateSystem<DOTS.Structures.StructureAnchorPlanningSystem>();

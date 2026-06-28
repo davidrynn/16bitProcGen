@@ -1,6 +1,6 @@
 # Document Index
 
-**Last Updated:** 2026-05-14
+**Last Updated:** 2026-06-11
 
 > **New here?** Start with [MASTER_PLAN.md](MASTER_PLAN.md) — it has the project vision, current status, phase roadmap, and a curated document map.
 
@@ -20,8 +20,11 @@ Quick-reference index of all project documentation. Docs are organized by catego
 | [AI/TerrainHeightMaps/TERRAIN_PLAINS_TREES_MVP_CHECKLIST.md](AI/TerrainHeightMaps/TERRAIN_PLAINS_TREES_MVP_CHECKLIST.md) | PHASE C IN PROGRESS | Phase A ✅ Phase B ✅ Phase C (visual) 🔄 — all systems implemented, awaiting Play Mode visual confirmation |
 | [AI/TerrainHeightMaps/TERRAIN_PLAINS_TREE_VARIANT_YAW_SPEC.md](AI/TerrainHeightMaps/TERRAIN_PLAINS_TREE_VARIANT_YAW_SPEC.md) | ACTIVE | Deterministic 3-variant plains tree mesh selection plus per-instance Y-axis yaw rotation |
 | [AI/TerrainHeightMaps/TERRAIN_SURFACE_SCATTER_PLAN.md](AI/TerrainHeightMaps/TERRAIN_SURFACE_SCATTER_PLAN.md) | DESIGN | Rollout plan for generalizing tree-only placement into reusable surface scatter families |
+| [AI/TerrainHeightMaps/SURFACE_SCATTER_LOD_SPEC.md](AI/TerrainHeightMaps/SURFACE_SCATTER_LOD_SPEC.md) | ACTIVE | Distance-based near/far mesh swap for scatter trees & rocks inside RenderMeshInstanced path — targets the vertex-bound finding in the render perf report |
+| [AI/TerrainHeightMaps/SCATTER_LOD_SPEED_BIAS_SPEC.md](AI/TerrainHeightMaps/SCATTER_LOD_SPEED_BIAS_SPEC.md) | DESIGN | Shrinks the scatter LOD swap distance as player speed rises — drops scatter detail during fast airborne movement (extends SURFACE_SCATTER_LOD_SPEC) |
 | [AI/TerrainHeightMaps/TERRAIN_SURFACE_SCATTER_SPEC.md](AI/TerrainHeightMaps/TERRAIN_SURFACE_SCATTER_SPEC.md) | DESIGN | Runtime contract for chunk-scattered trees, bushes, rocks, ore nodes, and similar discrete props |
 | [AI/MVP_VISTA_MOMENT_SPEC.md](AI/MVP_VISTA_MOMENT_SPEC.md) | **ACTIVE — MVP PRIORITY** | Vista discovery experience: atmospheric haze + mountain horizon + relic hand; gap analysis + ordered implementation |
+| [mvp/Windswept_Colossus_Plains_Biome_Spec.md](mvp/Windswept_Colossus_Plains_Biome_Spec.md) | ACTIVE | Procedural biome definition for the MVP plains — terrain/grass/scatter parameters in system units, MVP vs post-MVP pipeline status, relic seating hooks, biome-selection stub |
 | [AI/STRUCTURE PLACEMENT/STRUCTURE_PLACEMENT_PLAN.md](AI/STRUCTURE%20PLACEMENT/STRUCTURE_PLACEMENT_PLAN.md) | DESIGN | Rollout plan for deterministic semantic structure placement (dungeons, villages, relics, ruins) |
 | [AI/STRUCTURE PLACEMENT/STRUCTURE_PLACEMENT_SPEC.md](AI/STRUCTURE%20PLACEMENT/STRUCTURE_PLACEMENT_SPEC.md) | DESIGN | Runtime contract for region-scale anchors, hard spacing constraints, and structure-family realization |
 | [AI/STRUCTURE PLACEMENT/RELIC_RENDER_REFACTOR_SPEC.md](AI/STRUCTURE%20PLACEMENT/RELIC_RENDER_REFACTOR_SPEC.md) | IMPLEMENTED | Replace batch RenderMeshInstanced relic path with per-entity Entities Graphics rendering (fixes BUG-016 frustum culling) |
@@ -80,6 +83,7 @@ Quick-reference index of all project documentation. Docs are organized by catego
 
 | Document | Description |
 |----------|-------------|
+| [AI/RENDER_PERF_PROFILE_REPORT.md](AI/RENDER_PERF_PROFILE_REPORT.md) | Basic Terrain Scene profiling: scene is vertex-bound (trees/rocks = 92% of verts), NOT fill-rate bound — low-res rendering gives no FPS win; LODs are the lever |
 | [/TERRAIN_SYSTEMS_CODE_AUDIT.md](/TERRAIN_SYSTEMS_CODE_AUDIT.md) | Redundant/obsolete terrain code analysis |
 | [/ISystem_Usage_Report.md](/ISystem_Usage_Report.md) | ISystem usage patterns audit |
 | [AI/TERRAIN_SEAM_DEBUG_IMPLEMENTATION_REPORT.md](AI/TERRAIN_SEAM_DEBUG_IMPLEMENTATION_REPORT.md) | Seam debug implementation report |

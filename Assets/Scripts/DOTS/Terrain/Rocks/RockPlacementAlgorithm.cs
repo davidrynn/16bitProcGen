@@ -1,3 +1,4 @@
+using DOTS.Terrain.SurfaceScatter;
 using Unity.Collections;
 using Unity.Mathematics;
 using static Unity.Mathematics.noise;
@@ -36,7 +37,7 @@ namespace DOTS.Terrain.Rocks
                 float worldX = worldOrigin.x + localX + jitter.x;
                 float worldZ = worldOrigin.z + localZ + jitter.y;
 
-                if (!TryFindSurfaceHeight(worldX, worldZ, ref blob, out float surfaceY, out int surfaceIY))
+                if (!SurfaceScatterPlacementMath.TryFindSurfaceHeight(worldX, worldZ, ref blob, out float surfaceY, out int surfaceIY))
                     continue;
 
                 int ix = math.clamp(
@@ -46,7 +47,7 @@ namespace DOTS.Terrain.Rocks
                     (int)math.round((worldZ - blob.WorldOrigin.z) / blob.VoxelSize),
                     0, blob.Resolution.z - 1);
 
-                float3 normal = ComputeNormal(ix, surfaceIY, iz, ref blob);
+                float3 normal = SurfaceScatterPlacementMath.ComputeNormal(ix, surfaceIY, iz, ref blob);
                 float normalY = normal.y;
                 if (normalY < MinGroundNormalY)
                     continue;
@@ -105,63 +106,8 @@ namespace DOTS.Terrain.Rocks
 
         private static uint CandidateHash(uint worldSeed, int3 chunkCoord, int cellX, int cellZ)
         {
-            var h = worldSeed;
-            h ^= (uint)chunkCoord.x * 2654435761u;
-            h ^= (uint)chunkCoord.z * 1013904223u;
-            h ^= (uint)cellX * 374761393u;
-            h ^= (uint)cellZ * 668265263u;
-            h *= 0x9e3779b9u;
-            return h;
-        }
-
-        private static bool TryFindSurfaceHeight(
-            float worldX,
-            float worldZ,
-            ref TerrainChunkDensityBlob blob,
-            out float surfaceY,
-            out int surfaceIY)
-        {
-            surfaceY = 0f;
-            surfaceIY = 0;
-
-            int ix = math.clamp(
-                (int)math.round((worldX - blob.WorldOrigin.x) / blob.VoxelSize),
-                0, blob.Resolution.x - 1);
-            int iz = math.clamp(
-                (int)math.round((worldZ - blob.WorldOrigin.z) / blob.VoxelSize),
-                0, blob.Resolution.z - 1);
-
-            for (int iy = blob.Resolution.y - 2; iy >= 0; iy--)
-            {
-                float dAbove = blob.GetDensity(ix, iy + 1, iz);
-                float dBelow = blob.GetDensity(ix, iy, iz);
-                if (dAbove >= 0f && dBelow < 0f)
-                {
-                    float t = dAbove / (dAbove - dBelow);
-                    surfaceY = blob.WorldOrigin.y + (iy + 1 - t) * blob.VoxelSize;
-                    surfaceIY = iy + 1;
-                    return true;
-                }
-            }
-
-            return false;
-        }
-
-        private static float3 ComputeNormal(int ix, int iy, int iz, ref TerrainChunkDensityBlob blob)
-        {
-            int ixp = math.min(ix + 1, blob.Resolution.x - 1);
-            int ixm = math.max(ix - 1, 0);
-            int iyp = math.min(iy + 1, blob.Resolution.y - 1);
-            int iym = math.max(iy - 1, 0);
-            int izp = math.min(iz + 1, blob.Resolution.z - 1);
-            int izm = math.max(iz - 1, 0);
-
-            var grad = new float3(
-                blob.GetDensity(ixp, iy, iz) - blob.GetDensity(ixm, iy, iz),
-                blob.GetDensity(ix, iyp, iz) - blob.GetDensity(ix, iym, iz),
-                blob.GetDensity(ix, iy, izp) - blob.GetDensity(ix, iy, izm));
-
-            return math.normalizesafe(grad, new float3(0f, 1f, 0f));
+            // Delegates to the shared helper so pebbles/shrubs hash identically (Phase 2 extraction).
+            return SurfaceScatterPlacementMath.CandidateHash(worldSeed, chunkCoord, cellX, cellZ);
         }
     }
 }

@@ -34,14 +34,18 @@ namespace DOTS.Terrain.Trees
         private const int CulledScatterLod = 3;
         private const int MaxTreeVariants = 8;
 
+        // Bucket layout: near meshes [0..MaxTreeVariants-1], far-LOD meshes
+        // [MaxTreeVariants..TotalMeshBuckets-1]. See SURFACE_SCATTER_LOD_SPEC.md.
+        private const int TotalMeshBuckets = MaxTreeVariants * SurfaceScatterLodUtility.LodLevelCount;
+
         // RenderMeshInstanced batch limit is 1023.
         private static readonly Matrix4x4[] _instanceBuffer = new Matrix4x4[1023];
 
         // Matrices collected each OnUpdate, flushed per-camera in SubmitToCamera.
         // Static so the camera callback (a static delegate) can access without a closure.
-        private static readonly List<Matrix4x4>[] _pendingMatricesByVariant = CreateMatrixBuckets(MaxTreeVariants);
-        private static readonly Mesh[] _pendingMeshesByVariant = new Mesh[MaxTreeVariants];
-        private static readonly Bounds[] _pendingWorldBoundsByVariant = new Bounds[MaxTreeVariants];
+        private static readonly List<Matrix4x4>[] _pendingMatricesByVariant = CreateMatrixBuckets(TotalMeshBuckets);
+        private static readonly Mesh[] _pendingMeshesByVariant = new Mesh[TotalMeshBuckets];
+        private static readonly Bounds[] _pendingWorldBoundsByVariant = new Bounds[TotalMeshBuckets];
         private static readonly Bounds _tinyBounds = new Bounds(Vector3.zero, Vector3.one * 0.01f);
         private static readonly int BaseColorId = Shader.PropertyToID("_BaseColor");
         private static readonly int CutoffId = Shader.PropertyToID("_Cutoff");
@@ -85,10 +89,11 @@ namespace DOTS.Terrain.Trees
             if (_pendingMaterial == null || _pendingVariantCount == 0)
                 return;
 
-            for (int variantIndex = 0; variantIndex < _pendingVariantCount; variantIndex++)
+            // Iterate every bucket (near + far blocks); empties are skipped below.
+            for (int bucketIndex = 0; bucketIndex < TotalMeshBuckets; bucketIndex++)
             {
-                var mesh = _pendingMeshesByVariant[variantIndex];
-                var matrices = _pendingMatricesByVariant[variantIndex];
+                var mesh = _pendingMeshesByVariant[bucketIndex];
+                var matrices = _pendingMatricesByVariant[bucketIndex];
                 if (mesh == null || matrices.Count == 0)
                 {
                     continue;
@@ -96,7 +101,7 @@ namespace DOTS.Terrain.Trees
 
                 var rp = new RenderParams(_pendingMaterial)
                 {
-                    worldBounds = _pendingWorldBoundsByVariant[variantIndex],
+                    worldBounds = _pendingWorldBoundsByVariant[bucketIndex],
                 };
 
                 int remaining = matrices.Count;
@@ -258,6 +263,10 @@ namespace DOTS.Terrain.Trees
                     }
 
                     _pendingMeshesByVariant[variantCount] = mesh;
+                    // Far mesh is looked up by SOURCE index i (not the compacted slot) so a
+                    // null near entry cannot misalign the near/far pairing.
+                    _pendingMeshesByVariant[variantCount + MaxTreeVariants] =
+                        GetLodMeshForSourceIndex(config.LodMeshVariants, i);
                     variantCount++;
                 }
             }
@@ -265,10 +274,22 @@ namespace DOTS.Terrain.Trees
             if (variantCount == 0 && config.Mesh != null)
             {
                 _pendingMeshesByVariant[0] = config.Mesh;
+                _pendingMeshesByVariant[MaxTreeVariants] =
+                    GetLodMeshForSourceIndex(config.LodMeshVariants, 0);
                 variantCount = 1;
             }
 
             return variantCount;
+        }
+
+        private static Mesh GetLodMeshForSourceIndex(Mesh[] lodMeshVariants, int sourceIndex)
+        {
+            if (lodMeshVariants == null || sourceIndex >= lodMeshVariants.Length)
+            {
+                return null;
+            }
+
+            return lodMeshVariants[sourceIndex];
         }
 
         /// <summary>
@@ -294,7 +315,7 @@ namespace DOTS.Terrain.Trees
                 return false;
             }
 
-            for (int i = 0; i < _pendingVariantCount; i++)
+            for (int i = 0; i < TotalMeshBuckets; i++)
             {
                 if (_pendingMeshesByVariant[i] != null && _pendingMatricesByVariant[i].Count > 0)
                 {
@@ -305,10 +326,19 @@ namespace DOTS.Terrain.Trees
             return false;
         }
 
+        /// <summary>
+        /// Test-only hook to inspect which mesh is registered for a (variant, lodLevel) bucket.
+        /// </summary>
+        public static Mesh GetPendingMeshForTests(int variantIndex, int lodLevel)
+        {
+            return _pendingMeshesByVariant[
+                SurfaceScatterLodUtility.GetBucketIndex(variantIndex, lodLevel, MaxTreeVariants)];
+        }
+
         private static void ResetPendingVariantState()
         {
             _pendingVariantCount = 0;
-            for (int i = 0; i < MaxTreeVariants; i++)
+            for (int i = 0; i < TotalMeshBuckets; i++)
             {
                 _pendingMeshesByVariant[i] = null;
                 _pendingMatricesByVariant[i].Clear();
@@ -337,6 +367,15 @@ namespace DOTS.Terrain.Trees
 
             int variantCount = _pendingVariantCount;
 
+            // LOD buckets are selected once per frame against Camera.main, not per rendering camera.
+            // This is correct for the single gameplay camera (cheaper than re-bucketing per camera),
+            // but secondary cameras (scene view, split-screen) get near/far chosen for the main camera's
+            // viewpoint. Acceptable for the single-camera MVP; revisit if multi-camera ships.
+            // No camera (headless/tests) → LOD disabled for the frame; all instances stay near.
+            var lodCamera = Camera.main;
+            bool lodActive = config.LodSwapDistance > 0f && lodCamera != null;
+            float3 cameraPosition = lodActive ? (float3)lodCamera.transform.position : float3.zero;
+
             foreach (var (lodStateRO, records) in SystemAPI.Query<RefRO<TerrainChunkLodState>, DynamicBuffer<TreePlacementRecord>>()
                 .WithAll<TerrainChunk>())
             {
@@ -352,7 +391,21 @@ namespace DOTS.Terrain.Trees
                         ? 0
                         : math.clamp((int)record.TreeTypeId, 0, variantCount - 1);
 
-                    var mesh = _pendingMeshesByVariant[variantIndex];
+                    int bucketIndex = variantIndex;
+                    if (lodActive
+                        && SurfaceScatterLodUtility.SelectLodLevel(
+                            math.distancesq(record.WorldPosition, cameraPosition),
+                            config.LodSwapDistance) == SurfaceScatterLodUtility.FarLod)
+                    {
+                        // Variants without an authored far mesh fall back to near.
+                        int farBucket = variantIndex + MaxTreeVariants;
+                        if (_pendingMeshesByVariant[farBucket] != null)
+                        {
+                            bucketIndex = farBucket;
+                        }
+                    }
+
+                    var mesh = _pendingMeshesByVariant[bucketIndex];
                     if (mesh == null)
                     {
                         continue;
@@ -360,10 +413,12 @@ namespace DOTS.Terrain.Trees
 
                     // Ground instances by mesh bottom instead of pivot so centered-pivot assets
                     // (common in third-party packs) do not render half-buried as canopy domes.
+                    // Offset uses the mesh actually drawn — keep far-mesh bounds close to the
+                    // near mesh to avoid a vertical pop at the swap distance.
                     var yOffset = -mesh.bounds.min.y * config.UniformScale;
                     var groundedPosition = record.WorldPosition + new float3(0f, yOffset, 0f);
 
-                    _pendingMatricesByVariant[variantIndex].Add(Matrix4x4.TRS(
+                    _pendingMatricesByVariant[bucketIndex].Add(Matrix4x4.TRS(
                         groundedPosition,
                         Quaternion.Euler(0f, math.degrees(record.YawRadians), 0f),
                         Vector3.one * config.UniformScale));
@@ -371,22 +426,22 @@ namespace DOTS.Terrain.Trees
             }
 
             // Per-instance matrices already contain full scale, so use neutral external scale.
-            for (int variantIndex = 0; variantIndex < variantCount; variantIndex++)
+            for (int bucketIndex = 0; bucketIndex < TotalMeshBuckets; bucketIndex++)
             {
-                var mesh = _pendingMeshesByVariant[variantIndex];
+                var mesh = _pendingMeshesByVariant[bucketIndex];
                 if (mesh == null)
                 {
-                    _pendingWorldBoundsByVariant[variantIndex] = _tinyBounds;
+                    _pendingWorldBoundsByVariant[bucketIndex] = _tinyBounds;
                     continue;
                 }
 
                 if (!TryBuildWorldBounds(
-                        _pendingMatricesByVariant[variantIndex],
+                        _pendingMatricesByVariant[bucketIndex],
                         mesh.bounds,
                         1f,
-                        out _pendingWorldBoundsByVariant[variantIndex]))
+                        out _pendingWorldBoundsByVariant[bucketIndex]))
                 {
-                    _pendingWorldBoundsByVariant[variantIndex] = _tinyBounds;
+                    _pendingWorldBoundsByVariant[bucketIndex] = _tinyBounds;
                 }
             }
         }

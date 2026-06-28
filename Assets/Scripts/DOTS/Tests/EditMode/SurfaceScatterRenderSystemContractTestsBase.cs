@@ -21,6 +21,12 @@ namespace DOTS.Terrain.Tests
         protected abstract void AddPendingMatrixForTests(in Matrix4x4 matrix);
         protected abstract bool HasPendingSubmissionDataForTests();
         protected abstract TConfig CreateValidConfig(Mesh mesh, Material material, float uniformScale);
+        protected abstract TConfig CreateConfigWithLodVariants(
+            Mesh[] meshVariants,
+            Mesh[] lodMeshVariants,
+            Material material,
+            float lodSwapDistance);
+        protected abstract Mesh GetPendingMeshForTests(int variantIndex, int lodLevel);
         protected abstract void ClearPendingSubmissionStateForTests();
 
         [TearDown]
@@ -108,6 +114,87 @@ namespace DOTS.Terrain.Tests
             Assert.AreEqual(1f, bounds.size.x, 1e-4f);
             Assert.AreEqual(2f, bounds.size.y, 1e-4f);
             Assert.AreEqual(4f, bounds.size.z, 1e-4f);
+        }
+
+        [Test]
+        public void TryPrepareSubmissionFrame_LodMeshVariants_RegistersFarMeshesAlongsideNear()
+        {
+            var shader = Shader.Find("Unlit/Color")
+                         ?? Shader.Find("Sprites/Default")
+                         ?? Shader.Find("Standard")
+                         ?? Shader.Find("Hidden/InternalErrorShader");
+            Assert.IsNotNull(shader, "Expected at least one built-in shader for test material creation.");
+
+            var nearA = new Mesh();
+            var nearB = new Mesh();
+            var farA = new Mesh();
+            var material = new Material(shader);
+
+            try
+            {
+                // farB intentionally absent: variant 1 must never swap (always near).
+                var config = CreateConfigWithLodVariants(
+                    new[] { nearA, nearB },
+                    new[] { farA, null },
+                    material,
+                    60f);
+
+                var prepared = TryPrepareSubmissionFrame(config);
+                Assert.IsTrue(prepared, "Config with LOD variants should be accepted.");
+
+                Assert.AreSame(nearA, GetPendingMeshForTests(0, 0), "Near mesh for variant 0 should be registered unchanged.");
+                Assert.AreSame(nearB, GetPendingMeshForTests(1, 0), "Near mesh for variant 1 should be registered unchanged.");
+                Assert.AreSame(farA, GetPendingMeshForTests(0, 1), "Far mesh for variant 0 should be registered in the far bucket.");
+                Assert.IsNull(GetPendingMeshForTests(1, 1), "Variant without a far mesh must leave its far bucket empty.");
+            }
+            finally
+            {
+                ClearPendingSubmissionStateForTests();
+                Object.DestroyImmediate(material);
+                Object.DestroyImmediate(nearA);
+                Object.DestroyImmediate(nearB);
+                Object.DestroyImmediate(farA);
+            }
+        }
+
+        [Test]
+        public void TryPrepareSubmissionFrame_NullNearVariant_FarMeshFollowsCompaction()
+        {
+            var shader = Shader.Find("Unlit/Color")
+                         ?? Shader.Find("Sprites/Default")
+                         ?? Shader.Find("Standard")
+                         ?? Shader.Find("Hidden/InternalErrorShader");
+            Assert.IsNotNull(shader, "Expected at least one built-in shader for test material creation.");
+
+            var nearB = new Mesh();
+            var farA = new Mesh();
+            var farB = new Mesh();
+            var material = new Material(shader);
+
+            try
+            {
+                // Source index 0 has no near mesh, so it is skipped during compaction.
+                // Source index 1 lands in variant slot 0, and its far mesh must follow it there.
+                var config = CreateConfigWithLodVariants(
+                    new Mesh[] { null, nearB },
+                    new[] { farA, farB },
+                    material,
+                    60f);
+
+                var prepared = TryPrepareSubmissionFrame(config);
+                Assert.IsTrue(prepared, "Config with a null near variant should still be accepted.");
+
+                Assert.AreSame(nearB, GetPendingMeshForTests(0, 0), "Compaction should move source index 1 into variant slot 0.");
+                Assert.AreSame(farB, GetPendingMeshForTests(0, 1), "Far mesh must track its source near mesh through compaction, not raw array index.");
+            }
+            finally
+            {
+                ClearPendingSubmissionStateForTests();
+                Object.DestroyImmediate(material);
+                Object.DestroyImmediate(nearB);
+                Object.DestroyImmediate(farA);
+                Object.DestroyImmediate(farB);
+            }
         }
 
         [Test]

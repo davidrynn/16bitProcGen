@@ -153,6 +153,27 @@ namespace DOTS.Terrain.Tests
             };
         }
 
+        protected override RockRenderConfig CreateConfigWithLodVariants(
+            Mesh[] meshVariants,
+            Mesh[] lodMeshVariants,
+            Material material,
+            float lodSwapDistance)
+        {
+            return new RockRenderConfig
+            {
+                MeshVariants = meshVariants,
+                LodMeshVariants = lodMeshVariants,
+                Material = material,
+                UniformScale = 1f,
+                LodSwapDistance = lodSwapDistance,
+            };
+        }
+
+        protected override Mesh GetPendingMeshForTests(int variantIndex, int lodLevel)
+        {
+            return RockChunkRenderSystem.GetPendingMeshForTests(variantIndex, lodLevel);
+        }
+
         protected override void ClearPendingSubmissionStateForTests()
         {
             RockChunkRenderSystem.TryPrepareSubmissionFrame(null);

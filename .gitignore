@@ -111,3 +111,10 @@ TestResults-*.xml
 .mcp*
 skills-lock.json
 ugs_installer
+
+# ----- Local-only scratch (never source) -----
+# Unity scene auto-recovery backups; regenerated locally, not part of the project.
+/Assets/_Recovery/
+/Assets/_Recovery.meta
+# Manual one-off backups (e.g. Temp_PlayerAnimatorController.controller.backup).
+Temp_*.backup

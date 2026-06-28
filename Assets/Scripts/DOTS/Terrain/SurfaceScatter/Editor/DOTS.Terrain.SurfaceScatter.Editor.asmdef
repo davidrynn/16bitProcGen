@@ -1,0 +1,19 @@
+{
+    "name": "DOTS.Terrain.SurfaceScatter.Editor",
+    "rootNamespace": "",
+    "references": [
+        "DOTS.Terrain",
+        "DOTS.Core.Authoring"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

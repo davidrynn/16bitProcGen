@@ -49,7 +49,7 @@ MonoBehaviour:
   EnableTerrainModificationSystem: 1
   EnableTerrainGlobPhysicsSystem: 1
   EnableTerrainChunkDensitySamplingSystem: 1
-  EnableTerrainEditInputSystem: 1
+  EnableTerrainEditInputSystem: 0
   TerrainEditPlacementMode: 1
   TerrainEditSnapSpace: 1
   TerrainEditCellFraction: 0.25
@@ -70,6 +70,8 @@ MonoBehaviour:
   EnableTreeRenderSystem: 1
   EnableRockPlacementSystem: 1
   EnableRockRenderSystem: 1
+  EnablePebblePlacementSystem: 1
+  EnablePebbleRenderSystem: 1
   EnableTerrainSeamValidatorSystem: 0
   EnableTerrainMeshSeamValidatorSystem: 0
   EnableTerrainMeshBorderDebugSystem: 0
@@ -85,9 +87,9 @@ MonoBehaviour:
   EnableDungeonRenderingSystem: 0
   EnableHybridWeatherSystem: 0
   VistaCameraFarClip: 600
-  EnableDistanceFog: 1
+  EnableDistanceFog: 0
   FogMode: 3
   FogColor: {r: 0.56, g: 0.66, b: 0.75, a: 1}
-  FogDensity: 0.005
+  FogDensity: 0.0049
   FogStartRatio: 0.14
   FogEndRatio: 0.308
