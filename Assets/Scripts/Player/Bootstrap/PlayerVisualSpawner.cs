@@ -137,6 +137,12 @@ namespace DOTS.Player.Bootstrap
             var sync = root.AddComponent<PlayerVisualSync>();
             sync.targetEntity = playerEntity;
             sync.visualOffset = Vector3.zero;
+
+            // Hide the body in first-person (MVP default) so it doesn't clip through the head-mounted
+            // camera. Wired for both the prefab and capsule-fallback bodies. This is the seam the future
+            // first-person arms viewmodel hangs off — see PlayerFirstPersonVisibility.
+            var fpVisibility = root.AddComponent<PlayerFirstPersonVisibility>();
+            fpVisibility.TargetEntity = playerEntity;
         }
     }
 }

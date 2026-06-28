@@ -29,7 +29,21 @@ namespace DOTS.Player.Systems
         private const float EmbeddedRecoveryMinFallTime = 0.2f;
         private const float EmbeddedRecoveryMaxVerticalSpeed = 0.05f;
         private const float EmbeddedRecoveryUpProbeDistanceMultiplier = 2f;
+
+        // Hysteresis on Mode (not IsGrounded — physics/movement still react to raw probe
+        // results). A single-frame probe hit mid-flight (terrain skim, arc apex where speed
+        // drops below the preserve threshold) was demoting Ballistic → Grounded for one frame,
+        // flashing the animator through Idle and back. Mode only demotes after sustained
+        // ground contact, and only promotes after sustained free fall — the promotion delay
+        // also acts as animator coyote-time so running over small bumps doesn't flash Falling.
+        private const float ModeDemotionMinGroundedTime = 0.1f;
+        private const float ModePromotionMinFallTime = 0.1f;
+
         private bool _hasLoggedInvalidColliderRaycast;
+
+        // Single-player assumption (same as LandingDetectionSystem): continuous grounded
+        // duration is tracked on the system rather than per entity.
+        private float _groundedTime;
 
         /// <summary>
         /// Declares the singleton components that must exist before the system begins updating.
@@ -69,6 +83,7 @@ namespace DOTS.Player.Systems
                 var usedSteepRecovery = false;
                 var usedSupportRecovery = false;
                 var usedEmbeddedRecovery = false;
+                var suppressedBallisticTakeoff = false;
                 var hit = false;
 
                 if (rayHit)
@@ -125,6 +140,16 @@ namespace DOTS.Player.Systems
                     usedEmbeddedRecovery = true;
                 }
 
+                if (hit &&
+                    ShouldSuppressGroundingDuringBallisticTakeoff(
+                        prevGrounded,
+                        movementState.ValueRO.Mode,
+                        velocity.ValueRO.Linear.y))
+                {
+                    hit = false;
+                    suppressedBallisticTakeoff = true;
+                }
+
                 if (DebugSettings.EnableFallThroughDebug && prevGrounded != hit)
                 {
                     if (hit)
@@ -143,9 +168,12 @@ namespace DOTS.Player.Systems
                     }
                     else
                     {
+                        var suppressedTag = suppressedBallisticTakeoff
+                            ? $"ballisticTakeoff vy={velocity.ValueRO.Linear.y:F3}"
+                            : null;
                         var reason = rayHit
-                            ? $"steepHit normal={closestHit.SurfaceNormal}"
-                            : "noHit";
+                            ? suppressedTag ?? $"steepHit normal={closestHit.SurfaceNormal}"
+                            : suppressedTag ?? "noHit";
                         DebugSettings.LogFallThroughWarning(
                             $"Ungrounded: pos={origin}, probeEnd={rayInput.End}, reason={reason}, " +
                             $"fallTime={movementState.ValueRO.FallTime:F3}");
@@ -155,6 +183,8 @@ namespace DOTS.Player.Systems
                 movementState.ValueRW.IsGrounded = hit;
                 if (hit)
                 {
+                    _groundedTime += deltaTime;
+
                     // Don't overwrite modes that own the player's trajectory while
                     // the player still has significant velocity from that traversal.
                     // Once speed drops below the threshold, the mode transitions to
@@ -168,7 +198,7 @@ namespace DOTS.Player.Systems
                     float speed = math.length(velocity.ValueRO.Linear);
                     bool preserveMode = currentMode == PlayerMovementMode.SlingshotCharging ||
                                         (isActiveTraversal && speed > 2f);
-                    if (!preserveMode)
+                    if (!preserveMode && _groundedTime >= ModeDemotionMinGroundedTime)
                     {
                         movementState.ValueRW.Mode = PlayerMovementMode.Grounded;
                     }
@@ -176,13 +206,17 @@ namespace DOTS.Player.Systems
                 }
                 else
                 {
+                    _groundedTime = 0f;
                     movementState.ValueRW.FallTime += deltaTime;
 
-                    // Promote Grounded → Ballistic on first frame of free fall so the
+                    // Promote Grounded → Ballistic once free fall is sustained so the
                     // animator bridge sees the correct mode and triggers the fall clip.
                     // Other airborne modes (Ballistic, Gliding, etc.) own their own transitions.
-                    if (movementState.ValueRO.Mode == PlayerMovementMode.Grounded)
+                    if (movementState.ValueRO.Mode == PlayerMovementMode.Grounded &&
+                        movementState.ValueRO.FallTime >= ModePromotionMinFallTime)
+                    {
                         movementState.ValueRW.Mode = PlayerMovementMode.Ballistic;
+                    }
                 }
             }
         }
@@ -190,6 +224,16 @@ namespace DOTS.Player.Systems
         private static bool IsGroundLike(in RaycastHit hit)
         {
             return hit.SurfaceNormal.y >= MinGroundNormalY;
+        }
+
+        private static bool ShouldSuppressGroundingDuringBallisticTakeoff(
+            bool prevGrounded,
+            PlayerMovementMode mode,
+            float verticalSpeed)
+        {
+            return !prevGrounded &&
+                   mode == PlayerMovementMode.Ballistic &&
+                   verticalSpeed > 0.05f;
         }
 
         private static bool TryRecoverGroundFromSteepHit(

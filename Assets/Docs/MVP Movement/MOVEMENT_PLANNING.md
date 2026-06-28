@@ -609,14 +609,22 @@ avoid excessive steering authority.
 
 ## Camera Perspective
 
-Third-person camera is required for the slingshot mechanic. The player needs to see:
+**MVP is first-person only (decision reversed 2026-06-20).** The earlier plan made third-person the
+required MVP mode for slingshot readability; that has been reversed — the game ships first-person.
 
-- the character compressing during charge
-- the elastic/spring visual between character and drag origin
-- the launch trajectory relative to terrain
-- the character pose during flight states
+In first-person the camera sits inside the head (`PlayerCameraSettings.FirstPersonOffset`), so the
+third-person body is hidden (`PlayerFirstPersonVisibility`) to stop it clipping through the view.
+`PlayerCameraSettings.IsThirdPerson` defaults to `false`; the V key still toggles third-person as a
+dev/debug aid for inspecting the character animations (slingshot charge/launch, landing, glide).
 
-First-person is not suitable for MVP slingshot because the charge buildup has no readable visual anchor without seeing the character.
+The slingshot charge/launch still wants a readable visual anchor in first-person. The intended
+"real fix" is a **first-person arms viewmodel** (a dedicated arms rig with FPS-authored charge/launch/glide
+clips), tracked as a ticket. Until that lands, charge/launch feedback leans on camera feel (FOV narrow,
+pullback, shake, speed lines — see below) and HUD rather than a visible body.
+
+The original rationale for wanting the body visible — seeing the character compress during charge, the
+elastic/spring to the drag origin, the flight pose — now maps onto that future arms viewmodel plus camera
+and HUD feedback, not a third-person body.
 
 ## Camera Per-State Behavior
 

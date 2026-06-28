@@ -22,6 +22,9 @@ namespace DOTS.Player.Systems
     [UpdateAfter(typeof(MovementStateBookkeepingSystem))]
     public partial struct LandingDetectionSystem : ISystem
     {
+        /// <summary>Upward speed (m/s) above which a grounded edge is treated as a launch, not a landing.</summary>
+        private const float MaxUpwardSpeedForLanding = 0.5f;
+
         private bool _previousIsGrounded;
         private float3 _previousVelocity;
         private bool _eventWasFiredLastFrame;
@@ -51,7 +54,22 @@ namespace DOTS.Player.Systems
 
                 bool currentIsGrounded = movementState.ValueRO.IsGrounded;
 
-                if (!_previousIsGrounded && currentIsGrounded)
+                // A landing requires non-upward motion. PlayerGroundingSystem can re-ground
+                // the player on the frame after a slingshot launch (the probe still hits the
+                // ground before the character rises clear), and that false→true edge fired a
+                // phantom hard-landing event at takeoff — yanking the animator through
+                // Landing → Idle mid-flight. Small positive tolerance keeps slope/step
+                // landings, where the solver can leave a slight upward component.
+                //
+                // Both frames must be checked: MovementStateBookkeepingSystem syncs
+                // PhysicsVelocity → MovementState.Velocity at the START of each frame, so on
+                // the release frame _previousVelocity captures the stale pre-launch value
+                // (~0) — only the current frame's Velocity carries the launch impulse when
+                // the re-ground edge lands one frame after release.
+                bool isUpwardLaunch =
+                    math.max(_previousVelocity.y, movementState.ValueRO.Velocity.y) > MaxUpwardSpeedForLanding;
+
+                if (!_previousIsGrounded && currentIsGrounded && !isUpwardLaunch)
                 {
                     float verticalSpeed   = math.abs(_previousVelocity.y);
                     float horizontalSpeed = math.length(new float2(_previousVelocity.x, _previousVelocity.z));

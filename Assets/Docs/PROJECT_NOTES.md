@@ -117,3 +117,5 @@ _Items noticed during work that deserve follow-up but aren't urgent._
 
 - How silly is the game? Should guy put him in bunny suit?
 
+- As an end game sequence - player becomes one of giants, if multiplayer, or even single player online, can put in  other player's world. Giant moves very slowly but complete bullet sponge.
+

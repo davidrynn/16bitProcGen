@@ -198,6 +198,7 @@ Only begin Phase 3 after Phase 2 transitions are confirmed to feel non-jarring.
 - [ ] After slingshot impact, no part of character mesh appears below terrain surface. **(manual)**
 - [ ] Player cannot slingshot or jump while `LandingRecoveryTime > 0`. **(automatable)**
 - [ ] `LandingImpactEvent` fires on `IsGrounded` edge on high-speed impact. **(automatable)**
+- [ ] `LandingImpactEvent` does NOT fire on the grounded edge right after a slingshot launch (upward velocity > 0.5 m/s gates it — the grounding probe can re-hit the ground before the character rises clear, which previously fired a phantom hard landing at takeoff). **(automatable)**
 
 ---
 

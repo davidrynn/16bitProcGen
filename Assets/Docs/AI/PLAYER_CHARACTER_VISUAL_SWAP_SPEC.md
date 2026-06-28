@@ -162,7 +162,7 @@ Create `Assets/Scripts/Player/Animation/PlayerAnimatorController.controller`.
 | `Grounded` speed=0 | Idle | yes | |
 | `Grounded` speed>0 | Walk → Run (blend tree) | yes | blend on `Speed` param |
 | `SlingshotCharging` | Crouching Idle | yes | additive layer drives crouch depth via `ChargingNormalized` |
-| `Ballistic` + `BallisticRising=true` | T-pose (default) | yes | rising after launch |
+| `Ballistic` + `BallisticRising=true` | Falling (reused) | yes | MVP: same fall clip while rising; separate state label kept for a future dedicated rise anim |
 | `Ballistic` + `BallisticRising=false` | Falling | yes | vy < 0, gravity winning |
 | `GlideCharging` | Falling (cross-fade) | yes | brief transition window |
 | `Gliding` | Glide_Pose (custom 1-frame) | yes | authored in Step B1.5 |
@@ -182,10 +182,12 @@ Grounded Blend Tree (BlendTree1D on Speed):
 
 SlingshotCharging  : Crouching_Idle loop; additive Layer 1 blends crouch depth via ChargingNormalized
 
-Ballistic sub-states (inside Ballistic state or as two states):
-  BallisticRising=true  → T-pose (default rest pose, no clip needed)
-  BallisticRising=false → Falling loop
-  Transition between them: BallisticRising changes, instant (no exit time)
+Ballistic (MVP decision 2026-06-10, implemented in ticket A8): the entire
+  airborne arc plays the Falling loop — all MovementMode == 2 entries route to
+  the Falling state regardless of BallisticRising. The BallisticRise state
+  remains in the controller as an unreferenced placeholder, and the bridge
+  still dispatches BallisticRising, so a dedicated ballistic/tuck anim can be
+  swapped into the upward arc later.
 
 GlideCharging : Falling loop (cross-fade from Ballistic, 0.15s)
 Gliding       : Glide_Pose loop (cross-fade from GlideCharging, 0.2s)

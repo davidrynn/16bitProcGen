@@ -4,17 +4,71 @@ Lightweight task tracker. Status: `[ ]` pending · `[x]` done · `[-]` blocked
 
 ---
 
-## Sprint: Animation + Camera Feel
+## Sprint: Camera Feel + Animation
 
-### Animation
+> **FPS-only reversal + re-sequence (2026-06-20):** MVP ships **first-person only**. `PlayerCameraSettings.IsThirdPerson`
+> now defaults to `false` and the third-person body is hidden in first-person (`PlayerFirstPersonVisibility`).
+> Third-person stays as a **dev/debug toggle (V key)** for inspecting these clips. Consequence: the full-body
+> clips in **A1–A8 are not visible in normal play** — they only show in the dev toggle. So the sprint is
+> re-sequenced: **Camera Feel (C1–C3) now leads** — it's the primary in-game feel feedback in first-person and
+> is unaffected by the body being hidden. **Animation follows**, and its real in-game payoff is **A9
+> (first-person arms viewmodel)**; A1–A8 are now mostly dev-toggle / A9-prep work.
+
+### Camera Feel _(sprint lead — primary in-game feedback in first-person)_
+
+> **FPS adaptation:** these tickets were specced against the third-person orbit camera, so the **distance
+> dolly/pullback** terms (`TargetDistance`, `BallisticDistanceAdd`) are third-person concepts. In first-person
+> the camera is head-locked, so reinterpret those as no-ops; the **FOV punch/narrow, shake, dip, camera-local
+> drop, speed lines, and dust burst** all carry over to FPS as-is and are where the feel actually comes from.
+
+| ID  | Status | Subject |
+|-----|--------|---------|
+| C1  | [ ] | Camera charge pullback and FOV narrow during slingshot charge |
+| C2  | [ ] | Camera FOV punch and speed lines on launch |
+| C3  | [ ] | Landing camera dip and dust burst |
+
+#### C1 — Camera charge pullback and FOV narrow
+Per `MOVEMENT_PLANNING.md` Step 3:
+- Dolly back: `TargetDistance = BaseDistance + 2.5 * ChargeNormalized` _(third-person only — no-op in FPS)_
+- FOV narrow: `TargetFOV = BaseFOV - 5° * ChargeNormalized`
+- Camera shake ramps with charge: amplitude 0.01 → 0.06
+- Orbit locks to charge direction during SlingshotCharging (no free-look) _(FPS: look = aim, no orbit to lock)_
+- Exponential smoothing (damping = 8). On cancel: reverse over ~150ms
+
+**Test (EditMode):** TargetDistance == BaseDistance + ChargeDistanceAdd * ChargeNormalized
+
+#### C2 — Camera FOV punch and speed lines on launch
+Per `MOVEMENT_PLANNING.md` Step 5:
+- FOV punch on launch: +8–15°, fast attack ~80ms, decay over 300–500ms
+- Speed FOV: +0.15°/m/s above 15 m/s threshold, capped at +12°
+- Ballistic camera pulls back (BallisticDistanceAdd = 1.5m), damping loosens (= 6) _(pullback third-person only — no-op in FPS)_
+- Speed lines: camera-parented particles or screen-space shader, 0%→100% opacity over 15→40 m/s, fade 300ms on drop
+
+**Test (EditMode):** TargetFOV includes launch punch on first ballistic frame, decays over subsequent frames
+
+#### C3 — Landing camera dip and dust burst
+Per `MOVEMENT_PLANNING.md` Step 7:
+- Shake amplitude 0.05–0.20 proportional to vertical impact speed, decay 150–300ms
+- FOV dip: 2–4°, 200ms recovery
+- Camera drops 0.3–0.8m, recovers over 200ms _(camera-local dip — applies in FPS)_
+- Dust burst at feet: size/density scale with impact speed (min speed = 5 m/s, max radius = 3m)
+- Hard landing (vertical > 12 m/s): full shake + dip. Slide landing (horizontal > 8 m/s): smooth transition, no dip
+
+**Test (EditMode):** ShakeOffset proportional to VerticalSpeed, clamped to max. LandingImpactEvent fires exactly one frame then disables.
+
+---
+
+### Animation _(follows camera feel — A1–A8 are dev-toggle / A9-prep; A9 is the in-game payoff)_
 
 | ID  | Status | Subject | Blocks | Blocked By |
 |-----|--------|---------|--------|------------|
-| A1  | [ ] | Wire slingshot clips into animator controller | A2, A3 | — |
-| A2  | [-] | Fix animator controller transition blend times | A4 | A1 |
-| A3  | [-] | Stabilize landing animations | A4 | A1 |
+| A1  | [x] | Wire slingshot clips into animator controller | A2, A3 | — |
+| A2  | [ ] | Fix animator controller transition blend times | A4 | A1 |
+| A3  | [ ] | Stabilize landing animations | A4 | A1 |
 | A4  | [-] | Import Kevin Iglesias pack and wire basic movement animations | A5 | A2, A3 |
 | A5  | [-] | Wire glide animation state | — | A4 |
+| A8  | [ ] | Simplify airborne animation: single fall clip while in air (MVP) | — | — |
+| A9  | [ ] | First-person arms viewmodel (the real fix for FPS-only MVP) | — | — |
 
 #### A1 — Wire slingshot clips into animator controller
 Wire the 3 exported FBX clips into `PlayerAnimatorController` per `SLINGSHOT_ANIMATION_CONTROLLER_SPEC.md`.
@@ -56,46 +110,31 @@ Add Gliding animator state driven by `PlayerMovementMode.Gliding`.
 - Confirm `PlayerAnimatorBridge` dispatches Gliding mode; add parameter if missing
 - Validate: hold Space mid-flight → arms-spread pose blends smoothly from tuck
 
-_(Former A6 → folded into backlog **V2**. Former A7 → backlog **R1**. Both were rendering/environment work, not animation.)_
+#### A8 — Simplify airborne animation: single fall clip while in air (MVP)
+The animator graph has grown complex. MVP/POC decision (2026-06-10): every in-air state plays the existing fall clip (`HumanM@Fall01`).
+- Assign `HumanM@Fall01` to `BallisticRise` — it currently has **no motion**, so rising shows a T-pose. `Falling`, `GlideCharging`, and `ThermalBoost` already use it.
+- **Keep distinct state labels** (`BallisticRise` vs `Falling`): post-MVP we may put a dedicated ballistic/tuck anim on the upward arc and blend to free-fall on the downward arc.
+- Optional cleanup: with both states playing the same clip, the paired `MovementMode == 2 && BallisticRising` true/false transitions can collapse into single `MovementMode == 2` transitions where that reduces graph noise. Do **not** remove the `BallisticRising` parameter — `PlayerAnimatorBridge` still dispatches it and the future rise anim needs it.
+- Update the `BallisticRisingHash` comment in `PlayerAnimatorBridge.cs` ("drives T-pose vs Falling split") to match.
+- Spec: `PLAYER_CHARACTER_VISUAL_SWAP_SPEC.md` airborne mapping table + `SLINGSHOT_ANIMATION_CONTROLLER_SPEC.md` MVP note (both updated 2026-06-10).
 
----
+#### A9 — First-person arms viewmodel (the real fix for FPS-only MVP)
+With MVP reversed to first-person only (2026-06-20), the full third-person body is hidden in play
+(`PlayerFirstPersonVisibility`) and the A1–A8 clips are invisible except via the dev V-key toggle. The
+proper FPS feedback for charge/launch/glide is a dedicated **arms viewmodel**: a first-person arms rig with
+FPS-authored clips, shown only in first-person.
 
-### Camera Feel _(independent — can run in parallel with animation)_
+The groundwork is already done and forward-compatible — `PlayerFirstPersonVisibility` hides the body in
+first-person, so this ticket only adds the arms rig and shows it in the same place (no rework of the body-hide
+or camera-mode plumbing).
 
-| ID  | Status | Subject |
-|-----|--------|---------|
-| C1  | [ ] | Camera charge pullback and FOV narrow during slingshot charge |
-| C2  | [ ] | Camera FOV punch and speed lines on launch |
-| C3  | [ ] | Landing camera dip and dust burst |
+- Author/acquire a first-person arms rig + clips: slingshot charge pull, launch/release, glide arms-spread, idle/move bob.
+- Show the arms rig only when `IsThirdPerson == false`; hide it (and show the full body) in the third-person dev toggle. Extend `PlayerFirstPersonVisibility` — it already owns the first/third-person visibility swap.
+- Drive arms clips from the same `PlayerAnimatorBridge` parameters where they map; add FPS-specific params only where the body params don't translate.
+- Scope check before building: decide whether arms are a separate `Animator` (own controller) or share the existing controller. Capture the decision here.
+- **Validate:** in first-person, charge pull / launch / glide read clearly on the arms with no body clipping; V-key toggle still shows the full body + existing third-person clips for debugging.
 
-#### C1 — Camera charge pullback and FOV narrow
-Per `MOVEMENT_PLANNING.md` Step 3:
-- Dolly back: `TargetDistance = BaseDistance + 2.5 * ChargeNormalized`
-- FOV narrow: `TargetFOV = BaseFOV - 5° * ChargeNormalized`
-- Camera shake ramps with charge: amplitude 0.01 → 0.06
-- Orbit locks to charge direction during SlingshotCharging (no free-look)
-- Exponential smoothing (damping = 8). On cancel: reverse over ~150ms
-
-**Test (EditMode):** TargetDistance == BaseDistance + ChargeDistanceAdd * ChargeNormalized
-
-#### C2 — Camera FOV punch and speed lines on launch
-Per `MOVEMENT_PLANNING.md` Step 5:
-- FOV punch on launch: +8–15°, fast attack ~80ms, decay over 300–500ms
-- Speed FOV: +0.15°/m/s above 15 m/s threshold, capped at +12°
-- Ballistic camera pulls back (BallisticDistanceAdd = 1.5m), damping loosens (= 6)
-- Speed lines: camera-parented particles or screen-space shader, 0%→100% opacity over 15→40 m/s, fade 300ms on drop
-
-**Test (EditMode):** TargetFOV includes launch punch on first ballistic frame, decays over subsequent frames
-
-#### C3 — Landing camera dip and dust burst
-Per `MOVEMENT_PLANNING.md` Step 7:
-- Shake amplitude 0.05–0.20 proportional to vertical impact speed, decay 150–300ms
-- FOV dip: 2–4°, 200ms recovery
-- Camera drops 0.3–0.8m, recovers over 200ms
-- Dust burst at feet: size/density scale with impact speed (min speed = 5 m/s, max radius = 3m)
-- Hard landing (vertical > 12 m/s): full shake + dip. Slide landing (horizontal > 8 m/s): smooth transition, no dip
-
-**Test (EditMode):** ShakeOffset proportional to VerticalSpeed, clamped to max. LandingImpactEvent fires exactly one frame then disables.
+_(Former A6 → folded into backlog **V2**. Former A7 → backlog **R1**. Both were rendering/environment work, not animation. A9 added 2026-06-20 for the FPS-only reversal.)_
 
 ---
 
@@ -103,7 +142,7 @@ Per `MOVEMENT_PLANNING.md` Step 7:
 
 _Tickets for later sprints — not yet scheduled._
 
-| ID  | Subject | Group |
+| ID  | Subject | Group |  
 |-----|---------|-------|
 | M1  | Glide mechanic (Space hold → GlideCharging → Gliding) | Movement |
 | M2  | Chain slingshot (chain window + additive velocity) | Movement |
@@ -114,6 +153,17 @@ _Tickets for later sprints — not yet scheduled._
 | P1  | Basic HUD (charge indicator + chain window indicator) | Phase 1 |
 | P2  | Magic Hand System (raycast, charge, binary terrain edit) | Phase 1 |
 | R1  | Low-poly tree/rock LODs + enable relic LOD | Rendering |
+| R2  | Speed-biased scatter LOD (drop detail during fast airborne movement) | Rendering |
+| R3  | Camera-specific scatter LOD bucketing (multi-camera correctness) | Rendering |
+| R4  | Pebble chunk-cull cleanup parity (`TerrainChunkLodApplySystem`) | Rendering |
+| T1  | Scatter LOD test coverage (Pebble render contract, GeneratePlacements, OnUpdate routing) | Testing |
+| B1  | Boulder group models (1–6m, weathered, partially buried) | Biome Art |
+| B2  | Pebble cluster models (10–50cm fields) | Biome Art |
+| B3  | Stone outcrop models (5–30m navigation markers) | Biome Art |
+| B4  | Steppe shrub models (0.5–1m heath bushes) | Biome Art |
+| B5  | Prairie grass tuft models (20–80cm, wind-ready) | Biome Art |
+| B6  | Tall grass patch models (1–1.5m) | Biome Art |
+| B7  | Wildflower cluster models (10–40cm, 3 colorways) | Biome Art |
 
 ---
 
@@ -145,3 +195,81 @@ Goal: distance/height-based atmospheric haze that softens the far horizon withou
 3. Should enabling/verifying `RelicLodSelectionSystem` be a separate quick ticket, or stay folded into R1?
 
 **Acceptance:** Trees/rocks have a far LOD that holds frame budget at a populated viewpoint. Large relics visibly swap to impostor past `LodSwapDistance` (confirm via `DebugSettings.LogRendering` transition log). Add/extend an EditMode test alongside `StructureLodTests` for any new swap logic.
+
+### R2 — Speed-biased scatter LOD (drop detail during fast airborne movement)
+**Spec:** `AI/TerrainHeightMaps/SCATTER_LOD_SPEED_BIAS_SPEC.md` (extends `SURFACE_SCATTER_LOD_SPEC.md`).
+
+**Intent:** Shrink the tree/rock LOD swap distance as player speed rises, pushing more scatter to the far (low-poly) mesh during fast flight. The scene is vertex-bound (~92% verts from scatter), so a smaller near band directly cuts the bottleneck — and at high airborne speed the player can't resolve near detail anyway, so it's perceptually cheap.
+
+**Why it's near-free (the original question — "would changing LOD cost more than it's worth?"):** No. The scatter render path already rebuilds instance buckets every frame and selects near/far per instance with a stateless distance compare. Biasing the swap distance by speed is one velocity read + arithmetic per frame on a code path that already runs — no re-uploads, no thrash. Gain is capped by the near↔far vert gap, so it's only worth wiring once R1's far meshes are real.
+
+- **Depends on R1** — inert until far LOD meshes exist for trees/rocks.
+- Read `PlayerMovementState.Velocity` (horizontal `xz` speed) in each render system's `OnUpdate`; feed a speed-scaled swap distance into the existing `SelectLodLevel` calls.
+- Use a smooth `smoothstep`/lerp ramp over a speed window (defaults 15→40 m/s, scale 1.0→0.4), **not** a hard threshold — a binary snap pops the whole scene and oscillates near the threshold.
+- Add `EnableSpeedLodBias` + window/scale fields to `TreeRenderConfig`/`RockRenderConfig` + bootstraps; off by default = zero regression.
+- Pure bias logic in `SurfaceScatterLodUtility`, EditMode-tested.
+
+**Open questions (resolve in-ticket):** horizontal vs. full velocity magnitude on ballistic arcs; shared vs. per-config (tree/rock) tuning. See spec §7.
+
+**Acceptance:** Per spec §8 — bias-off output identical to current; with bias on + far meshes, profiler shows a further scatter vert drop during sustained high-speed flight with no measurable bias cost; no whole-scene pop/oscillation near the min-speed threshold.
+
+---
+
+### R3 / R4 / T1 — Surface scatter LOD follow-ups _(deferred from Codex review 2026-06-27)_
+
+Non-blocking gaps surfaced reviewing the surface-scatter-LOD commit. None cause a crash; all degrade safely (draw-near / draw-nothing). Deferred by decision — captured here so they aren't lost.
+
+**R3 — Camera-specific LOD bucketing.** `TreeChunkRenderSystem` / `RockChunkRenderSystem` / `PebbleChunkRenderSystem` pick near/far buckets once per frame from `Camera.main` in `OnUpdate`, but submission is per-camera via `beginCameraRendering`. Secondary cameras (scene view, split-screen) therefore get LOD chosen for the main camera's viewpoint. Correct and cheaper for the single-camera MVP (see the explanatory comment at each `Camera.main` read). Only schedule if multi-camera ships; fix = bucket per submitted camera, or filter submission to the intended camera.
+
+**R4 — Pebble chunk-cull cleanup parity.** `TerrainChunkLodApplySystem` strips `TreePlacementRecord`/`RockPlacementRecord` buffers + tags when a chunk culls to LOD3, but has no `PebblePlacementRecord`/`ChunkPebblePlacementTag` equivalent. No visual bug — the render system already skips culled chunks — but pebble buffers accumulate on culled chunks and they stay in the pebble render query just to be skipped. Fix = add the matching pebble removal block alongside the tree/rock one.
+
+**T1 — Scatter LOD test coverage.** Current tests cover pure LOD selection (`SurfaceScatterLodUtilityTests`) and mesh registration (`SurfaceScatterRenderSystemContractTestsBase`) but not the runtime paths most likely to break: no `PebbleChunkRenderSystem` contract test, `PebblePlacementAlgorithmTests` never calls `GeneratePlacements`, and no `OnUpdate` near/far bucket-routing test. Fill the highest-risk gaps first (Pebble contract + `GeneratePlacements`).
+
+---
+
+### Biome Art — Windswept Colossus Plains scatter models (B1–B7)
+
+**Source spec:** `Assets/Docs/mvp/Windswept_Colossus_Plains_Biome_Spec.md`. These are **model authoring tickets** — runtime placement/render systems are separate work where noted.
+
+**Shared conventions (apply to all B tickets):**
+- Author in Blender (`BlenderSource/`), export FBX to `Assets/Models/<Family>/` following the `Assets/Models/Trees/` layout. Keep `.blend` sources in `BlenderSource/`.
+- One material per family; bake color variation into mesh variants via vertex colors — scatter renders through `Graphics.RenderMeshInstanced` (URP), so per-instance material variation is unavailable.
+- The scene is vertex-bound with ~92% of frame verts from scatter (`RENDER_PERF_PROFILE_REPORT.md`); vert budgets below are **hard caps**. Budgets are proposed here — reconcile with `ArtAndDOTS_Pipeline.md` and feed the answer back into R1 open question 2.
+- Every near mesh ships with a far-LOD mesh per `SURFACE_SCATTER_LOD_SPEC.md` (system is inert until far meshes are assigned). Far-mesh bounds must approximately match the near mesh (grounding offset is computed from the mesh actually drawn — §4.5).
+- Pivot at mesh base; design rock-family meshes to read correctly when partially buried (no visible flat underside at ~20–30% sink).
+- **Dependency note (corrected 2026-06-11):** tree and rock scatter families exist (`TreeChunkRenderSystem` / `RockChunkRenderSystem`), and short grass already renders via the GPU-instanced blade system (`GrassChunkGenerationSystem`, `GrassType 0`) — baseline grass needs **no mesh authoring**. B1–B3 slot into the rock family. B5–B7 target the reserved sparse-clump variant (`GrassType 1` in `TerrainChunkGrassSurface`, not yet implemented). B4 (shrubs) needs a new family or a second tree-family config. Per-step status lives in `mvp/Windswept_Colossus_Plains_Biome_Spec.md` § Procedural Generation Rules.
+
+#### B1 — Boulder group models
+- 3–4 variants, 1–6 m. Rounded, weathered, glacial-erratic silhouettes per spec.
+- Colors: Granite Gray RGB(110,110,110), Dark Basalt RGB(70,70,75), Lichen Green accents — vertex color.
+- Budget: ≤500 verts near, ≤80 verts far LOD.
+- Wire into `RockRenderConfig.MeshVariants` + `LodMeshVariants` via `RockVisualBootstrap`.
+
+#### B2 — Pebble cluster models
+- Author as **pre-clustered patches** (≈5–12 pebbles per mesh, elements 10–50 cm) — spec wants "clustered, not uniform", and per-pebble instances would explode instance counts.
+- 2–3 cluster variants, rock-family palette. Budget: ≤150 verts near.
+- Far LOD likely unnecessary at this size — decide whether to cull-at-distance instead of swapping; note the decision here.
+
+#### B3 — Stone outcrop models
+- 2–3 variants, 5–30 m, rare. Purpose is horizon-breaking and navigation — **silhouette readability from 500 m matters more than close-up detail**.
+- Budget: ≤1,500 verts near, ≤200 far.
+- **Open question (resolve before wiring):** render via the rock scatter family or via the structure/relic placement path? At 30 m these behave like small landmarks — `RelicLodSelectionSystem` + structure placement may fit better than per-frame scatter instancing.
+
+#### B4 — Steppe shrub models
+- 2–3 variants, 0.5–1 m: hardy steppe bushes / low heath per spec. Coverage <2%, so instance counts stay low.
+- Budget: ≤300 verts near, ≤60 far.
+- No shrub render family exists. Smallest-change option: a second tree-family config (shrubs behave like mini-trees — bounds-grounded, yaw-varied). Decide in the system ticket.
+
+#### B5 — Prairie grass tuft models
+- Crossed-card tufts, 20–80 cm; 3 variants across the spec palette (Dry Grass RGB(166,153,102), Muted Olive RGB(114,125,76), Pale Green RGB(140,155,110)).
+- Author for vertex-shader wind: encode bend weight (e.g. vertex color alpha, 0 at root → 1 at tip) — **record the chosen convention here**, the wind shader ticket consumes it.
+- Budget: ≤30 verts per tuft. This family will dominate instance counts ("Density: High") — cheapness is the entire game.
+- Runtime is the biggest open dependency in the group: high-density grass may need its own batched path rather than the existing scatter loop. Models are forward-compatible either way.
+
+#### B6 — Tall grass patch models
+- 1–1.5 m, authored as patch clumps (not single blades). Coverage <5%, spawns near streams / valley bottoms / sheltered slopes.
+- Same wind-encoding convention as B5. Budget: ≤60 verts per patch.
+
+#### B7 — Wildflower cluster models
+- Clusters 10–40 cm; three colorways: white, pale purple, yellow. Spec: "small clusters, never fields" — author as cluster meshes for sparse placement.
+- Budget: ≤60 verts per cluster. Shares the grass-family render path and wind convention from B5.
