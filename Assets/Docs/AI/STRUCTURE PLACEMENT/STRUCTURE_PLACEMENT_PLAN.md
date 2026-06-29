@@ -58,6 +58,7 @@ This plan does not cover:
 - [../PERSISTENCE_SPEC.md](../PERSISTENCE_SPEC.md) - structure placement persistence layer and sparse deltas
 - [../TERRAIN_ECS_NEXT_STEPS_SPEC.md](../TERRAIN_ECS_NEXT_STEPS_SPEC.md) - primary SDF terrain pipeline context
 - [../../WFC/MAP_WFC.md](../../WFC/MAP_WFC.md) - current dungeon/WFC system map
+- [MAGIC_GRID_SPEC.md](MAGIC_GRID_SPEC.md) - analytic magic lattice supplying grid-bound anchor candidates (relics/cities/fortresses)
 
 ---
 

@@ -4,17 +4,77 @@ Lightweight task tracker. Status: `[ ]` pending · `[x]` done · `[-]` blocked
 
 ---
 
-## Sprint: Camera Feel + Animation
+## Sprint: MVP Vista Moment
 
 > **FPS-only reversal + re-sequence (2026-06-20):** MVP ships **first-person only**. `PlayerCameraSettings.IsThirdPerson`
 > now defaults to `false` and the third-person body is hidden in first-person (`PlayerFirstPersonVisibility`).
 > Third-person stays as a **dev/debug toggle (V key)** for inspecting these clips. Consequence: the full-body
-> clips in **A1–A8 are not visible in normal play** — they only show in the dev toggle. So the sprint is
-> re-sequenced: **Camera Feel (C1–C3) now leads** — it's the primary in-game feel feedback in first-person and
-> is unaffected by the body being hidden. **Animation follows**, and its real in-game payoff is **A9
-> (first-person arms viewmodel)**; A1–A8 are now mostly dev-toggle / A9-prep work.
+> clips in **A1–A8 are not visible in normal play** — they only show in the dev toggle. This made **Camera
+> Feel (C1–C3)** the primary in-game feel feedback in first-person, and **A9 (first-person arms viewmodel)**
+> the real animation payoff; A1–A8 became mostly dev-toggle / A9-prep work. _(Superseded as sprint lead by
+> the 2026-06-29 Vista re-anchor below — Camera Feel is now secondary, A9 deferred.)_
 
-### Camera Feel _(sprint lead — primary in-game feedback in first-person)_
+> **Re-anchor to Vista (2026-06-29):** Re-focused on the project's designated MVP wow moment — the vista
+> discovery of the giant four-fingered stone hand across a hazy plain (`AI/MVP_VISTA_MOMENT_SPEC.md`,
+> `MASTER_PLAN.md` §1/§5). Blockers V1–V5 were sitting in the backlog while movement-feel polish led;
+> they're cheap (~½–1 day each) and mostly unbuilt, so they now **lead the sprint**. **Camera Feel C1–C3**
+> stays in-sprint as **secondary** — it makes slingshotting toward the relic feel good. **Animation A9**
+> (arms viewmodel) is **deferred** — biggest cost, off the wow-moment critical path.
+
+### Vista Moment _(sprint lead — the MVP wow moment)_
+
+> Target: player crests a plain, sees the giant stone hand across atmospheric haze, slingshots toward it,
+> and enters the WFC maze interior. Ordered by impact-per-hour per `AI/MVP_VISTA_MOMENT_SPEC.md` §4.
+
+| ID  | Status | Subject |
+|-----|--------|---------|
+| V1  | [ ] | Ground plane impostor — terrain-colored disc beyond chunk radius (sky-drop world extent) |
+| V2  | [ ] | Atmospheric fog tuning — blue-grey haze, foreground sharp / horizon veiled |
+| V3  | [ ] | Mountain skybox panel — painted silhouette framing the horizon |
+| V4  | [ ] | Hand mesh validation — confirm `testAlienHand.fbx` renders; tune scale/yOffset |
+| V5  | [ ] | Relic → WFC maze interior — connect relic anchor to dungeon interior generation |
+
+#### V1 — Ground plane impostor
+**Spec:** `AI/GROUND_PLANE_IMPOSTOR_SPEC.md`. Horizontal terrain-colored disc (~1500u radius) on the XZ
+plane beyond the ~256u SDF chunk radius; world-space shaded with the terrain's noise octaves, radial alpha
+fade hides the seam, fog dissolves the outer edge. Entity follows player XZ (one transform write). Eliminates
+the void from altitude and enables the sky-drop intro. ½–1 day; no texture assets, no SDF pipeline changes.
+
+#### V2 — Atmospheric fog tuning _(canonical fog ticket — folds in former A6)_
+**Intent:** Fog should read as thin mist suspended in air, not a tint on objects. From altitude it currently
+renders as a visible square, which breaks the illusion.
+- Bias toward distance/altitude; reduce density so near geometry is largely unaffected. Shift color blue-grey
+  (`#8FA8C0`), tune start/end so foreground is sharp and horizon veiled.
+- Eliminate the "square from height" artifact — if a finite plane/quad drives the fog, replace with a
+  camera-relative/global effect or skirt it so no edge shows at fly heights.
+- Reconcile with the vista stack — check interaction with `AI/GROUND_PLANE_IMPOSTOR_SPEC.md` and
+  `AI/MVP_VISTA_MOMENT_SPEC.md` so fog and horizon read as one atmosphere.
+- **Open questions (resolve first):** (1) what renders the fog today — URP Volume/global fog, a custom
+  shader/material, a skybox blend, or a scene quad? (`WeatherSystem.WeatherType.Fog` sets weather state only,
+  no visuals — source is elsewhere.) (2) Is the "square from height" a dedicated fog plane or the ground-plane
+  impostor edge?
+- **Acceptance:** from ground and max fly height, no plane edge; near objects (~1 chunk) negligible tint; far
+  horizon softened. Validate in Play Mode at several altitudes.
+
+#### V3 — Mountain skybox panel
+Paint or source a mountain silhouette into the skybox (MVP Option A per `MVP_VISTA_MOMENT_SPEC.md` §2.4 —
+2–4 hrs). Sells horizon depth. The seed-driven horizon ring (`HORIZON_IMPOSTOR_SEED_DRIVEN_SPEC.md`) is the
+Phase 2 system, deferred.
+
+#### V4 — Hand mesh validation
+Confirm `Assets/Models/testAlienHand.fbx` renders correctly at scene scale in Play Mode (already wired as
+`Relic.asset` `DefaultTemplateId: relic_hand`). Tune `scale` / `yOffset` in `RelicVisualBootstrap` inspector
+so the four-finger hand reads from ~200–400u. Per `MVP_VISTA_MOMENT_SPEC.md` §2.1.
+
+#### V5 — Relic → WFC maze interior
+Connect the relic anchor to WFC dungeon interior generation so the hand is enterable. Bridges structure
+placement to the existing WFC pipeline — reuses the dungeon realizer path. Depends on the WFC bootstrap +
+deterministic-seed fixes noted in `AI/STRUCTURE PLACEMENT/STRUCTURE_PLACEMENT_SPEC.md` §12.5.1. See
+`WFC/MAP_WFC.md`, `WFC_Dungeon_Test_Plan.md`.
+
+---
+
+### Camera Feel _(secondary — slingshot feel toward the relic; was sprint lead pre-2026-06-29)_
 
 > **FPS adaptation:** these tickets were specced against the third-person orbit camera, so the **distance
 > dolly/pullback** terms (`TargetDistance`, `BallisticDistanceAdd`) are third-person concepts. In first-person
@@ -58,17 +118,48 @@ Per `MOVEMENT_PLANNING.md` Step 7:
 
 ---
 
-### Animation _(follows camera feel — A1–A8 are dev-toggle / A9-prep; A9 is the in-game payoff)_
+### Animation _(deferred from this sprint by the 2026-06-29 Vista re-anchor — A9 follows the vista; A1–A8 are third-person body)_
+
+> **Re-scope (2026-06-29):** Under FPS-only, the third-person body is hidden in play, so the full-body
+> clips (A2–A8) are invisible except via the dev V-key toggle — they do **not** gate the MVP. **A9
+> (first-person arms viewmodel)** is the real FPS animation work but is **deferred behind the Vista Moment**
+> this sprint (biggest cost, off the wow-moment path); it follows once the vista lands. A1–A8 stay parked
+> under **Dev-toggle / deferred** below.
+
+#### Deferred — follows the vista _(was live; deferred by Vista re-anchor 2026-06-29)_
 
 | ID  | Status | Subject | Blocks | Blocked By |
 |-----|--------|---------|--------|------------|
-| A1  | [x] | Wire slingshot clips into animator controller | A2, A3 | — |
+| A9  | [ ] | First-person arms viewmodel (the real fix for FPS-only MVP) | — | — |
+
+#### Dev-toggle / deferred (third-person body) _(not MVP-gating — body hidden in first-person play)_
+
+| ID  | Status | Subject | Blocks | Blocked By |
+|-----|--------|---------|--------|------------|
+| A1  | [x] | Wire slingshot clips into animator controller (done) | A2, A3 | — |
 | A2  | [ ] | Fix animator controller transition blend times | A4 | A1 |
-| A3  | [ ] | Stabilize landing animations | A4 | A1 |
+| A3  | [ ] | Stabilize landing animations _(verify hidden-animator state first — may still fire into dead states)_ | A4 | A1 |
 | A4  | [-] | Import Kevin Iglesias pack and wire basic movement animations | A5 | A2, A3 |
 | A5  | [-] | Wire glide animation state | — | A4 |
-| A8  | [ ] | Simplify airborne animation: single fall clip while in air (MVP) | — | — |
-| A9  | [ ] | First-person arms viewmodel (the real fix for FPS-only MVP) | — | — |
+| A8  | [ ] | Simplify airborne animation: single fall clip while in air | — | — |
+
+#### A9 — First-person arms viewmodel (the real fix for FPS-only MVP) _(deferred — follows the vista)_
+With MVP reversed to first-person only (2026-06-20), the full third-person body is hidden in play
+(`PlayerFirstPersonVisibility`) and the A1–A8 clips are invisible except via the dev V-key toggle. The
+proper FPS feedback for charge/launch/glide is a dedicated **arms viewmodel**: a first-person arms rig with
+FPS-authored clips, shown only in first-person.
+
+The groundwork is already done and forward-compatible — `PlayerFirstPersonVisibility` hides the body in
+first-person, so this ticket only adds the arms rig and shows it in the same place (no rework of the body-hide
+or camera-mode plumbing).
+
+- Author/acquire a first-person arms rig + clips: slingshot charge pull, launch/release, glide arms-spread, idle/move bob.
+- Show the arms rig only when `IsThirdPerson == false`; hide it (and show the full body) in the third-person dev toggle. Extend `PlayerFirstPersonVisibility` — it already owns the first/third-person visibility swap.
+- Drive arms clips from the same `PlayerAnimatorBridge` parameters where they map; add FPS-specific params only where the body params don't translate.
+- Scope check before building: decide whether arms are a separate `Animator` (own controller) or share the existing controller. Capture the decision here.
+- **Validate:** in first-person, charge pull / launch / glide read clearly on the arms with no body clipping; V-key toggle still shows the full body + existing third-person clips for debugging.
+
+**Dev-toggle / deferred ticket detail (third-person body, A1–A8):**
 
 #### A1 — Wire slingshot clips into animator controller
 Wire the 3 exported FBX clips into `PlayerAnimatorController` per `SLINGSHOT_ANIMATION_CONTROLLER_SPEC.md`.
@@ -118,22 +209,6 @@ The animator graph has grown complex. MVP/POC decision (2026-06-10): every in-ai
 - Update the `BallisticRisingHash` comment in `PlayerAnimatorBridge.cs` ("drives T-pose vs Falling split") to match.
 - Spec: `PLAYER_CHARACTER_VISUAL_SWAP_SPEC.md` airborne mapping table + `SLINGSHOT_ANIMATION_CONTROLLER_SPEC.md` MVP note (both updated 2026-06-10).
 
-#### A9 — First-person arms viewmodel (the real fix for FPS-only MVP)
-With MVP reversed to first-person only (2026-06-20), the full third-person body is hidden in play
-(`PlayerFirstPersonVisibility`) and the A1–A8 clips are invisible except via the dev V-key toggle. The
-proper FPS feedback for charge/launch/glide is a dedicated **arms viewmodel**: a first-person arms rig with
-FPS-authored clips, shown only in first-person.
-
-The groundwork is already done and forward-compatible — `PlayerFirstPersonVisibility` hides the body in
-first-person, so this ticket only adds the arms rig and shows it in the same place (no rework of the body-hide
-or camera-mode plumbing).
-
-- Author/acquire a first-person arms rig + clips: slingshot charge pull, launch/release, glide arms-spread, idle/move bob.
-- Show the arms rig only when `IsThirdPerson == false`; hide it (and show the full body) in the third-person dev toggle. Extend `PlayerFirstPersonVisibility` — it already owns the first/third-person visibility swap.
-- Drive arms clips from the same `PlayerAnimatorBridge` parameters where they map; add FPS-specific params only where the body params don't translate.
-- Scope check before building: decide whether arms are a separate `Animator` (own controller) or share the existing controller. Capture the decision here.
-- **Validate:** in first-person, charge pull / launch / glide read clearly on the arms with no body clipping; V-key toggle still shows the full body + existing third-person clips for debugging.
-
 _(Former A6 → folded into backlog **V2**. Former A7 → backlog **R1**. Both were rendering/environment work, not animation. A9 added 2026-06-20 for the FPS-only reversal.)_
 
 ---
@@ -147,11 +222,9 @@ _Tickets for later sprints — not yet scheduled._
 | M1  | Glide mechanic (Space hold → GlideCharging → Gliding) | Movement |
 | M2  | Chain slingshot (chain window + additive velocity) | Movement |
 | M3  | Thermal columns (vertical lift volumes) | Movement |
-| V1  | Ground plane impostor | MVP Vista |
-| V2  | Atmospheric fog tuning _(canonical fog ticket — folds in former A6)_ | MVP Vista |
-| V3  | Mountain skybox panel | MVP Vista |
 | P1  | Basic HUD (charge indicator + chain window indicator) | Phase 1 |
 | P2  | Magic Hand System (raycast, charge, binary terrain edit) | Phase 1 |
+| W1  | Magic power grid (placeholder — see `AI/STRUCTURE PLACEMENT/MAGIC_GRID_SPEC.md`) | Phase 2 / World Power |
 | R1  | Low-poly tree/rock LODs + enable relic LOD | Rendering |
 | R2  | Speed-biased scatter LOD (drop detail during fast airborne movement) | Rendering |
 | R3  | Camera-specific scatter LOD bucketing (multi-camera correctness) | Rendering |
@@ -166,21 +239,6 @@ _Tickets for later sprints — not yet scheduled._
 | B7  | Wildflower cluster models (10–40cm, 3 colorways) | Biome Art |
 
 ---
-
-### V2 — Atmospheric fog tuning _(canonical fog ticket)_
-**Intent:** Fog should read as a thin mist suspended in the air, not as a tint applied to objects (trees, rocks, etc.). From altitude it currently renders as a visible square, which breaks the illusion. Possibly also reconsider what the fog is for.
-
-Goal: distance/height-based atmospheric haze that softens the far horizon without visibly tinting nearby geometry, with **no perceptible plane/quad edge from any camera height**.
-
-- Bias the effect toward distance and/or altitude; reduce density so near geometry is largely unaffected.
-- Eliminate the "square from height" artifact. If a finite plane/quad drives the fog, replace it with a camera-relative/global effect or skirt/extend it so no edge shows at expected fly heights.
-- Reconcile with the vista stack — check interaction with `GROUND_PLANE_IMPOSTOR_SPEC.md` and `MVP_VISTA_MOMENT_SPEC.md` so fog and the horizon impostor read as one atmosphere.
-
-**Open questions (resolve first):**
-1. What actually renders the fog today — URP Volume/global fog (`RenderSettings.fog`), a custom fog shader/material, a skybox blend, or a quad/plane in the scene? The only `Fog` in code is `WeatherSystem.WeatherType.Fog`, which sets weather-state values (temperature/humidity) only — **no visuals** — so the source is elsewhere. (Determines settings-tweak vs. system change.)
-2. Is the "square from height" a dedicated fog plane, or the ground-plane impostor edge?
-
-**Acceptance:** From ground level and from max expected fly height, fog shows no plane edge; near objects (within ~1 chunk) show negligible tint; far horizon is softened. Validate in Play Mode at several altitudes.
 
 ### R1 — Low-poly tree/rock LODs + enable relic LOD
 **Intent:** Reduce environment-object render cost via LOD. **Priority: trees and rocks first** — they cost more FPS than the giant relics. Relics second.
@@ -224,6 +282,18 @@ Non-blocking gaps surfaced reviewing the surface-scatter-LOD commit. None cause 
 **R4 — Pebble chunk-cull cleanup parity.** `TerrainChunkLodApplySystem` strips `TreePlacementRecord`/`RockPlacementRecord` buffers + tags when a chunk culls to LOD3, but has no `PebblePlacementRecord`/`ChunkPebblePlacementTag` equivalent. No visual bug — the render system already skips culled chunks — but pebble buffers accumulate on culled chunks and they stay in the pebble render query just to be skipped. Fix = add the matching pebble removal block alongside the tree/rock one.
 
 **T1 — Scatter LOD test coverage.** Current tests cover pure LOD selection (`SurfaceScatterLodUtilityTests`) and mesh registration (`SurfaceScatterRenderSystemContractTestsBase`) but not the runtime paths most likely to break: no `PebbleChunkRenderSystem` contract test, `PebblePlacementAlgorithmTests` never calls `GeneratePlacements`, and no `OnUpdate` near/far bucket-routing test. Fill the highest-risk gaps first (Pebble contract + `GeneratePlacements`).
+
+---
+
+### W1 — Magic power grid _(placeholder — design-stage, not yet broken into tickets)_
+**Spec:** `AI/STRUCTURE PLACEMENT/MAGIC_GRID_SPEC.md` (DESIGN). Analytic world-space XZ lattice: power-source nodes, WFC-build-on-node affordance, sparse claimed-node alignment state, per-template `NodeAffinity`, universal influence query. Decisions captured in the spec; §13 lists the open questions to resolve before build.
+
+**Not scheduled — sequences behind its foundation.** Don't break into tickets until Structure Placement is on the board:
+- Depends on the **Structure Placement** anchor pipeline (`STRUCTURE_PLACEMENT_PLAN.md` §8 Steps 1–3) — the grid is a candidate-source variant reusing its `StructureAnchorRecord` / footprint / persistence machinery.
+- That in turn depends on the known **WFC bootstrap gaps** (`HybridWFCSystem` not created by `DotsSystemBootstrap`; deterministic seed) — see `STRUCTURE_PLACEMENT_SPEC.md` §12.5.1.
+- Orthogonal to **P2 Magic Hand System** (shares the "magic" fiction only; no dependency either way).
+
+**Earliest natural entry:** after the free anchor planner exists, add the grid as a `NodeBound` candidate source + the on-node WFC build affordance.
 
 ---
 

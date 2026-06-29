@@ -39,6 +39,7 @@ This spec does not cover:
 ## 4. Related Docs
 
 - [STRUCTURE_PLACEMENT_PLAN.md](STRUCTURE_PLACEMENT_PLAN.md) - rollout sequencing and priorities
+- [MAGIC_GRID_SPEC.md](MAGIC_GRID_SPEC.md) - analytic XZ lattice supplying grid-bound anchor candidates (relic/city/fortress) as a deterministic variant of §9.2
 - [../TerrainHeightMaps/TERRAIN_SURFACE_SCATTER_SPEC.md](../TerrainHeightMaps/TERRAIN_SURFACE_SCATTER_SPEC.md) - adjacent runtime for scatter props
 - [../TerrainHeightMaps/TERRAIN_SURFACE_SCATTER_PLAN.md](../TerrainHeightMaps/TERRAIN_SURFACE_SCATTER_PLAN.md) - placement domain boundary
 - [../PERSISTENCE_SPEC.md](../PERSISTENCE_SPEC.md) - structure placement persistence layer
