@@ -630,8 +630,8 @@ Recommendation for MVP: camera-parented ParticleSystem. Lower complexity, suffic
 ### Bootstrap Changes
 
 - `PlayerCameraBootstrap_WithVisuals` updated to add `CameraEffectState`, `CameraEffectConfig`, `SlingshotConfig`, `GlideConfig`, `ThermalConfig`, and `LandingConfig` to the player entity
-- Camera created at third-person distance behind player instead of first-person head position
-- `PlayerCameraSettings.IsThirdPerson` set to true
+- Camera supports both third-person orbit and first-person head placement (resolver branches on `IsThirdPerson`)
+- `PlayerCameraSettings.IsThirdPerson` defaults to **`false`** — MVP is first-person only (reversed 2026-06-20; see MOVEMENT_PLANNING.md "Camera Perspective"). Third-person remains available as a dev/debug toggle (V key). The body is hidden in first-person via `PlayerFirstPersonVisibility`.
 
 ---
 

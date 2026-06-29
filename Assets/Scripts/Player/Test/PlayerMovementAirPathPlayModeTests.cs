@@ -157,13 +157,45 @@ namespace DOTS.Player.Test
             yield return null;
         }
 
+        [UnityTest]
+        public IEnumerator GroundedJump_ImmediatelyPromotesToBallistic()
+        {
+            var entity = CreateMovementEntity(
+                mode: PlayerMovementMode.Grounded,
+                isGrounded: true,
+                initialLinearVelocity: float3.zero,
+                moveInput: float2.zero,
+                groundSpeed: 10f,
+                airControl: 0.2f,
+                jumpPressed: true);
+
+            TickPhysicsGroupOnce();
+
+            var movementState = entityManager.GetComponentData<PlayerMovementState>(entity);
+            var velocity = entityManager.GetComponentData<PhysicsVelocity>(entity);
+            var input = entityManager.GetComponentData<PlayerInputComponent>(entity);
+
+            Assert.AreEqual(PlayerMovementMode.Ballistic, movementState.Mode,
+                "Grounded jump should enter Ballistic on the takeoff frame so the jump animation can trigger from idle/run.");
+            Assert.IsFalse(movementState.IsGrounded,
+                "Grounded jump should clear IsGrounded on the takeoff frame.");
+            Assert.AreEqual(5f, velocity.Linear.y, 1e-4f,
+                "Grounded jump should apply the configured jump impulse immediately.");
+            Assert.IsFalse(input.JumpPressed,
+                "JumpPressed should be consumed after the jump impulse is applied.");
+
+            entityManager.DestroyEntity(entity);
+            yield return null;
+        }
+
         private Entity CreateMovementEntity(
             PlayerMovementMode mode,
             bool isGrounded,
             float3 initialLinearVelocity,
             float2 moveInput,
             float groundSpeed,
-            float airControl)
+            float airControl,
+            bool jumpPressed = false)
         {
             var entity = entityManager.CreateEntity(
                 typeof(PlayerMovementConfig),
@@ -190,7 +222,7 @@ namespace DOTS.Player.Test
             {
                 Move = moveInput,
                 Look = float2.zero,
-                JumpPressed = false
+                JumpPressed = jumpPressed
             });
 
             entityManager.SetComponentData(entity, new PlayerMovementState

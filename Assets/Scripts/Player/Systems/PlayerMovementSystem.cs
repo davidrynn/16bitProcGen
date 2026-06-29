@@ -173,6 +173,9 @@ namespace DOTS.Player.Systems
                         currentVelocity.y = math.max(currentVelocity.y, config.ValueRO.JumpImpulse);
                         // Flag the entity as airborne until grounding detects the next contact.
                         movementState.ValueRW.IsGrounded = false;
+                        // Switch traversal mode on the takeoff frame so jump animation and
+                        // airborne steering begin immediately instead of waiting for fall-time promotion.
+                        movementState.ValueRW.Mode = PlayerMovementMode.Ballistic;
                     }
                     // Consume the jump input so the impulse only fires once per press.
                     input.ValueRW.JumpPressed = false;

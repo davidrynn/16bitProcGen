@@ -249,7 +249,9 @@ namespace DOTS.Player.Bootstrap
                     FirstPersonOffset = new float3(0f, 1.6f, 0f),
                     ThirdPersonPivotOffset = new float3(0f, 1.5f, 0f),
                     ThirdPersonDistance = 4.0f,
-                    IsThirdPerson = true          // Third-person for slingshot visibility
+                    // MVP is first-person only (see MOVEMENT_PLANNING.md "Camera Perspective").
+                    // Third-person remains a dev/debug toggle (V key) for inspecting animations.
+                    IsThirdPerson = false
                 });
 
             }
@@ -260,7 +262,8 @@ namespace DOTS.Player.Bootstrap
                     FirstPersonOffset = new float3(0f, 1.6f, 0f),
                     ThirdPersonPivotOffset = new float3(0f, 1.5f, 0f),
                     ThirdPersonDistance = 4.0f,
-                    IsThirdPerson = true
+                    // MVP is first-person only (see MOVEMENT_PLANNING.md "Camera Perspective").
+                    IsThirdPerson = false
                 });
 
                 Debug.LogWarning("[PlayerBootstrap] Failed to create camera entity - camera system may not work");

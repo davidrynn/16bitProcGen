@@ -228,6 +228,61 @@ namespace DOTS.Player.Test
         }
 
         [UnityTest]
+        public IEnumerator GroundedJump_DoesNotImmediatelyRegroundWhileStillAscending()
+        {
+            wallColliderBlob = Unity.Physics.BoxCollider.Create(
+                new BoxGeometry
+                {
+                    Center = float3.zero,
+                    Size = new float3(4f, 0.2f, 4f),
+                    Orientation = quaternion.identity,
+                    BevelRadius = 0f
+                },
+                CollisionFilter.Default);
+
+            var floor = entityManager.CreateEntity(typeof(LocalTransform), typeof(PhysicsCollider), typeof(PhysicsWorldIndex));
+            entityManager.SetComponentData(floor, LocalTransform.FromPosition(new float3(0f, -0.1f, 0f)));
+            entityManager.SetComponentData(floor, new PhysicsCollider { Value = wallColliderBlob });
+
+            var player = CreateTerrainDriverPlayer(new float3(0f, 0f, 0f), PlayerMovementMode.Grounded, isGrounded: true);
+            entityManager.SetComponentData(player, new PhysicsGravityFactor { Value = 0f });
+            entityManager.SetComponentData(player, new PhysicsVelocity
+            {
+                Linear = float3.zero,
+                Angular = float3.zero
+            });
+            entityManager.SetComponentData(player, new PlayerInputComponent
+            {
+                Move = float2.zero,
+                Look = float2.zero,
+                JumpPressed = true
+            });
+
+            TickWorldOnce();
+
+            var firstTickState = entityManager.GetComponentData<PlayerMovementState>(player);
+            Assert.AreEqual(PlayerMovementMode.Ballistic, firstTickState.Mode,
+                "Grounded jump should switch to Ballistic on the takeoff frame.");
+            Assert.IsFalse(firstTickState.IsGrounded,
+                "Grounded jump should clear IsGrounded on the takeoff frame.");
+
+            TickWorldOnce();
+
+            var secondTickState = entityManager.GetComponentData<PlayerMovementState>(player);
+            var secondTickVelocity = entityManager.GetComponentData<PhysicsVelocity>(player);
+            Assert.Greater(secondTickVelocity.Linear.y, 0f,
+                "Test setup invalid: the player should still be moving upward on the next tick.");
+            Assert.IsFalse(secondTickState.IsGrounded,
+                "Grounding probe should not immediately re-ground a ballistic takeoff while vertical velocity is still upward.");
+            Assert.Greater(secondTickState.FallTime, 0f,
+                "Suppressing the upward takeoff hit should advance FallTime instead of snapping back to grounded.");
+
+            entityManager.DestroyEntity(player);
+            entityManager.DestroyEntity(floor);
+            yield return null;
+        }
+
+        [UnityTest]
         public IEnumerator OverlappedWall_UngroundedGroundMode_CommandsAirControlLerp()
         {
             // When IsGrounded=false, the movement system uses the air-control path

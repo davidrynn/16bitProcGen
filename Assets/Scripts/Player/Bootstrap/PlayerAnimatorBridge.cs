@@ -59,7 +59,9 @@ namespace DOTS.Player.Bootstrap
         private static readonly int HardLandingTriggerHash    = Animator.StringToHash("HardLandingTrigger");
         private static readonly int SlideLandingTriggerHash   = Animator.StringToHash("SlideLandingTrigger");
         private static readonly int GroundedBoolHash          = Animator.StringToHash("GroundedBool");
-        // True while Ballistic and still rising (vy >= 0) — drives T-pose vs Falling split
+        // True while Ballistic and still rising (vy >= 0). The controller uses this to
+        // distinguish grounded Jump takeoff from Falling, and to keep slingshot release
+        // on BallisticRise until the ascent turns into descent.
         private static readonly int BallisticRisingHash       = Animator.StringToHash("BallisticRising");
         // 0→1 countdown driven by LandingRecoveryTime/Duration for blend tree timing
         private static readonly int LandingRecoveryHash       = Animator.StringToHash("LandingRecoveryNormalized");
@@ -87,6 +89,10 @@ namespace DOTS.Player.Bootstrap
             { Animator.StringToHash("Base Layer.Idle"), "Idle" },
             { Animator.StringToHash("Base Layer.LocoBlend"), "LocoBlend" },
             { Animator.StringToHash("Base Layer.SlingshotCharge"), "SlingshotCharge" },
+            { Animator.StringToHash("Base Layer.Slingshot_Charge_Start"), "Slingshot_Charge_Start" },
+            { Animator.StringToHash("Base Layer.Slingshot_Charge_Hold"), "Slingshot_Charge_Hold" },
+            { Animator.StringToHash("Base Layer.Slingshot_Release"), "Slingshot_Release" },
+            { Animator.StringToHash("Base Layer.Jump"), "Jump" },
             { Animator.StringToHash("Base Layer.BallisticRise"), "BallisticRise" },
             { Animator.StringToHash("Base Layer.Falling"), "Falling" },
             { Animator.StringToHash("Base Layer.GlideCharging"), "GlideCharging" },
@@ -96,6 +102,10 @@ namespace DOTS.Player.Bootstrap
             { Animator.StringToHash("Idle"), "Idle" },
             { Animator.StringToHash("LocoBlend"), "LocoBlend" },
             { Animator.StringToHash("SlingshotCharge"), "SlingshotCharge" },
+            { Animator.StringToHash("Slingshot_Charge_Start"), "Slingshot_Charge_Start" },
+            { Animator.StringToHash("Slingshot_Charge_Hold"), "Slingshot_Charge_Hold" },
+            { Animator.StringToHash("Slingshot_Release"), "Slingshot_Release" },
+            { Animator.StringToHash("Jump"), "Jump" },
             { Animator.StringToHash("BallisticRise"), "BallisticRise" },
             { Animator.StringToHash("Falling"), "Falling" },
             { Animator.StringToHash("GlideCharging"), "GlideCharging" },
@@ -134,7 +144,9 @@ namespace DOTS.Player.Bootstrap
             CharacterAnimator.SetBool(GroundedBoolHash, state.IsGrounded);
             LogBoolParameterChange("GroundedBool", state.IsGrounded, ref _lastLoggedGrounded, ref _hasLoggedGrounded);
 
-            // Within Ballistic: rising (vy >= 0) = T-pose, falling (vy < 0) = Falling clip
+            // Within Ballistic: rising (vy >= 0) selects the upward branch
+            // (Jump from grounded locomotion or BallisticRise from slingshot release),
+            // while falling (vy < 0) selects Falling.
             bool ballisticRising = state.Mode == PlayerMovementMode.Ballistic && state.Velocity.y >= 0f;
             CharacterAnimator.SetBool(BallisticRisingHash, ballisticRising);
             LogBoolParameterChange("BallisticRising", ballisticRising, ref _lastLoggedBallisticRising, ref _hasLoggedBallisticRising);
