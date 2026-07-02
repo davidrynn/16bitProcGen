@@ -1,7 +1,13 @@
 # Deprecated Files Tracking
 
-**Last Updated:** 2026-01-23  
+**Last Updated:** 2026-07-02  
 **Purpose:** Track all deprecated, legacy, and archived files that have been moved to the deprecated assembly definition.
+
+> **2026-07-02 — cleanup round 1 (see `Assets/Docs/AI/CODEBASE_SIMPLIFICATION_PLAN.md` §6):**
+> The entire `Assets/Scripts/DOTS/Test/Archive/` tree (29 files + `DOTS.Terrain.Deprecated.asmdef`)
+> listed below was **deleted** (plan row A1) — git history is the archive. The "Legacy System Files"
+> below are being handled by plan rows A13/A18/R40 in subsequent batches. This ledger will be
+> archived at end of round (plan row A20); the plan doc is now the authoritative tracker.
 
 ## Overview
 
