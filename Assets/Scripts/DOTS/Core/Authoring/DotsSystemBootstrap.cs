@@ -323,12 +323,6 @@ public class DotsSystemBootstrap : MonoBehaviour
                 DebugSettings.Log("Bootstrap: PlayerEntityBootstrap enabled and added to InitializationSystemGroup.");
             }
 
-            if (config.EnablePlayerEntityBootstrapPureEcs)
-            {
-                world.CreateSystem<PlayerEntityBootstrap_PureECS>();
-                DebugSettings.Log("Bootstrap: PlayerEntityBootstrap_PureECS enabled via config.");
-            }
-
             if (config.EnablePlayerInputSystem)
             {
                 var handle = world.CreateSystem<PlayerInputSystem>();
@@ -370,27 +364,6 @@ public class DotsSystemBootstrap : MonoBehaviour
                 var handle = world.CreateSystem<PlayerGroundingSystem>();
                 physicsGroup.AddSystemToUpdateList(handle);
                 DebugSettings.Log("Bootstrap: PlayerGroundingSystem enabled and added to PhysicsSystemGroup.");
-            }
-
-            if (config.EnablePlayerCameraSystem)
-            {
-                var handle = world.CreateSystem<PlayerCameraSystem>();
-                presentationGroup.AddSystemToUpdateList(handle);
-                DebugSettings.Log("Bootstrap: PlayerCameraSystem enabled and added to PresentationSystemGroup.");
-            }
-
-            if (config.EnablePlayerCinemachineCameraSystem)
-            {
-                var handle = world.CreateSystem<PlayerCinemachineCameraSystem>();
-                presentationGroup.AddSystemToUpdateList(handle);
-                DebugSettings.Log("Bootstrap: PlayerCinemachineCameraSystem enabled and added to PresentationSystemGroup.");
-            }
-
-            if (config.EnableCameraFollowSystem)
-            {
-                var handle = world.CreateSystem<CameraFollowSystem>();
-                simGroup.AddSystemToUpdateList(handle);
-                DebugSettings.Log("Bootstrap: CameraFollowSystem enabled and added to SimulationSystemGroup.");
             }
 
             // ── Movement MVP systems ──
@@ -479,13 +452,6 @@ public class DotsSystemBootstrap : MonoBehaviour
                 DebugSettings.Log("Bootstrap: ScreenEffectResolverSystem enabled and added to PresentationSystemGroup.");
             }
 
-#if SIMPLE_PLAYER_MOVEMENT_ENABLED
-            if (config.EnableSimplePlayerMovementSystem)
-            {
-                world.CreateSystem<SimplePlayerMovementSystem>();
-                DebugSettings.Log("Bootstrap: SimplePlayerMovementSystem enabled via config.");
-            }
-#endif
         }
 
         if (config.EnableDungeonSystem)

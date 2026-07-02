@@ -38,7 +38,6 @@ public class ProjectFeatureConfig : ScriptableObject
     [Header("Player Bootstrap Systems")]
     public bool EnablePlayerBootstrapFixedRateInstaller = true;
     public bool EnablePlayerEntityBootstrap = true;
-    public bool EnablePlayerEntityBootstrapPureEcs = false;
 
     [Header("Player Gameplay Systems")]
     public bool EnablePlayerInputSystem = true;
@@ -46,9 +45,6 @@ public class ProjectFeatureConfig : ScriptableObject
     public bool EnablePlayerMovementSystem = true;
     public bool EnablePlayerGroundingSystem = true;
     public bool EnablePlayerTerrainSafetySystem = true;
-    public bool EnablePlayerCameraSystem = false;  // Replaced by CameraEffectResolverSystem for third-person orbit
-    public bool EnablePlayerCinemachineCameraSystem = false;  // Replaced by CameraEffectResolverSystem
-    public bool EnableCameraFollowSystem = false;  // Replaced by CameraEffectResolverSystem
 
     [Header("Player Movement MVP Systems")]
     public bool EnableSlingshotChargeSystem = true;
@@ -63,9 +59,6 @@ public class ProjectFeatureConfig : ScriptableObject
     public bool EnableCameraGlideFeedbackSystem = true;
     public bool EnableGlideSystem = true;
     public bool EnableScreenEffectResolverSystem = true;
-
-    [Header("Player Legacy/Test Systems")]
-    public bool EnableSimplePlayerMovementSystem = false;
 
     [Header("Terrain Core Systems")]
     public bool EnableHybridTerrainGenerationSystem = true;
