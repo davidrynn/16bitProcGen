@@ -336,3 +336,13 @@ No `.mat` file — material is created at runtime by the bootstrap.
 - **Vertex displacement** — drive Y per-vertex from the same noise function to add coarse height variation (hills visible from orbit).
 - **Biome-aware coloring** — pass biome weights to shader to match per-biome palettes.
 - **Compositing with horizon ring** — when `HORIZON_IMPOSTOR_SEED_DRIVEN_SPEC.md` is implemented (Phase 2), the ring sits above this plane and handles the vertical silhouette.
+
+## 11. Color authority (supersedes disabled `SyncTerrainColor`)
+
+The disc's base `_GrassColor`/`_RockColor` are currently **frozen shader defaults** and do not track the
+day/night cycle; the `SyncTerrainColor` attempt is disabled because it reads the terrain tint from the
+Synty material's `_BaseColor`, which is white (the real color is in the albedo texture). Both are
+superseded by the **[ATMOSPHERE_COLOR_AUTHORITY_SPEC.md](ATMOSPHERE_COLOR_AUTHORITY_SPEC.md)** (ticket
+**V9**): the disc consumes `_AtmoGround`/`_AtmoRock` globals and calls the shared `ApplyAerialPerspective`
+(low `strength`) so its base color and far-edge haze both come from the one palette source. The existing
+`MixFog` coupling stays.

@@ -44,6 +44,7 @@ Quick-reference index of all project documentation. Docs are organized by catego
 | [AI/BIOME_GRASS_STREAMING_MVP_PLAN.md](AI/BIOME_GRASS_STREAMING_MVP_PLAN.md) | DESIGN | Biome-based grass streaming MVP plan for infinite terrain |
 | [AI/GROUND_PLANE_IMPOSTOR_SPEC.md](AI/GROUND_PLANE_IMPOSTOR_SPEC.md) | **ACTIVE — MVP PRIORITY** | Horizontal ground-plane impostor for sky-drop sequence; terrain-colored flat disc beyond chunk radius |
 | [AI/HORIZON_IMPOSTOR_SEED_DRIVEN_SPEC.md](AI/HORIZON_IMPOSTOR_SEED_DRIVEN_SPEC.md) | DESIGN (DEFERRED) | Seed-driven far-horizon impostor plan for mountain/hill/sea silhouette rendering (Phase 2; builds after ground plane) |
+| [AI/ATMOSPHERE_COLOR_AUTHORITY_SPEC.md](AI/ATMOSPHERE_COLOR_AUTHORITY_SPEC.md) | PROPOSED | Single atmosphere/palette authority + global `_Atmo*` uniforms + shared aerial-perspective HLSL; unifies sky, ground disc, mountain impostor, terrain & fog color under one time-of-day/biome source (ticket V9; consumed by V3, V8) |
 | [AI/PLAYER_TERRAIN_FALLTHROUGH_DEBUG_SPEC.md](AI/PLAYER_TERRAIN_FALLTHROUGH_DEBUG_SPEC.md) | ROOT CAUSE FIXED | Fall-through debug: missing PhysicsWorldIndex |
 | [AI/TERRAIN_EDIT_CONTROLS_SPEC.md](AI/TERRAIN_EDIT_CONTROLS_SPEC.md) | IMPLEMENTED | Terrain edit raycast fix, Input System migration, reticle |
 | [AI/PLAYER_BOOTSTRAP_FIX_SPEC.md](AI/PLAYER_BOOTSTRAP_FIX_SPEC.md) | ACTIVE | Player bootstrap reliability for DOTS tests |
