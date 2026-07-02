@@ -48,6 +48,10 @@ Shader "Ground/GroundPlaneImpostor"
             #pragma fragment Frag
             #pragma target   3.5
             #pragma multi_compile_instancing
+            // Aerial perspective: let the disc fade into RenderSettings fog like the
+            // real terrain does, so the green plain blends into the horizon haze instead
+            // of staying vivid to its edge (the two atmospheres were previously uncoordinated).
+            #pragma multi_compile_fog
 
             // Lighting.hlsl includes Core.hlsl and exposes SampleSH + GetMainLight.
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
@@ -76,6 +80,7 @@ Shader "Ground/GroundPlaneImpostor"
             {
                 float4 positionCS : SV_POSITION;
                 float4 worldPos   : TEXCOORD0;
+                float  fogCoord   : TEXCOORD1;
                 UNITY_VERTEX_INPUT_INSTANCE_ID
             };
 
@@ -117,6 +122,7 @@ Shader "Ground/GroundPlaneImpostor"
                 VertexPositionInputs posInputs = GetVertexPositionInputs(IN.positionOS.xyz);
                 OUT.positionCS = posInputs.positionCS;
                 OUT.worldPos   = float4(posInputs.positionWS, 1.0);
+                OUT.fogCoord   = ComputeFogFactor(OUT.positionCS.z);
                 return OUT;
             }
 
@@ -152,6 +158,10 @@ Shader "Ground/GroundPlaneImpostor"
                 Light mainLight  = GetMainLight();
                 half3 sunContrib = half3(mainLight.color) * saturate(mainLight.direction.y) * 0.5h;
                 color           *= saturate(ambient + sunContrib);
+
+                // Aerial perspective: blend toward RenderSettings fog colour with distance
+                // so the disc melts into the horizon haze (matches fogged terrain/scatter).
+                color = MixFog(color, IN.fogCoord);
 
                 // Combined alpha: 0 at inner boundary, 1 in mid zone, 0 at outer edge.
                 half alpha = (half)(innerAlpha * outerBlend);

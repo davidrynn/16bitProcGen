@@ -12,5 +12,16 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 90436fa08791a88409d490acf86d8b45, type: 3}
   m_Name: DefaultBiomeSkyMapping
   m_EditorClassIdentifier: Core::DOTS.Rendering.Sky.BiomeSkyMapping
-  fallbackPreset: {fileID: 0}
-  entries: []
+  fallbackPreset: {fileID: 11400000, guid: c10d68eab4a5c0f4a9b2e7d3f6081a29, type: 2}
+  entries:
+  - biomeType: 5
+    skyPreset: {fileID: 11400000, guid: c10d68eab4a5c0f4a9b2e7d3f6081a29, type: 2}
+    cloudOverride:
+      cloudColor: {r: 1, g: 1, b: 1, a: 1}
+      cloudShadowColor: {r: 0.6, g: 0.6, b: 0.7, a: 1}
+      scrollSpeed: {x: 0.01, y: 0.005}
+      noiseScale: 3
+      coverageThreshold: 0.45
+      edgeSoftness: 0.15
+      opacity: 0.6
+    overrideClouds: 0
