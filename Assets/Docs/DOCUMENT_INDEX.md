@@ -1,6 +1,6 @@
 # Document Index
 
-**Last Updated:** 2026-06-11
+**Last Updated:** 2026-07-02
 
 > **New here?** Start with [MASTER_PLAN.md](MASTER_PLAN.md) — it has the project vision, current status, phase roadmap, and a curated document map.
 
@@ -36,6 +36,7 @@ Quick-reference index of all project documentation. Docs are organized by catego
 | [AI/TERRAIN_EDIT_PLAYER_SAFETY_LOCAL_GRID_SPEC.md](AI/TERRAIN_EDIT_PLAYER_SAFETY_LOCAL_GRID_SPEC.md) | PROPOSED | Player-overlap edit guard + deterministic chunk-local grid guarantees |
 | [AI/TERRAIN_BINARY_EDIT_LAYER_SPEC.md](AI/TERRAIN_BINARY_EDIT_LAYER_SPEC.md) | PROPOSED | Binary voxel edit layer: hard-edged boxy edits via separate mask + face extraction, no SDF density rebuild, additive to existing SDF pipeline. |
 | [AI/PLAYER_PIT_MUDINESS_HYPOTHESIS_TEST_PLAN.md](AI/PLAYER_PIT_MUDINESS_HYPOTHESIS_TEST_PLAN.md) | ACTIVE | Test-first hypothesis matrix for pit-wall mudiness root-cause validation |
+| [AI/CODEBASE_SIMPLIFICATION_PLAN.md](AI/CODEBASE_SIMPLIFICATION_PLAN.md) | PLANNED | Codebase cleanup workflow (naming fixes, dead-code archiving, doc ordering) — token-efficient 3-phase process; living home for rename maps, archive lists, and batch logs |
 | [AI/THIRD_PARTY_ASSET_EVALUATION_PLAYBOOK.md](AI/THIRD_PARTY_ASSET_EVALUATION_PLAYBOOK.md) | ACTIVE | Asset pre-screen, sandbox validation, and fit scoring workflow for third-party content |
 | [AI/MULTIPLAYER_SPEC.md](AI/MULTIPLAYER_SPEC.md) | DESIGN | Multiplayer readiness: Pre-MVP hygiene, MVP command architecture, Post-MVP arena PvP path. Supersedes multiplayer_evaluation_spec.md |
 | [AI/PERSISTENCE_SPEC.md](AI/PERSISTENCE_SPEC.md) | DESIGN | World persistence — edit journals, entity/NPC/player state (Phase 4) |
