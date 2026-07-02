@@ -407,9 +407,6 @@ public class SceneDiagnostics : MonoBehaviour
         {
             reportBuilder.AppendLine("  ✗ DOTS World not available");
         }
-        
-        // Check for legacy terrain (warn if found)
-        CheckLegacyTerrain();
     }
     
     private void CheckSDFTerrainSystems(World world)
@@ -511,24 +508,6 @@ public class SceneDiagnostics : MonoBehaviour
         }
         
         reportBuilder.AppendLine($"  Summary: SDF terrain pipeline appears {(activeSystemCount > 0 ? "active" : "inactive")}");
-    }
-    
-    private void CheckLegacyTerrain()
-    {
-        // Check for legacy GameObject-based terrain (warn if found)
-        var legacyChunks = UnityEngine.Object.FindObjectsByType<global::TerrainChunk>(FindObjectsSortMode.None);
-        if (legacyChunks.Length > 0)
-        {
-            reportBuilder.AppendLine($"\n  ⚠ LEGACY: Found {legacyChunks.Length} GameObject-based TerrainChunk component(s)");
-            reportBuilder.AppendLine("    (These are from the legacy terrain system - consider migrating to SDF DOTS terrain)");
-        }
-        
-        var terrainManager = TerrainManagerLegacy.Instance;
-        if (terrainManager != null)
-        {
-            reportBuilder.AppendLine($"  ⚠ LEGACY: TerrainManager found (legacy GameObject-based terrain system)");
-            reportBuilder.AppendLine("    (Consider migrating to SDF DOTS terrain system)");
-        }
     }
     
     private void CheckDOTSTerrainSetup()

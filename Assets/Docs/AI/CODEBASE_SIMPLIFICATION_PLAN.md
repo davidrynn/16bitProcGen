@@ -245,7 +245,10 @@ Batch protocol — every batch, no exceptions:
 
 | Batch | Date | Rows applied | Tests | Commit | Notes |
 |-------|------|--------------|-------|--------|-------|
-| — | | | | | |
+| 0 (baseline) | 2026-07-02 | — | EditMode 219/219 green | a9ec90e | Baseline via Unity 6000.4.1 CLI on the cleanup worktree (first import built its Library) |
+| 1 | 2026-07-02 | A1 | 219/219 | 1e94f49 | Deleted Test/Archive tree (29 files + Deprecated.asmdef); only comment mentions remain; DEPRECATED_FILES.md annotated |
+| 2 | 2026-07-02 | A2, A4, A5, A14, A15 | 219/219 | 309ffac | 12 zero-ref files deleted; gizmo MonoBehaviours GUID-verified unattached; SimpleVisualDebugTest kept |
+| 3 | 2026-07-02 | A3, A6–A10 | 219/219 | 944ceae | 6 camera/bootstrap variants deleted + bootstrap wiring + 5 config flags removed; comment-only mentions left in place |
 
 ### 6.7 Improvement Suggestions (out of scope — follow-up work)
 
