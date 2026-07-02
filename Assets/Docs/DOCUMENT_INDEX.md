@@ -1,6 +1,6 @@
 # Document Index
 
-**Last Updated:** 2026-06-11
+**Last Updated:** 2026-07-02
 
 > **New here?** Start with [MASTER_PLAN.md](MASTER_PLAN.md) — it has the project vision, current status, phase roadmap, and a curated document map.
 
@@ -27,6 +27,7 @@ Quick-reference index of all project documentation. Docs are organized by catego
 | [mvp/Windswept_Colossus_Plains_Biome_Spec.md](mvp/Windswept_Colossus_Plains_Biome_Spec.md) | ACTIVE | Procedural biome definition for the MVP plains — terrain/grass/scatter parameters in system units, MVP vs post-MVP pipeline status, relic seating hooks, biome-selection stub |
 | [AI/STRUCTURE PLACEMENT/STRUCTURE_PLACEMENT_PLAN.md](AI/STRUCTURE%20PLACEMENT/STRUCTURE_PLACEMENT_PLAN.md) | DESIGN | Rollout plan for deterministic semantic structure placement (dungeons, villages, relics, ruins) |
 | [AI/STRUCTURE PLACEMENT/STRUCTURE_PLACEMENT_SPEC.md](AI/STRUCTURE%20PLACEMENT/STRUCTURE_PLACEMENT_SPEC.md) | DESIGN | Runtime contract for region-scale anchors, hard spacing constraints, and structure-family realization |
+| [AI/STRUCTURE PLACEMENT/MAGIC_GRID_SPEC.md](AI/STRUCTURE%20PLACEMENT/MAGIC_GRID_SPEC.md) | DESIGN | Analytic world-space XZ magic lattice: power-source nodes, WFC-build-on-node affordance, sparse claimed-node alignment state, per-template NodeAffinity, two-sources-one-pipeline with the free placer + universal influence query; chunk-decoupled, additive brightness cue (air-warp deferred) |
 | [AI/STRUCTURE PLACEMENT/RELIC_RENDER_REFACTOR_SPEC.md](AI/STRUCTURE%20PLACEMENT/RELIC_RENDER_REFACTOR_SPEC.md) | IMPLEMENTED | Replace batch RenderMeshInstanced relic path with per-entity Entities Graphics rendering (fixes BUG-016 frustum culling) |
 | [AI/STRUCTURE PLACEMENT/RELIC_LOD_IMPOSTOR_SPEC.md](AI/STRUCTURE%20PLACEMENT/RELIC_LOD_IMPOSTOR_SPEC.md) | IMPLEMENTED | Distance-based full-mesh ↔ impostor swap for large relics; supersedes RELIC_RENDER_REFACTOR_SPEC §8. Far-plane clipping now masked by distance fog. |
 | [AI/STRUCTURE PLACEMENT/RELIC_BILLBOARD_IMPOSTOR_SPEC.md](AI/STRUCTURE%20PLACEMENT/RELIC_BILLBOARD_IMPOSTOR_SPEC.md) | DESIGN | Pre-baked camera-facing billboard as LOD 1 impostor for relics (atlas bake tool + Y-axis facing system); future work for distant vistas |
@@ -35,6 +36,7 @@ Quick-reference index of all project documentation. Docs are organized by catego
 | [AI/TERRAIN_EDIT_PLAYER_SAFETY_LOCAL_GRID_SPEC.md](AI/TERRAIN_EDIT_PLAYER_SAFETY_LOCAL_GRID_SPEC.md) | PROPOSED | Player-overlap edit guard + deterministic chunk-local grid guarantees |
 | [AI/TERRAIN_BINARY_EDIT_LAYER_SPEC.md](AI/TERRAIN_BINARY_EDIT_LAYER_SPEC.md) | PROPOSED | Binary voxel edit layer: hard-edged boxy edits via separate mask + face extraction, no SDF density rebuild, additive to existing SDF pipeline. |
 | [AI/PLAYER_PIT_MUDINESS_HYPOTHESIS_TEST_PLAN.md](AI/PLAYER_PIT_MUDINESS_HYPOTHESIS_TEST_PLAN.md) | ACTIVE | Test-first hypothesis matrix for pit-wall mudiness root-cause validation |
+| [AI/CODEBASE_SIMPLIFICATION_PLAN.md](AI/CODEBASE_SIMPLIFICATION_PLAN.md) | PLANNED | Codebase cleanup workflow (naming fixes, dead-code archiving, doc ordering) — token-efficient 3-phase process; living home for rename maps, archive lists, and batch logs |
 | [AI/THIRD_PARTY_ASSET_EVALUATION_PLAYBOOK.md](AI/THIRD_PARTY_ASSET_EVALUATION_PLAYBOOK.md) | ACTIVE | Asset pre-screen, sandbox validation, and fit scoring workflow for third-party content |
 | [AI/MULTIPLAYER_SPEC.md](AI/MULTIPLAYER_SPEC.md) | DESIGN | Multiplayer readiness: Pre-MVP hygiene, MVP command architecture, Post-MVP arena PvP path. Supersedes multiplayer_evaluation_spec.md |
 | [AI/PERSISTENCE_SPEC.md](AI/PERSISTENCE_SPEC.md) | DESIGN | World persistence — edit journals, entity/NPC/player state (Phase 4) |
@@ -42,6 +44,7 @@ Quick-reference index of all project documentation. Docs are organized by catego
 | [AI/BIOME_GRASS_STREAMING_MVP_PLAN.md](AI/BIOME_GRASS_STREAMING_MVP_PLAN.md) | DESIGN | Biome-based grass streaming MVP plan for infinite terrain |
 | [AI/GROUND_PLANE_IMPOSTOR_SPEC.md](AI/GROUND_PLANE_IMPOSTOR_SPEC.md) | **ACTIVE — MVP PRIORITY** | Horizontal ground-plane impostor for sky-drop sequence; terrain-colored flat disc beyond chunk radius |
 | [AI/HORIZON_IMPOSTOR_SEED_DRIVEN_SPEC.md](AI/HORIZON_IMPOSTOR_SEED_DRIVEN_SPEC.md) | DESIGN (DEFERRED) | Seed-driven far-horizon impostor plan for mountain/hill/sea silhouette rendering (Phase 2; builds after ground plane) |
+| [AI/ATMOSPHERE_COLOR_AUTHORITY_SPEC.md](AI/ATMOSPHERE_COLOR_AUTHORITY_SPEC.md) | PROPOSED | Single atmosphere/palette authority + global `_Atmo*` uniforms + shared aerial-perspective HLSL; unifies sky, ground disc, mountain impostor, terrain & fog color under one time-of-day/biome source (ticket V9; consumed by V3, V8) |
 | [AI/PLAYER_TERRAIN_FALLTHROUGH_DEBUG_SPEC.md](AI/PLAYER_TERRAIN_FALLTHROUGH_DEBUG_SPEC.md) | ROOT CAUSE FIXED | Fall-through debug: missing PhysicsWorldIndex |
 | [AI/TERRAIN_EDIT_CONTROLS_SPEC.md](AI/TERRAIN_EDIT_CONTROLS_SPEC.md) | IMPLEMENTED | Terrain edit raycast fix, Input System migration, reticle |
 | [AI/PLAYER_BOOTSTRAP_FIX_SPEC.md](AI/PLAYER_BOOTSTRAP_FIX_SPEC.md) | ACTIVE | Player bootstrap reliability for DOTS tests |

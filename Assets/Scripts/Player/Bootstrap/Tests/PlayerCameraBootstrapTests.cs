@@ -498,7 +498,9 @@ namespace DOTS.Player.Tests.Bootstrap
             Assert.AreEqual(0f, settings.ThirdPersonPivotOffset.z, 0.001f, "Third-person pivot offset Z should default to 0");
 
             Assert.AreEqual(4.0f, settings.ThirdPersonDistance, 0.001f, "Third-person distance should default to 4.0");
-            Assert.IsTrue(settings.IsThirdPerson, "Default camera mode should be third-person for slingshot visibility");
+            // MVP ships first-person only (2026-06-20 FPS reversal); PlayerEntityBootstrap
+            // defaults IsThirdPerson=false. Third-person remains a dev/debug toggle, not the default.
+            Assert.IsFalse(settings.IsThirdPerson, "Default camera mode should be first-person (FPS-only MVP)");
         }
 
         [UnityTest]

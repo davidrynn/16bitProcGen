@@ -564,7 +564,7 @@ Camera:
   m_Enabled: 1
   serializedVersion: 2
   m_ClearFlags: 1
-  m_BackGroundColor: {r: 0.19215687, g: 0.3019608, b: 0.4745098, a: 0}
+  m_BackGroundColor: {r: 0.192, g: 0.302, b: 0.475, a: 0}
   m_projectionMatrixMode: 1
   m_GateFitMode: 2
   m_FOVAxisMode: 0
@@ -698,6 +698,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Core::DOTS.Rendering.Sky.SkyController
   cloudsEnabled: 1
+  _driveFogColor: 1
   skyMaterial: {fileID: 2100000, guid: 621bc50337047094691512886f6c7165, type: 2}
 --- !u!114 &1404189621
 MonoBehaviour:
@@ -711,7 +712,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c38dca5964beeb0498fe6415b8c08385, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Core::DOTS.Rendering.Sky.TimeOfDayController
-  normalizedTime: 0
+  normalizedTime: 0.08
   cycleDurationSeconds: 240
   _timeRemapCurve:
     serializedVersion: 2
@@ -720,8 +721,8 @@ MonoBehaviour:
     m_PostInfinity: 2
     m_RotationOrder: 4
   skyController: {fileID: 1404189620}
-  activePreset: {fileID: 11400000, guid: 5b3b6fd280a956a49b726b5a32ae2908, type: 2}
-  biomeSkyMapping: {fileID: 0}
+  activePreset: {fileID: 11400000, guid: c10d68eab4a5c0f4a9b2e7d3f6081a29, type: 2}
+  biomeSkyMapping: {fileID: 11400000, guid: 30bf86b672363434c85a711dac2b368c, type: 2}
   directionalLight: {fileID: 203844588}
   defaultCloudSettings:
     cloudColor: {r: 1, g: 1, b: 1, a: 1}

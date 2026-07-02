@@ -7,6 +7,12 @@ namespace DOTS.Rendering.Sky
         private const string CloudsKeyword = "_CLOUDS_ON";
         [SerializeField] private bool cloudsEnabled = true;
 
+        [Header("Fog")]
+        [Tooltip("Drive RenderSettings.fogColor from the current horizon color each update so distance " +
+                 "haze always matches the sky across the day/night cycle and biome. Enable/mode/density " +
+                 "remain owned by ProjectFeatureConfig / DotsSystemBootstrap.")]
+        [SerializeField] private bool _driveFogColor = true;
+
         [Header("References")]
         [SerializeField] private Material skyMaterial;
 
@@ -69,6 +75,13 @@ namespace DOTS.Rendering.Sky
             _runtimeMaterial.SetColor(ShaderIDs.ZenithColor, clamped.zenithColor);
             _runtimeMaterial.SetFloat(ShaderIDs.GradientExponent, clamped.gradientExponent);
             _runtimeMaterial.SetFloat(ShaderIDs.HorizonHeight, clamped.horizonHeight);
+
+            // Aerial perspective: keep distance fog matched to the current horizon so the ground
+            // plane, scatter, and ground-plane impostor all dissolve into the same band the sky
+            // fades to (Highlands vista goal). Color only — fog enable/mode/density stay owned by
+            // ProjectFeatureConfig / DotsSystemBootstrap.ApplyDistanceFog.
+            if (_driveFogColor)
+                RenderSettings.fogColor = clamped.horizonColor;
         }
 
         private void PushCloudUniforms()

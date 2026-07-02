@@ -149,6 +149,11 @@ namespace DOTS.Player.Editor
             var tIdleFall = AddTrans(stIdle, stFall, 0.1f);
             tIdleFall.AddCondition(AnimatorConditionMode.Equals, 2, "MovementMode");
             tIdleFall.AddCondition(AnimatorConditionMode.IfNot, 0, "BallisticRising");
+            // Guard against the post-landing Mode-hysteresis window: PlayerGroundingSystem
+            // holds Mode at Ballistic (2) for ModeDemotionMinGroundedTime after touchdown, so
+            // without this a grounded player could momentarily satisfy the →Falling conditions.
+            // "Falling while grounded" is never valid; gate on GroundedBool, not clip length.
+            tIdleFall.AddCondition(AnimatorConditionMode.IfNot, 0, "GroundedBool");
             AddTrans(stIdle, stGCharge, 0.1f).AddCondition(AnimatorConditionMode.Equals, 3, "MovementMode");
             AddTrans(stIdle, stGlide,   0.2f).AddCondition(AnimatorConditionMode.Equals, 4, "MovementMode");
             AddTrans(stIdle, stTherm,   0.1f).AddCondition(AnimatorConditionMode.Equals, 5, "MovementMode");
@@ -161,6 +166,8 @@ namespace DOTS.Player.Editor
             var tLocoFall = AddTrans(stLoco, stFall, 0.1f);
             tLocoFall.AddCondition(AnimatorConditionMode.Equals, 2, "MovementMode");
             tLocoFall.AddCondition(AnimatorConditionMode.IfNot, 0, "BallisticRising");
+            // See tIdleFall above: never enter Falling while grounded (Mode-hysteresis window).
+            tLocoFall.AddCondition(AnimatorConditionMode.IfNot, 0, "GroundedBool");
             AddTrans(stLoco, stGCharge, 0.1f).AddCondition(AnimatorConditionMode.Equals, 3, "MovementMode");
             AddTrans(stLoco, stGlide,   0.2f).AddCondition(AnimatorConditionMode.Equals, 4, "MovementMode");
             AddTrans(stLoco, stTherm,   0.1f).AddCondition(AnimatorConditionMode.Equals, 5, "MovementMode");

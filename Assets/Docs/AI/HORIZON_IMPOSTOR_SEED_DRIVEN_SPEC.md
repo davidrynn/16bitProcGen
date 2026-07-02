@@ -268,3 +268,12 @@ This feature is Phase 2. It is the *correct* long-term solution for the horizon 
 **MVP path:** `MVP_VISTA_MOMENT_SPEC.md` §2.3 — a painted skybox mountain silhouette panel achieves the same visual goal in hours vs. days. Ship that first.
 
 Implement this system only after MVP vista moment is complete and Phase 2 streaming/optimization work is actively scheduled.
+
+## 18. Color authority
+
+Whether the MVP painted panel (ticket **V3**) or this seed-driven system, the mountain surface must
+**consume the shared atmosphere palette** rather than a private `_MountainColor` literal (currently a flat
+`(0.22,0.25,0.20)` grey-green). Per **[ATMOSPHERE_COLOR_AUTHORITY_SPEC.md](ATMOSPHERE_COLOR_AUTHORITY_SPEC.md)**
+(ticket **V9**), the mountain base hue comes from `_AtmoGround`/`_AtmoRock` and applies the shared
+`ApplyAerialPerspective` with **high `strength`** — so the distant range reads correctly desaturated and
+horizon-tinted, and its base meets the ground disc's outer edge and the sky horizon in one hue band.

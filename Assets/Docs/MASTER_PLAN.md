@@ -1,5 +1,5 @@
 # 16-BitCraft — Master Plan
-_Last updated: 2026-05-14_
+_Last updated: 2026-06-29_
 
 > **Start here.** This document is the authoritative project overview: vision, current status, phase roadmap, and document map.  
 > Sprint-level task detail lives in [`Assets/.cursor/plans/game-production-plan-7ea46cb6.plan.md`](../.cursor/plans/game-production-plan-7ea46cb6.plan.md).
@@ -37,7 +37,7 @@ Full design: [`Archives/TerrainDesign/Stylized_Procedural_Terrain_System_Design.
 
 ---
 
-## 2. Current Status (as of 2026-03-01)
+## 2. Current Status (as of 2026-06-29)
 
 ### ✅ Foundation Complete
 - DOTS core infrastructure (entities, systems, ECB patterns, blob assets)
@@ -54,7 +54,11 @@ Full design: [`Archives/TerrainDesign/Stylized_Procedural_Terrain_System_Design.
 
 ### 🔨 Phase 1 — In Progress (CRITICAL)
 
-**MVP Vista Moment** (see [`AI/MVP_VISTA_MOMENT_SPEC.md`](AI/MVP_VISTA_MOMENT_SPEC.md)) — ordered by impact-per-hour:
+**MVP Vista Moment** (see [`AI/MVP_VISTA_MOMENT_SPEC.md`](AI/MVP_VISTA_MOMENT_SPEC.md)) — ordered by impact-per-hour.
+
+> **Now the active sprint (re-anchored 2026-06-29).** These are scheduled as **V1–V5** in [`TICKETS.md`](TICKETS.md),
+> with Camera Feel (C1–C3) secondary and the arms viewmodel (A9) deferred. Build statuses below are unchanged —
+> the change is that this work is now the active sprint rather than sitting in the backlog.
 
 | Feature | Target Location | Status |
 |---------|----------------|--------|
@@ -156,7 +160,7 @@ public partial struct MySystem : ISystem
 
 ## 5. Immediate Next Steps
 
-**MVP Vista Moment — do these first (ordered by impact-per-hour):**
+**MVP Vista Moment — do these first (ordered by impact-per-hour).** Active sprint: **V1–V5** in [`TICKETS.md`](TICKETS.md).
 
 1. **Ground plane impostor** — horizontal terrain-colored disc beyond chunk radius; eliminates void from altitude; enables sky-drop intro. Spec: [`AI/GROUND_PLANE_IMPOSTOR_SPEC.md`](AI/GROUND_PLANE_IMPOSTOR_SPEC.md). ½–1 day.
 2. **Atmospheric fog tuning** — shift fog color toward blue-grey (`#8FA8C0`), tune density/start so foreground is sharp and horizon is veiled. Half-day, immediate mood payoff.

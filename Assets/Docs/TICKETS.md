@@ -4,17 +4,240 @@ Lightweight task tracker. Status: `[ ]` pending · `[x]` done · `[-]` blocked
 
 ---
 
-## Sprint: Camera Feel + Animation
+## Sprint: MVP Vista Moment
 
 > **FPS-only reversal + re-sequence (2026-06-20):** MVP ships **first-person only**. `PlayerCameraSettings.IsThirdPerson`
 > now defaults to `false` and the third-person body is hidden in first-person (`PlayerFirstPersonVisibility`).
 > Third-person stays as a **dev/debug toggle (V key)** for inspecting these clips. Consequence: the full-body
-> clips in **A1–A8 are not visible in normal play** — they only show in the dev toggle. So the sprint is
-> re-sequenced: **Camera Feel (C1–C3) now leads** — it's the primary in-game feel feedback in first-person and
-> is unaffected by the body being hidden. **Animation follows**, and its real in-game payoff is **A9
-> (first-person arms viewmodel)**; A1–A8 are now mostly dev-toggle / A9-prep work.
+> clips in **A1–A8 are not visible in normal play** — they only show in the dev toggle. This made **Camera
+> Feel (C1–C3)** the primary in-game feel feedback in first-person, and **A9 (first-person arms viewmodel)**
+> the real animation payoff; A1–A8 became mostly dev-toggle / A9-prep work. _(Superseded as sprint lead by
+> the 2026-06-29 Vista re-anchor below — Camera Feel is now secondary, A9 deferred.)_
 
-### Camera Feel _(sprint lead — primary in-game feedback in first-person)_
+> **Re-anchor to Vista (2026-06-29):** Re-focused on the project's designated MVP wow moment — the vista
+> discovery of the giant four-fingered stone hand across a hazy plain (`AI/MVP_VISTA_MOMENT_SPEC.md`,
+> `MASTER_PLAN.md` §1/§5). Blockers V1–V5 were sitting in the backlog while movement-feel polish led;
+> they're cheap (~½–1 day each) and mostly unbuilt, so they now **lead the sprint**. **Camera Feel C1–C3**
+> stays in-sprint as **secondary** — it makes slingshotting toward the relic feel good. **Animation A9**
+> (arms viewmodel) is **deferred** — biggest cost, off the wow-moment critical path.
+
+> **Scope: "look at" moment (2026-06-29):** Decided the MVP vista is a **look-at** beat — crest the plain,
+> see the hand across the haze, slingshot *toward* it. **Entering** the hand is explicitly out of MVP scope.
+> Consequence: the critical path is **V1 → V2 → V3 → V4**; **V5 (Relic → WFC maze interior) is deferred**
+> to a follow-up sprint, where it re-homes next to **W1** (both carry the same WFC bootstrap blocker,
+> `STRUCTURE_PLACEMENT_SPEC.md` §12.5.1). Camera Feel C1–C3 stays secondary — slingshot-toward still applies.
+
+### Vista Moment _(sprint lead — the MVP wow moment)_
+
+> Target: player crests a plain, sees the giant stone hand across atmospheric haze, and slingshots toward
+> it. (Entering the hand is out of MVP scope — see the "look at" scope note above.) Ordered by
+> impact-per-hour per `AI/MVP_VISTA_MOMENT_SPEC.md` §4.
+
+| ID  | Status | Subject |
+|-----|--------|---------|
+| V1  | [x] | Ground plane impostor — built & enabled; now receives fog so the plain hazes into the horizon (2026-07-01) |
+| V2  | [x] | Atmospheric fog — enabled + impostor fog wired; "square from height" diagnosed as skybox horizon, not a fog plane (2026-07-01). Dynamic sky-tracking color → V6 |
+| V3  | [ ] | Mountain skybox panel — painted silhouette framing the horizon _(color path folds into V9 P4)_ |
+| V4  | [ ] | Hand mesh validation — confirm `testAlienHand.fbx` renders; tune scale/yOffset |
+| V5  | [-] | _(Deferred — out of MVP "look at" scope)_ Relic → WFC maze interior — connect relic anchor to dungeon interior generation |
+| V6  | [x] | Time-of-day + biome-dependent sky & tracking fog — Plains "Cloudbreak" preset; haze color follows the horizon (2026-07-01) |
+| V7  | [ ] | BUG: player intermittently falls through the ground (collider-build timing / sky-drop landing) |
+| V8  | [ ] | Distance-graded fog density — see the ground from height while still veiling the far horizon _(consumes V9 `_AtmoHorizon`)_ |
+| V9  | [ ] | Atmosphere color authority — one palette source + global `_Atmo*` uniforms + shared aerial-perspective HLSL; unifies sky, disc, mountains, terrain, hero relic & fog color (supersedes disc `SyncTerrainColor`; folds V3 color path; hero relic gets reduced-strength fog exemption) |
+
+#### V1 — Ground plane impostor
+**Spec:** `AI/GROUND_PLANE_IMPOSTOR_SPEC.md`. Horizontal terrain-colored disc (~1500u radius) on the XZ
+plane beyond the ~256u SDF chunk radius; world-space shaded with the terrain's noise octaves, radial alpha
+fade hides the seam, fog dissolves the outer edge. Entity follows player XZ (one transform write). Eliminates
+the void from altitude and enables the sky-drop intro. ½–1 day; no texture assets, no SDF pipeline changes.
+- **Status (2026-07-01):** Built & enabled all along (the "unbuilt" assumption was wrong). Confirmed via MCP
+  screenshots. The disc is a 3000u square grid (roundness comes from the radial shader fade), not a literal
+  disc — acceptable; deferred as polish. Added `multi_compile_fog` + `MixFog` to `GroundPlaneImpostor.shader`
+  so the plain now fades into the horizon haze instead of staying vivid to its edge. There was **no literal
+  void/gap** — see `AI/VISTA_GROUND_PLANE_FOG_INVESTIGATION.md`.
+
+#### V2 — Atmospheric fog tuning _(canonical fog ticket — folds in former A6)_
+**Intent:** Fog should read as thin mist suspended in air, not a tint on objects. From altitude it currently
+renders as a visible square, which breaks the illusion.
+- Bias toward distance/altitude; reduce density so near geometry is largely unaffected. Shift color blue-grey
+  (`#8FA8C0`), tune start/end so foreground is sharp and horizon veiled.
+- Eliminate the "square from height" artifact — if a finite plane/quad drives the fog, replace with a
+  camera-relative/global effect or skirt it so no edge shows at fly heights.
+- Reconcile with the vista stack — check interaction with `AI/GROUND_PLANE_IMPOSTOR_SPEC.md` and
+  `AI/MVP_VISTA_MOMENT_SPEC.md` so fog and horizon read as one atmosphere.
+- **Open questions (resolve first):** (1) what renders the fog today — URP Volume/global fog, a custom
+  shader/material, a skybox blend, or a scene quad? (`WeatherSystem.WeatherType.Fog` sets weather state only,
+  no visuals — source is elsewhere.) (2) Is the "square from height" a dedicated fog plane or the ground-plane
+  impostor edge?
+- **Acceptance:** from ground and max fly height, no plane edge; near objects (~1 chunk) negligible tint; far
+  horizon softened. Validate in Play Mode at several altitudes.
+- **Resolved (2026-07-01, via MCP screenshots — `AI/VISTA_GROUND_PLANE_FOG_INVESTIGATION.md`):** The "square
+  from height" and warm tint were **not a fog plane** — fog was already disabled in config, and the warm
+  band is the **skybox horizon** driven by the day/night cycle (`TimeOfDayController` → `SkyPreset`). Proven by
+  setting the camera clear to solid blue (tan vanished). Applied: enabled gentle Exp² fog (`density 0.0015`,
+  color `(0.62,0.74,0.85)`) in `ProjectFeatureConfig.asset` + fog support in the impostor shader → clean haze,
+  no seam. **Remaining:** the fog color is static and will clash across the day/night cycle — making it track
+  the sky horizon (and biome) moves to **V6**. De-oranging the sky palette also lives in V6.
+
+#### V3 — Mountain skybox panel
+Paint or source a mountain silhouette into the skybox (MVP Option A per `MVP_VISTA_MOMENT_SPEC.md` §2.4 —
+2–4 hrs). Sells horizon depth. The seed-driven horizon ring (`HORIZON_IMPOSTOR_SEED_DRIVEN_SPEC.md`) is the
+Phase 2 system, deferred.
+
+#### V4 — Hand mesh validation
+Confirm `Assets/Models/testAlienHand.fbx` renders correctly at scene scale in Play Mode (already wired as
+`Relic.asset` `DefaultTemplateId: relic_hand`). Tune `scale` / `yOffset` in `RelicVisualBootstrap` inspector
+so the four-finger hand reads from ~200–400u. Per `MVP_VISTA_MOMENT_SPEC.md` §2.1.
+
+#### V5 — Relic → WFC maze interior _(deferred — out of MVP "look at" scope, 2026-06-29)_
+Connect the relic anchor to WFC dungeon interior generation so the hand is enterable. Bridges structure
+placement to the existing WFC pipeline — reuses the dungeon realizer path. Depends on the WFC bootstrap +
+deterministic-seed fixes noted in `AI/STRUCTURE PLACEMENT/STRUCTURE_PLACEMENT_SPEC.md` §12.5.1. See
+`WFC/MAP_WFC.md`, `WFC_Dungeon_Test_Plan.md`.
+
+#### V6 — Time-of-day + biome-dependent sky & tracking fog
+**Spec/plan:** `AI/SKYBOXPLAN.md` (Phase 3), `AI/VISTA_GROUND_PLANE_FOG_INVESTIGATION.md`.
+**Intent:** Kill the orange horizon and make the atmosphere read as one coherent haze at any time of day —
+per the opening inspiration (`Docs/Temp_OpeningInspiration.png`): a cool, broken-overcast highland day with
+distant mountains dissolved into pale blue-grey haze. Keep the **Highlands** fiction (no ocean).
+
+The sky architecture already exists but is empty/unwired: `TimeOfDayController` runs a live cycle over a
+`SkyPreset`; `BiomeSkyMapping` (`BiomeType → SkyPreset`) and `ApplyBiome()` are implemented but
+`DefaultBiomeSkyMapping.asset` has a null fallback + no entries, and nothing calls `ApplyBiome()`. Scope this
+to the single MVP biome and leave the biome-switch bridge as a marked seam.
+
+- **Create the Plains "Cloudbreak" `SkyPreset`** — cool overcast steppe with broken sunlight. Read off the
+  inspiration: zenith `~(0.45,0.52,0.60)`, horizon `~(0.68,0.72,0.74)`, high cloud coverage (bright white /
+  grey undersides), soft reduced-intensity sun. Tune dawn/noon/dusk/night keyframes so **no** daytime horizon
+  is orange (current preset horizons are all warm). Set it as the active + fallback preset.
+- **Fog tracks the sky** — promote `SKYBOXPLAN.md`'s Phase 3+ "fog integration" extension: drive
+  `RenderSettings.fogColor` (and optionally density) from the evaluated `SkySettings.horizonColor` each frame
+  in `SkyController` so haze always matches the horizon at every time-of-day/biome (the impostor already reads
+  RenderSettings fog per V1/V2). Replaces the static fog color set in `DotsSystemBootstrap.ApplyDistanceFog`.
+- **Populate + assign `DefaultBiomeSkyMapping`** — Plains entry + fallback = Cloudbreak; assign it to the
+  `TimeOfDayController` so the biome path is live and correct for one biome, ready to extend.
+- **Decision (2026-07-01):** keep the live day/night cycle (fog-tracks-sky makes it look right, so no need to
+  pin a fixed time). Colors are **biome-dependent** by design.
+- **Deferred seam:** the DOTS→sky biome-change signal (a caller for `ApplyBiome`) — build when a 2nd biome
+  exists to switch to. Verify then how "current biome" is signaled at runtime.
+- **Acceptance:** across a full day/night cycle, horizon reads cool (never orange) and the ground plain +
+  scatter + impostor haze into one matching horizon color; validate in Play Mode at several altitudes/times.
+- **Done (2026-07-01):** ✅ Created `Assets/Resources/Sky/CloudbreakSkyPreset.asset` (cool overcast palette,
+  no warm daytime horizon). ✅ `SkyController` now drives `RenderSettings.fogColor` from the evaluated
+  horizon each update (`_driveFogColor`, default on). ✅ Populated + assigned `DefaultBiomeSkyMapping` (Plains
+  → Cloudbreak + fallback); set the `TimeOfDayController` `activePreset` = Cloudbreak and default start time to
+  midday. Scene saved. Validated via MCP screenshots (ground + altitude) — cool grey-blue sky, clouds, plain
+  dissolves into a matching haze, zero orange.
+- **Fog density (2026-07-01):** raised `0.0015 → 0.0022`. At altitude the 600u far clip cuts the ground before
+  light fog saturates, leaving a sharp green silhouette against the mist; `0.0022` dissolves that far edge into
+  the haze while keeping the plain readable (`0.003` removed the edge but went milky). This is a **far-clip
+  trade-off** — the real long-term fix for "see far from altitude without a fog bubble" is a larger far clip +
+  V3 mountain/horizon panel, not heavier fog. Near-ground vista already reads clean at any density.
+- **Deferred seam (unchanged):** no DOTS→sky biome-change signal yet (`ApplyBiome` still uncalled) — build
+  with the 2nd biome. Clouds use default coverage; bump on `TimeOfDayController.defaultCloudSettings` for a
+  more overcast sky.
+
+#### V7 — BUG: player falls through the ground _(flagged 2026-07-01)_
+Intermittent — the player sometimes drops through terrain. Suspect collider-build timing vs. player arrival,
+especially on sky-drop landing. Investigate: `PlayerTerrainSafetySystem`, `TerrainChunkColliderBuildSystem`,
+the sky-drop readiness gate (`SkyDropGravityHoldSeconds` in `ProjectFeatureConfig`). Enable
+`EnablePlayerFallThroughDiagnosticSystem` to capture repro data. _(Not yet investigated.)_
+
+#### V8 — Distance-graded fog density _(flagged 2026-07-01; approach decided 2026-07-02)_
+The uniform-density fog (V6 landed at `0.0022`, Exp²) is too thick to see the ground from altitude — raising
+density to hide the far-clip edge also greys out the near/below ground. Goal: near/downward views stay clear
+while the far horizon still veils.
+
+**Root cause.** Unity's built-in fog (Linear, Exp, Exp²) is **purely distance-based and altitude-blind** — it
+fogs a fragment by its Euclidean distance from the camera. At the ~400u sky-drop height *everything* is far, so
+the ground directly below veils just as hard as the horizon. This is a structural limit of built-in fog, not a
+tuning miss. The thing we actually want (clear looking down, veiled at the horizon) is a different axis —
+**height-based / aerial-perspective fog** — than pure distance.
+
+**Two routes considered:**
+
+- **Route A — Linear retune (cheap, config-only, partial). ← CHOSEN for now.** Infrastructure already exists:
+  `ProjectFeatureConfig` has `FogStartRatio` (0.14) / `FogEndRatio` (0.308), and
+  `DotsSystemBootstrap.ApplyDistanceFog()` already wires them for Linear mode — currently dormant because
+  `FogMode` is `3` (Exp²). Flip `FogMode → 1` (Linear) to get an explicit **zero-fog near zone** (nothing
+  before `start`) that Exp² can't produce; from altitude the nearer ground below fogs less than the horizon at
+  far clip. Still distance-based, so any single start/end is a compromise between low- and high-altitude
+  framing — accepted as good-enough for the MVP vista. Near-zero risk, ~config-only, fully reversible.
+
+- **Route B — Height-based fog (proper, the JC3 aerial-perspective look).** Fog density as a function of
+  world-Y so a downward ray through thin high air stays clear while a long horizontal ray through dense low air
+  veils — altitude-independent, reads right at any height. URP 17.2 has **no** built-in height fog (that's
+  HDRP), so this requires custom shader work: extend the shared fog term in the terrain / scatter / impostor
+  shaders, or a depth-based URP renderer feature that reconstructs world position. Larger surface area, more
+  testing. This is where **V3** (mountain horizon panel) naturally pairs in — painted silhouette + height fog
+  is the real "see terrain to the horizon" combo.
+
+**Decision (2026-07-02):** Ship **Route A** first (nearly free, may be sufficient), judge it at altitude via
+screenshots, and **escalate to Route B only if the distance compromise still reads wrong.** Route B remains the
+documented fallback.
+
+**Reversibility:** Route A changes only serialized fields in `ProjectFeatureConfig.asset` — `FogMode` back to
+`3` and, if start/end are retuned, the prior `FogStartRatio`/`FogEndRatio` values. Record the pre-change values
+below before editing so the exact Exp²/`0.0022` baseline can be restored with a single asset revert; make no
+code/shader changes under Route A.
+
+_Baseline before Route A (restore point):_ `FogMode: 3` (Exp²), `FogDensity: 0.0022`,
+`FogColor: {0.62, 0.74, 0.85}`, `FogStartRatio: 0.14`, `FogEndRatio: 0.308`, `VistaCameraFarClip: 600`.
+
+**Route A applied (2026-07-02, first pass — config-only, `ProjectFeatureConfig.asset`):** `FogMode: 1`
+(Linear), `FogStartRatio: 0.55` (start = 330u), `FogEndRatio: 1.0` (end = 600u = far clip). Rationale: the
+clear near-zone reaches past the 400u sky-drop so the ground below reads ~74% visible at altitude, while the
+ramp finishes at the far clip to veil the horizon and hide the hard clip edge (V2). At ground-level play all
+real terrain (≤180u streaming radius) is inside the clear zone; only the impostor disc (330–600u) hazes.
+`FogDensity: 0.0022` left in the asset unused (Linear ignores it) as the Exp² restore value. `FogColor` is
+still driven live from the horizon by `SkyController._driveFogColor` (V6) — unchanged. **Pending judgement in
+Unity at altitude;** retune the two ratios if the near-zone reads too crisp or the horizon too thin.
+
+#### V9 — Atmosphere color authority _(specced 2026-07-02)_
+**Spec:** `AI/ATMOSPHERE_COLOR_AUTHORITY_SPEC.md`.
+**Intent:** Make one authority own the scene palette and have every distance-facing surface *consume* it, so
+sky, ground disc, mountain impostor, terrain, and fog stay hue-unified and all shift together with the
+day/night cycle and biome. Root problem: the four surfaces source color from four different mechanisms and two
+are frozen — the sky + fog track time-of-day while the disc (frozen shader defaults), mountains (flat
+`_MountainColor`), and terrain (baked Synty albedo × white `_BaseColor`) do not. The disabled
+`SyncTerrainColor` was architecturally doomed because it reads the terrain tint from `_BaseColor`, which is
+white (the color lives in the texture). This generalizes the shipped `_driveFogColor` coupling from one output
+to all surfaces.
+- **Architecture:** extend `TimeOfDayController` into the authority (managed/rendering, not ECS); broadcast
+  global `_Atmo*` uniforms (`_AtmoHorizon/_AtmoZenith/_AtmoGround/_AtmoRock/_AtmoSun/_AtmoSaturation/_AtmoFarFade`)
+  once per frame; add a shared `Atmosphere.hlsl` with `ApplyAerialPerspective(color, viewDist, strength)`. Disc
+  and mountains share that function — disc low `strength`, mountains high `strength` (→ correctly desaturated,
+  horizon-tinted). Ground-color decision = **Option B**: palette *tints* the Synty terrain (cheap `_BaseColor`
+  write first, shadergraph albedo multiply for the full version).
+- **Rollout:** P1 authority+contract → P2 disc consumes → P3 terrain tint → **P4 mountains (folds V3 color
+  path)** → P5 saturation/overcast pass. Compute-light (a few ALU ops/fragment, no new passes/textures).
+- **Deliberately deferred:** unifying the disc + mountain C#/DOTS bootstraps into one system — wait for a third
+  impostor type. Share the interface (authority + HLSL), not the implementation.
+- **Confirmed symptom — hero relic "white-out" at distance (2026-07-02).** The giant hand relic washes pale
+  toward the horizon fog color at distance, dissolving into the cloud band behind it (the one object the vista
+  exists to make you *look at*). **Root cause:** the relic is a **fifth distance-facing surface** not in the
+  enumeration above — it renders full-terrain-grade fog with no hero treatment, so V6's `_driveFogColor`
+  (fog = bright ~`0.7` grey-blue horizon) veils the tallest/most-distant geometry hardest. Confirmed by toggling
+  `EnableDistanceFog: 0` → hands drop to flat warm-gray (fog is the whitening agent, not lighting/albedo).
+  **Diagnostic facts:** not an impostor/LOD artifact — every relic template has null impostor mesh/material and
+  `lodSwapDistance: 1000` > the 600u far clip, so relics never swap and are always the full LOD-0 mesh; the
+  shared material `Assets/Materials/Unlit gray.mat` is misnamed — it is **URP/Lit** with warm-gray base
+  `(0.55, 0.52, 0.48)`, so it does receive fog. **Requirement for V9:** the atmosphere authority must let the
+  hero relic take a **reduced aerial-perspective strength** (hero exemption) so it stays a legible silhouette
+  against the pale plain rather than saturating to fog like background terrain — the opposite end of the
+  strength scale from mountains (high strength). Cheap-tuning overlap noted in **V8/V3** (hero sits in the light
+  near-fog band; horizon panel carries the far wash). Cosmetic follow-up: rename `Unlit gray.mat` to stop
+  implying it is unlit.
+- **Relationships:** supersedes disc `SyncTerrainColor` (`GROUND_PLANE_IMPOSTOR_SPEC.md` §11); mountain color
+  path per `HORIZON_IMPOSTOR_SEED_DRIVEN_SPEC.md` §18; **V3** consumes P4; **V8** consumes `_AtmoHorizon`;
+  hero-relic exemption relates to **V4** (hand mesh validation / placement) and the V8/V3 far-clip trade-off.
+- **Status:** specced, not started. Acceptance = §11 of the spec (no surface holds a private base-color literal;
+  cycle shifts all surfaces together; disc-edge/mountain-base/horizon read as one hue band) **+ the hero relic
+  reads as a legible silhouette at vista distance, not a fog-saturated wash**.
+
+---
+
+### Camera Feel _(secondary — slingshot feel toward the relic; was sprint lead pre-2026-06-29)_
 
 > **FPS adaptation:** these tickets were specced against the third-person orbit camera, so the **distance
 > dolly/pullback** terms (`TargetDistance`, `BallisticDistanceAdd`) are third-person concepts. In first-person
@@ -58,17 +281,48 @@ Per `MOVEMENT_PLANNING.md` Step 7:
 
 ---
 
-### Animation _(follows camera feel — A1–A8 are dev-toggle / A9-prep; A9 is the in-game payoff)_
+### Animation _(deferred from this sprint by the 2026-06-29 Vista re-anchor — A9 follows the vista; A1–A8 are third-person body)_
+
+> **Re-scope (2026-06-29):** Under FPS-only, the third-person body is hidden in play, so the full-body
+> clips (A2–A8) are invisible except via the dev V-key toggle — they do **not** gate the MVP. **A9
+> (first-person arms viewmodel)** is the real FPS animation work but is **deferred behind the Vista Moment**
+> this sprint (biggest cost, off the wow-moment path); it follows once the vista lands. A1–A8 stay parked
+> under **Dev-toggle / deferred** below.
+
+#### Deferred — follows the vista _(was live; deferred by Vista re-anchor 2026-06-29)_
 
 | ID  | Status | Subject | Blocks | Blocked By |
 |-----|--------|---------|--------|------------|
-| A1  | [x] | Wire slingshot clips into animator controller | A2, A3 | — |
+| A9  | [ ] | First-person arms viewmodel (the real fix for FPS-only MVP) | — | — |
+
+#### Dev-toggle / deferred (third-person body) _(not MVP-gating — body hidden in first-person play)_
+
+| ID  | Status | Subject | Blocks | Blocked By |
+|-----|--------|---------|--------|------------|
+| A1  | [x] | Wire slingshot clips into animator controller (done) | A2, A3 | — |
 | A2  | [ ] | Fix animator controller transition blend times | A4 | A1 |
-| A3  | [ ] | Stabilize landing animations | A4 | A1 |
+| A3  | [ ] | Stabilize landing animations _(verify hidden-animator state first — may still fire into dead states)_ | A4 | A1 |
 | A4  | [-] | Import Kevin Iglesias pack and wire basic movement animations | A5 | A2, A3 |
 | A5  | [-] | Wire glide animation state | — | A4 |
-| A8  | [ ] | Simplify airborne animation: single fall clip while in air (MVP) | — | — |
-| A9  | [ ] | First-person arms viewmodel (the real fix for FPS-only MVP) | — | — |
+| A8  | [ ] | Simplify airborne animation: single fall clip while in air | — | — |
+
+#### A9 — First-person arms viewmodel (the real fix for FPS-only MVP) _(deferred — follows the vista)_
+With MVP reversed to first-person only (2026-06-20), the full third-person body is hidden in play
+(`PlayerFirstPersonVisibility`) and the A1–A8 clips are invisible except via the dev V-key toggle. The
+proper FPS feedback for charge/launch/glide is a dedicated **arms viewmodel**: a first-person arms rig with
+FPS-authored clips, shown only in first-person.
+
+The groundwork is already done and forward-compatible — `PlayerFirstPersonVisibility` hides the body in
+first-person, so this ticket only adds the arms rig and shows it in the same place (no rework of the body-hide
+or camera-mode plumbing).
+
+- Author/acquire a first-person arms rig + clips: slingshot charge pull, launch/release, glide arms-spread, idle/move bob.
+- Show the arms rig only when `IsThirdPerson == false`; hide it (and show the full body) in the third-person dev toggle. Extend `PlayerFirstPersonVisibility` — it already owns the first/third-person visibility swap.
+- Drive arms clips from the same `PlayerAnimatorBridge` parameters where they map; add FPS-specific params only where the body params don't translate.
+- Scope check before building: decide whether arms are a separate `Animator` (own controller) or share the existing controller. Capture the decision here.
+- **Validate:** in first-person, charge pull / launch / glide read clearly on the arms with no body clipping; V-key toggle still shows the full body + existing third-person clips for debugging.
+
+**Dev-toggle / deferred ticket detail (third-person body, A1–A8):**
 
 #### A1 — Wire slingshot clips into animator controller
 Wire the 3 exported FBX clips into `PlayerAnimatorController` per `SLINGSHOT_ANIMATION_CONTROLLER_SPEC.md`.
@@ -118,23 +372,7 @@ The animator graph has grown complex. MVP/POC decision (2026-06-10): every in-ai
 - Update the `BallisticRisingHash` comment in `PlayerAnimatorBridge.cs` ("drives T-pose vs Falling split") to match.
 - Spec: `PLAYER_CHARACTER_VISUAL_SWAP_SPEC.md` airborne mapping table + `SLINGSHOT_ANIMATION_CONTROLLER_SPEC.md` MVP note (both updated 2026-06-10).
 
-#### A9 — First-person arms viewmodel (the real fix for FPS-only MVP)
-With MVP reversed to first-person only (2026-06-20), the full third-person body is hidden in play
-(`PlayerFirstPersonVisibility`) and the A1–A8 clips are invisible except via the dev V-key toggle. The
-proper FPS feedback for charge/launch/glide is a dedicated **arms viewmodel**: a first-person arms rig with
-FPS-authored clips, shown only in first-person.
-
-The groundwork is already done and forward-compatible — `PlayerFirstPersonVisibility` hides the body in
-first-person, so this ticket only adds the arms rig and shows it in the same place (no rework of the body-hide
-or camera-mode plumbing).
-
-- Author/acquire a first-person arms rig + clips: slingshot charge pull, launch/release, glide arms-spread, idle/move bob.
-- Show the arms rig only when `IsThirdPerson == false`; hide it (and show the full body) in the third-person dev toggle. Extend `PlayerFirstPersonVisibility` — it already owns the first/third-person visibility swap.
-- Drive arms clips from the same `PlayerAnimatorBridge` parameters where they map; add FPS-specific params only where the body params don't translate.
-- Scope check before building: decide whether arms are a separate `Animator` (own controller) or share the existing controller. Capture the decision here.
-- **Validate:** in first-person, charge pull / launch / glide read clearly on the arms with no body clipping; V-key toggle still shows the full body + existing third-person clips for debugging.
-
-_(Former A6 → folded into backlog **V2**. Former A7 → backlog **R1**. Both were rendering/environment work, not animation. A9 added 2026-06-20 for the FPS-only reversal.)_
+_(Former A6 → folded into the vista fog ticket **V2**. Former A7 → backlog **R1**. Both were rendering/environment work, not animation. A9 added 2026-06-20 for the FPS-only reversal.)_
 
 ---
 
@@ -147,11 +385,10 @@ _Tickets for later sprints — not yet scheduled._
 | M1  | Glide mechanic (Space hold → GlideCharging → Gliding) | Movement |
 | M2  | Chain slingshot (chain window + additive velocity) | Movement |
 | M3  | Thermal columns (vertical lift volumes) | Movement |
-| V1  | Ground plane impostor | MVP Vista |
-| V2  | Atmospheric fog tuning _(canonical fog ticket — folds in former A6)_ | MVP Vista |
-| V3  | Mountain skybox panel | MVP Vista |
+| M4  | BUG: Ballistic-takeoff false-grounding past jump apex — suppress by contact/separation, not velocity sign | Movement |
 | P1  | Basic HUD (charge indicator + chain window indicator) | Phase 1 |
 | P2  | Magic Hand System (raycast, charge, binary terrain edit) | Phase 1 |
+| W1  | Magic power grid (placeholder — see `AI/STRUCTURE PLACEMENT/MAGIC_GRID_SPEC.md`) | Phase 2 / World Power |
 | R1  | Low-poly tree/rock LODs + enable relic LOD | Rendering |
 | R2  | Speed-biased scatter LOD (drop detail during fast airborne movement) | Rendering |
 | R3  | Camera-specific scatter LOD bucketing (multi-camera correctness) | Rendering |
@@ -167,20 +404,20 @@ _Tickets for later sprints — not yet scheduled._
 
 ---
 
-### V2 — Atmospheric fog tuning _(canonical fog ticket)_
-**Intent:** Fog should read as a thin mist suspended in the air, not as a tint applied to objects (trees, rocks, etc.). From altitude it currently renders as a visible square, which breaks the illusion. Possibly also reconsider what the fog is for.
-
-Goal: distance/height-based atmospheric haze that softens the far horizon without visibly tinting nearby geometry, with **no perceptible plane/quad edge from any camera height**.
-
-- Bias the effect toward distance and/or altitude; reduce density so near geometry is largely unaffected.
-- Eliminate the "square from height" artifact. If a finite plane/quad drives the fog, replace it with a camera-relative/global effect or skirt/extend it so no edge shows at expected fly heights.
-- Reconcile with the vista stack — check interaction with `GROUND_PLANE_IMPOSTOR_SPEC.md` and `MVP_VISTA_MOMENT_SPEC.md` so fog and the horizon impostor read as one atmosphere.
-
-**Open questions (resolve first):**
-1. What actually renders the fog today — URP Volume/global fog (`RenderSettings.fog`), a custom fog shader/material, a skybox blend, or a quad/plane in the scene? The only `Fog` in code is `WeatherSystem.WeatherType.Fog`, which sets weather-state values (temperature/humidity) only — **no visuals** — so the source is elsewhere. (Determines settings-tweak vs. system change.)
-2. Is the "square from height" a dedicated fog plane, or the ground-plane impostor edge?
-
-**Acceptance:** From ground level and from max expected fly height, fog shows no plane edge; near objects (within ~1 chunk) show negligible tint; far horizon is softened. Validate in Play Mode at several altitudes.
+### M4 — BUG: Ballistic-takeoff false-grounding past jump apex _(Codex review 2026-07-02)_
+`PlayerGroundingSystem.ShouldSuppressGroundingDuringBallisticTakeoff` suppresses a ground-probe hit only while
+the player is *rising* (`mode == Ballistic && verticalSpeed > 0.05`). With the default jump (`JumpImpulse = 5`
+→ apex ≈ 1.27m) and `GroundProbeDistance = 1.3`, the downward ray still reaches the floor for the **entire**
+hop. Past apex, `verticalSpeed` drops below the threshold, suppression releases, and the still-hitting ray
+marks `IsGrounded = true` mid-air — firing landing logic before real touchdown and (after the
+`ModeDemotionMinGroundedTime` hysteresis window) potentially demoting Mode while airborne.
+- **Fix direction:** gate suppression on **actual contact/separation**, not velocity sign — e.g. only treat a
+  hit as grounded when the hit fraction/feet-to-surface distance is within a small contact epsilon, so the
+  probe reaching ground from mid-air (apex < probe length) doesn't register as grounded. Keep it robust to both
+  small jumps and high slingshot arcs.
+- **Notes:** pre-existing on `main` (not introduced by the vista PR). Related to the grounding/landing cluster
+  (**V7** fall-through, `LandingDetectionSystem`, Mode hysteresis). Needs playtesting — behavior change, not a
+  cosmetic fix. Enable `DebugSettings.EnableFallThroughDebug` to observe the ungrounded/grounded transitions.
 
 ### R1 — Low-poly tree/rock LODs + enable relic LOD
 **Intent:** Reduce environment-object render cost via LOD. **Priority: trees and rocks first** — they cost more FPS than the giant relics. Relics second.
@@ -224,6 +461,18 @@ Non-blocking gaps surfaced reviewing the surface-scatter-LOD commit. None cause 
 **R4 — Pebble chunk-cull cleanup parity.** `TerrainChunkLodApplySystem` strips `TreePlacementRecord`/`RockPlacementRecord` buffers + tags when a chunk culls to LOD3, but has no `PebblePlacementRecord`/`ChunkPebblePlacementTag` equivalent. No visual bug — the render system already skips culled chunks — but pebble buffers accumulate on culled chunks and they stay in the pebble render query just to be skipped. Fix = add the matching pebble removal block alongside the tree/rock one.
 
 **T1 — Scatter LOD test coverage.** Current tests cover pure LOD selection (`SurfaceScatterLodUtilityTests`) and mesh registration (`SurfaceScatterRenderSystemContractTestsBase`) but not the runtime paths most likely to break: no `PebbleChunkRenderSystem` contract test, `PebblePlacementAlgorithmTests` never calls `GeneratePlacements`, and no `OnUpdate` near/far bucket-routing test. Fill the highest-risk gaps first (Pebble contract + `GeneratePlacements`).
+
+---
+
+### W1 — Magic power grid _(placeholder — design-stage, not yet broken into tickets)_
+**Spec:** `AI/STRUCTURE PLACEMENT/MAGIC_GRID_SPEC.md` (DESIGN). Analytic world-space XZ lattice: power-source nodes, WFC-build-on-node affordance, sparse claimed-node alignment state, per-template `NodeAffinity`, universal influence query. Decisions captured in the spec; §13 lists the open questions to resolve before build.
+
+**Not scheduled — sequences behind its foundation.** Don't break into tickets until Structure Placement is on the board:
+- Depends on the **Structure Placement** anchor pipeline (`STRUCTURE_PLACEMENT_PLAN.md` §8 Steps 1–3) — the grid is a candidate-source variant reusing its `StructureAnchorRecord` / footprint / persistence machinery.
+- That in turn depends on the known **WFC bootstrap gaps** (`HybridWFCSystem` not created by `DotsSystemBootstrap`; deterministic seed) — see `STRUCTURE_PLACEMENT_SPEC.md` §12.5.1.
+- Orthogonal to **P2 Magic Hand System** (shares the "magic" fiction only; no dependency either way).
+
+**Earliest natural entry:** after the free anchor planner exists, add the grid as a `NodeBound` candidate source + the on-node WFC build affordance.
 
 ---
 
