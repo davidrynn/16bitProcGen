@@ -209,7 +209,6 @@ public class GlobPhysicsTestSetup : MonoBehaviour
             Debug.Log($"Glob Entities: {globCount}");
             
             // Check systems
-            Debug.Log("TerrainSystem: (Managed system)");
             Debug.Log("TerrainGlobPhysicsSystem: (ISystem active in world update list)");
         }
         else

@@ -60,8 +60,10 @@ public class DotsSystemBootstrap : MonoBehaviour
         {
             EnsureConfigSingleton(world);
 
-            world.CreateSystem<TerrainSystem>();
-            DebugSettings.Log("Bootstrap: TerrainSystem enabled via config.");
+            // Survivor of the ChunkProcessor/TerrainSystem duplicate-validator merge (plan C5);
+            // takes the unconditional slot the deleted TerrainSystem occupied.
+            world.CreateSystem<TerrainDataValidationSystem>();
+            DebugSettings.Log("Bootstrap: TerrainDataValidationSystem enabled via config.");
 
             if (config.EnableHybridTerrainGenerationSystem)
             {
@@ -73,12 +75,6 @@ public class DotsSystemBootstrap : MonoBehaviour
             {
                 world.CreateSystem<TerrainCleanupSystem>();
                 DebugSettings.Log("Bootstrap: TerrainCleanupSystem enabled via config.");
-            }
-
-            if (config.EnableChunkProcessor)
-            {
-                world.CreateSystem<ChunkProcessor>();
-                DebugSettings.Log("Bootstrap: ChunkProcessor enabled via config.");
             }
 
             if (config.EnableTerrainGlobPhysicsSystem)

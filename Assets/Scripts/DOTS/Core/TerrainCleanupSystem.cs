@@ -9,7 +9,9 @@ namespace DOTS.Terrain
     /// Prevents memory leaks from undisposed blob assets
     /// </summary>
     [UpdateInGroup(typeof(SimulationSystemGroup))]
-    [UpdateAfter(typeof(TerrainSystem))]
+    // Ordering after the validator (formerly TerrainSystem, merged into
+    // TerrainDataValidationSystem per plan C5) so cleanup runs after validation.
+    [UpdateAfter(typeof(TerrainDataValidationSystem))]
     [DisableAutoCreation]
     public partial class TerrainCleanupSystem : SystemBase
     {

@@ -21,7 +21,9 @@ namespace DOTS.Terrain.Generation
     /// For new terrain generation, use the SDF terrain pipeline instead.
     /// </summary>
     [UpdateInGroup(typeof(SimulationSystemGroup))]
-    [UpdateAfter(typeof(TerrainSystem))]
+    // Ordering after the validator (formerly TerrainSystem, merged into
+    // TerrainDataValidationSystem per plan C5).
+    [UpdateAfter(typeof(TerrainDataValidationSystem))]
     [DisableAutoCreation]
     public partial class HybridTerrainGenerationSystem : SystemBase
     {

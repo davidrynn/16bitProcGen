@@ -4,10 +4,13 @@ using DOTS.Terrain.Core;
 using TerrainData = DOTS.Terrain.TerrainData;
 
 /// <summary>
-/// DOTS System for managing terrain chunks
+/// [LEGACY] Validates legacy heightmap <see cref="TerrainData"/> entities (warns on
+/// non-positive resolution). Survivor of the ChunkProcessor/TerrainSystem merge
+/// (cleanup round 1, plan row C5) — the two were duplicate validators.
+/// The active SDF pipeline does not use this component.
 /// </summary>
 [DisableAutoCreation]
-public partial struct ChunkProcessor : ISystem
+public partial struct TerrainDataValidationSystem : ISystem
 {
     public void OnCreate(ref SystemState state)
     {
@@ -20,7 +23,7 @@ public partial struct ChunkProcessor : ISystem
         {
             if (terrain.ValueRO.resolution <= 0)
             {
-                DebugSettings.LogWarning($"[ChunkProcessor] Invalid resolution for entity {entity}");
+                DebugSettings.LogWarning($"[TerrainDataValidationSystem] Invalid resolution for entity {entity}");
             }
         }
     }
@@ -28,4 +31,4 @@ public partial struct ChunkProcessor : ISystem
     public void OnDestroy(ref SystemState state)
     {
     }
-} 
+}
