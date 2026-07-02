@@ -249,6 +249,7 @@ Batch protocol — every batch, no exceptions:
 | 1 | 2026-07-02 | A1 | 219/219 | 1e94f49 | Deleted Test/Archive tree (29 files + Deprecated.asmdef); only comment mentions remain; DEPRECATED_FILES.md annotated |
 | 2 | 2026-07-02 | A2, A4, A5, A14, A15 | 219/219 | 309ffac | 12 zero-ref files deleted; gizmo MonoBehaviours GUID-verified unattached; SimpleVisualDebugTest kept |
 | 3 | 2026-07-02 | A3, A6–A10 | 219/219 | 944ceae | 6 camera/bootstrap variants deleted + bootstrap wiring + 5 config flags removed; comment-only mentions left in place |
+| 4 | 2026-07-02 | A11, A12, S4 | 219/219 | c538fb5 | Prototype cluster + SampleScene + TerrainChunk.prefab + 11 BiomeData assets + 2 dependent editors deleted; Build Settings → Basic Terrain Scene. **Amendments:** BiomeType/TerrainType/NoiseType enums KEPT (referenced by active Sky code, live glob physics, quarantined Biome files); SceneDiagnostics KEPT (attached in live smoke scene) minus its CheckLegacyTerrain() method |
 
 ### 6.7 Improvement Suggestions (out of scope — follow-up work)
 

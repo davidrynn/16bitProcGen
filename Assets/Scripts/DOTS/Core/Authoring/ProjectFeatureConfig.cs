@@ -64,7 +64,6 @@ public class ProjectFeatureConfig : ScriptableObject
     public bool EnableHybridTerrainGenerationSystem = true;
     public bool EnableTerrainCleanupSystem = false;
     public bool EnableChunkProcessor = false;
-    public bool EnableTerrainModificationSystem = true;
     public bool EnableTerrainGlobPhysicsSystem = true;
 
     [Header("Terrain SDF Systems")]

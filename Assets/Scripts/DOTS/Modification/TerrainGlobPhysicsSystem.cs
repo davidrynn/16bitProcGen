@@ -13,7 +13,9 @@ namespace DOTS.Terrain.Modification
     /// </summary>
     [DisableAutoCreation]
     [UpdateInGroup(typeof(SimulationSystemGroup))]
-    [UpdateAfter(typeof(TerrainModificationSystem))]
+    // Previously ordered [UpdateAfter(TerrainModificationSystem)]; that legacy heightmap
+    // edit system was removed in cleanup round 1 (plan row A18) — globs are now spawned
+    // only by the SDF edit path, so no intra-group ordering constraint remains.
     public partial struct TerrainGlobPhysicsSystem : ISystem
     {
         // Physics constants

@@ -211,7 +211,6 @@ public class GlobPhysicsTestSetup : MonoBehaviour
             // Check systems
             Debug.Log("TerrainSystem: (Managed system)");
             Debug.Log("TerrainGlobPhysicsSystem: (ISystem active in world update list)");
-            Debug.Log("TerrainModificationSystem: (ISystem active in world update list)");
         }
         else
         {

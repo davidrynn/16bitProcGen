@@ -69,9 +69,6 @@ public class DotsSystemBootstrap : MonoBehaviour
                 DebugSettings.Log("Bootstrap: HybridTerrainGenerationSystem enabled via config.");
             }
 
-            world.CreateSystem<TerrainGenerationSystem>();
-            DebugSettings.Log("Bootstrap: TerrainGenerationSystem enabled via config.");
-
             if (config.EnableTerrainCleanupSystem)
             {
                 world.CreateSystem<TerrainCleanupSystem>();
@@ -82,12 +79,6 @@ public class DotsSystemBootstrap : MonoBehaviour
             {
                 world.CreateSystem<ChunkProcessor>();
                 DebugSettings.Log("Bootstrap: ChunkProcessor enabled via config.");
-            }
-
-            if (config.EnableTerrainModificationSystem)
-            {
-                world.CreateSystem<TerrainModificationSystem>();
-                DebugSettings.Log("Bootstrap: TerrainModificationSystem enabled via config.");
             }
 
             if (config.EnableTerrainGlobPhysicsSystem)
