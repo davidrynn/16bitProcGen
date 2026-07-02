@@ -5,13 +5,13 @@ using Unity.Jobs;
 using Unity.Burst;
 using UnityEngine;
 using DOTS.Terrain.Core;
-namespace DOTS.Terrain.Generation
+namespace DOTS.Terrain.Legacy
 {
     /// <summary>
     /// [LEGACY] Hybrid system that coordinates between DOTS entities and Compute Shaders for the legacy TerrainData component.
     /// Handles terrain generation using GPU acceleration with DOTS data management.
     /// 
-    /// ⚠️ LEGACY SYSTEM: This system operates on DOTS.Terrain.TerrainData component.
+    /// ⚠️ LEGACY SYSTEM: This system operates on DOTS.Terrain.Legacy.TerrainData component.
     /// The current active terrain system uses SDF (Signed Distance Fields) with systems in DOTS.Terrain namespace:
     /// - TerrainChunkDensitySamplingSystem (SDF density sampling)
     /// - TerrainChunkMeshBuildSystem (Surface Nets meshing)
@@ -25,7 +25,7 @@ namespace DOTS.Terrain.Generation
     // TerrainDataValidationSystem per plan C5).
     [UpdateAfter(typeof(TerrainDataValidationSystem))]
     [DisableAutoCreation]
-    public partial class HybridTerrainGenerationSystem : SystemBase
+    public partial class LegacyHeightmapTerrainGenerationSystem : SystemBase
     {
         // Compute Shader Manager reference
         private ComputeShaderManager computeManager;
@@ -54,7 +54,7 @@ namespace DOTS.Terrain.Generation
             }
             else
             {
-                DebugSettings.LogWarning("HybridTerrainGenerationSystem: No settings found, using defaults");
+                DebugSettings.LogWarning("LegacyHeightmapTerrainGenerationSystem: No settings found, using defaults");
             }
             
             // Initialize performance counters
@@ -349,7 +349,7 @@ namespace DOTS.Terrain.Generation
             }
             catch (System.Exception e)
             {
-                DebugSettings.LogError($"HybridTerrainGenerationSystem: Hardcoded test generation failed: {e.Message}");
+                DebugSettings.LogError($"LegacyHeightmapTerrainGenerationSystem: Hardcoded test generation failed: {e.Message}");
                 return false;
             }
         }
@@ -369,7 +369,7 @@ namespace DOTS.Terrain.Generation
         private void ProcessNoiseResults(ref TerrainData terrain)
         {
             // TODO: Implement in Step 4
-            // Debug.Log("HybridTerrainGenerationSystem: ProcessNoiseResults - Not implemented yet");
+            // UnityEngine.Debug.Log("LegacyHeightmapTerrainGenerationSystem: ProcessNoiseResults - Not implemented yet");
         }
         
         /// <summary>
@@ -422,7 +422,7 @@ namespace DOTS.Terrain.Generation
             }
             catch (System.Exception e)
             {
-                DebugSettings.LogError($"HybridTerrainGenerationSystem: Failed to initialize buffers: {e.Message}");
+                DebugSettings.LogError($"LegacyHeightmapTerrainGenerationSystem: Failed to initialize buffers: {e.Message}");
                 buffersInitialized = false;
             }
         }
@@ -451,13 +451,13 @@ namespace DOTS.Terrain.Generation
             }
             
             buffersInitialized = false;
-            // Debug.Log("HybridTerrainGenerationSystem: Buffers cleaned up");
+            // UnityEngine.Debug.Log("LegacyHeightmapTerrainGenerationSystem: Buffers cleaned up");
         }
         
         protected override void OnDestroy()
         {
             CleanupBuffers();
-            // Debug.Log("HybridTerrainGenerationSystem: Destroyed");
+            // UnityEngine.Debug.Log("LegacyHeightmapTerrainGenerationSystem: Destroyed");
         }
         
         /// <summary>
@@ -606,20 +606,20 @@ namespace DOTS.Terrain.Generation
             
             if (shouldLog)
             {
-                DebugSettings.LogTerrain($"HybridTerrainGenerationSystem: {message}", true);
+                DebugSettings.LogTerrain($"LegacyHeightmapTerrainGenerationSystem: {message}", true);
             }
         }
         
         private void DebugError(string message)
         {
             // Errors always shown via DebugSettings
-            DebugSettings.LogError($"HybridTerrainGenerationSystem: {message}");
+            DebugSettings.LogError($"LegacyHeightmapTerrainGenerationSystem: {message}");
         }
         
         private void DebugWarning(string message)
         {
             // Warnings always shown via DebugSettings
-            DebugSettings.LogWarning($"HybridTerrainGenerationSystem: {message}");
+            DebugSettings.LogWarning($"LegacyHeightmapTerrainGenerationSystem: {message}");
         }
     }
 } 

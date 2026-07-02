@@ -4,7 +4,7 @@ using Unity.Collections;
 using Unity.Transforms;
 using UnityEngine;
 
-namespace DOTS.Terrain
+namespace DOTS.Terrain.Legacy
 {
     /// <summary>
     /// [LEGACY] Core terrain data component for the legacy DOTS terrain system.

@@ -1,9 +1,10 @@
+using DOTS.Terrain.Legacy;
 using Unity.Entities;
 using Unity.Mathematics;
 using UnityEngine;
 using DOTS.Terrain.Weather;
 using DOTS.Terrain;
-using TerrainData = DOTS.Terrain.TerrainData;
+using TerrainData = DOTS.Terrain.Legacy.TerrainData;
 
 namespace DOTS.Test
 {
@@ -134,7 +135,7 @@ namespace DOTS.Test
             }
             
             // Create query for terrain entities
-            terrainQuery = entityManager.CreateEntityQuery(typeof(DOTS.Terrain.TerrainData));
+            terrainQuery = entityManager.CreateEntityQuery(typeof(DOTS.Terrain.Legacy.TerrainData));
             
             // Add weather components to existing terrain entities
             AddWeatherComponentsToTerrain();
@@ -312,7 +313,7 @@ namespace DOTS.Test
             
             if (entities.Length > 0)
             {
-                var terrainData = entityManager.GetComponentData<DOTS.Terrain.TerrainData>(entities[0]);
+                var terrainData = entityManager.GetComponentData<DOTS.Terrain.Legacy.TerrainData>(entities[0]);
                 currentTerrainHeight = terrainData.averageHeight;
                 
                 if (lastTerrainHeight != 0f && Mathf.Abs(currentTerrainHeight - lastTerrainHeight) > 0.01f)

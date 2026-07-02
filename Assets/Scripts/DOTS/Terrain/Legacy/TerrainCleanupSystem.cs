@@ -2,7 +2,7 @@ using Unity.Entities;
 using Unity.Collections;
 using UnityEngine;
 
-namespace DOTS.Terrain
+namespace DOTS.Terrain.Legacy
 {
     /// <summary>
     /// System that automatically cleans up BlobAssetReferences when terrain entities are destroyed

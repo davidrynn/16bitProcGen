@@ -1,10 +1,11 @@
+using DOTS.Terrain.Legacy;
 using Unity.Entities;
 using Unity.Mathematics;
 using UnityEngine;
 
 /// <summary>
 /// Quick script to create terrain entities for testing
-/// This will immediately create entities so the HybridTerrainGenerationSystem has something to process
+/// This will immediately create entities so the LegacyHeightmapTerrainGenerationSystem has something to process
 /// Now includes seamless terrain verification
 /// </summary>
 public class QuickTerrainEntityCreator : MonoBehaviour
@@ -80,7 +81,7 @@ public class QuickTerrainEntityCreator : MonoBehaviour
             var world = World.DefaultGameObjectInjectionWorld;
             if (world != null)
             {
-                var terrainData = world.EntityManager.GetComponentData<DOTS.Terrain.TerrainData>(entity);
+                var terrainData = world.EntityManager.GetComponentData<DOTS.Terrain.Legacy.TerrainData>(entity);
                 terrainData.needsGeneration = true;
                 world.EntityManager.SetComponentData(entity, terrainData);
                 
@@ -89,7 +90,7 @@ public class QuickTerrainEntityCreator : MonoBehaviour
         }
         
         Debug.Log($"✓ Created {numberOfEntities} terrain entities successfully");
-        Debug.Log("The HybridTerrainGenerationSystem should now process these entities!");
+        Debug.Log("The LegacyHeightmapTerrainGenerationSystem should now process these entities!");
         
         // Start seamless testing if enabled
         if (enableSeamlessTesting)
@@ -209,8 +210,8 @@ public class QuickTerrainEntityCreator : MonoBehaviour
         if (!world.EntityManager.Exists(leftEntity) || !world.EntityManager.Exists(rightEntity))
             return false;
         
-        var leftTerrain = world.EntityManager.GetComponentData<DOTS.Terrain.TerrainData>(leftEntity);
-        var rightTerrain = world.EntityManager.GetComponentData<DOTS.Terrain.TerrainData>(rightEntity);
+        var leftTerrain = world.EntityManager.GetComponentData<DOTS.Terrain.Legacy.TerrainData>(leftEntity);
+        var rightTerrain = world.EntityManager.GetComponentData<DOTS.Terrain.Legacy.TerrainData>(rightEntity);
         
         if (!leftTerrain.heightData.IsCreated || !rightTerrain.heightData.IsCreated)
             return false;
@@ -265,8 +266,8 @@ public class QuickTerrainEntityCreator : MonoBehaviour
         if (!world.EntityManager.Exists(bottomEntity) || !world.EntityManager.Exists(topEntity))
             return false;
         
-        var bottomTerrain = world.EntityManager.GetComponentData<DOTS.Terrain.TerrainData>(bottomEntity);
-        var topTerrain = world.EntityManager.GetComponentData<DOTS.Terrain.TerrainData>(topEntity);
+        var bottomTerrain = world.EntityManager.GetComponentData<DOTS.Terrain.Legacy.TerrainData>(bottomEntity);
+        var topTerrain = world.EntityManager.GetComponentData<DOTS.Terrain.Legacy.TerrainData>(topEntity);
         
         if (!bottomTerrain.heightData.IsCreated || !topTerrain.heightData.IsCreated)
             return false;

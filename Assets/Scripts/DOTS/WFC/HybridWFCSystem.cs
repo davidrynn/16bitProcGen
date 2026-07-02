@@ -1,3 +1,4 @@
+using DOTS.Terrain.Legacy;
 using Unity.Entities;
 using Unity.Mathematics;
 using Unity.Collections;
@@ -14,7 +15,7 @@ namespace DOTS.Terrain.WFC
     /// Hybrid WFC System that combines DOTS with Compute Shaders for structured terrain generation
     /// </summary>
     [UpdateInGroup(typeof(SimulationSystemGroup))]
-    [UpdateAfter(typeof(DOTS.Terrain.Generation.HybridTerrainGenerationSystem))]
+    [UpdateAfter(typeof(DOTS.Terrain.Legacy.LegacyHeightmapTerrainGenerationSystem))]
     [DisableAutoCreation]
     public partial class HybridWFCSystem : SystemBase
     {

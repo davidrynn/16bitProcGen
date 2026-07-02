@@ -1,7 +1,7 @@
 using UnityEngine;
 using DOTS.Terrain.Core;
 
-namespace DOTS.Terrain.Generation
+namespace DOTS.Terrain.Legacy
 {
     /// <summary>
     /// ScriptableObject configuration for terrain generation settings

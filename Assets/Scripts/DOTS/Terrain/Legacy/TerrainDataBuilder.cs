@@ -3,13 +3,13 @@ using Unity.Mathematics;
 using Unity.Collections;
 using UnityEngine;
 
-namespace DOTS.Terrain
+namespace DOTS.Terrain.Legacy
 {
     /// <summary>
     /// [LEGACY] Factory class for creating TerrainData and related structures for the legacy terrain system.
     /// Provides efficient methods for initializing terrain data with proper memory management.
     /// 
-    /// ⚠️ LEGACY SYSTEM: This is part of the legacy terrain system that uses DOTS.Terrain.TerrainData component.
+    /// ⚠️ LEGACY SYSTEM: This is part of the legacy terrain system that uses DOTS.Terrain.Legacy.TerrainData component.
     /// The current active terrain system uses SDF (Signed Distance Fields) with components in DOTS.Terrain namespace.
     /// 
     /// This builder is maintained for backward compatibility with existing tests and legacy code.

@@ -1,5 +1,6 @@
 using DOTS.Terrain;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 public enum TerrainRenderDistancePreset
 {
@@ -61,7 +62,8 @@ public class ProjectFeatureConfig : ScriptableObject
     public bool EnableScreenEffectResolverSystem = true;
 
     [Header("Terrain Core Systems")]
-    public bool EnableHybridTerrainGenerationSystem = true;
+    [FormerlySerializedAs("EnableHybridTerrainGenerationSystem")]
+    public bool EnableLegacyHeightmapTerrainGenerationSystem = true;
     public bool EnableTerrainCleanupSystem = false;
     public bool EnableTerrainGlobPhysicsSystem = true;
 

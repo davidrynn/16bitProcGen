@@ -1,8 +1,8 @@
+using DOTS.Terrain.Legacy;
 using DOTS.Player.Bootstrap;
 using DOTS.Player.Systems;
 using DOTS.Terrain.Core;
 using DOTS.Terrain;
-using DOTS.Terrain.Generation;
 using DOTS.Terrain.LOD;
 using DOTS.Terrain.Meshing;
 using DOTS.Terrain.Modification;
@@ -65,10 +65,10 @@ public class DotsSystemBootstrap : MonoBehaviour
             world.CreateSystem<TerrainDataValidationSystem>();
             DebugSettings.Log("Bootstrap: TerrainDataValidationSystem enabled via config.");
 
-            if (config.EnableHybridTerrainGenerationSystem)
+            if (config.EnableLegacyHeightmapTerrainGenerationSystem)
             {
-                world.CreateSystem<HybridTerrainGenerationSystem>();
-                DebugSettings.Log("Bootstrap: HybridTerrainGenerationSystem enabled via config.");
+                world.CreateSystem<LegacyHeightmapTerrainGenerationSystem>();
+                DebugSettings.Log("Bootstrap: LegacyHeightmapTerrainGenerationSystem enabled via config.");
             }
 
             if (config.EnableTerrainCleanupSystem)

@@ -1,9 +1,10 @@
+using DOTS.Terrain.Legacy;
 using Unity.Entities;
 using Unity.Mathematics;
 using UnityEngine;
 using DOTS.Terrain;
 using DOTS.Terrain.Modification;
-using TerrainData = DOTS.Terrain.TerrainData;
+using TerrainData = DOTS.Terrain.Legacy.TerrainData;
 
 /// <summary>
 /// Setup script to configure the test environment for glob physics testing

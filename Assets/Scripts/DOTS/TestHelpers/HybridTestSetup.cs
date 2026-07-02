@@ -1,6 +1,6 @@
+using DOTS.Terrain.Legacy;
 using UnityEngine;
 using Unity.Entities;
-using DOTS.Terrain.Generation;
 using DOTS.Terrain.Weather;
 using DOTS.Terrain.Core;
 
@@ -248,11 +248,11 @@ namespace DOTS.Terrain.Test
                 return false;
             }
             
-            // Check if HybridTerrainGenerationSystem is registered
-            var hybridSystemHandle = world.GetExistingSystem<HybridTerrainGenerationSystem>();
+            // Check if LegacyHeightmapTerrainGenerationSystem is registered
+            var hybridSystemHandle = world.GetExistingSystem<LegacyHeightmapTerrainGenerationSystem>();
             if (hybridSystemHandle == SystemHandle.Null)
             {
-                DebugSettings.LogError("HybridTerrainGenerationSystem not found in world");
+                DebugSettings.LogError("LegacyHeightmapTerrainGenerationSystem not found in world");
                 return false;
             }
             
@@ -264,7 +264,7 @@ namespace DOTS.Terrain.Test
             DebugSettings.LogTest($"  - TerrainEntityManager: {(entityManager != null ? "Found" : "Missing")}");
             DebugSettings.LogTest($"  - TerrainComputeBufferManager: {(bufferManager != null ? "Found" : "Missing")}");
             DebugSettings.LogTest($"  - DOTS World: {(world != null ? "Found" : "Missing")}");
-            DebugSettings.LogTest($"  - HybridTerrainGenerationSystem: {(hybridSystemHandle != SystemHandle.Null ? "Found" : "Missing")}");
+            DebugSettings.LogTest($"  - LegacyHeightmapTerrainGenerationSystem: {(hybridSystemHandle != SystemHandle.Null ? "Found" : "Missing")}");
             DebugSettings.LogTest($"  - WeatherSystem: Auto-registered by DOTS");
             DebugSettings.LogTest($"  - HybridWeatherSystem: Auto-registered by DOTS");
             
@@ -312,12 +312,12 @@ namespace DOTS.Terrain.Test
             }
             var entityManager = FindFirstObjectByType<TerrainEntityManager>();
             var world = World.DefaultGameObjectInjectionWorld;
-            var hybridSystemHandle = world?.GetExistingSystem<HybridTerrainGenerationSystem>();
+            var hybridSystemHandle = world?.GetExistingSystem<LegacyHeightmapTerrainGenerationSystem>();
             
             DebugSettings.LogTest($"ComputeShaderManager: {(computeManager != null ? "✓ Found" : "✗ Missing")}");
             DebugSettings.LogTest($"TerrainEntityManager: {(entityManager != null ? "✓ Found" : "✗ Missing")}");
             DebugSettings.LogTest($"DOTS World: {(world != null ? "✓ Found" : "✗ Missing")}");
-            DebugSettings.LogTest($"HybridTerrainGenerationSystem: {(hybridSystemHandle != SystemHandle.Null ? "✓ Found" : "✗ Missing")}");
+            DebugSettings.LogTest($"LegacyHeightmapTerrainGenerationSystem: {(hybridSystemHandle != SystemHandle.Null ? "✓ Found" : "✗ Missing")}");
             
             if (computeManager != null && entityManager != null && world != null && hybridSystemHandle != SystemHandle.Null)
             {
