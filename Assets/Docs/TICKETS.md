@@ -385,6 +385,7 @@ _Tickets for later sprints — not yet scheduled._
 | M1  | Glide mechanic (Space hold → GlideCharging → Gliding) | Movement |
 | M2  | Chain slingshot (chain window + additive velocity) | Movement |
 | M3  | Thermal columns (vertical lift volumes) | Movement |
+| M4  | BUG: Ballistic-takeoff false-grounding past jump apex — suppress by contact/separation, not velocity sign | Movement |
 | P1  | Basic HUD (charge indicator + chain window indicator) | Phase 1 |
 | P2  | Magic Hand System (raycast, charge, binary terrain edit) | Phase 1 |
 | W1  | Magic power grid (placeholder — see `AI/STRUCTURE PLACEMENT/MAGIC_GRID_SPEC.md`) | Phase 2 / World Power |
@@ -402,6 +403,21 @@ _Tickets for later sprints — not yet scheduled._
 | B7  | Wildflower cluster models (10–40cm, 3 colorways) | Biome Art |
 
 ---
+
+### M4 — BUG: Ballistic-takeoff false-grounding past jump apex _(Codex review 2026-07-02)_
+`PlayerGroundingSystem.ShouldSuppressGroundingDuringBallisticTakeoff` suppresses a ground-probe hit only while
+the player is *rising* (`mode == Ballistic && verticalSpeed > 0.05`). With the default jump (`JumpImpulse = 5`
+→ apex ≈ 1.27m) and `GroundProbeDistance = 1.3`, the downward ray still reaches the floor for the **entire**
+hop. Past apex, `verticalSpeed` drops below the threshold, suppression releases, and the still-hitting ray
+marks `IsGrounded = true` mid-air — firing landing logic before real touchdown and (after the
+`ModeDemotionMinGroundedTime` hysteresis window) potentially demoting Mode while airborne.
+- **Fix direction:** gate suppression on **actual contact/separation**, not velocity sign — e.g. only treat a
+  hit as grounded when the hit fraction/feet-to-surface distance is within a small contact epsilon, so the
+  probe reaching ground from mid-air (apex < probe length) doesn't register as grounded. Keep it robust to both
+  small jumps and high slingshot arcs.
+- **Notes:** pre-existing on `main` (not introduced by the vista PR). Related to the grounding/landing cluster
+  (**V7** fall-through, `LandingDetectionSystem`, Mode hysteresis). Needs playtesting — behavior change, not a
+  cosmetic fix. Enable `DebugSettings.EnableFallThroughDebug` to observe the ungrounded/grounded transitions.
 
 ### R1 — Low-poly tree/rock LODs + enable relic LOD
 **Intent:** Reduce environment-object render cost via LOD. **Priority: trees and rocks first** — they cost more FPS than the giant relics. Relics second.
