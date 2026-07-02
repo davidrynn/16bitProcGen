@@ -4,11 +4,17 @@
 **Last Updated:** 2026-07-02
 **Owner:** David + AI assistant
 
-**Purpose:** Living plan for simplifying and clarifying the codebase — correcting system names, archiving dead code, and ordering documentation — using a token-efficient AI workflow. All cleanup planning (current and future rounds) lives in this doc: the phase workflow is defined once in §2–§5, and each round's manifests, decisions, and batch logs accumulate in §6.
+**Purpose:** Living plan for simplifying and clarifying the codebase — correcting system names, archiving dead code, repairing structure, and ordering documentation — using a token-efficient AI workflow. The goal is a codebase the owner — who has limited Unity/ECS experience — can navigate and understand unaided: fewer moving parts, self-explanatory names and structure, modern ECS idiom, and documentation that reflects reality. All cleanup planning (current and future rounds) lives in this doc: the phase workflow is defined once in §2–§5, and each round's manifests, decisions, and batch logs accumulate in §6.
 
 ---
 
-## 1. Scope & Non-Goals
+## 1. Goals, Scope & Non-Goals
+
+**Goals** (every Phase 2 verdict should cite which goal the change serves):
+
+1. **Understandable by a Unity/ECS newcomer** — names that explain themselves, folder structure that teaches the architecture, XML summaries on public types, why-comments on DOTS constraints. The bar is not just "matches the convention" but "a newcomer can infer what it does."
+2. **Lighter** — less dead weight, fewer duplicate code paths, fewer stale docs competing for attention.
+3. **Aligned with modern Unity 6 / DOTS best practices** — current ECS idiom per the `unity-ecs-patterns` skill, not just correct naming.
 
 **Scope:**
 
@@ -25,6 +31,8 @@
 - No performance work (tracked separately, e.g. scatter LOD specs).
 - No architectural migrations (e.g. heightmap → SDF consolidation) — those need their own specs.
 - No touching `Assets/Docs/Archives/` content beyond moving things into it.
+
+Out-of-scope observations are **recorded, not dropped**: when any phase surfaces an improvement that would change behavior or exceed this plan's scope (a worthwhile `SystemBase`→`ISystem` conversion, a performance smell, an architectural simplification), it goes into §6.7 as a suggestion for separate follow-up work — it is never silently applied inside a cleanup batch.
 
 ---
 
@@ -129,6 +137,7 @@ Batch protocol — every batch, no exceptions:
 
 > One entry per Phase 2 sitting or mid-execution judgment call. Newest first.
 
+- **2026-07-02** — Goals made explicit per owner review: learnability for a Unity/ECS newcomer, lighter codebase, modern best practices (§1); verdicts must cite the goal served. Added §6.7 so behavior-changing improvement ideas are recorded for follow-up instead of dropped or silently applied.
 - **2026-07-02** — Scope expanded per review: folder/namespace structure audit and functional overlap audit added to Phase 1; `unity-ecs-patterns` skill made mandatory for the idiom audit and any code-touching worker; consolidation candidates get their own table (§6.4) and run one-per-batch.
 - **2026-07-02** — Plan created; workflow and batch protocol agreed. No inventory run yet.
 
@@ -138,6 +147,14 @@ Batch protocol — every batch, no exceptions:
 |-------|------|--------------|-------|--------|-------|
 | — | | | | | |
 
+### 6.7 Improvement Suggestions (out of scope — follow-up work)
+
+> Behavior-changing or scope-exceeding improvements noticed during any phase (see §1 Non-Goals). Never applied in a cleanup batch; each row is a candidate for its own spec/ticket.
+
+| # | Where | Suggestion | Goal served (§1) | Disposition (open / spun off to spec-ticket / rejected) |
+|---|-------|------------|------------------|----------------------------------------------------------|
+| — | *(none yet)* | | | |
+
 ---
 
 ## 7. Acceptance Criteria (per round)
@@ -146,6 +163,8 @@ Batch protocol — every batch, no exceptions:
 - No orphaned `.meta` files (`git status` clean of unmatched meta churn).
 - `DOCUMENT_INDEX.md` and folder indexes reflect all doc moves; superseded docs marked per `DOCUMENTATION_SYSTEM_SPEC.md`.
 - Zero behavior change: EditMode suite green before and after the round; no new console errors on domain reload.
+- **Learnability check:** a developer new to Unity/ECS can locate the system responsible for a given behavior from names and folder structure alone, without grepping — spot-check a few behaviors after each round.
+- Out-of-scope improvements observed during the round are captured in §6.7, not lost and not silently applied.
 - Another agent reading only this doc can answer: what was renamed, what was archived, what's still pending.
 
 ## Related Docs
