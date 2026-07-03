@@ -1,6 +1,6 @@
 # Codebase Simplification & Cleanup Plan
 
-**Status:** ROUND 2 COMPLETE (2026-07-03, branch `chore/cleanup-round-2`, unmerged; round 1 merged to main as `9f08538`) — batches 22–24 executed and green (doc taxonomy D14–D16, archives A21/A22, test consolidation R48/C9). No in-scope rows remain; §6.7 suggestions S1–S16 are the follow-up backlog (each needs its own spec/ticket, not a cleanup batch)
+**Status:** ROUND 3 IN PROGRESS (2026-07-03, branch `chore/cleanup-round-3`; rounds 1+2 merged to local main `5306959`, main unpushed) — batch 25 done (T1–T15 top-level loose files). No in-scope rows remain; §6.7 suggestions S1–S16 are the follow-up backlog (each needs its own spec/ticket, not a cleanup batch)
 **Last Updated:** 2026-07-03
 **Owner:** David + AI assistant
 
@@ -207,20 +207,20 @@ Batch protocol — every batch, no exceptions:
 | # | Path | Referenced by (evidence) | Proposed verdict | Batch |
 |---|------|---------------------------|------------------|-------|
 | T1 | `CLAUDE.md` | AI guidance, current | **keep in place** | — |
-| T2 | `ISystem_Usage_Report.md` (repo root) | Nothing; catalogs classes deleted in round 1 (`CameraFollowSystem` confirmed gone) | **archive to `Docs/Archives/`** (pending owner) | |
+| T2 | `ISystem_Usage_Report.md` (repo root) | Nothing; catalogs classes deleted in round 1 (`CameraFollowSystem` confirmed gone) |  **archive to `Docs/Archives/RootLegacy_2026/`** (owner 2026-07-03) — done | 25 | |
 | T3 | `LICENSE.txt` | — | **keep in place** | — |
-| T4 | `space_figure_spec.md` (repo root) | No refs, but describes the LIVE BoxPlayer humanoid rig | **move to `Assets/Docs/Player/`** (pending owner) | |
-| T5 | `TERRAIN_SYSTEMS_CODE_AUDIT.md` (repo root) | Nothing; flags code deleted in rounds 1–2 | **archive to `Docs/Archives/`** (pending owner) | |
-| T6 | `Assets/BoxPlayer.fbx` | LIVE: `Basic Terrain Scene.unity` (build scene) + `PlayerAnimatorController` | **move to `Assets/Models/`** (pending owner) | |
-| T7 | `Assets/InitTestScene<uuid>.unity` | Zero refs; leaked Unity Test Runner temp scene (UUID name) | **archive/delete** (pending owner) | |
+| T4 | `space_figure_spec.md` (repo root) | No refs, but describes the LIVE BoxPlayer humanoid rig |  **move to `Assets/Docs/Player/SPACE_FIGURE_SPEC.md`** (owner 2026-07-03) — done, status header added, indexed | 25 | |
+| T5 | `TERRAIN_SYSTEMS_CODE_AUDIT.md` (repo root) | Nothing; flags code deleted in rounds 1–2 |  **archive to `Docs/Archives/RootLegacy_2026/`** (owner 2026-07-03) — done | 25 | |
+| T6 | `Assets/BoxPlayer.fbx` | LIVE: `Basic Terrain Scene.unity` (build scene) + `PlayerAnimatorController` |  **move to `Assets/Models/`** (owner 2026-07-03) — done | 25 | |
+| T7 | `Assets/InitTestScene<uuid>.unity` | Zero refs; leaked Unity Test Runner temp scene (UUID name) |  **archive/delete** (owner 2026-07-03) — done | 25 | |
 | T8 | `Assets/InputSystem_Actions.inputactions` | LIVE: ProjectSettings default input | **keep in place** (Unity convention) | — |
-| T9 | `Assets/LODTerrainChunk.prefab` | Zero refs found anywhere | **needs-owner-input** — dead, or spawned by code not found? | |
-| T10 | `Assets/LowResRender.renderTexture` | Zero refs found | **needs-owner-input** — 240p retro target still wired manually in-editor, or obsolete? | |
-| T11 | `Assets/README.md` | DOTS authoring checklist, still accurate | **needs-owner-input** — move under `Docs/Reference/`, or intentional Assets-root README? | |
-| T12 | `Assets/sdftest.unity` | Has live `PlayerCameraBootstrap_WithVisuals`; not in Build Settings | **move to `Assets/Scenes/`** (pending owner) | |
-| T13 | `Assets/test.unity` | Zero refs; scratch name | **needs-owner-input** — dev scene worth keeping (move to `Scenes/`) or archive? | |
-| T14 | `Assets/TriArm2.0.fbx` | LIVE (surprise): 8 weather-effect prefabs in `Resources/WeatherEffects/` reference it | **move to `Assets/Models/`** (pending owner) | |
-| T15 | `Assets/_Recovery/` (found in-audit) | Unity crash-recovery folder artifact (`0.unity` references BoxPlayer) | **archive/delete** (pending owner) | |
+| T9 | `Assets/LODTerrainChunk.prefab` | Zero refs found anywhere |  **archive** (owner 2026-07-03) — done | 25 | |
+| T10 | `Assets/LowResRender.renderTexture` | Zero refs found |  **archive** (owner 2026-07-03) — done | 25 | |
+| T11 | `Assets/README.md` | DOTS authoring checklist, still accurate |  **fold into CLAUDE.md + archive** (owner 2026-07-03) — done; source-gen debug tip folded into Common Pitfalls, rest redundant/stale | 25 | |
+| T12 | `Assets/sdftest.unity` | Has live `PlayerCameraBootstrap_WithVisuals`; not in Build Settings |  **move to `Assets/Scenes/`** (owner 2026-07-03) — done | 25 | |
+| T13 | `Assets/test.unity` | Zero refs; scratch name |  **archive** (owner 2026-07-03) — done | 25 | |
+| T14 | `Assets/TriArm2.0.fbx` | LIVE (surprise): 8 weather-effect prefabs in `Resources/WeatherEffects/` reference it |  **move to `Assets/Models/`** (owner 2026-07-03) — done | 25 | |
+| T15 | `Assets/_Recovery/` (found in-audit) | Unity crash-recovery folder artifact (`0.unity` references BoxPlayer) |  **archive/delete** (owner 2026-07-03) — done | 25 | |
 
 ### 6.3 Doc Reorder List
 
@@ -316,6 +316,7 @@ Batch protocol — every batch, no exceptions:
 | 22 | 2026-07-03 | D14–D16 | n/a (docs only) — meta-pairing + repo-wide link check scripted (0 broken active links; 3 pre-existing missing-PNG refs untouched); Unity gate skipped, editor held by owner; `Testing/*.md` metas pending next editor import | *(this commit)* | **ROUND 2 START** (branch `chore/cleanup-round-2` off merged main `9f08538`). Taxonomy codified in `DOCUMENTATION_SYSTEM_SPEC.md` §6.4; 53 docs re-homed into `Terrain/(Scatter/)`, `Biomes/`, `Rendering/`, `Player/(Movement/)`, `Structures/`, `WFC/`, `Testing/`, `Process/`, `Multiplayer/`, `Persistence/`; `AI/`, `TerrainHeightMaps/`, `STRUCTURE_PLACEMENT/`, `MVP_Movement/`, repo-root `Docs/` all dissolved. `DOCUMENT_INDEX.md` regrouped by feature area; changelog entry added. Stale refs fixed beyond the moves: `AI_Instructions.md` live-path refs in CLAUDE.md / copilot-instructions / BOOTSTRAP_GUIDE / Bootstrap README; spec §5/§6.2 examples updated to new paths. This plan now lives at `Assets/Docs/Process/CODEBASE_SIMPLIFICATION_PLAN.md` |
 | 23 | 2026-07-03 | A21, A22 | EditMode 210/210 | *(this commit)* | testa.unity + 11 manual-harness MonoBehaviours deleted (`DOTS/Test/`, `DOTS/TestHelpers/` gone; they compiled into production `DOTS.Terrain`). **Amendments:** `SimpleVisualDebugTest` cascade-archived (A2 keep-reason dissolved; `DOTS/Debug/` gone entirely); 3 companion docs archived to `Docs/Archives/ManualTestScripts_2026/` per doc rules + indexed; CLAUDE.md Test Locations + catalog ref updated. Gate ran after owner's editor closed (crash recovery mid-batch — no work lost) |
 | 24 | 2026-07-03 | R48, C9 | EditMode 210/210; PlayMode 96 = baseline exactly (86 pass / 9 fail / 1 skip, identical failure set — 7 batchmode artifacts + S14 + S15) | *(this commit)* | All NUnit tests → `DOTS/Tests/{EditMode,PlayMode}`, two asmdefs `DOTS.Tests.EditMode` + `DOTS.Tests.PlayMode` (5 old test asms dissolved incl. **7th location found in-batch: `DOTS.Core.Authoring.Tests`**, folded in); namespaces aligned to folders; dead Cinemachine ref dropped. **Hazard hit & fixed:** renaming a namespace off the `DOTS.Terrain.*` ancestor chain removes implicit type resolution — 28 explicit usings + 3 `using Streaming = DOTS.Terrain.Streaming;` aliases restored it. Stragglers per taxonomy: `PlayerMovementTestPlan.md` → `Docs/Testing/` (indexed), stale `VERIFICATION_SUMMARY.md` → `Docs/Archives/TestRefactor_2025/`, Tests `README.md` rewritten as area index; CLAUDE.md + PROJECT_STRUCTURE_DOTS updated |
+| 25 | 2026-07-03 | T2, T4–T7, T9–T15 | EditMode 210/210 | *(this commit)* | **ROUND 3 batch 1** (branch `chore/cleanup-round-3`; owner-requested Haiku scan + Opus evaluation of 14 top-level loose files). Moves: BoxPlayer.fbx + TriArm2.0.fbx → `Models/`, sdftest.unity → `Scenes/`, space_figure_spec → `Docs/Player/` (+status, indexed). Archived to `Docs/Archives/RootLegacy_2026/`: 2 stale repo-root audit docs + Assets/README (authoring checklist folded into CLAUDE.md — source-gen debug tip; rest redundant/stale). Deleted: leaked InitTestScene<uuid>, test.unity, zero-ref LODTerrainChunk.prefab + LowResRender.renderTexture, untracked `_Recovery/`. **Sweep catch Opus missed:** `PlayerAnimatorControllerBuilder.cs` loads BoxPlayer by string path — updated (GUID moves don't protect string loads). Repo root now: CLAUDE.md + LICENSE only; Assets root: InputSystem_Actions only |
 
 ### 6.7 Improvement Suggestions (out of scope — follow-up work)
 

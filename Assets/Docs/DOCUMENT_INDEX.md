@@ -68,6 +68,7 @@ Quick-reference index of all project documentation. Docs are organized by featur
 | [Player/PLAYER_LANDING_ANIMATION_SPEC.md](Player/PLAYER_LANDING_ANIMATION_SPEC.md) | PROPOSED | Tiered landing animations (light/hard/slide) + visual floor clamp to fix slingshot terrain clipping |
 | [Player/PLAYER_PIT_MUDINESS_HYPOTHESIS_TEST_PLAN.md](Player/PLAYER_PIT_MUDINESS_HYPOTHESIS_TEST_PLAN.md) | ACTIVE | Test-first hypothesis matrix for pit-wall mudiness root-cause validation |
 | [Player/PLAYER_BOOTSTRAP_FIX_SPEC.md](Player/PLAYER_BOOTSTRAP_FIX_SPEC.md) | ACTIVE | Player bootstrap reliability for DOTS tests |
+| [Player/SPACE_FIGURE_SPEC.md](Player/SPACE_FIGURE_SPEC.md) | ACTIVE | Humanoid block-figure model spec (BoxPlayer rig, Unity Humanoid Avatar mapping) — moved from repo root |
 
 ### Player / Movement
 

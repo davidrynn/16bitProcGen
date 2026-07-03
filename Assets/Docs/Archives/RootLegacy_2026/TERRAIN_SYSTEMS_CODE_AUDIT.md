@@ -1,5 +1,7 @@
 # Terrain Systems Code Audit
 
+**Status:** ARCHIVED (2026-07-03) — repo-root terrain dead-code audit from 2025-12; everything it flags was removed/quarantined in cleanup rounds 1-2 (plan T5).
+
 ## 1. Summary
 - Two parallel terrain stacks exist: an older GameObject-based chunk manager/mesher and several DOTS compute-driven pipelines, while a newer SDF/Surface Nets DOTS pipeline appears to be the active direction.
 - Multiple DOTS generation paths coexist, including a disabled `TerrainGenerationSystem` and an experimental `HybridTerrainGenerationSystem` with manual input hooks, creating dead code and maintenance drag.

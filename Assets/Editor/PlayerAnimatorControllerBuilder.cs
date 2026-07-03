@@ -17,7 +17,7 @@ namespace DOTS.Player.Editor
         private const string ControllerPath = "Assets/Scripts/Player/Animation/PlayerAnimatorController.controller";
         private const string KIBase = "Assets/Kevin Iglesias/Human Animations/Animations/Male/";
         private const string GlidePosePath = "Assets/Kevin Iglesias/Glide_Pose.anim";
-        private const string BoxPlayerPath = "Assets/BoxPlayer.fbx";
+        private const string BoxPlayerPath = "Assets/Models/BoxPlayer.fbx";
 
         // Actual subdirectory paths per clip category
         private const string KI_IDLE  = KIBase + "Idles/HumanM@Idle01-Idle02.fbx";

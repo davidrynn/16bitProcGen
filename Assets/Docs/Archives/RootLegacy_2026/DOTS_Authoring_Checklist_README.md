@@ -1,5 +1,7 @@
 # Unity DOTS System Authoring Checklist
 
+**Status:** ARCHIVED (2026-07-03) — former Assets/README.md authoring checklist; conventions live in /CLAUDE.md (source-generator debug tip folded in); legacy TerrainData/glob sections describe removed code (plan T11).
+
 ## ✅ Always Mark DOTS Systems as `partial`
 - [ ] Every class inheriting from `SystemBase`, `ISystem`, or similar DOTS base types is marked as `partial`.
   ```csharp

@@ -1,5 +1,7 @@
 # ISystem Usage Report
 
+**Status:** ARCHIVED (2026-07-03) — repo-root ISystem inventory from 2025-12; catalogs systems renamed/deleted in cleanup rounds 1-2 (plan T2).
+
 ## Summary of ISystem Implementations
 
 - CameraFollowSystem

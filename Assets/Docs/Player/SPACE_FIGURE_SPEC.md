@@ -1,5 +1,9 @@
 # Humanoid Block Figure — Spec v3 (Minimalist)
 
+**Status:** ACTIVE
+**Last Updated:** 2026-07-03 (moved from repo root, plan T4)
+**Owner:** Player / art pipeline
+
 ## Overview
 
 A humanoid figure built from **tapered rectangular cuboids**, mapped to the **Unity Humanoid Avatar** bone hierarchy. Based on the actual built model — a simplified ~1.75m tall adult male silhouette. One Blender unit = one metre.
