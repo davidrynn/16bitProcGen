@@ -255,6 +255,7 @@ Batch protocol — every batch, no exceptions:
 | 7 | 2026-07-02 | R40, R7, A19 | 210/210 (after 3 compile-fix iterations) | 777d2b4 | 15 files → DOTS/Terrain/Legacy + ns DOTS.Terrain.Legacy; R7 rename + [FormerlySerializedAs] flag; 17 consumers updated. Hazards hit & fixed: UnityEngine.TerrainData ambiguity (aliases), DOTS.Terrain.Debug namespace shadowing UnityEngine.Debug, fully-qualified old-ns refs |
 | 8 | 2026-07-02 | R22, R24, R25, R27, R28 | 210/210 (after removing over-added usings) | c29908a | Namespaces added; key finding: NOTHING outside DOTS.Core.Authoring's own assembly uses the config/bootstrap types in code — all other grep matches were comments. Lesson: before adding `using X` to a consumer, confirm its asmdef references X's assembly |
 | — (verify) | 2026-07-02 | PlayMode regression check after batches 1–8 | branch **86/96** = baseline (a9ec90e) **86/96**, identical failure lists — **zero regressions** | — | 9 failures all pre-existing: 6 headless-CLI artifacts (WaitForEndOfFrame; player-visual spawn needs rendered frames), 1 skip, 2 genuine pre-existing failures → S14/S15 |
+| 9 | 2026-07-02 | R26 | 210/210 | d660fe8 | DebugSettings/DebugController/DebugTestController → DOTS.Core; 45 usings + 7 qualified refs updated project-wide |
 
 ### 6.7 Improvement Suggestions (out of scope — follow-up work)
 
