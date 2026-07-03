@@ -202,6 +202,26 @@ Batch protocol — every batch, no exceptions:
 
 > **Archive mechanics (decided 2026-07-02):** "archive" for code = delete in a dedicated, revertable commit — git history is the archive. No code `Archive/` folder is created; the §6.2 rows plus batch commits are the review trail. Every archive batch greps for references first and removes any `DotsSystemBootstrap`/`ProjectFeatureConfig` wiring for the archived systems (flag removal from the config class is part of the batch; a stale flag pointing at deleted code is worse than no flag).
 
+**Round-3 seeds: top-level loose files (owner-requested Haiku scan + Opus evaluation, 2026-07-03).** Scope: non-recursive — the 5 repo-root + 9 Assets-root loose files. All proposed moves verified GUID-safe (no `Resources.Load`/scene-path string loads found for T6–T14).
+
+| # | Path | Referenced by (evidence) | Proposed verdict | Batch |
+|---|------|---------------------------|------------------|-------|
+| T1 | `CLAUDE.md` | AI guidance, current | **keep in place** | — |
+| T2 | `ISystem_Usage_Report.md` (repo root) | Nothing; catalogs classes deleted in round 1 (`CameraFollowSystem` confirmed gone) | **archive to `Docs/Archives/`** (pending owner) | |
+| T3 | `LICENSE.txt` | — | **keep in place** | — |
+| T4 | `space_figure_spec.md` (repo root) | No refs, but describes the LIVE BoxPlayer humanoid rig | **move to `Assets/Docs/Player/`** (pending owner) | |
+| T5 | `TERRAIN_SYSTEMS_CODE_AUDIT.md` (repo root) | Nothing; flags code deleted in rounds 1–2 | **archive to `Docs/Archives/`** (pending owner) | |
+| T6 | `Assets/BoxPlayer.fbx` | LIVE: `Basic Terrain Scene.unity` (build scene) + `PlayerAnimatorController` | **move to `Assets/Models/`** (pending owner) | |
+| T7 | `Assets/InitTestScene<uuid>.unity` | Zero refs; leaked Unity Test Runner temp scene (UUID name) | **archive/delete** (pending owner) | |
+| T8 | `Assets/InputSystem_Actions.inputactions` | LIVE: ProjectSettings default input | **keep in place** (Unity convention) | — |
+| T9 | `Assets/LODTerrainChunk.prefab` | Zero refs found anywhere | **needs-owner-input** — dead, or spawned by code not found? | |
+| T10 | `Assets/LowResRender.renderTexture` | Zero refs found | **needs-owner-input** — 240p retro target still wired manually in-editor, or obsolete? | |
+| T11 | `Assets/README.md` | DOTS authoring checklist, still accurate | **needs-owner-input** — move under `Docs/Reference/`, or intentional Assets-root README? | |
+| T12 | `Assets/sdftest.unity` | Has live `PlayerCameraBootstrap_WithVisuals`; not in Build Settings | **move to `Assets/Scenes/`** (pending owner) | |
+| T13 | `Assets/test.unity` | Zero refs; scratch name | **needs-owner-input** — dev scene worth keeping (move to `Scenes/`) or archive? | |
+| T14 | `Assets/TriArm2.0.fbx` | LIVE (surprise): 8 weather-effect prefabs in `Resources/WeatherEffects/` reference it | **move to `Assets/Models/`** (pending owner) | |
+| T15 | `Assets/_Recovery/` (found in-audit) | Unity crash-recovery folder artifact (`0.unity` references BoxPlayer) | **archive/delete** (pending owner) | |
+
 ### 6.3 Doc Reorder List
 
 > Per `DOCUMENTATION_SYSTEM_SPEC.md` rules. 84 active docs audited; index has zero broken links but 30 unindexed files.
