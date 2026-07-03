@@ -263,6 +263,7 @@ Batch protocol — every batch, no exceptions:
 | 14 | 2026-07-02 | R61 | 210/210 | 47e0146 | WFCComponent.cs split into 13 one-type files |
 | 15 | 2026-07-02 | C2 | 210/210 (incl. jitter regression + tree determinism tests) | 75628ef | Trees adopt shared placement math; private copies verified constant-identical before deletion |
 | 16 | 2026-07-02 | C3 | 210/210 | 74b8c6c | SurfaceScatterDeltaUtility extracted (generic over new IStableLocalIdRecord); family predicates stay; Burst-safe constrained struct calls |
+| 17 | 2026-07-02 | C1 | 210/210 | 7674534 | SurfaceScatterRenderCore + per-family SurfaceScatterRenderState extracted; systems 450/415/416 → 208/185/188 lines; divergences (clamp vs modulo, grounding, capacities) preserved exactly |
 
 ### 6.7 Improvement Suggestions (out of scope — follow-up work)
 
