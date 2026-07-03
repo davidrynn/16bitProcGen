@@ -1,6 +1,6 @@
 using Unity.Entities;
 
-namespace DOTS.Terrain.Rendering
+namespace DOTS.Terrain.Grass
 {
     /// <summary>
     /// Tag component that signals <see cref="GrassChunkGenerationSystem"/> to rebuild the

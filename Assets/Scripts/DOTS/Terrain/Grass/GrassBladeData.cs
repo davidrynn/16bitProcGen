@@ -1,7 +1,7 @@
 using System.Runtime.InteropServices;
 using Unity.Mathematics;
 
-namespace DOTS.Terrain.Rendering
+namespace DOTS.Terrain.Grass
 {
     /// <summary>
     /// Per-blade instance data uploaded to a <see cref="UnityEngine.GraphicsBuffer"/> and read

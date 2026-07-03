@@ -3,7 +3,7 @@ using Unity.Transforms;
 using UnityEngine;
 using DOTS.Player.Components;
 
-namespace DOTS.Terrain.Rendering
+namespace DOTS.Terrain.Grass
 {
     /// <summary>
     /// Bridges the DOTS player entity's world position to a scene Transform each frame.

@@ -7,7 +7,7 @@ using DOTS.Terrain.LOD;
 using DOTS.Terrain.Meshing;
 using DOTS.Terrain.Modification;
 using DOTS.Terrain.Rocks;
-using DOTS.Terrain.Rendering;
+using DOTS.Terrain.Grass;
 using DOTS.Terrain.Streaming;
 using DOTS.Terrain.Trees;
 using DOTS.Terrain.WFC;

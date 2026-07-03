@@ -1,7 +1,7 @@
 using Unity.Entities;
 using UnityEngine;
 
-namespace DOTS.Terrain.Rendering
+namespace DOTS.Terrain.Grass
 {
     /// <summary>
     /// Managed component that owns the GPU-side resources for one chunk's grass blades.

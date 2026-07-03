@@ -6,7 +6,7 @@ using Unity.Transforms;
 using UnityEngine;
 using UnityEngine.Rendering;
 
-namespace DOTS.Terrain.Rendering
+namespace DOTS.Terrain.Grass
 {
     /// <summary>
     /// Renders grass blades for all terrain surface chunks that have a

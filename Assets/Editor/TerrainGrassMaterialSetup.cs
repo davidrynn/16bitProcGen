@@ -4,6 +4,7 @@ using UnityEditor;
 using UnityEngine;
 using DOTS.Terrain;
 using DOTS.Terrain.Rendering;
+using DOTS.Terrain.Grass;
 
 namespace DOTS.Terrain.Editor
 {

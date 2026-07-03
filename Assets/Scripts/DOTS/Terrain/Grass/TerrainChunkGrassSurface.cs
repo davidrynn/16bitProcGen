@@ -1,6 +1,6 @@
 using Unity.Entities;
 
-namespace DOTS.Terrain.Rendering
+namespace DOTS.Terrain.Grass
 {
     /// <summary>
     /// Marks a terrain chunk entity as a grass-bearing surface and carries per-chunk
