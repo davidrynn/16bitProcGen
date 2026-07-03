@@ -3,6 +3,7 @@ using Unity.Entities;
 using Unity.Mathematics;
 using UnityEngine;
 using DOTS.Terrain.Meshing;
+using BorderDirection = DOTS.Terrain.Debug.TerrainChunkMeshBorderUtility.BorderDirection;
 
 namespace DOTS.Terrain.Debug
 {
@@ -71,10 +72,7 @@ namespace DOTS.Terrain.Debug
                 var grid = entityManager.GetComponentData<TerrainChunkGridInfo>(entity);
 
                 ref var mesh = ref meshData.Mesh.Value;
-                var chunkSize = new float3(
-                    (grid.Resolution.x - 1) * grid.VoxelSize,
-                    (grid.Resolution.y - 1) * grid.VoxelSize,
-                    (grid.Resolution.z - 1) * grid.VoxelSize);
+                var chunkSize = TerrainChunkMeshBorderUtility.ComputeChunkSize(grid);
 
                 // Draw chunk boundary box (green)
                 DrawChunkBounds(bounds.WorldOrigin, chunkSize, Color.green);
@@ -156,61 +154,24 @@ namespace DOTS.Terrain.Debug
             ref var blobB = ref meshDataB.Mesh.Value;
 
             var borderThreshold = gridA.VoxelSize;
-            var chunkSize = new float3(
-                (gridA.Resolution.x - 1) * gridA.VoxelSize,
-                (gridA.Resolution.y - 1) * gridA.VoxelSize,
-                (gridA.Resolution.z - 1) * gridA.VoxelSize);
+            var chunkSize = TerrainChunkMeshBorderUtility.ComputeChunkSize(gridA);
 
-            // Collect border vertices from chunk B (neighbor)
-            using var borderVertsB = new NativeList<float3>(Allocator.Temp);
-            for (int i = 0; i < blobB.Vertices.Length; i++)
-            {
-                var localPos = blobB.Vertices[i];
-                bool onBorder = false;
+            using var borderVertsB = TerrainChunkMeshBorderUtility.CollectBorderVertices(
+                ref blobB, boundsB.WorldOrigin, chunkSize, direction, isSourceChunk: false, borderThreshold, Allocator.Temp);
 
-                if (direction == BorderDirection.East)
-                {
-                    onBorder = localPos.x <= borderThreshold; // West border of neighbor
-                }
-                else
-                {
-                    onBorder = localPos.z <= borderThreshold; // South border of neighbor
-                }
-
-                if (onBorder)
-                {
-                    borderVertsB.Add(boundsB.WorldOrigin + localPos);
-                }
-            }
-
-            // Check each border vertex in chunk A for mismatches
+            // Walk chunk A's vertices directly (rather than via CollectBorderVertices) so the
+            // result set can key mismatches by their original TerrainChunkMeshBlob.Vertices index —
+            // the caller needs that index to color the exact mismatched vertex when drawing.
             for (int i = 0; i < blobA.Vertices.Length; i++)
             {
                 var localPos = blobA.Vertices[i];
-                bool onBorder = false;
-
-                if (direction == BorderDirection.East)
-                {
-                    onBorder = localPos.x >= chunkSize.x - borderThreshold;
-                }
-                else
-                {
-                    onBorder = localPos.z >= chunkSize.z - borderThreshold;
-                }
-
-                if (!onBorder)
+                if (!TerrainChunkMeshBorderUtility.IsOnSharedBorder(localPos, chunkSize, borderThreshold, direction, isSourceChunk: true))
                 {
                     continue;
                 }
 
                 var worldPosA = boundsA.WorldOrigin + localPos;
-                var closestDist = float.MaxValue;
-
-                for (int j = 0; j < borderVertsB.Length; j++)
-                {
-                    var dist = math.distance(worldPosA, borderVertsB[j]);
-                    closestDist = math.min(closestDist, dist);
-                }
+                var closestDist = TerrainChunkMeshBorderUtility.ClosestDistance(worldPosA, borderVertsB);
 
                 // If no matching vertex found within tolerance, mark as mismatch
                 if (closestDist > config.MeshSeamPositionEpsilon && closestDist < borderThreshold * 2f)
@@ -258,12 +219,6 @@ namespace DOTS.Terrain.Debug
             UnityEngine.Debug.DrawLine(pos - new float3(halfSize, 0, 0), pos + new float3(halfSize, 0, 0), color);
             UnityEngine.Debug.DrawLine(pos - new float3(0, halfSize, 0), pos + new float3(0, halfSize, 0), color);
             UnityEngine.Debug.DrawLine(pos - new float3(0, 0, halfSize), pos + new float3(0, 0, halfSize), color);
-        }
-
-        private enum BorderDirection
-        {
-            East,
-            North
         }
     }
 }

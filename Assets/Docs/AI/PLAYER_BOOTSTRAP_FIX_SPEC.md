@@ -1,5 +1,8 @@
 # Player Bootstrap Reliability SPEC
 
+**Status:** ACTIVE
+**Last Updated:** 2025-12-07
+
 **Purpose**
 
 Restore green status for the failing DOTS player bootstrap tests by tightening the physics bootstrap path and the hybrid visual sync bridge. This SPEC targets only the regressions exercised by `Assets/Scripts/Player/Bootstrap/Tests/PlayerCameraBootstrapTests.cs`.

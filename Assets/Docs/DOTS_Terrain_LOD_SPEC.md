@@ -1,5 +1,8 @@
 # DOTS Terrain LOD System Specification
 
+**Status:** ACTIVE — sole source of truth for terrain LOD (sibling checklist: `AI/DOTS_Terrain_LOD_Implementation_Checklist.md`)
+**Last Updated:** 2026-07-02
+
 ## Goals
 
 Create a scalable terrain Level of Detail (LOD) system for an infinite procedural world using Unity DOTS that:
@@ -435,3 +438,40 @@ This revised LOD system:
 * keeps deterministic transitions while reducing thrash via hysteresis
 * preserves stylized silhouette identity
 * scales to infinite terrain with bounded rebuild costs
+
+---
+
+# Merged from Superseded Docs (2026-07-02)
+
+> The following content was carried over from `AI/DOTS_Terrain_LOD_Plan.md` and
+> `AI/TERRAIN_LOD_SPEC.md` before both were archived (doc cleanup batch D8 —
+> see `AI/CODEBASE_SIMPLIFICATION_PLAN.md` §6.3). This spec is the sole
+> source of truth for terrain LOD going forward; `DOTS_Terrain_LOD_Implementation_Checklist.md`
+> remains the execution-state sibling doc.
+
+## Implementation Namespace
+
+All LOD components/systems live under `DOTS.Terrain.LOD` (confirmed in code:
+`TerrainLodSettings`, `TerrainChunkLodState`, `TerrainChunkLodDirty`,
+`TerrainChunkLodSelectionSystem`, `TerrainChunkLodApplySystem`).
+
+## Edit-Authoritative LOD Promotion (from DOTS_Terrain_LOD_Plan.md §6)
+
+- Keep the edit-authoritative area near the player at LOD0.
+- For far chunks that receive an edit outside the normal LOD0 radius,
+  temporarily promote them to LOD0 while the edit is active so edit
+  correctness (density rebuild, collider, mesh) is never evaluated against a
+  reduced-resolution grid.
+
+## Neighbor Delta Clamp Implementation Note (from TERRAIN_LOD_SPEC.md Milestone 2)
+
+Enforce the "neighbor LOD delta <= 1" rule by building a
+`NativeParallelHashMap<int2, int>` of chunk-coord -> `CurrentLod` before the
+clamp pass, then reading cardinal (XZ) neighbors from that map to clamp each
+chunk's `TargetLod`. This runs after LOD selection and before LOD apply.
+
+## Debug Visualization Flag (from TERRAIN_LOD_SPEC.md Milestone 3)
+
+LOD transition logging and the debug overlay are gated by
+`DebugSettings.LogLod` (confirmed in code), consistent with the project's
+centralized-logging rule — no bare `Debug.Log` in LOD systems.

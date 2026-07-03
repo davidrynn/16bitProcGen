@@ -3,7 +3,7 @@ using Unity.Collections;
 using Unity.Entities;
 using Unity.Jobs;
 using Unity.Mathematics;
-using DOTS.Terrain.Core;
+using DOTS.Core;
 
 namespace DOTS.Terrain
 {

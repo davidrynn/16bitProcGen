@@ -1,6 +1,6 @@
+using DOTS.Terrain.Legacy;
 using UnityEngine;
-using DOTS.Terrain.Generation;
-using DOTS.Terrain.Core;
+using DOTS.Core;
 
 namespace DOTS.Terrain.Test
 {

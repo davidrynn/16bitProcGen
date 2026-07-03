@@ -2,7 +2,7 @@ using System.Collections.Generic;
 using DOTS.Terrain.Rendering;
 using DOTS.Terrain.LOD;
 using DOTS.Terrain;
-using DOTS.Terrain.Core;
+using DOTS.Core;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;

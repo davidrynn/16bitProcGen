@@ -3,7 +3,7 @@ using Unity.Mathematics;
 using Unity.Rendering;
 using Unity.Transforms;
 using UnityEngine;
-using DOTS.Terrain.Core;
+using DOTS.Core;
 
 namespace DOTS.Structures
 {

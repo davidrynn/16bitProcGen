@@ -1,11 +1,43 @@
 # Documentation Reorganization Changelog
 
-**Date:** 2025-11-05  
-**Purpose:** Organized and consolidated project documentation for better maintainability
+---
+
+## 2026-07-02 — Codebase Cleanup Doc Reorder Round (Batch 19, `AI/CODEBASE_SIMPLIFICATION_PLAN.md` §6.3 rows D1–D8)
+
+**Purpose:** Archive concluded/superseded docs and de-duplicate the LOD doc cluster as part of the broader codebase simplification pass.
+
+### Archived (21 docs total, into 8 new `Assets/Docs/Archives/*_2026` subfolders)
+
+- **`Archives/SeamDebug_2026/`** (D1) — `TERRAIN_SEAM_DEBUG_SPEC_OBSOLETE.md`, `TERRAIN_SEAM_DEBUG_SPEC_v1.md`, `TERRAIN_SEAM_DEBUG_MESH_SPEC.md`, `TERRAIN_SEAM_DEBUG_IMPLEMENTATION_REPORT.md` — moved from `AI/`; concluded investigation lineage.
+- **`Archives/Skybox_2026/`** (D2) — `SKYBOXSPEC.md`, `SKYBOXTESTS.md` — moved from `AI/`; Phase 1/2 complete, forward work lives in `AI/ATMOSPHERE_COLOR_AUTHORITY_SPEC.md`. `AI/SKYBOXPLAN.md` stays active.
+- **`Archives/ResolvedBugfixes_2026/`** (D3) — `PLAYER_TERRAIN_FALLTHROUGH_DEBUG_SPEC.md`, `TERRAIN_EDIT_CONTROLS_SPEC.md`, `CAMERA_IDENTITY_FIX_SPEC.md` — moved from `AI/`; all resolved/implemented.
+- **`Archives/StructurePlacement_2026/`** (D4) — `RELIC_RENDER_REFACTOR_SPEC.md` — moved from `AI/STRUCTURE PLACEMENT/`; superseded by `RELIC_LOD_IMPOSTOR_SPEC.md` §8.
+- **`Archives/TerrainHeightMaps_2026/`** (D5) — `TERRAIN_PLAINS_NOISE_ALGORITHM.md` — moved from `AI/TerrainHeightMaps/`; values absorbed by `TERRAIN_PLAINS_TREES_MVP_CHECKLIST.md`.
+- **`Archives/RootLegacy_2026/`** (D6) — `CURSOR_NamespaceFlattening_Refactor.md`, `multiplayer_evaluation_spec.md`, `ISystem_Usage_Report.md`, `StructureReview.md`, `Unity6_Compatibility_Notes.md`, and the whole `DebugTraces/` folder — moved from `Assets/Docs/` root; stale/complete records. `StructureReview.md`'s one still-open finding (legacy non-DOTS `Assets/Scripts/Terrain/` tree) was folded into `CODEBASE_SIMPLIFICATION_PLAN.md` §6.7 as row S16 before archiving.
+- **`Archives/MVP_Ideation_2026/`** (D7) — `mvp_feature_list.md`, `wfc_good_vs_evil_rules.md` — moved from `mvp/`; stale ideation docs.
+- **`Archives/LOD_2026/`** (D8) — `TERRAIN_LOD_SPEC.md`, `DOTS_Terrain_LOD_Plan.md` — moved from `AI/`; superseded by root `DOTS_Terrain_LOD_SPEC.md`, which is now the sole LOD source of truth (see next section).
+
+Every archived doc above received a `Status: ARCHIVED (2026-07-02)` header line, with a `Superseded By` / historical-reference note where applicable, per `DOCUMENTATION_SYSTEM_SPEC.md` §6.3.
+
+### Folder rename (D7)
+
+- `Assets/Docs/mvp/` → `Assets/Docs/Biomes/` (now contains only `Windswept_Colossus_Plains_Biome_Spec.md`, the one live biome spec).
+
+### LOD doc cluster de-duplication (D8)
+
+Root `Assets/Docs/DOTS_Terrain_LOD_SPEC.md` was confirmed as the actual source of truth (the implementation checklist already pointed at it). `AI/TERRAIN_LOD_SPEC.md` and `AI/DOTS_Terrain_LOD_Plan.md` were content-diffed against it; unique still-relevant content (confirmed implementation namespace `DOTS.Terrain.LOD`, the edit-authoritative LOD0 promotion policy for far edited chunks, the `NativeParallelHashMap`-based neighbor-clamp approach, and the `DebugSettings.LogLod` flag) was merged into a new "Merged from Superseded Docs" section in the root spec before both AI/ docs were archived. `DOTS_Terrain_LOD_Implementation_Checklist.md` remains active alongside the root spec.
+
+### Index
+
+`DOCUMENT_INDEX.md` updated: every doc moved above had its entry's path corrected (or moved to the Archives table); no other entries were touched.
 
 ---
 
-## Summary of Changes
+## 2025-11-05 — Initial Reorganization Round
+
+**Purpose:** Organized and consolidated project documentation for better maintainability
+
+### Summary of Changes
 
 ### 1. Archived FirstPerson Controller Documentation
 

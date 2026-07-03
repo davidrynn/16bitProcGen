@@ -2,7 +2,7 @@
 
 **Status:** DESIGN
 **Last Updated:** 2026-04-30
-**Supersedes:** `Assets/Docs/multiplayer_evaluation_spec.md`
+**Supersedes:** `Assets/Docs/Archives/RootLegacy_2026/multiplayer_evaluation_spec.md` (archived 2026-07-02)
 **Owner:** Architecture
 
 ---

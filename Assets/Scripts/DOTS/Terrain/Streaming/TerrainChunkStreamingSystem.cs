@@ -1,5 +1,5 @@
 using DOTS.Player.Components;
-using DOTS.Terrain.Core;
+using DOTS.Core;
 using DOTS.Terrain.LOD;
 using Unity.Collections;
 using Unity.Entities;

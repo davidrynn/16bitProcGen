@@ -67,7 +67,7 @@ Trees ground instances by mesh-bottom (`-mesh.bounds.min.y`). The offset is comp
 - [../RENDER_PERF_PROFILE_REPORT.md](../RENDER_PERF_PROFILE_REPORT.md) — profiling evidence motivating this spec
 - [TERRAIN_SURFACE_SCATTER_SPEC.md](TERRAIN_SURFACE_SCATTER_SPEC.md) — scatter runtime contract
 - [TERRAIN_PLAINS_TREE_VARIANT_YAW_SPEC.md](TERRAIN_PLAINS_TREE_VARIANT_YAW_SPEC.md) — variant selection this spec extends
-- [../STRUCTURE PLACEMENT/RELIC_LOD_IMPOSTOR_SPEC.md](../STRUCTURE%20PLACEMENT/RELIC_LOD_IMPOSTOR_SPEC.md) — Entities.Graphics LOD precedent (different render path, same goal)
+- [../STRUCTURE_PLACEMENT/RELIC_LOD_IMPOSTOR_SPEC.md](../STRUCTURE_PLACEMENT/RELIC_LOD_IMPOSTOR_SPEC.md) — Entities.Graphics LOD precedent (different render path, same goal)
 
 ## 6. Acceptance Criteria
 

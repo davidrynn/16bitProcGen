@@ -1,9 +1,11 @@
+using DOTS.Compute;
+using DOTS.Terrain.Legacy;
 using Unity.Entities;
 using Unity.Mathematics;
 using UnityEngine;
 using DOTS.Terrain;
 using DOTS.Terrain.Modification;
-using TerrainData = DOTS.Terrain.TerrainData;
+using TerrainData = DOTS.Terrain.Legacy.TerrainData;
 
 /// <summary>
 /// Setup script to configure the test environment for glob physics testing
@@ -209,9 +211,7 @@ public class GlobPhysicsTestSetup : MonoBehaviour
             Debug.Log($"Glob Entities: {globCount}");
             
             // Check systems
-            Debug.Log("TerrainSystem: (Managed system)");
             Debug.Log("TerrainGlobPhysicsSystem: (ISystem active in world update list)");
-            Debug.Log("TerrainModificationSystem: (ISystem active in world update list)");
         }
         else
         {

@@ -2,7 +2,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.SceneManagement;
 using DOTS.Terrain;
-using DOTS.Terrain.Core;
+using DOTS.Core;
 
 namespace DOTS.Player.Bootstrap
 {

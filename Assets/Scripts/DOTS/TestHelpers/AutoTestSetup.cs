@@ -1,3 +1,5 @@
+using DOTS.Compute;
+using DOTS.Terrain.Legacy;
 using UnityEngine;
 using Unity.Entities;
 

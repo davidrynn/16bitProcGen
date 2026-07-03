@@ -1,7 +1,7 @@
 using Unity.Entities;
 using DOTS.Player.Bootstrap;
 
-namespace DOTS.Player.Tests.Bootstrap
+namespace DOTS.Player.Bootstrap.Tests
 {
     /// <summary>
     /// Test helper to bootstrap player systems without requiring ProjectFeatureConfig.

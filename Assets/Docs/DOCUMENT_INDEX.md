@@ -24,13 +24,20 @@ Quick-reference index of all project documentation. Docs are organized by catego
 | [AI/TerrainHeightMaps/SCATTER_LOD_SPEED_BIAS_SPEC.md](AI/TerrainHeightMaps/SCATTER_LOD_SPEED_BIAS_SPEC.md) | DESIGN | Shrinks the scatter LOD swap distance as player speed rises — drops scatter detail during fast airborne movement (extends SURFACE_SCATTER_LOD_SPEC) |
 | [AI/TerrainHeightMaps/TERRAIN_SURFACE_SCATTER_SPEC.md](AI/TerrainHeightMaps/TERRAIN_SURFACE_SCATTER_SPEC.md) | DESIGN | Runtime contract for chunk-scattered trees, bushes, rocks, ore nodes, and similar discrete props |
 | [AI/MVP_VISTA_MOMENT_SPEC.md](AI/MVP_VISTA_MOMENT_SPEC.md) | **ACTIVE — MVP PRIORITY** | Vista discovery experience: atmospheric haze + mountain horizon + relic hand; gap analysis + ordered implementation |
-| [mvp/Windswept_Colossus_Plains_Biome_Spec.md](mvp/Windswept_Colossus_Plains_Biome_Spec.md) | ACTIVE | Procedural biome definition for the MVP plains — terrain/grass/scatter parameters in system units, MVP vs post-MVP pipeline status, relic seating hooks, biome-selection stub |
-| [AI/STRUCTURE PLACEMENT/STRUCTURE_PLACEMENT_PLAN.md](AI/STRUCTURE%20PLACEMENT/STRUCTURE_PLACEMENT_PLAN.md) | DESIGN | Rollout plan for deterministic semantic structure placement (dungeons, villages, relics, ruins) |
-| [AI/STRUCTURE PLACEMENT/STRUCTURE_PLACEMENT_SPEC.md](AI/STRUCTURE%20PLACEMENT/STRUCTURE_PLACEMENT_SPEC.md) | DESIGN | Runtime contract for region-scale anchors, hard spacing constraints, and structure-family realization |
-| [AI/STRUCTURE PLACEMENT/MAGIC_GRID_SPEC.md](AI/STRUCTURE%20PLACEMENT/MAGIC_GRID_SPEC.md) | DESIGN | Analytic world-space XZ magic lattice: power-source nodes, WFC-build-on-node affordance, sparse claimed-node alignment state, per-template NodeAffinity, two-sources-one-pipeline with the free placer + universal influence query; chunk-decoupled, additive brightness cue (air-warp deferred) |
-| [AI/STRUCTURE PLACEMENT/RELIC_RENDER_REFACTOR_SPEC.md](AI/STRUCTURE%20PLACEMENT/RELIC_RENDER_REFACTOR_SPEC.md) | IMPLEMENTED | Replace batch RenderMeshInstanced relic path with per-entity Entities Graphics rendering (fixes BUG-016 frustum culling) |
-| [AI/STRUCTURE PLACEMENT/RELIC_LOD_IMPOSTOR_SPEC.md](AI/STRUCTURE%20PLACEMENT/RELIC_LOD_IMPOSTOR_SPEC.md) | IMPLEMENTED | Distance-based full-mesh ↔ impostor swap for large relics; supersedes RELIC_RENDER_REFACTOR_SPEC §8. Far-plane clipping now masked by distance fog. |
-| [AI/STRUCTURE PLACEMENT/RELIC_BILLBOARD_IMPOSTOR_SPEC.md](AI/STRUCTURE%20PLACEMENT/RELIC_BILLBOARD_IMPOSTOR_SPEC.md) | DESIGN | Pre-baked camera-facing billboard as LOD 1 impostor for relics (atlas bake tool + Y-axis facing system); future work for distant vistas |
+| [AI/VISTA_GROUND_PLANE_FOG_INVESTIGATION.md](AI/VISTA_GROUND_PLANE_FOG_INVESTIGATION.md) | INVESTIGATING | Working doc: what the ground-plane impostor + fog actually do today vs. spec, re-scoping tickets V1/V2 from screenshot evidence |
+| [AI/SKYBOXPLAN.md](AI/SKYBOXPLAN.md) | PHASE 2 COMPLETE · PHASE 3 PLANNED | Procedural gradient sky plan; Phase 3 = vista atmosphere (ticket V6). Companion SPEC/TESTS archived in `Archives/Skybox_2026/` |
+| [AI/TERRAIN_VOXEL_CHUNK_EDIT_SPEC.md](AI/TERRAIN_VOXEL_CHUNK_EDIT_SPEC.md) | PROPOSED | Minecraft-style cube edits snapped to a voxel/chunk-aligned grid, deterministic across chunk boundaries |
+| [AI/GRASS_ECS_SPEC.md](AI/GRASS_ECS_SPEC.md) | PLANNING (DEFERRED) | GPU-instanced, edit-reactive grass via DrawMeshInstancedIndirect; post-MVP, staged behind core terrain and trees |
+| [AI/TerrainHeightMaps/TERRAIN_STRATEGY_PLAN.md](AI/TerrainHeightMaps/TERRAIN_STRATEGY_PLAN.md) | DESIGN | Sequencing plan: from prototype height signal to biome-aware world generation on the SDF pipeline |
+| [AI/TerrainHeightMaps/TERRAIN_BIOME_NOISE_SPEC.md](AI/TerrainHeightMaps/TERRAIN_BIOME_NOISE_SPEC.md) | DESIGN | Behavior spec for biome-aware terrain generation in the active SDF + Surface Nets pipeline |
+| [AI/TerrainHeightMaps/TERRAIN_BIOME_NOISE_SCHEMA.md](AI/TerrainHeightMaps/TERRAIN_BIOME_NOISE_SCHEMA.md) | DESIGN | Concrete data model for the biome-noise behavior (sibling of the strategy plan + noise spec) |
+| [AI/TerrainHeightMaps/TERRAIN_MVP_PRIORITY_NOTE.md](AI/TerrainHeightMaps/TERRAIN_MVP_PRIORITY_NOTE.md) | DESIGN | Priority guidance: intended order of importance for the terrain-system MVP |
+| [Biomes/Windswept_Colossus_Plains_Biome_Spec.md](Biomes/Windswept_Colossus_Plains_Biome_Spec.md) | ACTIVE | Procedural biome definition for the MVP plains — terrain/grass/scatter parameters in system units, MVP vs post-MVP pipeline status, relic seating hooks, biome-selection stub |
+| [AI/STRUCTURE_PLACEMENT/STRUCTURE_PLACEMENT_PLAN.md](AI/STRUCTURE_PLACEMENT/STRUCTURE_PLACEMENT_PLAN.md) | DESIGN | Rollout plan for deterministic semantic structure placement (dungeons, villages, relics, ruins) |
+| [AI/STRUCTURE_PLACEMENT/STRUCTURE_PLACEMENT_SPEC.md](AI/STRUCTURE_PLACEMENT/STRUCTURE_PLACEMENT_SPEC.md) | DESIGN | Runtime contract for region-scale anchors, hard spacing constraints, and structure-family realization |
+| [AI/STRUCTURE_PLACEMENT/MAGIC_GRID_SPEC.md](AI/STRUCTURE_PLACEMENT/MAGIC_GRID_SPEC.md) | DESIGN | Analytic world-space XZ magic lattice: power-source nodes, WFC-build-on-node affordance, sparse claimed-node alignment state, per-template NodeAffinity, two-sources-one-pipeline with the free placer + universal influence query; chunk-decoupled, additive brightness cue (air-warp deferred) |
+| [AI/STRUCTURE_PLACEMENT/RELIC_LOD_IMPOSTOR_SPEC.md](AI/STRUCTURE_PLACEMENT/RELIC_LOD_IMPOSTOR_SPEC.md) | IMPLEMENTED | Distance-based full-mesh ↔ impostor swap for large relics; supersedes archived `RELIC_RENDER_REFACTOR_SPEC.md` §8. Far-plane clipping now masked by distance fog. |
+| [AI/STRUCTURE_PLACEMENT/RELIC_BILLBOARD_IMPOSTOR_SPEC.md](AI/STRUCTURE_PLACEMENT/RELIC_BILLBOARD_IMPOSTOR_SPEC.md) | DESIGN | Pre-baked camera-facing billboard as LOD 1 impostor for relics (atlas bake tool + Y-axis facing system); future work for distant vistas |
 | [AI/TerrainHeightMaps/TERRAIN_SURFACE_SCATTER_SCHEMA.md](AI/TerrainHeightMaps/TERRAIN_SURFACE_SCATTER_SCHEMA.md) | DESIGN | First ECS/data breakdown for tree-plus-rock surface scatter lifecycle |
 | [AI/TerrainHeightMaps/TERRAIN_TREE_PLACEMENT_SPEC.md](AI/TerrainHeightMaps/TERRAIN_TREE_PLACEMENT_SPEC.md) | DESIGN | Tree-specific placement behavior within the broader surface scatter layer |
 | [AI/TERRAIN_EDIT_PLAYER_SAFETY_LOCAL_GRID_SPEC.md](AI/TERRAIN_EDIT_PLAYER_SAFETY_LOCAL_GRID_SPEC.md) | PROPOSED | Player-overlap edit guard + deterministic chunk-local grid guarantees |
@@ -45,22 +52,21 @@ Quick-reference index of all project documentation. Docs are organized by catego
 | [AI/GROUND_PLANE_IMPOSTOR_SPEC.md](AI/GROUND_PLANE_IMPOSTOR_SPEC.md) | **ACTIVE — MVP PRIORITY** | Horizontal ground-plane impostor for sky-drop sequence; terrain-colored flat disc beyond chunk radius |
 | [AI/HORIZON_IMPOSTOR_SEED_DRIVEN_SPEC.md](AI/HORIZON_IMPOSTOR_SEED_DRIVEN_SPEC.md) | DESIGN (DEFERRED) | Seed-driven far-horizon impostor plan for mountain/hill/sea silhouette rendering (Phase 2; builds after ground plane) |
 | [AI/ATMOSPHERE_COLOR_AUTHORITY_SPEC.md](AI/ATMOSPHERE_COLOR_AUTHORITY_SPEC.md) | PROPOSED | Single atmosphere/palette authority + global `_Atmo*` uniforms + shared aerial-perspective HLSL; unifies sky, ground disc, mountain impostor, terrain & fog color under one time-of-day/biome source (ticket V9; consumed by V3, V8) |
-| [AI/PLAYER_TERRAIN_FALLTHROUGH_DEBUG_SPEC.md](AI/PLAYER_TERRAIN_FALLTHROUGH_DEBUG_SPEC.md) | ROOT CAUSE FIXED | Fall-through debug: missing PhysicsWorldIndex |
-| [AI/TERRAIN_EDIT_CONTROLS_SPEC.md](AI/TERRAIN_EDIT_CONTROLS_SPEC.md) | IMPLEMENTED | Terrain edit raycast fix, Input System migration, reticle |
 | [AI/PLAYER_BOOTSTRAP_FIX_SPEC.md](AI/PLAYER_BOOTSTRAP_FIX_SPEC.md) | ACTIVE | Player bootstrap reliability for DOTS tests |
+| [DOTS_Terrain_LOD_SPEC.md](DOTS_Terrain_LOD_SPEC.md) | ACTIVE | Terrain LOD system spec — sole source of truth for LOD (absorbed `AI/TERRAIN_LOD_SPEC.md` + `AI/DOTS_Terrain_LOD_Plan.md` on archiving, 2026-07-02) |
 | [AI/DOTS_Terrain_LOD_Implementation_Checklist.md](AI/DOTS_Terrain_LOD_Implementation_Checklist.md) | ACTIVE | Gap-to-spec execution checklist for current LOD implementation |
 | [AI/TERRAIN_BANDING_DIAGNOSTIC_SPEC.md](AI/TERRAIN_BANDING_DIAGNOSTIC_SPEC.md) | ACTIVE | Terrain banding visual artifact diagnostic |
-| [AI/TERRAIN_SEAM_DEBUG_SPEC_v1.md](AI/TERRAIN_SEAM_DEBUG_SPEC_v1.md) | COMPLETE | Terrain seam/ring pattern investigation |
-| [AI/TERRAIN_SEAM_DEBUG_MESH_SPEC.md](AI/TERRAIN_SEAM_DEBUG_MESH_SPEC.md) | COMPLETE | Mesh seam validator findings |
 | [SDF_SurfaceNets_ECS_Overview.md](SDF_SurfaceNets_ECS_Overview.md) | CURRENT | SDF terrain architecture overview |
 
 ## MVP Movement
 
 | Document | Status | Description |
 |----------|--------|-------------|
-| [MVP Movement/MOVEMENT_PLANNING.md](MVP%20Movement/MOVEMENT_PLANNING.md) | ACTIVE | Movement system design spec — slingshot, glide, thermals, visual feedback, camera behavior, prototype order |
-| [MVP Movement/AAA_MOVEMENT_CHECKLIST.md](MVP%20Movement/AAA_MOVEMENT_CHECKLIST.md) | ACTIVE | 21-point playtest evaluation rubric for traversal feel |
-| [MVP Movement/MOVEMENT_TECHNICAL_ARCHITECTURE_SPEC.md](MVP%20Movement/MOVEMENT_TECHNICAL_ARCHITECTURE_SPEC.md) | PROPOSED | ECS components, systems, update ordering, camera resolver architecture |
+| [MVP_Movement/MOVEMENT_PLANNING.md](MVP_Movement/MOVEMENT_PLANNING.md) | ACTIVE | Movement system design spec — slingshot, glide, thermals, visual feedback, camera behavior, prototype order |
+| [MVP_Movement/AAA_MOVEMENT_CHECKLIST.md](MVP_Movement/AAA_MOVEMENT_CHECKLIST.md) | ACTIVE | 21-point playtest evaluation rubric for traversal feel |
+| [MVP_Movement/MOVEMENT_TECHNICAL_ARCHITECTURE_SPEC.md](MVP_Movement/MOVEMENT_TECHNICAL_ARCHITECTURE_SPEC.md) | PROPOSED | ECS components, systems, update ordering, camera resolver architecture |
+| [MVP_Movement/SLINGSHOT_ANIMATION_CONTROLLER_SPEC.md](MVP_Movement/SLINGSHOT_ANIMATION_CONTROLLER_SPEC.md) | SPEC | Wire the three authored slingshot clips into the Animator state machine — no gameplay/physics changes |
+| [MVP_Movement/SPEED_SHAKE_SPEC.md](MVP_Movement/SPEED_SHAKE_SPEC.md) | DESIGN | Velocity-driven continuous camera shake for sense of speed (movement feel polish) |
 
 ## Project-Level Docs
 
@@ -70,8 +76,10 @@ Quick-reference index of all project documentation. Docs are organized by catego
 | [DOCUMENTATION_SYSTEM_SPEC.md](DOCUMENTATION_SYSTEM_SPEC.md) | Canonical documentation structure, metadata, and AI-discovery rules |
 | [/CLAUDE.md](/CLAUDE.md) | Claude Code project instructions |
 | [/.github/copilot-instructions.md](/.github/copilot-instructions.md) | GitHub Copilot instructions |
+| [TICKETS.md](TICKETS.md) | Lightweight task tracker (sprint tickets, backlog) |
 | [PROJECT_NOTES.md](PROJECT_NOTES.md) | Current work session notes and TODO |
 | [PROJECT_STRUCTURE_DOTS.md](PROJECT_STRUCTURE_DOTS.md) | DOTS-first folder layout |
+| [DOCUMENTATION_CHANGELOG.md](DOCUMENTATION_CHANGELOG.md) | Record of documentation reorganization rounds |
 
 ## Code Guides
 
@@ -79,8 +87,7 @@ Quick-reference index of all project documentation. Docs are organized by catego
 |----------|-------------|
 | [/Assets/Scripts/Player/Bootstrap/BOOTSTRAP_GUIDE.md](/Assets/Scripts/Player/Bootstrap/BOOTSTRAP_GUIDE.md) | Bootstrap pattern guide with physics setup |
 | [/Assets/Scripts/DOTS/Test/Testing_Documentation.md](/Assets/Scripts/DOTS/Test/Testing_Documentation.md) | Complete test catalog |
-| [Unity6_Compatibility_Notes.md](Unity6_Compatibility_Notes.md) | Unity 6 DOTS compatibility fixes |
-| [ArtAndDOTS_Pipeline.md](ArtAndDOTS_Pipeline.md) | 16-bit art + DOTS integration |
+| [AI/ArtAndDOTS_Pipeline.md](AI/ArtAndDOTS_Pipeline.md) | 16-bit art + DOTS integration |
 
 ## Audits & Reports
 
@@ -88,9 +95,6 @@ Quick-reference index of all project documentation. Docs are organized by catego
 |----------|-------------|
 | [AI/RENDER_PERF_PROFILE_REPORT.md](AI/RENDER_PERF_PROFILE_REPORT.md) | Basic Terrain Scene profiling: scene is vertex-bound (trees/rocks = 92% of verts), NOT fill-rate bound — low-res rendering gives no FPS win; LODs are the lever |
 | [/TERRAIN_SYSTEMS_CODE_AUDIT.md](/TERRAIN_SYSTEMS_CODE_AUDIT.md) | Redundant/obsolete terrain code analysis |
-| [/ISystem_Usage_Report.md](/ISystem_Usage_Report.md) | ISystem usage patterns audit |
-| [AI/TERRAIN_SEAM_DEBUG_IMPLEMENTATION_REPORT.md](AI/TERRAIN_SEAM_DEBUG_IMPLEMENTATION_REPORT.md) | Seam debug implementation report |
-| [CURSOR_NamespaceFlattening_Refactor.md](CURSOR_NamespaceFlattening_Refactor.md) | Namespace refactor (COMPLETE) |
 
 ## WFC Dungeon
 
@@ -109,8 +113,20 @@ Quick-reference index of all project documentation. Docs are organized by catego
 | [Archives/Fixes/](Archives/Fixes/) | Test planning archives |
 | [Archives/WFC_Debug_Oct2025/](Archives/WFC_Debug_Oct2025/) | Oct 2025 WFC rotation debug campaign |
 | [Archives/TestReports_Oct2025/](Archives/TestReports_Oct2025/) | Oct 2025 test campaign reports |
-| [DebugTraces/](DebugTraces/) | Historical WFC debug traces |
-| [AI/TERRAIN_SEAM_DEBUG_SPEC_OBSOLETE.md](AI/TERRAIN_SEAM_DEBUG_SPEC_OBSOLETE.md) | Superseded by v1 |
 | [Archives/DOTS_Migration_Plan.md](Archives/DOTS_Migration_Plan.md) | Legacy hybrid terrain migration (superseded by SDF pipeline) |
 | [Archives/AI_Instructions.md](Archives/AI_Instructions.md) | AI assistant standards (superseded by CLAUDE.md) |
 | [Archives/PROJECT_NOTES_2025-11.md](Archives/PROJECT_NOTES_2025-11.md) | Nov 2025 work session notes (camera system, test org) |
+| [Archives/SeamDebug_2026/](Archives/SeamDebug_2026/) | Concluded terrain seam-debug lineage: OBSOLETE spec, v1 density spec, mesh spec, implementation report (2026-07-02, doc cleanup D1) |
+| [Archives/Skybox_2026/](Archives/Skybox_2026/) | Skybox Phase 1/2 spec + test plan, superseded by `AI/ATMOSPHERE_COLOR_AUTHORITY_SPEC.md` (2026-07-02, doc cleanup D2) |
+| [Archives/ResolvedBugfixes_2026/](Archives/ResolvedBugfixes_2026/) | Resolved bugfix specs: player terrain fall-through, terrain edit controls, camera identity mismatch (2026-07-02, doc cleanup D3) |
+| [Archives/StructurePlacement_2026/](Archives/StructurePlacement_2026/) | `RELIC_RENDER_REFACTOR_SPEC.md`, superseded by `RELIC_LOD_IMPOSTOR_SPEC.md` §8 (2026-07-02, doc cleanup D4) |
+| [Archives/TerrainHeightMaps_2026/](Archives/TerrainHeightMaps_2026/) | Plains noise algorithm spec, values absorbed by the MVP tree checklist (2026-07-02, doc cleanup D5) |
+| [Archives/RootLegacy_2026/](Archives/RootLegacy_2026/) | Stale root-level records: namespace refactor, multiplayer evaluation, ISystem usage report, structure review, Unity 6 compat notes, plus the whole `DebugTraces/` folder (2026-07-02, doc cleanup D6) |
+| [Archives/MVP_Ideation_2026/](Archives/MVP_Ideation_2026/) | Stale MVP ideation docs from the former `mvp/` folder, now `Biomes/` (2026-07-02, doc cleanup D7) |
+| [Archives/LOD_2026/](Archives/LOD_2026/) | Superseded LOD spec + plan; content merged into root `DOTS_Terrain_LOD_SPEC.md` before archiving (2026-07-02, doc cleanup D8) |
+
+## External Reference
+
+| Folder | Contents |
+|--------|----------|
+| [Reference/External/SmolbeanPlanet3D/](Reference/External/SmolbeanPlanet3D/) | External reference material from an unrelated project (SmolbeanPlanet3D) — patterns/salvage notes only, not project documentation |

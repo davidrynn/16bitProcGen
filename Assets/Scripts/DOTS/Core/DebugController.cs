@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace DOTS.Terrain.Core
+namespace DOTS.Core
 {
     /// <summary>
     /// MonoBehaviour to control debug settings from the Unity Inspector

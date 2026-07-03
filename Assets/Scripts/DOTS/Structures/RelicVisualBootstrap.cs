@@ -2,7 +2,7 @@ using System.Collections.Generic;
 using Unity.Entities;
 using Unity.Mathematics;
 using UnityEngine;
-using DOTS.Terrain.Core;
+using DOTS.Core;
 using DOTS.Terrain.SurfaceScatter;
 
 namespace DOTS.Structures

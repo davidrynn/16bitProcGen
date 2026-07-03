@@ -5,7 +5,7 @@ using Unity.Rendering;
 using Unity.Transforms;
 using UnityEngine;
 using UnityEngine.Rendering;
-using DOTS.Terrain.Core;
+using DOTS.Core;
 
 namespace DOTS.Structures
 {

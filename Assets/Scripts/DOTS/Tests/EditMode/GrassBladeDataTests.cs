@@ -1,6 +1,6 @@
 using System.Runtime.InteropServices;
 using NUnit.Framework;
-using DOTS.Terrain.Rendering;
+using DOTS.Terrain.Grass;
 
 namespace DOTS.Terrain.Tests
 {

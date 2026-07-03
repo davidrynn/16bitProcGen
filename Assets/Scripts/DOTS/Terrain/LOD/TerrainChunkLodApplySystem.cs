@@ -1,6 +1,6 @@
-using DOTS.Terrain.Core;
+using DOTS.Core;
 using DOTS.Terrain.Rocks;
-using DOTS.Terrain.Rendering;
+using DOTS.Terrain.Grass;
 using DOTS.Terrain.Trees;
 using Unity.Collections;
 using Unity.Entities;

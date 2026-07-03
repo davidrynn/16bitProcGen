@@ -1,5 +1,8 @@
 ## WFC Dungeon Test Plan
 
+**Status:** REFERENCE (WFC work paused; resuming per owner note 2026-07-02)
+**Last Updated:** 2025-11-02
+
 ### Purpose
 Define a repeatable, lightweight test strategy to validate functional correctness, stability, and performance of the Wave Function Collapse (WFC) dungeon generator. Phase 1 uses prototyping tiles (current setup). Phase 2 validates a switch to `Models/TestFloor.fbx` and `Models/Wall_Intact.fbx` tiles.
 

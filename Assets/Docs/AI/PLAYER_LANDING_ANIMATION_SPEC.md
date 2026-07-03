@@ -3,7 +3,7 @@
 **Status:** ACTIVE  
 **Created:** 2026-05-19  
 **Revised:** 2026-05-19 (v3 — transition-first phased approach)  
-**Related:** `MVP Movement/MOVEMENT_PLANNING.md`, `AI/PLAYER_CHARACTER_VISUAL_SWAP_SPEC.md`
+**Related:** `MVP_Movement/MOVEMENT_PLANNING.md`, `AI/PLAYER_CHARACTER_VISUAL_SWAP_SPEC.md`
 
 ---
 

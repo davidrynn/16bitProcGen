@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace DOTS.Terrain.Core
+namespace DOTS.Core
 {
     /// <summary>
     /// Simple test controller to verify debug control is working

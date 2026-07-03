@@ -1,5 +1,8 @@
 # TERRAIN_BANDING_DIAGNOSTIC_SPEC.md
 
+**Status:** ACTIVE
+**Last Updated:** 2026-02-08
+
 **Project:** Unity 6 DOTS – SDF + Surface Nets Terrain
 **Prerequisite:** TERRAIN_SEAM_DEBUG_MESH_SPEC.md concluded – chunk boundary hypothesis ruled out
 **Goal:** Identify the root cause of visible concentric/grid banding artifacts in terrain mesh.

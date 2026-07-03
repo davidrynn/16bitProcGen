@@ -4,7 +4,7 @@ using Unity.Physics;
 using Unity.Physics.Systems;
 using Unity.Transforms;
 using DOTS.Player.Components;
-using DOTS.Terrain.Core;
+using DOTS.Core;
 using System;
 
 namespace DOTS.Player.Systems

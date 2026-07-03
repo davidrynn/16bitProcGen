@@ -145,9 +145,9 @@ The MVP vista moment is complete when:
 ## 7. Related Documents
 
 - [`GROUND_PLANE_IMPOSTOR_SPEC.md`](GROUND_PLANE_IMPOSTOR_SPEC.md) — **MVP** horizontal ground-plane impostor (sky-drop world extent)
-- [`RELIC_LOD_IMPOSTOR_SPEC.md`](STRUCTURE%20PLACEMENT/RELIC_LOD_IMPOSTOR_SPEC.md) — LOD/impostor system for far-relic rendering
-- [`STRUCTURE_PLACEMENT_SPEC.md`](STRUCTURE%20PLACEMENT/STRUCTURE_PLACEMENT_SPEC.md) — Anchor planning and structure realization
+- [`RELIC_LOD_IMPOSTOR_SPEC.md`](STRUCTURE_PLACEMENT/RELIC_LOD_IMPOSTOR_SPEC.md) — LOD/impostor system for far-relic rendering
+- [`STRUCTURE_PLACEMENT_SPEC.md`](STRUCTURE_PLACEMENT/STRUCTURE_PLACEMENT_SPEC.md) — Anchor planning and structure realization
 - [`HORIZON_IMPOSTOR_SEED_DRIVEN_SPEC.md`](HORIZON_IMPOSTOR_SEED_DRIVEN_SPEC.md) — Phase 2 vertical horizon ring (mountain silhouettes, deferred)
-- [`../MVP Movement/MOVEMENT_PLANNING.md`](../MVP%20Movement/MOVEMENT_PLANNING.md) — Slingshot traversal toward the relic
+- [`../MVP_Movement/MOVEMENT_PLANNING.md`](../MVP_Movement/MOVEMENT_PLANNING.md) — Slingshot traversal toward the relic
 - [`../WFC_Dungeon_Test_Plan.md`](../WFC_Dungeon_Test_Plan.md) — WFC dungeon system test strategy (interior maze pipeline)
 - [`../WFC/MAP_WFC.md`](../WFC/MAP_WFC.md) — WFC system map, components, and socket contracts (entry point for relic interior integration)
