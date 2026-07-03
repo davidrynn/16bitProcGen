@@ -60,10 +60,10 @@ This spec does **not** cover:
 
 - [STRUCTURE_PLACEMENT_SPEC.md](STRUCTURE_PLACEMENT_SPEC.md) - shared anchor pipeline the grid feeds into; per-template support (§12.5.3) that `NodeAffinity` extends
 - [STRUCTURE_PLACEMENT_PLAN.md](STRUCTURE_PLACEMENT_PLAN.md) - rollout sequencing for structure families (relic/dungeon)
-- [../PERSISTENCE_SPEC.md](../PERSISTENCE_SPEC.md) - sparse-delta persistence model that claimed-node state reuses
-- [../../WFC/MAP_WFC.md](../../WFC/MAP_WFC.md) - WFC realization for node-built cities/fortresses
-- [../TERRAIN_ECS_NEXT_STEPS_SPEC.md](../TERRAIN_ECS_NEXT_STEPS_SPEC.md) - SDF terrain pipeline the visual cue shader rides on
-- [../RENDER_PERF_PROFILE_REPORT.md](../RENDER_PERF_PROFILE_REPORT.md) - scene is vertex-bound; the analytic shader cue adds no geometry
+- [../PERSISTENCE_SPEC.md](../Persistence/PERSISTENCE_SPEC.md) - sparse-delta persistence model that claimed-node state reuses
+- [../../WFC/MAP_WFC.md](../WFC/MAP_WFC.md) - WFC realization for node-built cities/fortresses
+- [../TERRAIN_ECS_NEXT_STEPS_SPEC.md](../Terrain/TERRAIN_ECS_NEXT_STEPS_SPEC.md) - SDF terrain pipeline the visual cue shader rides on
+- [../RENDER_PERF_PROFILE_REPORT.md](../Rendering/RENDER_PERF_PROFILE_REPORT.md) - scene is vertex-bound; the analytic shader cue adds no geometry
 
 ---
 
@@ -206,7 +206,7 @@ persistence model:
 - **Untouched node** → analytic, regenerates from seed, zero stored state.
 - **Claimed/built node** → a sparse record keyed by `StableAnchorId`, where the id derives from
   `NodeCell` (§7) so identity is stable across replays. Persisted as a sparse delta, exactly like any
-  modified structure (see [PERSISTENCE_SPEC.md](../PERSISTENCE_SPEC.md)).
+  modified structure (see [PERSISTENCE_SPEC.md](../Persistence/PERSISTENCE_SPEC.md)).
 
 ```csharp
 /// Sparse state for a node the player has claimed or built on. Untouched nodes have no record.

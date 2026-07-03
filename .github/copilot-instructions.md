@@ -35,7 +35,7 @@ Legacy/parallel heightmap flow: TerrainEntityManager → TerrainDataBuilder → 
 - Transform sync: TerrainTransformSystem pushes TerrainData worldPosition/rotation/scale into LocalTransform.
 
 **Terrain Generation (SDF / Surface Nets path)**
-Primary path for destructible terrain. Follow Assets/Docs/AI/TERRAIN_ECS_NEXT_STEPS_SPEC.md. Use the SDF + Surface Nets ECS pipeline; do not extend HybridTerrainGenerationSystem for SDF unless the spec explicitly instructs. Keep heightmap and SDF pipelines decoupled; SDF work should align with the spec’s data flow, components, and systems.
+Primary path for destructible terrain. Follow Assets/Docs/Terrain/TERRAIN_ECS_NEXT_STEPS_SPEC.md. Use the SDF + Surface Nets ECS pipeline; do not extend HybridTerrainGenerationSystem for SDF unless the spec explicitly instructs. Keep heightmap and SDF pipelines decoupled; SDF work should align with the spec’s data flow, components, and systems.
 
 **WFC Dungeon Flow**
 Collapse state → compute shader → prefab instantiation → rendering.
@@ -99,10 +99,9 @@ Architecture principle: if legacy code conflicts with DOTS-first, prefer pure DO
 - Assets/Docs/DOCUMENT_INDEX.md — canonical entry point for project documentation
 - Assets/Docs/DOCUMENTATION_SYSTEM_SPEC.md — documentation structure and AI-discovery rules
 - Assets/Scripts/DOTS/Test/Testing_Documentation.md — test harness catalog
-- Assets/Docs/AI_Instructions.md — SPEC → TEST → CODE workflow
 - Assets/Scripts/Player/Bootstrap/BOOTSTRAP_GUIDE.md — pure-code DOTS scene setup patterns
 - Assets/README.md — DOTS authoring checklist
-- Assets/Docs/AI/TERRAIN_ECS_NEXT_STEPS_SPEC.md — SDF terrain roadmap
+- Assets/Docs/Terrain/TERRAIN_ECS_NEXT_STEPS_SPEC.md — SDF terrain roadmap
 
 ## Common Pitfalls
 

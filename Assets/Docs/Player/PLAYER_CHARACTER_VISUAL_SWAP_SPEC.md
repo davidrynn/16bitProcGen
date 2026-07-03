@@ -9,9 +9,9 @@
 
 ## Related Docs
 
-- [MVP_Movement/MOVEMENT_PLANNING.md](../MVP_Movement/MOVEMENT_PLANNING.md) — Movement state machine and Step 12 (character pose per state)
-- [MVP_Movement/MOVEMENT_TECHNICAL_ARCHITECTURE_SPEC.md](../MVP_Movement/MOVEMENT_TECHNICAL_ARCHITECTURE_SPEC.md) — ECS component/system mapping
-- [AI/THIRD_PARTY_ASSET_EVALUATION_PLAYBOOK.md](THIRD_PARTY_ASSET_EVALUATION_PLAYBOOK.md) — Sandbox validation checklist
+- [Player/Movement/MOVEMENT_PLANNING.md](Movement/MOVEMENT_PLANNING.md) — Movement state machine and Step 12 (character pose per state)
+- [Player/Movement/MOVEMENT_TECHNICAL_ARCHITECTURE_SPEC.md](Movement/MOVEMENT_TECHNICAL_ARCHITECTURE_SPEC.md) — ECS component/system mapping
+- [Process/THIRD_PARTY_ASSET_EVALUATION_PLAYBOOK.md](../Process/THIRD_PARTY_ASSET_EVALUATION_PLAYBOOK.md) — Sandbox validation checklist
 - [/Assets/Scripts/Player/Bootstrap/BOOTSTRAP_GUIDE.md](/Assets/Scripts/Player/Bootstrap/BOOTSTRAP_GUIDE.md) — Bootstrap pattern guide
 
 ---

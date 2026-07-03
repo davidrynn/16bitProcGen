@@ -1,7 +1,7 @@
 # Documentation System Spec
 
 **Status:** ACTIVE
-**Last Updated:** 2026-04-11
+**Last Updated:** 2026-07-03 (added §6.4 Folder Taxonomy — feature/area folders, `AI/` dissolved)
 **Owner:** Project-wide
 
 ---
@@ -93,10 +93,10 @@ Guidelines:
 
 Example already in use:
 
-- `TerrainHeightMaps/TERRAIN_STRATEGY_PLAN.md`
-- `TerrainHeightMaps/TERRAIN_BIOME_NOISE_SPEC.md`
-- `TerrainHeightMaps/TERRAIN_BIOME_NOISE_SCHEMA.md`
-- `TerrainHeightMaps/TERRAIN_PLAINS_TREES_MVP_CHECKLIST.md`
+- `Terrain/TERRAIN_STRATEGY_PLAN.md`
+- `Biomes/TERRAIN_BIOME_NOISE_SPEC.md`
+- `Biomes/TERRAIN_BIOME_NOISE_SCHEMA.md`
+- `Terrain/Scatter/TERRAIN_PLAINS_TREES_MVP_CHECKLIST.md`
 
 ---
 
@@ -118,8 +118,8 @@ Each high-churn or high-volume folder should eventually have a local entry file.
 
 Recommended examples:
 
-- `Assets/Docs/AI/README.md`
-- `Assets/Docs/AI/TerrainHeightMaps/README.md`
+- `Assets/Docs/Terrain/README.md`
+- `Assets/Docs/Terrain/Scatter/README.md`
 - `Assets/Docs/WFC/README.md`
 
 Area indexes should summarize:
@@ -139,6 +139,25 @@ Every superseded doc should say one of:
 - `Superseded By: ...`
 - `Obsolete`
 - `Historical Reference Only`
+
+### 6.4 Folder Taxonomy
+
+Decided 2026-07-03 (owner; rationale in `Process/CODEBASE_SIMPLIFICATION_PLAN.md` §6.3 D15). Three orthogonal axes, each with its own home:
+
+| Axis | Where it lives | Example |
+|------|----------------|---------|
+| **Topic / feature area** | the folder | `Rendering/SKYBOXPLAN.md` |
+| **Document type** | the filename suffix (§5) | `_PLAN` / `_SPEC` / `_SCHEMA` / `_CHECKLIST` / `_REPORT` |
+| **Lifecycle** | Status metadata (§4) and `Archives/` | `Status: ACTIVE`, `Archives/Skybox_2026/` |
+
+Rules:
+
+1. **Folders are feature/area folders that mirror the code architecture** — `Terrain/` (with `Scatter/` subfolder), `Player/` (with `Movement/`), `Rendering/`, `Biomes/`, `WFC/`, `Structures/`, `Multiplayer/`, `Persistence/`, `Testing/`, plus `Process/` for meta-docs about how the project is built (cleanup plans, asset pipelines, evaluation playbooks).
+2. **The `Assets/Docs/` root is reserved for project-wide living docs** — the index, changelog, this spec, `TICKETS.md`, `KNOWN_ISSUES.md`, `MASTER_PLAN.md`, `PROJECT_NOTES.md`, `PROJECT_STRUCTURE_DOTS.md`. If a doc is about one feature, it goes in that feature's folder.
+3. **A folder of one file is fine** — predictability beats density (`Persistence/PERSISTENCE_SPEC.md`).
+4. **No author- or audience-based folders.** The historical `AI/` folder (dissolved 2026-07-03) categorized docs by who wrote them; every doc here is human+AI collaborative, and discovery is index-driven (§3, §8), so such names carry no retrieval value.
+5. **No initiative- or milestone-named folders** (`MVP*/`, `Sprint*/`). Initiatives end and the name rots (`mvp/` → `Biomes/`, 2026-07-02); milestone status belongs in Status metadata and `MASTER_PLAN.md`.
+6. **All project documentation lives under `Assets/Docs/`** — no doc trees at the repo root (a root `Docs/` existed until 2026-07-03; Unity doesn't import files outside `Assets/`, so they're invisible to in-editor search and easy to orphan).
 
 ---
 

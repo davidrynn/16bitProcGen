@@ -40,11 +40,11 @@ This spec does not cover:
 
 - [STRUCTURE_PLACEMENT_PLAN.md](STRUCTURE_PLACEMENT_PLAN.md) - rollout sequencing and priorities
 - [MAGIC_GRID_SPEC.md](MAGIC_GRID_SPEC.md) - analytic XZ lattice supplying grid-bound anchor candidates (relic/city/fortress) as a deterministic variant of §9.2
-- [../TerrainHeightMaps/TERRAIN_SURFACE_SCATTER_SPEC.md](../TerrainHeightMaps/TERRAIN_SURFACE_SCATTER_SPEC.md) - adjacent runtime for scatter props
-- [../TerrainHeightMaps/TERRAIN_SURFACE_SCATTER_PLAN.md](../TerrainHeightMaps/TERRAIN_SURFACE_SCATTER_PLAN.md) - placement domain boundary
-- [../PERSISTENCE_SPEC.md](../PERSISTENCE_SPEC.md) - structure placement persistence layer
-- [../TERRAIN_ECS_NEXT_STEPS_SPEC.md](../TERRAIN_ECS_NEXT_STEPS_SPEC.md) - SDF terrain pipeline context
-- [../../WFC/MAP_WFC.md](../../WFC/MAP_WFC.md) - WFC systems and dungeon references
+- [../TerrainHeightMaps/TERRAIN_SURFACE_SCATTER_SPEC.md](../Terrain/Scatter/TERRAIN_SURFACE_SCATTER_SPEC.md) - adjacent runtime for scatter props
+- [../TerrainHeightMaps/TERRAIN_SURFACE_SCATTER_PLAN.md](../Terrain/Scatter/TERRAIN_SURFACE_SCATTER_PLAN.md) - placement domain boundary
+- [../PERSISTENCE_SPEC.md](../Persistence/PERSISTENCE_SPEC.md) - structure placement persistence layer
+- [../TERRAIN_ECS_NEXT_STEPS_SPEC.md](../Terrain/TERRAIN_ECS_NEXT_STEPS_SPEC.md) - SDF terrain pipeline context
+- [../../WFC/MAP_WFC.md](../WFC/MAP_WFC.md) - WFC systems and dungeon references
 
 ---
 
@@ -305,7 +305,7 @@ The dungeon realizer bridges to the existing `HybridWFCSystem`. Two known issues
 #### 12.5.2 Relic Realizer
 
 - spawns one ECS entity per accepted relic anchor with Entities Graphics render components (`RenderMeshArray`, `MaterialMeshInfo`, `RenderBounds`, `LocalToWorld`)
-- per-entity `RenderBounds` for correct individual frustum culling (required for large-scale meshes; batch `RenderMeshInstanced` is unsuitable — see [RELIC_RENDER_REFACTOR_SPEC.md](../../Archives/StructurePlacement_2026/RELIC_RENDER_REFACTOR_SPEC.md) (archived))
+- per-entity `RenderBounds` for correct individual frustum culling (required for large-scale meshes; batch `RenderMeshInstanced` is unsuitable — see [RELIC_RENDER_REFACTOR_SPEC.md](../Archives/StructurePlacement_2026/RELIC_RENDER_REFACTOR_SPEC.md) (archived))
 - tracks realized entities via `StructureRealizedTag.StableAnchorId` for lifecycle cleanup
 - entity structure provides the natural hook for future LOD/impostor distance switching
 
@@ -343,7 +343,7 @@ Storage and serialization backing may be introduced after baseline apply/record 
 
 ## 13. Persistence Model
 
-`Structure Placement` aligns with the structure layer in [PERSISTENCE_SPEC.md](PERSISTENCE_SPEC.md):
+`Structure Placement` aligns with the structure layer in [PERSISTENCE_SPEC.md](../Persistence/PERSISTENCE_SPEC.md):
 
 - deterministic base placements regenerate from seed
 - only destroyed/modified/generated-beyond-default structure state persists

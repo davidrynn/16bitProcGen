@@ -40,8 +40,8 @@ This schema does not cover:
 - [TERRAIN_SURFACE_SCATTER_PLAN.md](TERRAIN_SURFACE_SCATTER_PLAN.md) - rollout and sequencing
 - [TERRAIN_SURFACE_SCATTER_SPEC.md](TERRAIN_SURFACE_SCATTER_SPEC.md) - runtime contract
 - [TERRAIN_TREE_PLACEMENT_SPEC.md](TERRAIN_TREE_PLACEMENT_SPEC.md) - tree behavior and constraints
-- [../BIOME_GRASS_STREAMING_MVP_PLAN.md](../BIOME_GRASS_STREAMING_MVP_PLAN.md) - dense details path (separate)
-- [../PERSISTENCE_SPEC.md](../PERSISTENCE_SPEC.md) - sparse divergence persistence model
+- [../BIOME_GRASS_STREAMING_MVP_PLAN.md](../../Biomes/BIOME_GRASS_STREAMING_MVP_PLAN.md) - dense details path (separate)
+- [../PERSISTENCE_SPEC.md](../../Persistence/PERSISTENCE_SPEC.md) - sparse divergence persistence model
 
 ---
 

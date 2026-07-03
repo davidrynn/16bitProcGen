@@ -10,16 +10,16 @@ Define the architecture for world-field-driven terrain generation: a system wher
 
 This is the bridge between:
 - The archived vision in [`Archives/TerrainDesign/Stylized_Procedural_Terrain_System_Design.md`](../Archives/TerrainDesign/Stylized_Procedural_Terrain_System_Design.md) (temperature/moisture/elevation fields)
-- The active SDF pipeline in [`AI/TERRAIN_ECS_NEXT_STEPS_SPEC.md`](TERRAIN_ECS_NEXT_STEPS_SPEC.md) (`SDFTerrainField`, `SdLayeredGround`, `TerrainFieldSettings`)
+- The active SDF pipeline in [`Terrain/TERRAIN_ECS_NEXT_STEPS_SPEC.md`](../Terrain/TERRAIN_ECS_NEXT_STEPS_SPEC.md) (`SDFTerrainField`, `SdLayeredGround`, `TerrainFieldSettings`)
 
-It is also the prerequisite that [`AI/BIOME_GRASS_STREAMING_MVP_PLAN.md`](BIOME_GRASS_STREAMING_MVP_PLAN.md) explicitly defers to:
+It is also the prerequisite that [`Biomes/BIOME_GRASS_STREAMING_MVP_PLAN.md`](BIOME_GRASS_STREAMING_MVP_PLAN.md) explicitly defers to:
 > "Core biome-aware terrain shape and chunk behavior come first."
 
 ---
 
 ## 2. Phase Placement
 
-**Do not start this work until the MVP Vista Moment is deliverable.** The Vista Moment (ground plane impostor, atmospheric fog, mountain skybox, hand mesh validation) is Phase 1 and is not gated on biome classification. See [`AI/MVP_VISTA_MOMENT_SPEC.md`](MVP_VISTA_MOMENT_SPEC.md).
+**Do not start this work until the MVP Vista Moment is deliverable.** The Vista Moment (ground plane impostor, atmospheric fog, mountain skybox, hand mesh validation) is Phase 1 and is not gated on biome classification. See [`Rendering/MVP_VISTA_MOMENT_SPEC.md`](../Rendering/MVP_VISTA_MOMENT_SPEC.md).
 
 Phase 2 ordering after Vista Moment:
 1. **This spec** — world fields + region classifier + per-region shaping
@@ -341,8 +341,8 @@ Follow the project's review-gated sequence. Stop after each step and wait for re
 
 | Document | Relationship |
 |---|---|
-| [`AI/TERRAIN_ECS_NEXT_STEPS_SPEC.md`](TERRAIN_ECS_NEXT_STEPS_SPEC.md) | Active SDF pipeline this spec extends |
-| [`AI/BIOME_GRASS_STREAMING_MVP_PLAN.md`](BIOME_GRASS_STREAMING_MVP_PLAN.md) | Grass system that consumes `TerrainChunkBiomeContext.Region` |
-| [`AI/MVP_VISTA_MOMENT_SPEC.md`](MVP_VISTA_MOMENT_SPEC.md) | Phase 1 prerequisite — must be deliverable before this work starts |
-| [`AI/STRUCTURE_PLACEMENT/STRUCTURE_PLACEMENT_SPEC.md`](STRUCTURE_PLACEMENT/STRUCTURE_PLACEMENT_SPEC.md) | Structure pipeline that rare features (fissures, craters) integrate with |
+| [`Terrain/TERRAIN_ECS_NEXT_STEPS_SPEC.md`](../Terrain/TERRAIN_ECS_NEXT_STEPS_SPEC.md) | Active SDF pipeline this spec extends |
+| [`Biomes/BIOME_GRASS_STREAMING_MVP_PLAN.md`](BIOME_GRASS_STREAMING_MVP_PLAN.md) | Grass system that consumes `TerrainChunkBiomeContext.Region` |
+| [`Rendering/MVP_VISTA_MOMENT_SPEC.md`](../Rendering/MVP_VISTA_MOMENT_SPEC.md) | Phase 1 prerequisite — must be deliverable before this work starts |
+| [`Structures/STRUCTURE_PLACEMENT_SPEC.md`](../Structures/STRUCTURE_PLACEMENT_SPEC.md) | Structure pipeline that rare features (fissures, craters) integrate with |
 | [`Archives/TerrainDesign/Stylized_Procedural_Terrain_System_Design.md`](../Archives/TerrainDesign/Stylized_Procedural_Terrain_System_Design.md) | Original archived vision — temperature/moisture/elevation concept superseded by this spec |

@@ -25,8 +25,8 @@ Trees are treated as a higher-priority secondary placement system than grass bec
 - [TERRAIN_SURFACE_SCATTER_PLAN.md](TERRAIN_SURFACE_SCATTER_PLAN.md) - rollout path for broadening tree-only placement into reusable surface-scatter families
 - [TERRAIN_SURFACE_SCATTER_SPEC.md](TERRAIN_SURFACE_SCATTER_SPEC.md) - umbrella runtime contract for trees, rocks, bushes, and similar discrete props
 - [TERRAIN_SURFACE_SCATTER_SCHEMA.md](TERRAIN_SURFACE_SCATTER_SCHEMA.md) - first ECS/data breakdown for tree-plus-rock surface scatter
-- [../BIOME_GRASS_STREAMING_MVP_PLAN.md](../BIOME_GRASS_STREAMING_MVP_PLAN.md) - dense detail path that should remain separate from tree-style placement
-- [../PERSISTENCE_SPEC.md](../PERSISTENCE_SPEC.md) - sparse divergence and promotion expectations for generated world content
+- [../BIOME_GRASS_STREAMING_MVP_PLAN.md](../../Biomes/BIOME_GRASS_STREAMING_MVP_PLAN.md) - dense detail path that should remain separate from tree-style placement
+- [../PERSISTENCE_SPEC.md](../../Persistence/PERSISTENCE_SPEC.md) - sparse divergence and promotion expectations for generated world content
 
 ---
 

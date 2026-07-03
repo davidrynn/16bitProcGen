@@ -53,11 +53,11 @@ This plan does not cover:
 
 ## 5. Related Docs
 
-- [../TerrainHeightMaps/TERRAIN_SURFACE_SCATTER_PLAN.md](../TerrainHeightMaps/TERRAIN_SURFACE_SCATTER_PLAN.md) - boundary between scatter props and structures
-- [../TerrainHeightMaps/TERRAIN_SURFACE_SCATTER_SPEC.md](../TerrainHeightMaps/TERRAIN_SURFACE_SCATTER_SPEC.md) - scatter runtime contract
-- [../PERSISTENCE_SPEC.md](../PERSISTENCE_SPEC.md) - structure placement persistence layer and sparse deltas
-- [../TERRAIN_ECS_NEXT_STEPS_SPEC.md](../TERRAIN_ECS_NEXT_STEPS_SPEC.md) - primary SDF terrain pipeline context
-- [../../WFC/MAP_WFC.md](../../WFC/MAP_WFC.md) - current dungeon/WFC system map
+- [../TerrainHeightMaps/TERRAIN_SURFACE_SCATTER_PLAN.md](../Terrain/Scatter/TERRAIN_SURFACE_SCATTER_PLAN.md) - boundary between scatter props and structures
+- [../TerrainHeightMaps/TERRAIN_SURFACE_SCATTER_SPEC.md](../Terrain/Scatter/TERRAIN_SURFACE_SCATTER_SPEC.md) - scatter runtime contract
+- [../PERSISTENCE_SPEC.md](../Persistence/PERSISTENCE_SPEC.md) - structure placement persistence layer and sparse deltas
+- [../TERRAIN_ECS_NEXT_STEPS_SPEC.md](../Terrain/TERRAIN_ECS_NEXT_STEPS_SPEC.md) - primary SDF terrain pipeline context
+- [../../WFC/MAP_WFC.md](../WFC/MAP_WFC.md) - current dungeon/WFC system map
 - [MAGIC_GRID_SPEC.md](MAGIC_GRID_SPEC.md) - analytic magic lattice supplying grid-bound anchor candidates (relics/cities/fortresses)
 
 ---
@@ -171,7 +171,7 @@ The full 6-phase plan (§8.1) remains the long-term target. This MVP cut gets st
 
 ### MVP Step 3 — Relic Realizer (simplest family)
 
-> **Rendering refactor (2026-04-16):** The initial MVP implementation used `Graphics.RenderMeshInstanced` for batch rendering. This caused a frustum culling artifact ("globe eating") on the 15x-scaled relic mesh due to a single `worldBounds` AABB for the entire batch. See [RELIC_RENDER_REFACTOR_SPEC.md](../../Archives/StructurePlacement_2026/RELIC_RENDER_REFACTOR_SPEC.md) (archived) for full diagnosis and the replacement design.
+> **Rendering refactor (2026-04-16):** The initial MVP implementation used `Graphics.RenderMeshInstanced` for batch rendering. This caused a frustum culling artifact ("globe eating") on the 15x-scaled relic mesh due to a single `worldBounds` AABB for the entire batch. See [RELIC_RENDER_REFACTOR_SPEC.md](../Archives/StructurePlacement_2026/RELIC_RENDER_REFACTOR_SPEC.md) (archived) for full diagnosis and the replacement design.
 
 - `RelicRealizationSystem` — spawns one ECS entity per accepted relic anchor with Entities Graphics render components (`RenderMeshArray`, `MaterialMeshInfo`, `RenderBounds`, `LocalToWorld`)
 - Each entity has per-entity `RenderBounds` for correct individual frustum culling

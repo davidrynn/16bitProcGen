@@ -256,7 +256,7 @@ differs. Let them stay two thin bootstraps that happen to consume the same globa
 - [MVP_VISTA_MOMENT_SPEC.md](MVP_VISTA_MOMENT_SPEC.md) — umbrella MVP vista experience this serves.
 - [VISTA_GROUND_PLANE_FOG_INVESTIGATION.md](VISTA_GROUND_PLANE_FOG_INVESTIGATION.md) — working notes /
   evidence for the color-desync diagnosis.
-- [../mvp/Windswept_Colossus_Plains_Biome_Spec.md](../mvp/Windswept_Colossus_Plains_Biome_Spec.md) —
+- [../Biomes/Windswept_Colossus_Plains_Biome_Spec.md](../Biomes/Windswept_Colossus_Plains_Biome_Spec.md) —
   biome palette source for the Plains (Cloudbreak).
 - Tickets: `Assets/Docs/TICKETS.md` — **V9** (this authority), **V3** (mountain panel, folds into P4),
   **V8** (distance-graded fog, consumes `_AtmoHorizon`).

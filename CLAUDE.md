@@ -31,10 +31,10 @@ If instructions conflict: **safety > architecture rules > performance > style > 
 
 **Heightmap Path (Legacy — quarantined in `Assets/Scripts/DOTS/Terrain/Legacy/`, namespace `DOTS.Terrain.Legacy`):**
 `TerrainEntityManager → TerrainDataBuilder → LegacyHeightmapTerrainGenerationSystem → GPU compute → BlobAsset → Mesh`
-Do not extend this pipeline; retirement is tracked in `CODEBASE_SIMPLIFICATION_PLAN.md` §6.7 (S11).
+Do not extend this pipeline; retirement is tracked in `Assets/Docs/Process/CODEBASE_SIMPLIFICATION_PLAN.md` §6.7 (S11).
 
 **SDF / Surface Nets Path (Primary for destructible terrain):**
-Follow `Assets/Docs/AI/TERRAIN_ECS_NEXT_STEPS_SPEC.md`. Keep heightmap and SDF pipelines decoupled.
+Follow `Assets/Docs/Terrain/TERRAIN_ECS_NEXT_STEPS_SPEC.md`. Keep heightmap and SDF pipelines decoupled.
 
 ## Build & Test Commands
 
@@ -264,8 +264,7 @@ public class PlayerCameraBootstrap : MonoBehaviour
 
 - `Assets/Docs/DOCUMENT_INDEX.md` - Canonical entry point for project documentation
 - `Assets/Docs/DOCUMENTATION_SYSTEM_SPEC.md` - Documentation structure and AI-discovery rules
-- `Assets/Docs/AI_Instructions.md` - Detailed AI assistant standards and DOTS-first workflow
-- `Assets/Docs/AI/TERRAIN_ECS_NEXT_STEPS_SPEC.md` - SDF terrain implementation roadmap
+- `Assets/Docs/Terrain/TERRAIN_ECS_NEXT_STEPS_SPEC.md` - SDF terrain implementation roadmap
 - `Assets/Scripts/Player/Bootstrap/BOOTSTRAP_GUIDE.md` - Bootstrap pattern guide with physics setup
 - `Assets/Scripts/DOTS/Test/Testing_Documentation.md` - Complete test catalog
 - `.github/copilot-instructions.md` - Additional context including current development focus

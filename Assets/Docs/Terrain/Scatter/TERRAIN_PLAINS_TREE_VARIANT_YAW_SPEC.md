@@ -98,6 +98,6 @@ Determinism must hold across stream out/in cycles and for repeated generation ca
 
 ## 7. Related Docs
 
-1. `Assets/Docs/AI/TerrainHeightMaps/TERRAIN_PLAINS_TREES_MVP_CHECKLIST.md`
-2. `Assets/Docs/AI/TerrainHeightMaps/TERRAIN_TREE_PLACEMENT_SPEC.md`
-3. `Assets/Docs/AI/TerrainHeightMaps/TERRAIN_SURFACE_SCATTER_SPEC.md`
+1. `Assets/Docs/Terrain/Scatter/TERRAIN_PLAINS_TREES_MVP_CHECKLIST.md`
+2. `Assets/Docs/Terrain/Scatter/TERRAIN_TREE_PLACEMENT_SPEC.md`
+3. `Assets/Docs/Terrain/Scatter/TERRAIN_SURFACE_SCATTER_SPEC.md`

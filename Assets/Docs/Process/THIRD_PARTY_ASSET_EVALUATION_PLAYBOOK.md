@@ -179,5 +179,5 @@ Constraints:
 
 - Assets/Docs/DOCUMENT_INDEX.md
 - Assets/Docs/MASTER_PLAN.md
-- Assets/Docs/AI/ArtAndDOTS_Pipeline.md
-- Assets/Docs/AI/TERRAIN_ECS_NEXT_STEPS_SPEC.md
+- Assets/Docs/Process/ArtAndDOTS_Pipeline.md
+- Assets/Docs/Terrain/TERRAIN_ECS_NEXT_STEPS_SPEC.md

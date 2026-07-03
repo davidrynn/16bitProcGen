@@ -8,7 +8,7 @@
 
 ## 1. Purpose
 
-Cut scatter vertex load by swapping tree/rock instances to low-poly meshes beyond a configurable camera distance. Profiling ([../RENDER_PERF_PROFILE_REPORT.md](../RENDER_PERF_PROFILE_REPORT.md)) showed the Basic Terrain Scene is vertex-bound with **92% of frame vertices coming from scatter trees/rocks** (674 instances × ~1,420 verts). Unity `LODGroup` cannot be used — scatter renders via `Graphics.RenderMeshInstanced` with no GameObjects — so LOD selection happens inside the existing render-system instance loop ("Option A").
+Cut scatter vertex load by swapping tree/rock instances to low-poly meshes beyond a configurable camera distance. Profiling ([../RENDER_PERF_PROFILE_REPORT.md](../../Rendering/RENDER_PERF_PROFILE_REPORT.md)) showed the Basic Terrain Scene is vertex-bound with **92% of frame vertices coming from scatter trees/rocks** (674 instances × ~1,420 verts). Unity `LODGroup` cannot be used — scatter renders via `Graphics.RenderMeshInstanced` with no GameObjects — so LOD selection happens inside the existing render-system instance loop ("Option A").
 
 ## 2. Scope
 
@@ -64,10 +64,10 @@ Trees ground instances by mesh-bottom (`-mesh.bounds.min.y`). The offset is comp
 
 ## 5. Related Docs
 
-- [../RENDER_PERF_PROFILE_REPORT.md](../RENDER_PERF_PROFILE_REPORT.md) — profiling evidence motivating this spec
+- [../RENDER_PERF_PROFILE_REPORT.md](../../Rendering/RENDER_PERF_PROFILE_REPORT.md) — profiling evidence motivating this spec
 - [TERRAIN_SURFACE_SCATTER_SPEC.md](TERRAIN_SURFACE_SCATTER_SPEC.md) — scatter runtime contract
 - [TERRAIN_PLAINS_TREE_VARIANT_YAW_SPEC.md](TERRAIN_PLAINS_TREE_VARIANT_YAW_SPEC.md) — variant selection this spec extends
-- [../STRUCTURE_PLACEMENT/RELIC_LOD_IMPOSTOR_SPEC.md](../STRUCTURE_PLACEMENT/RELIC_LOD_IMPOSTOR_SPEC.md) — Entities.Graphics LOD precedent (different render path, same goal)
+- [../STRUCTURE_PLACEMENT/RELIC_LOD_IMPOSTOR_SPEC.md](../../Structures/RELIC_LOD_IMPOSTOR_SPEC.md) — Entities.Graphics LOD precedent (different render path, same goal)
 
 ## 6. Acceptance Criteria
 

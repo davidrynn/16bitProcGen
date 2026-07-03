@@ -26,7 +26,7 @@ This is a **procedural biome definition**: parameters here are meant to be consu
 
 - **Feel over fidelity.** The target is the reference's *emotional read* — scale, openness, wind, a far-off impossible thing pulling the player forward — rendered in the project's low-res, low-poly 16-bit style. Photoreal grass, volumetric clouds, and water simulation are explicitly not goals.
 - **Palette decision (deliberate):** the reference image is greener/wetter than this spec's palette. We target the **drier end** of the same biome family (late-summer Highlands rather than spring). Revisit only as a color-tuning pass, not a structural change.
-- **Performance is a first-class constraint.** The Basic Terrain Scene is **vertex-bound** with ~92% of frame vertices coming from scatter (`AI/RENDER_PERF_PROFILE_REPORT.md`). Every scatter family in this biome must respect the vert budgets in TICKETS B1–B7 and ship far-LOD meshes per `AI/TerrainHeightMaps/SURFACE_SCATTER_LOD_SPEC.md`. Density values below are starting points; the frame budget wins every conflict.
+- **Performance is a first-class constraint.** The Basic Terrain Scene is **vertex-bound** with ~92% of frame vertices coming from scatter (`Rendering/RENDER_PERF_PROFILE_REPORT.md`). Every scatter family in this biome must respect the vert budgets in TICKETS B1–B7 and ship far-LOD meshes per `Terrain/Scatter/SURFACE_SCATTER_LOD_SPEC.md`. Density values below are starting points; the frame budget wins every conflict.
 
 ### Scatter Palette Atlas (convention)
 
@@ -239,7 +239,7 @@ A low distant ridge should enclose the plain so the 2–10 km view ends at a sil
 
 ## Landmark Integration
 
-Landmark content (what relics exist) is owned by the structure placement specs (`AI/STRUCTURE_PLACEMENT/`). This biome hosts:
+Landmark content (what relics exist) is owned by the structure placement specs (`Structures/`). This biome hosts:
 
 - Giant buried hands, colossal skulls, broken towers, ancient machines, massive craters, buried arches.
 - **Scale:** major landmarks 50–250 m — large enough to dwarf the 10–60 m terrain relief.
@@ -259,7 +259,7 @@ Rules the biome supplies so a procedurally placed relic looks *seated* rather th
 ## Biome Selection & Boundaries — STUB
 
 - **MVP:** this is the sole/default biome (`BiomeTypeId 0`); no selection logic needed.
-- **POST-MVP:** selection signals and edge blending per `AI/BIOME_TERRAIN_FIELD_SPEC.md` (world-field driven region classification). When neighbors exist, blend scatter densities and grass color over the boundary falloff; hard-switch sky/fog per dominant biome.
+- **POST-MVP:** selection signals and edge blending per `Biomes/BIOME_TERRAIN_FIELD_SPEC.md` (world-field driven region classification). When neighbors exist, blend scatter densities and grass color over the boundary falloff; hard-switch sky/fog per dominant biome.
 
 ---
 
@@ -312,10 +312,10 @@ Every discovery should be visible from a great distance and naturally pull the p
 ## Related Docs
 
 - `Assets/Docs/TICKETS.md` — B1–B7 (scatter models), V2 (fog), V3 (mountain skybox), R1 (LODs)
-- `AI/RENDER_PERF_PROFILE_REPORT.md` — vertex-bound finding driving all density/budget caps
-- `AI/TerrainHeightMaps/SURFACE_SCATTER_LOD_SPEC.md` — far-LOD contract every scatter family must satisfy
-- `AI/TerrainHeightMaps/TERRAIN_SURFACE_SCATTER_SPEC.md` — scatter runtime contract
-- `AI/BIOME_GRASS_STREAMING_MVP_PLAN.md` / `GrassBiomeSettings` — grass system this spec parameterizes
-- `AI/BIOME_TERRAIN_FIELD_SPEC.md` — post-MVP biome selection fields
-- `AI/STRUCTURE_PLACEMENT/STRUCTURE_PLACEMENT_SPEC.md` — landmark placement consuming the seating hooks
-- `AI/GROUND_PLANE_IMPOSTOR_SPEC.md`, `AI/HORIZON_IMPOSTOR_SEED_DRIVEN_SPEC.md`, `AI/MVP_VISTA_MOMENT_SPEC.md` — vista stack this biome plugs into
+- `Rendering/RENDER_PERF_PROFILE_REPORT.md` — vertex-bound finding driving all density/budget caps
+- `Terrain/Scatter/SURFACE_SCATTER_LOD_SPEC.md` — far-LOD contract every scatter family must satisfy
+- `Terrain/Scatter/TERRAIN_SURFACE_SCATTER_SPEC.md` — scatter runtime contract
+- `Biomes/BIOME_GRASS_STREAMING_MVP_PLAN.md` / `GrassBiomeSettings` — grass system this spec parameterizes
+- `Biomes/BIOME_TERRAIN_FIELD_SPEC.md` — post-MVP biome selection fields
+- `Structures/STRUCTURE_PLACEMENT_SPEC.md` — landmark placement consuming the seating hooks
+- `Rendering/GROUND_PLANE_IMPOSTOR_SPEC.md`, `Rendering/HORIZON_IMPOSTOR_SEED_DRIVEN_SPEC.md`, `Rendering/MVP_VISTA_MOMENT_SPEC.md` — vista stack this biome plugs into

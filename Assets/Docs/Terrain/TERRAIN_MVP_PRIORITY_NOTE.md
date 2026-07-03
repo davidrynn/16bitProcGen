@@ -43,7 +43,7 @@ Grass is valuable, but it is secondary polish compared to terrain shape and majo
 
 ## 3. Immediate Interpretation for Current Docs
 
-- The terrain height-map strategy/spec/schema docs under `Assets/Docs/AI/TerrainHeightMaps/` describe current active terrain-shape planning.
+- The terrain height-map strategy/spec/schema docs under `Assets/Docs/Terrain/` and `Assets/Docs/Biomes/` describe current active terrain-shape planning.
 - Grass docs remain useful, but should be treated as deferred design.
 - New tree-placement docs should be considered higher priority than grass docs for terrain MVP execution.
 

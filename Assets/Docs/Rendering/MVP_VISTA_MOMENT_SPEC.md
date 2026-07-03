@@ -74,7 +74,7 @@ Mountains exist only as a horizon silhouette — they do not need to be real ter
 
 **Plains (current terrain, needs tuning):**
 - Flat to gently rolling, SDF terrain
-- Grass scatter (GPU-instanced) — existing baseline stays; only the *streaming rewrite* ([`BIOME_GRASS_STREAMING_MVP_PLAN.md`](BIOME_GRASS_STREAMING_MVP_PLAN.md)) is deferred
+- Grass scatter (GPU-instanced) — existing baseline stays; only the *streaming rewrite* ([`BIOME_GRASS_STREAMING_MVP_PLAN.md`](../Biomes/BIOME_GRASS_STREAMING_MVP_PLAN.md)) is deferred
 - Rock scatter (surface scatter system)
 - Muted green palette
 
@@ -145,9 +145,9 @@ The MVP vista moment is complete when:
 ## 7. Related Documents
 
 - [`GROUND_PLANE_IMPOSTOR_SPEC.md`](GROUND_PLANE_IMPOSTOR_SPEC.md) — **MVP** horizontal ground-plane impostor (sky-drop world extent)
-- [`RELIC_LOD_IMPOSTOR_SPEC.md`](STRUCTURE_PLACEMENT/RELIC_LOD_IMPOSTOR_SPEC.md) — LOD/impostor system for far-relic rendering
-- [`STRUCTURE_PLACEMENT_SPEC.md`](STRUCTURE_PLACEMENT/STRUCTURE_PLACEMENT_SPEC.md) — Anchor planning and structure realization
+- [`RELIC_LOD_IMPOSTOR_SPEC.md`](../Structures/RELIC_LOD_IMPOSTOR_SPEC.md) — LOD/impostor system for far-relic rendering
+- [`STRUCTURE_PLACEMENT_SPEC.md`](../Structures/STRUCTURE_PLACEMENT_SPEC.md) — Anchor planning and structure realization
 - [`HORIZON_IMPOSTOR_SEED_DRIVEN_SPEC.md`](HORIZON_IMPOSTOR_SEED_DRIVEN_SPEC.md) — Phase 2 vertical horizon ring (mountain silhouettes, deferred)
-- [`../MVP_Movement/MOVEMENT_PLANNING.md`](../MVP_Movement/MOVEMENT_PLANNING.md) — Slingshot traversal toward the relic
-- [`../WFC_Dungeon_Test_Plan.md`](../WFC_Dungeon_Test_Plan.md) — WFC dungeon system test strategy (interior maze pipeline)
+- [`../Player/Movement/MOVEMENT_PLANNING.md`](../Player/Movement/MOVEMENT_PLANNING.md) — Slingshot traversal toward the relic
+- [`../WFC/WFC_Dungeon_Test_Plan.md`](../WFC/WFC_Dungeon_Test_Plan.md) — WFC dungeon system test strategy (interior maze pipeline)
 - [`../WFC/MAP_WFC.md`](../WFC/MAP_WFC.md) — WFC system map, components, and socket contracts (entry point for relic interior integration)

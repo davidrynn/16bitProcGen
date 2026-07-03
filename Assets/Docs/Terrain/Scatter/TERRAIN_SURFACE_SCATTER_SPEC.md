@@ -40,8 +40,8 @@ This spec does not cover:
 - [TERRAIN_SURFACE_SCATTER_PLAN.md](TERRAIN_SURFACE_SCATTER_PLAN.md) - rollout and sequencing for this runtime
 - [TERRAIN_SURFACE_SCATTER_SCHEMA.md](TERRAIN_SURFACE_SCATTER_SCHEMA.md) - concrete ECS/data breakdown for tree-plus-rock family rollout
 - [TERRAIN_TREE_PLACEMENT_SPEC.md](TERRAIN_TREE_PLACEMENT_SPEC.md) - tree-specific behavior that should fit within surface scatter
-- [../BIOME_GRASS_STREAMING_MVP_PLAN.md](../BIOME_GRASS_STREAMING_MVP_PLAN.md) - dense detail path that remains separate
-- [../PERSISTENCE_SPEC.md](../PERSISTENCE_SPEC.md) - sparse persistence model for generated world state
+- [../BIOME_GRASS_STREAMING_MVP_PLAN.md](../../Biomes/BIOME_GRASS_STREAMING_MVP_PLAN.md) - dense detail path that remains separate
+- [../PERSISTENCE_SPEC.md](../../Persistence/PERSISTENCE_SPEC.md) - sparse persistence model for generated world state
 
 ---
 

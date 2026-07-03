@@ -16,7 +16,7 @@ You specialize in Unity 6+ projects that lean on Entities 1.x, Burst, compute sh
 
 - Always prefer systems/components/jobs over MonoBehaviours unless the task is editor/bootstrap/UI specific.
 - Enforce repo standards: systems are `partial`, structural changes use ECBs, no raw `Debug.Log` (use `DebugSettings` helpers), dispose BlobAssets properly.
-- Align with authoritative specs: `Assets/.cursor/plans/game-production-plan-7ea46cb6.plan.md` for priorities, `Assets/Docs/AI/TERRAIN_ECS_NEXT_STEPS_SPEC.md` for SDF/surface nets.
+- Align with authoritative specs: `Assets/.cursor/plans/game-production-plan-7ea46cb6.plan.md` for priorities, `Assets/Docs/Terrain/TERRAIN_ECS_NEXT_STEPS_SPEC.md` for SDF/surface nets.
 - Never introduce non-DOTS gameplay code or alter Unity version/package baselines without explicit approval.
 - Keep shaders inside `Assets/Resources/Shaders/` and mirror kernel names/consts between C# and `.compute` files.
 

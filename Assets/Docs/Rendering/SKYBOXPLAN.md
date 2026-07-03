@@ -254,6 +254,6 @@ represented/detected at runtime. Until then the fallback (Cloudbreak) is always 
 
 ## References
 
-- [TERRAIN_ECS_NEXT_STEPS_SPEC.md](TERRAIN_ECS_NEXT_STEPS_SPEC.md) — SDF terrain pipeline (sky must not depend on terrain height)
-- [BIOME_GRASS_STREAMING_MVP_PLAN.md](BIOME_GRASS_STREAMING_MVP_PLAN.md) — biome streaming context for future sky color hookup
+- [TERRAIN_ECS_NEXT_STEPS_SPEC.md](../Terrain/TERRAIN_ECS_NEXT_STEPS_SPEC.md) — SDF terrain pipeline (sky must not depend on terrain height)
+- [BIOME_GRASS_STREAMING_MVP_PLAN.md](../Biomes/BIOME_GRASS_STREAMING_MVP_PLAN.md) — biome streaming context for future sky color hookup
 - [MASTER_PLAN.md](../MASTER_PLAN.md) — overall project roadmap

@@ -156,7 +156,7 @@ Audit all terrain and player systems: any `UnityEngine.Random` call in a simulat
 
 ### 4.5 Document the Network Boundary
 
-Create `Assets/Docs/AI/MULTIPLAYER_NETWORK_BOUNDARY.md` listing which components are:
+Create `Assets/Docs/Multiplayer/MULTIPLAYER_NETWORK_BOUNDARY.md` listing which components are:
 - **Simulation-relevant** (will be replicated): `PlayerMovementState`, `PlayerInputComponent`, `PhysicsVelocity`, `SlingshotChargeState`, `ChainSlingshotState`
 - **Client-only** (never replicated): `CameraEffectState`, `CameraEffectConfig`, `ScreenEffectState`, `GlideState` (visual only)
 - **Server-authoritative** (server validates, broadcasts): terrain edits, position corrections

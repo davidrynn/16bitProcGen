@@ -11,7 +11,7 @@
 
 Shrink the scatter LOD swap distance as player speed rises, pushing more tree/rock
 instances to their far (low-poly) mesh during fast flight. The scene is vertex-bound
-with ~92% of frame verts coming from scatter ([../RENDER_PERF_PROFILE_REPORT.md](../RENDER_PERF_PROFILE_REPORT.md)),
+with ~92% of frame verts coming from scatter ([../RENDER_PERF_PROFILE_REPORT.md](../../Rendering/RENDER_PERF_PROFILE_REPORT.md)),
 so a smaller near-band directly cuts the bottleneck. The fidelity loss is perceptually
 cheap: at high airborne speed the player cannot resolve near-mesh detail anyway (motion
 blur / rapid parallax), so detail bought there is wasted.
@@ -119,7 +119,7 @@ speed a small residual pop is further masked by motion.
 ## 6. Related Docs
 
 - [SURFACE_SCATTER_LOD_SPEC.md](SURFACE_SCATTER_LOD_SPEC.md) — base distance LOD this extends
-- [../RENDER_PERF_PROFILE_REPORT.md](../RENDER_PERF_PROFILE_REPORT.md) — vertex-bound profiling evidence
+- [../RENDER_PERF_PROFILE_REPORT.md](../../Rendering/RENDER_PERF_PROFILE_REPORT.md) — vertex-bound profiling evidence
 - `MOVEMENT_PLANNING.md` C2 (speed lines / speed FOV) — the speed-feel windows these defaults align to
 
 ## 7. Open Questions (resolve in-ticket)

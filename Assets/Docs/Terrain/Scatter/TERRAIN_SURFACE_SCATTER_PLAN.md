@@ -64,9 +64,9 @@ This plan does not cover:
 - [TERRAIN_SURFACE_SCATTER_SPEC.md](TERRAIN_SURFACE_SCATTER_SPEC.md) - runtime contract for the shared surface-scatter layer
 - [TERRAIN_SURFACE_SCATTER_SCHEMA.md](TERRAIN_SURFACE_SCATTER_SCHEMA.md) - first ECS/data breakdown for tree-plus-rock family rollout
 - [TERRAIN_TREE_PLACEMENT_SPEC.md](TERRAIN_TREE_PLACEMENT_SPEC.md) - tree-specific placement behavior on the active terrain path
-- [../BIOME_GRASS_STREAMING_MVP_PLAN.md](../BIOME_GRASS_STREAMING_MVP_PLAN.md) - dense detail path that should remain separate from surface scatter
-- [../PERSISTENCE_SPEC.md](../PERSISTENCE_SPEC.md) - sparse divergence and world-state persistence expectations
-- [TERRAIN_MVP_PRIORITY_NOTE.md](TERRAIN_MVP_PRIORITY_NOTE.md) - terrain first, trees and major markers second, grass third
+- [../BIOME_GRASS_STREAMING_MVP_PLAN.md](../../Biomes/BIOME_GRASS_STREAMING_MVP_PLAN.md) - dense detail path that should remain separate from surface scatter
+- [../PERSISTENCE_SPEC.md](../../Persistence/PERSISTENCE_SPEC.md) - sparse divergence and world-state persistence expectations
+- [TERRAIN_MVP_PRIORITY_NOTE.md](../TERRAIN_MVP_PRIORITY_NOTE.md) - terrain first, trees and major markers second, grass third
 
 ---
 
