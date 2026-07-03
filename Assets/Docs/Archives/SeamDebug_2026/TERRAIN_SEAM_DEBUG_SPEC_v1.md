@@ -1,4 +1,7 @@
 # TERRAIN_SEAM_DEBUG_SPEC_v1.md
+
+**Status:** ARCHIVED (2026-07-02) — Historical Reference Only. Investigation completed (see `TERRAIN_SEAM_DEBUG_IMPLEMENTATION_REPORT.md`); moved from `Assets/Docs/AI/` to `Archives/SeamDebug_2026/` (doc cleanup batch D1).
+
 **Project:** Unity 6 DOTS – SDF + Surface Nets Terrain  
 **Goal:** Determine whether visible terrain seams (vertical 90° walls / ring patterns) are caused by
 density sampling mismatches between chunks or by later meshing/rendering stages.

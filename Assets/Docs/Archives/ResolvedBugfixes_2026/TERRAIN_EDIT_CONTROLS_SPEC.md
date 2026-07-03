@@ -1,7 +1,7 @@
 # Terrain Edit Controls + Center-Screen Reticle Spec
 
 **Date:** 2026-02-15
-**Status:** IMPLEMENTED — awaiting runtime validation of terrain editing (reticle verified)
+**Status:** ARCHIVED (2026-07-02) — IMPLEMENTED (reticle verified). Moved from `Assets/Docs/AI/` to `Archives/ResolvedBugfixes_2026/` (doc cleanup batch D3).
 
 ---
 

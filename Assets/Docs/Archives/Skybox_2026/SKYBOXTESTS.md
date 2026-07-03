@@ -1,6 +1,6 @@
 # Minimal Procedural Gradient Sky — Test Plan
 
-_Status: DESIGN — Phase 1 test definitions_
+_Status: ARCHIVED (2026-07-02) — Phase 1/2 complete; forward work lives in `AI/ATMOSPHERE_COLOR_AUTHORITY_SPEC.md`. Moved from `Assets/Docs/AI/` to `Archives/Skybox_2026/` (doc cleanup batch D2)._
 _Last updated: 2026-04-06_
 _Depends on: [SKYBOXSPEC.md](SKYBOXSPEC.md)_
 

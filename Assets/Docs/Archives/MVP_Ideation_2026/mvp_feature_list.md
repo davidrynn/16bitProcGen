@@ -1,5 +1,7 @@
 # MVP Feature List (Lean but Powerful)
 
+**Status:** ARCHIVED (2026-07-02) — stale ideation, superseded by `AI/MVP_VISTA_MOMENT_SPEC.md` and `Biomes/Windswept_Colossus_Plains_Biome_Spec.md`. Moved from `Assets/Docs/mvp/` to `Archives/MVP_Ideation_2026/` (doc cleanup batch D7).
+
 ## Goal
 
 Validate that players enjoy movement + generative building + alignment

@@ -1,3 +1,9 @@
+# ISystem Usage Report
+
+**Status:** ARCHIVED (2026-07-02) — Historical Reference Only (point-in-time grep audit). Moved from `Assets/Docs/` root to `Archives/RootLegacy_2026/` (doc cleanup batch D6).
+
+---
+
 | C:\UnityWorkspace\16bitProcGen\Assets\Scripts\DOTS\Core\ChunkProcessor.cs | 9 | public partial struct ChunkProcessor : ISystem |
 | C:\UnityWorkspace\16bitProcGen\Assets\Scripts\DOTS\Debug\SystemDiscoveryTool.cs | 25 | [Tooltip("Show unmanaged systems (ISystem)")] |
 | C:\UnityWorkspace\16bitProcGen\Assets\Scripts\DOTS\Debug\SystemDiscoveryTool.cs | 61 | Unmanaged,  // ISystem |

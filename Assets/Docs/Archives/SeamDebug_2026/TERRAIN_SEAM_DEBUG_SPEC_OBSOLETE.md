@@ -1,5 +1,7 @@
 # TERRAIN_SEAM_DEBUG_SPEC.md [OBSOLETE]
 
+> **Status:** ARCHIVED (2026-07-02) — moved from `Assets/Docs/AI/` to `Archives/SeamDebug_2026/` (doc cleanup batch D1); lineage concluded, see `TERRAIN_SEAM_DEBUG_IMPLEMENTATION_REPORT.md` for outcome.
+
 > **STATUS: OBSOLETE**
 >
 > This comprehensive spec has been replaced by two focused specs:

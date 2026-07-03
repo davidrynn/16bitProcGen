@@ -395,7 +395,7 @@ When `impostorBillboardAtlas != null`, bootstrap refuses to start unless `impost
 ## 14. Related Docs
 
 - [RELIC_LOD_IMPOSTOR_SPEC.md](RELIC_LOD_IMPOSTOR_SPEC.md) — the LOD swap machinery this spec plugs into
-- [RELIC_RENDER_REFACTOR_SPEC.md](RELIC_RENDER_REFACTOR_SPEC.md) — per-entity render path prerequisite
+- [RELIC_RENDER_REFACTOR_SPEC.md](../../Archives/StructurePlacement_2026/RELIC_RENDER_REFACTOR_SPEC.md) (archived) — per-entity render path prerequisite
 - [STRUCTURE_PLACEMENT_SPEC.md](STRUCTURE_PLACEMENT_SPEC.md) — §12.5.2 Relic Realizer
 - [../HORIZON_IMPOSTOR_SEED_DRIVEN_SPEC.md](../HORIZON_IMPOSTOR_SEED_DRIVEN_SPEC.md) — sibling far-horizon system (separate scope: terrain silhouette, not per-landmark billboards)
 - [../../KNOWN_ISSUES.md](../../KNOWN_ISSUES.md) — BUG-016 relic rendering artifact (resolved by LOD spec; billboard is visual polish on top)

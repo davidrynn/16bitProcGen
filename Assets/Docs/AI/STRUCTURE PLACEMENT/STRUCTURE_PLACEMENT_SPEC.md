@@ -305,7 +305,7 @@ The dungeon realizer bridges to the existing `HybridWFCSystem`. Two known issues
 #### 12.5.2 Relic Realizer
 
 - spawns one ECS entity per accepted relic anchor with Entities Graphics render components (`RenderMeshArray`, `MaterialMeshInfo`, `RenderBounds`, `LocalToWorld`)
-- per-entity `RenderBounds` for correct individual frustum culling (required for large-scale meshes; batch `RenderMeshInstanced` is unsuitable — see [RELIC_RENDER_REFACTOR_SPEC.md](RELIC_RENDER_REFACTOR_SPEC.md))
+- per-entity `RenderBounds` for correct individual frustum culling (required for large-scale meshes; batch `RenderMeshInstanced` is unsuitable — see [RELIC_RENDER_REFACTOR_SPEC.md](../../Archives/StructurePlacement_2026/RELIC_RENDER_REFACTOR_SPEC.md) (archived))
 - tracks realized entities via `StructureRealizedTag.StableAnchorId` for lifecycle cleanup
 - entity structure provides the natural hook for future LOD/impostor distance switching
 

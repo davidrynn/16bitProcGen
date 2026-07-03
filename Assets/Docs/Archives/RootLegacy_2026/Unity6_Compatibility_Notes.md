@@ -1,5 +1,7 @@
 # Unity 6 DOTS Compatibility Fixes
 
+**Status:** ARCHIVED (2026-07-02) — Historical Reference Only (fixes long since merged). Moved from `Assets/Docs/` root to `Archives/RootLegacy_2026/` (doc cleanup batch D6).
+
 ## Issues Fixed
 
 ### 1. PhysicsSystemGroup Error

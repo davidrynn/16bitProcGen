@@ -1,5 +1,6 @@
 # Relic Render Refactor Spec
-_Status: IMPLEMENTED_
+_Status: ARCHIVED (2026-07-02) — IMPLEMENTED; superseded by `RELIC_LOD_IMPOSTOR_SPEC.md` §8. Moved from `Assets/Docs/AI/STRUCTURE PLACEMENT/` to `Archives/StructurePlacement_2026/` (doc cleanup batch D4)._
+_Superseded By: [RELIC_LOD_IMPOSTOR_SPEC.md](../../AI/STRUCTURE%20PLACEMENT/RELIC_LOD_IMPOSTOR_SPEC.md)_
 _Last updated: 2026-04-16_
 _Owner: Structures / Rendering_
 _Supersedes: MVP Step 3 rendering approach in STRUCTURE_PLACEMENT_PLAN.md_

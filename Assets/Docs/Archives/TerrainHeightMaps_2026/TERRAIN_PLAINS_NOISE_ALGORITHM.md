@@ -1,5 +1,5 @@
 # Plains Terrain — Noise Algorithm and Starting Values
-_Status: COMPLETE — all values adopted by TERRAIN_PLAINS_TREES_MVP_CHECKLIST.md_
+_Status: ARCHIVED (2026-07-02) — COMPLETE; all values adopted by `TERRAIN_PLAINS_TREES_MVP_CHECKLIST.md`. Moved from `Assets/Docs/AI/TerrainHeightMaps/` to `Archives/TerrainHeightMaps_2026/` (doc cleanup batch D5)._
 _Last updated: 2026-04-10_
 
 ---

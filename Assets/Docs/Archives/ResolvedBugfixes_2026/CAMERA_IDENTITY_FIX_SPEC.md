@@ -1,5 +1,7 @@
 # Camera Identity Mismatch Fix SPEC
 
+**Status:** ARCHIVED (2026-07-02) — confirmed fixed 2026-02; Historical Reference Only. Moved from `Assets/Docs/AI/` to `Archives/ResolvedBugfixes_2026/` (doc cleanup batch D3).
+
 **Purpose**
 
 Fix BUG-003 (reticle not visible) and the aim-not-following-player aspect of BUG-004 by resolving the `Camera.main` identity mismatch. Multiple systems assume `Camera.main` is the player-controlled camera, but it resolves to a static scene camera instead.

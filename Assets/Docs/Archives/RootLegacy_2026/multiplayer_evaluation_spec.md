@@ -1,5 +1,8 @@
 # Multiplayer Evaluation & Future-Proofing Spec
 
+**Status:** ARCHIVED (2026-07-02) — Historical Reference Only.
+**Superseded By:** `AI/MULTIPLAYER_SPEC.md`. Moved from `Assets/Docs/` root to `Archives/RootLegacy_2026/` (doc cleanup batch D6).
+
 ## Context
 
 Game features under consideration:

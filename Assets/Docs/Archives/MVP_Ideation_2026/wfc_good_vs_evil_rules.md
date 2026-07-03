@@ -1,5 +1,7 @@
 # WFC Rules Ideas for Good vs Evil Architecture
 
+**Status:** ARCHIVED (2026-07-02) — stale ideation, not adopted into active WFC specs. Moved from `Assets/Docs/mvp/` to `Archives/MVP_Ideation_2026/` (doc cleanup batch D7).
+
 ## Design Principle for WFC Rules
 
 Do NOT randomize everything.

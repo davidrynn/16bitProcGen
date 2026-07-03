@@ -110,7 +110,6 @@ Full design: [`Archives/TerrainDesign/Stylized_Procedural_Terrain_System_Design.
 |----------|---------|
 | [`Assets/Docs/SDF_SurfaceNets_ECS_Overview.md`](SDF_SurfaceNets_ECS_Overview.md) | SDF terrain architecture overview |
 | [`Assets/Docs/ArtAndDOTS_Pipeline.md`](ArtAndDOTS_Pipeline.md) | 16-bit art + DOTS integration guide |
-| [`Assets/Docs/Unity6_Compatibility_Notes.md`](Unity6_Compatibility_Notes.md) | Unity 6 DOTS compatibility fixes |
 | [`Assets/Docs/PROJECT_STRUCTURE_DOTS.md`](PROJECT_STRUCTURE_DOTS.md) | DOTS-first folder layout reference |
 
 ### Archived — Historical / Superseded
@@ -120,6 +119,7 @@ Full design: [`Archives/TerrainDesign/Stylized_Procedural_Terrain_System_Design.
 | [`Archives/AI_Instructions.md`](Archives/AI_Instructions.md) | Superseded by `CLAUDE.md` |
 | [`Archives/DOTS_Migration_Plan.md`](Archives/DOTS_Migration_Plan.md) | Legacy heightmap migration; SDF pipeline is now primary |
 | [`Archives/PROJECT_NOTES_2025-11.md`](Archives/PROJECT_NOTES_2025-11.md) | Nov 2025 session notes (camera system, test org) |
+| [`Archives/RootLegacy_2026/Unity6_Compatibility_Notes.md`](Archives/RootLegacy_2026/Unity6_Compatibility_Notes.md) | Unity 6 compatibility fixes long since merged (2026-07-02 doc cleanup) |
 
 ---
 

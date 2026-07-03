@@ -96,7 +96,7 @@ The 2–3× scene gap suggests features unique to BasicTerrainScene account for 
 **Severity:** High
 **Affected Systems:** `TerrainEditInputSystem`, `PlayerGroundingSystem`, `PlayerCameraSystem`, terrain collider lifecycle
 **Related:** BUG-003 (shared root cause confirmed for aim-not-following-player)
-**Spec:** [CAMERA_IDENTITY_FIX_SPEC.md](AI/CAMERA_IDENTITY_FIX_SPEC.md) (aim fix); BlobAsset error is separate
+**Spec:** [CAMERA_IDENTITY_FIX_SPEC.md](Archives/ResolvedBugfixes_2026/CAMERA_IDENTITY_FIX_SPEC.md) (aim fix); BlobAsset error is separate
 
 **Symptoms:**
 - Add/remove interaction triggers `InvalidOperationException` related to invalid `BlobAssetReference` during `physicsWorld.CastRay()`
@@ -377,7 +377,7 @@ Replace `mesh.RecalculateNormals()` with **SDF-gradient-based analytical normals
 **Status:** RESOLVED — per-entity rendering + LOD impostor swap implemented (2026-04-24). Billboard impostor mesh not yet authored; full-mesh fallback active until art asset lands.
 **Severity:** Medium (visual)
 **Affected Systems:** `RelicRealizationSystem`, `RelicLodSelectionSystem`, `DotsSystemBootstrap` (fog)
-**Specs:** [RELIC_RENDER_REFACTOR_SPEC.md](AI/STRUCTURE%20PLACEMENT/RELIC_RENDER_REFACTOR_SPEC.md), [RELIC_LOD_IMPOSTOR_SPEC.md](AI/STRUCTURE%20PLACEMENT/RELIC_LOD_IMPOSTOR_SPEC.md)
+**Specs:** [RELIC_RENDER_REFACTOR_SPEC.md](Archives/StructurePlacement_2026/RELIC_RENDER_REFACTOR_SPEC.md), [RELIC_LOD_IMPOSTOR_SPEC.md](AI/STRUCTURE%20PLACEMENT/RELIC_LOD_IMPOSTOR_SPEC.md)
 
 **Symptoms:**
 - At moderate-to-far camera distance, the relic mesh partially disappears in a spherical clipping pattern
@@ -412,9 +412,9 @@ Replace `mesh.RecalculateNormals()` with **SDF-gradient-based analytical normals
 | ID | Title | Priority | Spec |
 |----|-------|----------|------|
 | INV-001 | Terrain banding visual artifacts | Medium | [TERRAIN_BANDING_DIAGNOSTIC_SPEC.md](AI/TERRAIN_BANDING_DIAGNOSTIC_SPEC.md) |
-| INV-002 | Degenerate mesh triangles in Surface Nets output | Medium | [PLAYER_TERRAIN_FALLTHROUGH_DEBUG_SPEC.md](AI/PLAYER_TERRAIN_FALLTHROUGH_DEBUG_SPEC.md) (H4) |
-| INV-003 | Raycast origin vs capsule bottom mismatch on slopes | Low | [PLAYER_TERRAIN_FALLTHROUGH_DEBUG_SPEC.md](AI/PLAYER_TERRAIN_FALLTHROUGH_DEBUG_SPEC.md) (H3) |
-| INV-004 | Physics tunneling at high downward velocity | Low | [PLAYER_TERRAIN_FALLTHROUGH_DEBUG_SPEC.md](AI/PLAYER_TERRAIN_FALLTHROUGH_DEBUG_SPEC.md) (H5) |
+| INV-002 | Degenerate mesh triangles in Surface Nets output | Medium | [PLAYER_TERRAIN_FALLTHROUGH_DEBUG_SPEC.md](Archives/ResolvedBugfixes_2026/PLAYER_TERRAIN_FALLTHROUGH_DEBUG_SPEC.md) (H4) |
+| INV-003 | Raycast origin vs capsule bottom mismatch on slopes | Low | [PLAYER_TERRAIN_FALLTHROUGH_DEBUG_SPEC.md](Archives/ResolvedBugfixes_2026/PLAYER_TERRAIN_FALLTHROUGH_DEBUG_SPEC.md) (H3) |
+| INV-004 | Physics tunneling at high downward velocity | Low | [PLAYER_TERRAIN_FALLTHROUGH_DEBUG_SPEC.md](Archives/ResolvedBugfixes_2026/PLAYER_TERRAIN_FALLTHROUGH_DEBUG_SPEC.md) (H5) |
 | INV-005 | Parallel/dead terrain code stacks | Low | [TERRAIN_SYSTEMS_CODE_AUDIT.md](/TERRAIN_SYSTEMS_CODE_AUDIT.md) |
 
 ---
@@ -445,7 +445,7 @@ Replace `mesh.RecalculateNormals()` with **SDF-gradient-based analytical normals
 **Severity:** High
 **Affected Systems:** `ReticleBootstrap`, `PlayerCameraSystem`, UI rendering path
 **Related:** BUG-004 (shared root cause confirmed)
-**Spec:** [CAMERA_IDENTITY_FIX_SPEC.md](AI/CAMERA_IDENTITY_FIX_SPEC.md)
+**Spec:** [CAMERA_IDENTITY_FIX_SPEC.md](Archives/ResolvedBugfixes_2026/CAMERA_IDENTITY_FIX_SPEC.md)
 
 **Root Cause:** `ReticleBootstrap` bound to `Camera.main`, but `PlayerCameraSystem` managed a specific camera entity via `SystemAPI.ManagedAPI.GetComponent<Camera>()` — never going through `Camera.main`. The reticle was parented to a static/wrong camera and invisible from the player's viewpoint.
 
@@ -520,7 +520,7 @@ Replace `mesh.RecalculateNormals()` with **SDF-gradient-based analytical normals
 
 **Status:** FIXED (2026-02-15)
 **Severity:** Critical
-**Spec:** [PLAYER_TERRAIN_FALLTHROUGH_DEBUG_SPEC.md](AI/PLAYER_TERRAIN_FALLTHROUGH_DEBUG_SPEC.md)
+**Spec:** [PLAYER_TERRAIN_FALLTHROUGH_DEBUG_SPEC.md](Archives/ResolvedBugfixes_2026/PLAYER_TERRAIN_FALLTHROUGH_DEBUG_SPEC.md)
 
 **Root Cause:** Terrain chunk entities had `PhysicsCollider` but no `PhysicsWorldIndex`, making them invisible to the physics broadphase. Fixed by adding `PhysicsWorldIndex` in `TerrainChunkColliderBuildSystem.ApplyCollider`.
 
@@ -534,7 +534,7 @@ Replace `mesh.RecalculateNormals()` with **SDF-gradient-based analytical normals
 ### BUG-R002: Terrain seam artifacts
 
 **Status:** INVESTIGATED — no chunk-related issues found (2026-01-20)
-**Spec:** [TERRAIN_SEAM_DEBUG_SPEC_v1.md](AI/TERRAIN_SEAM_DEBUG_SPEC_v1.md), [TERRAIN_SEAM_DEBUG_MESH_SPEC.md](AI/TERRAIN_SEAM_DEBUG_MESH_SPEC.md)
+**Spec:** [TERRAIN_SEAM_DEBUG_SPEC_v1.md](Archives/SeamDebug_2026/TERRAIN_SEAM_DEBUG_SPEC_v1.md), [TERRAIN_SEAM_DEBUG_MESH_SPEC.md](Archives/SeamDebug_2026/TERRAIN_SEAM_DEBUG_MESH_SPEC.md)
 
 **Finding:** Seam validator systems found no mismatched vertices at chunk boundaries. Visual artifacts are from flat-shaded normals; recommendation is smooth normal generation.
 
@@ -545,7 +545,7 @@ Replace `mesh.RecalculateNormals()` with **SDF-gradient-based analytical normals
 **Status:** FIXED (confirmed in Play mode, 2026-02-16)
 **Severity:** Medium
 **Affected Systems:** `PlayerTerrainSafetySystem`, `DotsSystemBootstrap`
-**Spec:** [PLAYER_TERRAIN_FALLTHROUGH_DEBUG_SPEC.md](AI/PLAYER_TERRAIN_FALLTHROUGH_DEBUG_SPEC.md) (Phase 8)
+**Spec:** [PLAYER_TERRAIN_FALLTHROUGH_DEBUG_SPEC.md](Archives/ResolvedBugfixes_2026/PLAYER_TERRAIN_FALLTHROUGH_DEBUG_SPEC.md) (Phase 8)
 
 **Root Cause:** Safety raycasts were sensitive to near-ground contacts and triggered false positives during normal movement/landing.
 

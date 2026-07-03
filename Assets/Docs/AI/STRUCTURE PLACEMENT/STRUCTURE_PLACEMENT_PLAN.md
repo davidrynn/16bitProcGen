@@ -171,7 +171,7 @@ The full 6-phase plan (§8.1) remains the long-term target. This MVP cut gets st
 
 ### MVP Step 3 — Relic Realizer (simplest family)
 
-> **Rendering refactor (2026-04-16):** The initial MVP implementation used `Graphics.RenderMeshInstanced` for batch rendering. This caused a frustum culling artifact ("globe eating") on the 15x-scaled relic mesh due to a single `worldBounds` AABB for the entire batch. See [RELIC_RENDER_REFACTOR_SPEC.md](RELIC_RENDER_REFACTOR_SPEC.md) for full diagnosis and the replacement design.
+> **Rendering refactor (2026-04-16):** The initial MVP implementation used `Graphics.RenderMeshInstanced` for batch rendering. This caused a frustum culling artifact ("globe eating") on the 15x-scaled relic mesh due to a single `worldBounds` AABB for the entire batch. See [RELIC_RENDER_REFACTOR_SPEC.md](../../Archives/StructurePlacement_2026/RELIC_RENDER_REFACTOR_SPEC.md) (archived) for full diagnosis and the replacement design.
 
 - `RelicRealizationSystem` — spawns one ECS entity per accepted relic anchor with Entities Graphics render components (`RenderMeshArray`, `MaterialMeshInfo`, `RenderBounds`, `LocalToWorld`)
 - Each entity has per-entity `RenderBounds` for correct individual frustum culling

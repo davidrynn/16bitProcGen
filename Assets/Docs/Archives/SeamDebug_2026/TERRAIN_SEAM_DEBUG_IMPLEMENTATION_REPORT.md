@@ -1,4 +1,7 @@
 # Terrain Seam Debug Implementation Report
+
+**Status:** ARCHIVED (2026-07-02) — Historical Reference Only. Moved from `Assets/Docs/AI/` to `Archives/SeamDebug_2026/` (doc cleanup batch D1).
+
 **Branch:** `debug/terrain-seams-v1`  
 **Date:** 2026-01-20  
 **Spec:** TERRAIN_SEAM_DEBUG_SPEC_v1.md  

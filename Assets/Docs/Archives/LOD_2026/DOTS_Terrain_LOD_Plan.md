@@ -1,6 +1,7 @@
 # DOTS Terrain LOD Plan
 
 Date: 2026-04-06
+Status: ARCHIVED (2026-07-02) — superseded by `DOTS_Terrain_LOD_SPEC.md` (root), which is now the sole LOD source of truth. The edit-authoritative LOD0 promotion policy (§6) was merged into that spec's "Merged from Superseded Docs" section before archiving. Moved from `Assets/Docs/AI/` to `Archives/LOD_2026/` (doc cleanup batch D8).
 Scope: SDF + Surface Nets terrain pipeline in DOTS/ECS
 
 ## 1. Goals

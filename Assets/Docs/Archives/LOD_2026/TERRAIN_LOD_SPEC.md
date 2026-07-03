@@ -1,7 +1,7 @@
 # Terrain LOD Implementation Spec
 
 Date: 2026-04-06
-Status: Ready for implementation
+Status: ARCHIVED (2026-07-02) — superseded by `DOTS_Terrain_LOD_SPEC.md` (root), which is now the sole LOD source of truth. Unique implementation notes (namespace, neighbor-clamp approach, debug flag) were merged into that spec's "Merged from Superseded Docs" section before archiving. Moved from `Assets/Docs/AI/` to `Archives/LOD_2026/` (doc cleanup batch D8).
 Depends on: DOTS_Terrain_LOD_Plan.md
 
 ## Overview

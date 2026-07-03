@@ -1,7 +1,7 @@
 # CURSOR: Namespace Flattening Refactor - DOTS.Terrain.SDF → DOTS.Terrain
 
 **Date:** 2025-12-28  
-**Status:** ✅ COMPLETE (Namespace Flattening + Assembly Reorganization)  
+**Status:** ARCHIVED (2026-07-02) — ✅ COMPLETE (Namespace Flattening + Assembly Reorganization). Moved from `Assets/Docs/` root to `Archives/RootLegacy_2026/` (doc cleanup batch D6).  
 **Purpose:** Flatten the `DOTS.Terrain.SDF` namespace into `DOTS.Terrain` since SDF is the current/primary terrain system.
 
 ## Rationale

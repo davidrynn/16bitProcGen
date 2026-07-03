@@ -326,7 +326,7 @@ Leave a single `forceLog = true` info line on the first LOD transition per sessi
 
 - [STRUCTURE_PLACEMENT_PLAN.md](STRUCTURE_PLACEMENT_PLAN.md)
 - [STRUCTURE_PLACEMENT_SPEC.md](STRUCTURE_PLACEMENT_SPEC.md) — §12.5.2 Relic Realizer
-- [RELIC_RENDER_REFACTOR_SPEC.md](RELIC_RENDER_REFACTOR_SPEC.md) — §8 Future Hook, superseded by this spec
+- [RELIC_RENDER_REFACTOR_SPEC.md](../../Archives/StructurePlacement_2026/RELIC_RENDER_REFACTOR_SPEC.md) (archived) — §8 Future Hook, superseded by this spec
 - [RELIC_BILLBOARD_IMPOSTOR_SPEC.md](RELIC_BILLBOARD_IMPOSTOR_SPEC.md) — follow-up that replaces the MVP scaled-mesh impostor with a pre-baked camera-facing billboard
 - [../../KNOWN_ISSUES.md](../../KNOWN_ISSUES.md) — BUG-016 relic rendering artifact
 - [../HORIZON_IMPOSTOR_SEED_DRIVEN_SPEC.md](../HORIZON_IMPOSTOR_SEED_DRIVEN_SPEC.md) — complementary far-horizon rendering plan

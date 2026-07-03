@@ -1,4 +1,7 @@
 # TERRAIN_SEAM_DEBUG_MESH_SPEC.md
+
+**Status:** ARCHIVED (2026-07-02) — Historical Reference Only. Investigation completed (see `TERRAIN_SEAM_DEBUG_IMPLEMENTATION_REPORT.md`); moved from `Assets/Docs/AI/` to `Archives/SeamDebug_2026/` (doc cleanup batch D1).
+
 **Project:** Unity 6 DOTS – SDF + Surface Nets Terrain
 **Prerequisite:** TERRAIN_SEAM_DEBUG_SPEC_v1.md completed – density sampling validated as correct
 **Goal:** Determine whether visible terrain seams are caused by Surface Nets meshing, normal calculation, winding order, or mesh upload.

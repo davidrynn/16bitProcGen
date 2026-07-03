@@ -2,7 +2,7 @@
 
 **Date:** 2026-02-08
 **Updated:** 2026-02-15
-**Status:** ROOT CAUSE CONFIRMED + FIXED. Terrain colliders lacked `PhysicsWorldIndex` — invisible to physics broadphase. Runtime validated.
+**Status:** ARCHIVED (2026-07-02) — ROOT CAUSE CONFIRMED + FIXED. Terrain colliders lacked `PhysicsWorldIndex` — invisible to physics broadphase. Runtime validated. Moved from `Assets/Docs/AI/` to `Archives/ResolvedBugfixes_2026/` (doc cleanup batch D3).
 **Bug:** Player intermittently falls through terrain mesh during movement. The issue appears more likely when terrain height increases (uphill movement).
 
 ---
