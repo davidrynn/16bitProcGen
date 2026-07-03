@@ -399,4 +399,4 @@ When `impostorBillboardAtlas != null`, bootstrap refuses to start unless `impost
 - [STRUCTURE_PLACEMENT_SPEC.md](STRUCTURE_PLACEMENT_SPEC.md) — §12.5.2 Relic Realizer
 - [../HORIZON_IMPOSTOR_SEED_DRIVEN_SPEC.md](../HORIZON_IMPOSTOR_SEED_DRIVEN_SPEC.md) — sibling far-horizon system (separate scope: terrain silhouette, not per-landmark billboards)
 - [../../KNOWN_ISSUES.md](../../KNOWN_ISSUES.md) — BUG-016 relic rendering artifact (resolved by LOD spec; billboard is visual polish on top)
-- [../../ArtAndDOTS_Pipeline.md](../../ArtAndDOTS_Pipeline.md) — 16-bit art conventions (Point filter, palette)
+- [../ArtAndDOTS_Pipeline.md](../ArtAndDOTS_Pipeline.md) — 16-bit art conventions (Point filter, palette)

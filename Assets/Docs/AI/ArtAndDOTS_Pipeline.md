@@ -1,5 +1,8 @@
 ## 16‑bit Art Direction and DOTS Integration Guide
 
+**Status:** REFERENCE (agent asset-pipeline guide)
+**Last Updated:** 2025-08-14
+
 This guide covers how to author assets for a stylized “16‑bit” low‑poly look (akin to Dredge / Caravan SandWitch / Hyper Light Drifter aesthetics) and integrate them into Unity DOTS (Entities Graphics) efficiently.
 
 ### Goals

@@ -239,7 +239,7 @@ A low distant ridge should enclose the plain so the 2–10 km view ends at a sil
 
 ## Landmark Integration
 
-Landmark content (what relics exist) is owned by the structure placement specs (`AI/STRUCTURE PLACEMENT/`). This biome hosts:
+Landmark content (what relics exist) is owned by the structure placement specs (`AI/STRUCTURE_PLACEMENT/`). This biome hosts:
 
 - Giant buried hands, colossal skulls, broken towers, ancient machines, massive craters, buried arches.
 - **Scale:** major landmarks 50–250 m — large enough to dwarf the 10–60 m terrain relief.
@@ -317,5 +317,5 @@ Every discovery should be visible from a great distance and naturally pull the p
 - `AI/TerrainHeightMaps/TERRAIN_SURFACE_SCATTER_SPEC.md` — scatter runtime contract
 - `AI/BIOME_GRASS_STREAMING_MVP_PLAN.md` / `GrassBiomeSettings` — grass system this spec parameterizes
 - `AI/BIOME_TERRAIN_FIELD_SPEC.md` — post-MVP biome selection fields
-- `AI/STRUCTURE PLACEMENT/STRUCTURE_PLACEMENT_SPEC.md` — landmark placement consuming the seating hooks
+- `AI/STRUCTURE_PLACEMENT/STRUCTURE_PLACEMENT_SPEC.md` — landmark placement consuming the seating hooks
 - `AI/GROUND_PLANE_IMPOSTOR_SPEC.md`, `AI/HORIZON_IMPOSTOR_SEED_DRIVEN_SPEC.md`, `AI/MVP_VISTA_MOMENT_SPEC.md` — vista stack this biome plugs into

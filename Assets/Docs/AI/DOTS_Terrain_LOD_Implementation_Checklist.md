@@ -1,5 +1,8 @@
 # DOTS Terrain LOD Implementation Checklist
 
+**Status:** ACTIVE
+**Last Updated:** 2026-04-07
+
 Date: 2026-04-07
 Source of truth: Assets/Docs/DOTS_Terrain_LOD_SPEC.md (revised)
 Scope: SDF + Surface Nets DOTS terrain path

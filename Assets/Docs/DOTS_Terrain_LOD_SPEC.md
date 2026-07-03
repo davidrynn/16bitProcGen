@@ -1,5 +1,8 @@
 # DOTS Terrain LOD System Specification
 
+**Status:** ACTIVE — sole source of truth for terrain LOD (sibling checklist: `AI/DOTS_Terrain_LOD_Implementation_Checklist.md`)
+**Last Updated:** 2026-07-02
+
 ## Goals
 
 Create a scalable terrain Level of Detail (LOD) system for an infinite procedural world using Unity DOTS that:

@@ -344,5 +344,5 @@ Follow the project's review-gated sequence. Stop after each step and wait for re
 | [`AI/TERRAIN_ECS_NEXT_STEPS_SPEC.md`](TERRAIN_ECS_NEXT_STEPS_SPEC.md) | Active SDF pipeline this spec extends |
 | [`AI/BIOME_GRASS_STREAMING_MVP_PLAN.md`](BIOME_GRASS_STREAMING_MVP_PLAN.md) | Grass system that consumes `TerrainChunkBiomeContext.Region` |
 | [`AI/MVP_VISTA_MOMENT_SPEC.md`](MVP_VISTA_MOMENT_SPEC.md) | Phase 1 prerequisite — must be deliverable before this work starts |
-| [`AI/STRUCTURE PLACEMENT/STRUCTURE_PLACEMENT_SPEC.md`](STRUCTURE%20PLACEMENT/STRUCTURE_PLACEMENT_SPEC.md) | Structure pipeline that rare features (fissures, craters) integrate with |
+| [`AI/STRUCTURE_PLACEMENT/STRUCTURE_PLACEMENT_SPEC.md`](STRUCTURE_PLACEMENT/STRUCTURE_PLACEMENT_SPEC.md) | Structure pipeline that rare features (fissures, craters) integrate with |
 | [`Archives/TerrainDesign/Stylized_Procedural_Terrain_System_Design.md`](../Archives/TerrainDesign/Stylized_Procedural_Terrain_System_Design.md) | Original archived vision — temperature/moisture/elevation concept superseded by this spec |

@@ -1,5 +1,6 @@
 # Project Notes — Scratchpad
 
+**Status:** ACTIVE
 **Last Updated:** 2026-04-23
 
 Lightweight scratchpad for current session notes, quick TODOs, and observations that don't yet belong in a spec or bug report. Anything durable should migrate to the appropriate document below.

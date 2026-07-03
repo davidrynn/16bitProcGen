@@ -1,5 +1,8 @@
 # Tickets
 
+**Status:** ACTIVE
+**Last Updated:** 2026-07-02
+
 Lightweight task tracker. Status: `[ ]` pending · `[x]` done · `[-]` blocked
 
 ---
@@ -92,7 +95,7 @@ so the four-finger hand reads from ~200–400u. Per `MVP_VISTA_MOMENT_SPEC.md` �
 #### V5 — Relic → WFC maze interior _(deferred — out of MVP "look at" scope, 2026-06-29)_
 Connect the relic anchor to WFC dungeon interior generation so the hand is enterable. Bridges structure
 placement to the existing WFC pipeline — reuses the dungeon realizer path. Depends on the WFC bootstrap +
-deterministic-seed fixes noted in `AI/STRUCTURE PLACEMENT/STRUCTURE_PLACEMENT_SPEC.md` §12.5.1. See
+deterministic-seed fixes noted in `AI/STRUCTURE_PLACEMENT/STRUCTURE_PLACEMENT_SPEC.md` §12.5.1. See
 `WFC/MAP_WFC.md`, `WFC_Dungeon_Test_Plan.md`.
 
 #### V6 — Time-of-day + biome-dependent sky & tracking fog
@@ -388,7 +391,7 @@ _Tickets for later sprints — not yet scheduled._
 | M4  | BUG: Ballistic-takeoff false-grounding past jump apex — suppress by contact/separation, not velocity sign | Movement |
 | P1  | Basic HUD (charge indicator + chain window indicator) | Phase 1 |
 | P2  | Magic Hand System (raycast, charge, binary terrain edit) | Phase 1 |
-| W1  | Magic power grid (placeholder — see `AI/STRUCTURE PLACEMENT/MAGIC_GRID_SPEC.md`) | Phase 2 / World Power |
+| W1  | Magic power grid (placeholder — see `AI/STRUCTURE_PLACEMENT/MAGIC_GRID_SPEC.md`) | Phase 2 / World Power |
 | R1  | Low-poly tree/rock LODs + enable relic LOD | Rendering |
 | R2  | Speed-biased scatter LOD (drop detail during fast airborne movement) | Rendering |
 | R3  | Camera-specific scatter LOD bucketing (multi-camera correctness) | Rendering |
@@ -465,7 +468,7 @@ Non-blocking gaps surfaced reviewing the surface-scatter-LOD commit. None cause 
 ---
 
 ### W1 — Magic power grid _(placeholder — design-stage, not yet broken into tickets)_
-**Spec:** `AI/STRUCTURE PLACEMENT/MAGIC_GRID_SPEC.md` (DESIGN). Analytic world-space XZ lattice: power-source nodes, WFC-build-on-node affordance, sparse claimed-node alignment state, per-template `NodeAffinity`, universal influence query. Decisions captured in the spec; §13 lists the open questions to resolve before build.
+**Spec:** `AI/STRUCTURE_PLACEMENT/MAGIC_GRID_SPEC.md` (DESIGN). Analytic world-space XZ lattice: power-source nodes, WFC-build-on-node affordance, sparse claimed-node alignment state, per-template `NodeAffinity`, universal influence query. Decisions captured in the spec; §13 lists the open questions to resolve before build.
 
 **Not scheduled — sequences behind its foundation.** Don't break into tickets until Structure Placement is on the board:
 - Depends on the **Structure Placement** anchor pipeline (`STRUCTURE_PLACEMENT_PLAN.md` §8 Steps 1–3) — the grid is a candidate-source variant reusing its `StructureAnchorRecord` / footprint / persistence machinery.

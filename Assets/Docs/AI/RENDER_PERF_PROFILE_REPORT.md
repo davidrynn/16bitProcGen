@@ -68,7 +68,7 @@ Vertices outnumber triangles **2.2 : 1** — heavy vertex duplication inherent t
 
 - [TerrainHeightMaps/SURFACE_SCATTER_LOD_SPEC.md](TerrainHeightMaps/SURFACE_SCATTER_LOD_SPEC.md) — **the fix**: distance-based mesh swap implementing recommendation #1
 - [TerrainHeightMaps/TERRAIN_SURFACE_SCATTER_SPEC.md](TerrainHeightMaps/TERRAIN_SURFACE_SCATTER_SPEC.md) — trees/rocks scatter runtime contract (the geometry profiled here)
-- [STRUCTURE PLACEMENT/RELIC_LOD_IMPOSTOR_SPEC.md](STRUCTURE%20PLACEMENT/RELIC_LOD_IMPOSTOR_SPEC.md) — implemented distance LOD/impostor precedent to mirror for scatter
+- [STRUCTURE_PLACEMENT/RELIC_LOD_IMPOSTOR_SPEC.md](STRUCTURE_PLACEMENT/RELIC_LOD_IMPOSTOR_SPEC.md) — implemented distance LOD/impostor precedent to mirror for scatter
 - [DOTS_Terrain_LOD_Implementation_Checklist.md](DOTS_Terrain_LOD_Implementation_Checklist.md) — terrain LOD execution checklist
 
 ## 6. Acceptance / Follow-up

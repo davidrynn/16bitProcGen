@@ -1,4 +1,8 @@
 # WFC Socket Table - Minimal Rotation Test Set
+
+**Status:** REFERENCE (WFC work paused; resuming per owner note 2026-07-02)
+**Last Updated:** 2025-11-02
+
 **Scope:** Corridor, Corner, DeadEnd (Door) — 3 base tiles × 4 rotations = 12 total patterns  
 **Purpose:** Audit socket values and rotation behavior for testing
 

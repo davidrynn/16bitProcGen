@@ -1,5 +1,8 @@
 # SLINGSHOT_ANIMATION_CONTROLLER_SPEC.md
 
+**Status:** ACTIVE
+**Last Updated:** 2026-06-28
+
 ## Purpose
 
 Wire the three authored slingshot animation clips into the Unity animation controller/state machine.

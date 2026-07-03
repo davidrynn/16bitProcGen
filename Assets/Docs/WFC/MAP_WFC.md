@@ -1,5 +1,8 @@
 # WFC (Wave Function Collapse) System Map
 
+**Status:** REFERENCE (WFC work paused; resuming per owner note 2026-07-02)
+**Last Updated:** 2025-11-02
+
 ## Overview
 DOTS-based Wave Function Collapse implementation for procedural dungeon generation with macro-tile patterns, constraint propagation, and entity-based rendering.
 

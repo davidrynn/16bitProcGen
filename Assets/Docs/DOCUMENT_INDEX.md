@@ -24,12 +24,20 @@ Quick-reference index of all project documentation. Docs are organized by catego
 | [AI/TerrainHeightMaps/SCATTER_LOD_SPEED_BIAS_SPEC.md](AI/TerrainHeightMaps/SCATTER_LOD_SPEED_BIAS_SPEC.md) | DESIGN | Shrinks the scatter LOD swap distance as player speed rises — drops scatter detail during fast airborne movement (extends SURFACE_SCATTER_LOD_SPEC) |
 | [AI/TerrainHeightMaps/TERRAIN_SURFACE_SCATTER_SPEC.md](AI/TerrainHeightMaps/TERRAIN_SURFACE_SCATTER_SPEC.md) | DESIGN | Runtime contract for chunk-scattered trees, bushes, rocks, ore nodes, and similar discrete props |
 | [AI/MVP_VISTA_MOMENT_SPEC.md](AI/MVP_VISTA_MOMENT_SPEC.md) | **ACTIVE — MVP PRIORITY** | Vista discovery experience: atmospheric haze + mountain horizon + relic hand; gap analysis + ordered implementation |
+| [AI/VISTA_GROUND_PLANE_FOG_INVESTIGATION.md](AI/VISTA_GROUND_PLANE_FOG_INVESTIGATION.md) | INVESTIGATING | Working doc: what the ground-plane impostor + fog actually do today vs. spec, re-scoping tickets V1/V2 from screenshot evidence |
+| [AI/SKYBOXPLAN.md](AI/SKYBOXPLAN.md) | PHASE 2 COMPLETE · PHASE 3 PLANNED | Procedural gradient sky plan; Phase 3 = vista atmosphere (ticket V6). Companion SPEC/TESTS archived in `Archives/Skybox_2026/` |
+| [AI/TERRAIN_VOXEL_CHUNK_EDIT_SPEC.md](AI/TERRAIN_VOXEL_CHUNK_EDIT_SPEC.md) | PROPOSED | Minecraft-style cube edits snapped to a voxel/chunk-aligned grid, deterministic across chunk boundaries |
+| [AI/GRASS_ECS_SPEC.md](AI/GRASS_ECS_SPEC.md) | PLANNING (DEFERRED) | GPU-instanced, edit-reactive grass via DrawMeshInstancedIndirect; post-MVP, staged behind core terrain and trees |
+| [AI/TerrainHeightMaps/TERRAIN_STRATEGY_PLAN.md](AI/TerrainHeightMaps/TERRAIN_STRATEGY_PLAN.md) | DESIGN | Sequencing plan: from prototype height signal to biome-aware world generation on the SDF pipeline |
+| [AI/TerrainHeightMaps/TERRAIN_BIOME_NOISE_SPEC.md](AI/TerrainHeightMaps/TERRAIN_BIOME_NOISE_SPEC.md) | DESIGN | Behavior spec for biome-aware terrain generation in the active SDF + Surface Nets pipeline |
+| [AI/TerrainHeightMaps/TERRAIN_BIOME_NOISE_SCHEMA.md](AI/TerrainHeightMaps/TERRAIN_BIOME_NOISE_SCHEMA.md) | DESIGN | Concrete data model for the biome-noise behavior (sibling of the strategy plan + noise spec) |
+| [AI/TerrainHeightMaps/TERRAIN_MVP_PRIORITY_NOTE.md](AI/TerrainHeightMaps/TERRAIN_MVP_PRIORITY_NOTE.md) | DESIGN | Priority guidance: intended order of importance for the terrain-system MVP |
 | [Biomes/Windswept_Colossus_Plains_Biome_Spec.md](Biomes/Windswept_Colossus_Plains_Biome_Spec.md) | ACTIVE | Procedural biome definition for the MVP plains — terrain/grass/scatter parameters in system units, MVP vs post-MVP pipeline status, relic seating hooks, biome-selection stub |
-| [AI/STRUCTURE PLACEMENT/STRUCTURE_PLACEMENT_PLAN.md](AI/STRUCTURE%20PLACEMENT/STRUCTURE_PLACEMENT_PLAN.md) | DESIGN | Rollout plan for deterministic semantic structure placement (dungeons, villages, relics, ruins) |
-| [AI/STRUCTURE PLACEMENT/STRUCTURE_PLACEMENT_SPEC.md](AI/STRUCTURE%20PLACEMENT/STRUCTURE_PLACEMENT_SPEC.md) | DESIGN | Runtime contract for region-scale anchors, hard spacing constraints, and structure-family realization |
-| [AI/STRUCTURE PLACEMENT/MAGIC_GRID_SPEC.md](AI/STRUCTURE%20PLACEMENT/MAGIC_GRID_SPEC.md) | DESIGN | Analytic world-space XZ magic lattice: power-source nodes, WFC-build-on-node affordance, sparse claimed-node alignment state, per-template NodeAffinity, two-sources-one-pipeline with the free placer + universal influence query; chunk-decoupled, additive brightness cue (air-warp deferred) |
-| [AI/STRUCTURE PLACEMENT/RELIC_LOD_IMPOSTOR_SPEC.md](AI/STRUCTURE%20PLACEMENT/RELIC_LOD_IMPOSTOR_SPEC.md) | IMPLEMENTED | Distance-based full-mesh ↔ impostor swap for large relics; supersedes archived `RELIC_RENDER_REFACTOR_SPEC.md` §8. Far-plane clipping now masked by distance fog. |
-| [AI/STRUCTURE PLACEMENT/RELIC_BILLBOARD_IMPOSTOR_SPEC.md](AI/STRUCTURE%20PLACEMENT/RELIC_BILLBOARD_IMPOSTOR_SPEC.md) | DESIGN | Pre-baked camera-facing billboard as LOD 1 impostor for relics (atlas bake tool + Y-axis facing system); future work for distant vistas |
+| [AI/STRUCTURE_PLACEMENT/STRUCTURE_PLACEMENT_PLAN.md](AI/STRUCTURE_PLACEMENT/STRUCTURE_PLACEMENT_PLAN.md) | DESIGN | Rollout plan for deterministic semantic structure placement (dungeons, villages, relics, ruins) |
+| [AI/STRUCTURE_PLACEMENT/STRUCTURE_PLACEMENT_SPEC.md](AI/STRUCTURE_PLACEMENT/STRUCTURE_PLACEMENT_SPEC.md) | DESIGN | Runtime contract for region-scale anchors, hard spacing constraints, and structure-family realization |
+| [AI/STRUCTURE_PLACEMENT/MAGIC_GRID_SPEC.md](AI/STRUCTURE_PLACEMENT/MAGIC_GRID_SPEC.md) | DESIGN | Analytic world-space XZ magic lattice: power-source nodes, WFC-build-on-node affordance, sparse claimed-node alignment state, per-template NodeAffinity, two-sources-one-pipeline with the free placer + universal influence query; chunk-decoupled, additive brightness cue (air-warp deferred) |
+| [AI/STRUCTURE_PLACEMENT/RELIC_LOD_IMPOSTOR_SPEC.md](AI/STRUCTURE_PLACEMENT/RELIC_LOD_IMPOSTOR_SPEC.md) | IMPLEMENTED | Distance-based full-mesh ↔ impostor swap for large relics; supersedes archived `RELIC_RENDER_REFACTOR_SPEC.md` §8. Far-plane clipping now masked by distance fog. |
+| [AI/STRUCTURE_PLACEMENT/RELIC_BILLBOARD_IMPOSTOR_SPEC.md](AI/STRUCTURE_PLACEMENT/RELIC_BILLBOARD_IMPOSTOR_SPEC.md) | DESIGN | Pre-baked camera-facing billboard as LOD 1 impostor for relics (atlas bake tool + Y-axis facing system); future work for distant vistas |
 | [AI/TerrainHeightMaps/TERRAIN_SURFACE_SCATTER_SCHEMA.md](AI/TerrainHeightMaps/TERRAIN_SURFACE_SCATTER_SCHEMA.md) | DESIGN | First ECS/data breakdown for tree-plus-rock surface scatter lifecycle |
 | [AI/TerrainHeightMaps/TERRAIN_TREE_PLACEMENT_SPEC.md](AI/TerrainHeightMaps/TERRAIN_TREE_PLACEMENT_SPEC.md) | DESIGN | Tree-specific placement behavior within the broader surface scatter layer |
 | [AI/TERRAIN_EDIT_PLAYER_SAFETY_LOCAL_GRID_SPEC.md](AI/TERRAIN_EDIT_PLAYER_SAFETY_LOCAL_GRID_SPEC.md) | PROPOSED | Player-overlap edit guard + deterministic chunk-local grid guarantees |
@@ -54,9 +62,11 @@ Quick-reference index of all project documentation. Docs are organized by catego
 
 | Document | Status | Description |
 |----------|--------|-------------|
-| [MVP Movement/MOVEMENT_PLANNING.md](MVP%20Movement/MOVEMENT_PLANNING.md) | ACTIVE | Movement system design spec — slingshot, glide, thermals, visual feedback, camera behavior, prototype order |
-| [MVP Movement/AAA_MOVEMENT_CHECKLIST.md](MVP%20Movement/AAA_MOVEMENT_CHECKLIST.md) | ACTIVE | 21-point playtest evaluation rubric for traversal feel |
-| [MVP Movement/MOVEMENT_TECHNICAL_ARCHITECTURE_SPEC.md](MVP%20Movement/MOVEMENT_TECHNICAL_ARCHITECTURE_SPEC.md) | PROPOSED | ECS components, systems, update ordering, camera resolver architecture |
+| [MVP_Movement/MOVEMENT_PLANNING.md](MVP_Movement/MOVEMENT_PLANNING.md) | ACTIVE | Movement system design spec — slingshot, glide, thermals, visual feedback, camera behavior, prototype order |
+| [MVP_Movement/AAA_MOVEMENT_CHECKLIST.md](MVP_Movement/AAA_MOVEMENT_CHECKLIST.md) | ACTIVE | 21-point playtest evaluation rubric for traversal feel |
+| [MVP_Movement/MOVEMENT_TECHNICAL_ARCHITECTURE_SPEC.md](MVP_Movement/MOVEMENT_TECHNICAL_ARCHITECTURE_SPEC.md) | PROPOSED | ECS components, systems, update ordering, camera resolver architecture |
+| [MVP_Movement/SLINGSHOT_ANIMATION_CONTROLLER_SPEC.md](MVP_Movement/SLINGSHOT_ANIMATION_CONTROLLER_SPEC.md) | SPEC | Wire the three authored slingshot clips into the Animator state machine — no gameplay/physics changes |
+| [MVP_Movement/SPEED_SHAKE_SPEC.md](MVP_Movement/SPEED_SHAKE_SPEC.md) | DESIGN | Velocity-driven continuous camera shake for sense of speed (movement feel polish) |
 
 ## Project-Level Docs
 
@@ -66,8 +76,10 @@ Quick-reference index of all project documentation. Docs are organized by catego
 | [DOCUMENTATION_SYSTEM_SPEC.md](DOCUMENTATION_SYSTEM_SPEC.md) | Canonical documentation structure, metadata, and AI-discovery rules |
 | [/CLAUDE.md](/CLAUDE.md) | Claude Code project instructions |
 | [/.github/copilot-instructions.md](/.github/copilot-instructions.md) | GitHub Copilot instructions |
+| [TICKETS.md](TICKETS.md) | Lightweight task tracker (sprint tickets, backlog) |
 | [PROJECT_NOTES.md](PROJECT_NOTES.md) | Current work session notes and TODO |
 | [PROJECT_STRUCTURE_DOTS.md](PROJECT_STRUCTURE_DOTS.md) | DOTS-first folder layout |
+| [DOCUMENTATION_CHANGELOG.md](DOCUMENTATION_CHANGELOG.md) | Record of documentation reorganization rounds |
 
 ## Code Guides
 
@@ -75,7 +87,7 @@ Quick-reference index of all project documentation. Docs are organized by catego
 |----------|-------------|
 | [/Assets/Scripts/Player/Bootstrap/BOOTSTRAP_GUIDE.md](/Assets/Scripts/Player/Bootstrap/BOOTSTRAP_GUIDE.md) | Bootstrap pattern guide with physics setup |
 | [/Assets/Scripts/DOTS/Test/Testing_Documentation.md](/Assets/Scripts/DOTS/Test/Testing_Documentation.md) | Complete test catalog |
-| [ArtAndDOTS_Pipeline.md](ArtAndDOTS_Pipeline.md) | 16-bit art + DOTS integration |
+| [AI/ArtAndDOTS_Pipeline.md](AI/ArtAndDOTS_Pipeline.md) | 16-bit art + DOTS integration |
 
 ## Audits & Reports
 
@@ -112,3 +124,9 @@ Quick-reference index of all project documentation. Docs are organized by catego
 | [Archives/RootLegacy_2026/](Archives/RootLegacy_2026/) | Stale root-level records: namespace refactor, multiplayer evaluation, ISystem usage report, structure review, Unity 6 compat notes, plus the whole `DebugTraces/` folder (2026-07-02, doc cleanup D6) |
 | [Archives/MVP_Ideation_2026/](Archives/MVP_Ideation_2026/) | Stale MVP ideation docs from the former `mvp/` folder, now `Biomes/` (2026-07-02, doc cleanup D7) |
 | [Archives/LOD_2026/](Archives/LOD_2026/) | Superseded LOD spec + plan; content merged into root `DOTS_Terrain_LOD_SPEC.md` before archiving (2026-07-02, doc cleanup D8) |
+
+## External Reference
+
+| Folder | Contents |
+|--------|----------|
+| [Reference/External/SmolbeanPlanet3D/](Reference/External/SmolbeanPlanet3D/) | External reference material from an unrelated project (SmolbeanPlanet3D) — patterns/salvage notes only, not project documentation |

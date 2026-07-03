@@ -1,5 +1,8 @@
 # SDF Surface Nets Terrain – ECS Implementation Overview
 
+**Status:** REFERENCE (architecture overview)
+**Last Updated:** 2026-01-10
+
 ## Title + Context
 - The project represents terrain as signed distance fields (SDF) and converts them into meshes via a Surface Nets meshing pass.
 - All processing is organized with Unity DOTS/ECS: chunks, sampling, meshing, and rendering are data-oriented systems and components.

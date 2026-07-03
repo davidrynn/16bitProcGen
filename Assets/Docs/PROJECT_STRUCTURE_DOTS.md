@@ -1,5 +1,8 @@
 # Project Structure – DOTS-First Overview
 
+**Status:** ACTIVE — PARTIALLY STALE (content rewrite pending after cleanup code moves land; see `AI/CODEBASE_SIMPLIFICATION_PLAN.md` §6.3 D12)
+**Last Updated:** 2026-01-10
+
 ## Purpose
 This document describes the high-level structure of the 16bitProcGen project as it relates to Unity DOTS (Entities/ECS), including folder layout, assembly definitions, and best practices for modular, scalable DOTS development.
 

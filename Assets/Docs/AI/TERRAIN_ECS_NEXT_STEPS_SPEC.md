@@ -1,3 +1,8 @@
+# Terrain ECS Next Steps SPEC
+
+**Status:** ACTIVE
+**Last Updated:** 2026-01-10
+
 Purpose
 
 Define the next concrete steps to bring SDF + Surface Nets + destructible terrain into the main Unity ECS/DOTS 16-bit crafting game, using the existing SDF lab work as the math/algorithm reference.

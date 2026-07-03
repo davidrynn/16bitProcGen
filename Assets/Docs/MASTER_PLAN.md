@@ -1,4 +1,6 @@
 # 16-BitCraft — Master Plan
+
+**Status:** ACTIVE
 _Last updated: 2026-06-29_
 
 > **Start here.** This document is the authoritative project overview: vision, current status, phase roadmap, and document map.  
@@ -109,7 +111,7 @@ Full design: [`Archives/TerrainDesign/Stylized_Procedural_Terrain_System_Design.
 | Document | Purpose |
 |----------|---------|
 | [`Assets/Docs/SDF_SurfaceNets_ECS_Overview.md`](SDF_SurfaceNets_ECS_Overview.md) | SDF terrain architecture overview |
-| [`Assets/Docs/ArtAndDOTS_Pipeline.md`](ArtAndDOTS_Pipeline.md) | 16-bit art + DOTS integration guide |
+| [`Assets/Docs/AI/ArtAndDOTS_Pipeline.md`](AI/ArtAndDOTS_Pipeline.md) | 16-bit art + DOTS integration guide |
 | [`Assets/Docs/PROJECT_STRUCTURE_DOTS.md`](PROJECT_STRUCTURE_DOTS.md) | DOTS-first folder layout reference |
 
 ### Archived — Historical / Superseded
