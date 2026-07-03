@@ -4,7 +4,7 @@
 _Last updated: 2026-06-29_
 
 > **Start here.** This document is the authoritative project overview: vision, current status, phase roadmap, and document map.  
-> Sprint-level task detail lives in [`Assets/.cursor/plans/game-production-plan-7ea46cb6.plan.md`](../.cursor/plans/game-production-plan-7ea46cb6.plan.md).
+> Sprint-level task detail lives in [`TICKETS.md`](TICKETS.md).
 
 ---
 
@@ -48,7 +48,7 @@ Full design: [`Archives/TerrainDesign/Stylized_Procedural_Terrain_System_Design.
 - WFC dungeon generation (compute shader + prefab instantiation)
 - Weather system (rain, sandstorms)
 - Terrain destruction (glob removal + TerrainGlobPhysicsSystem)
-- Camera follow system (CameraFollowSystem, PlayerCameraSystem)
+- Camera system (`CameraEffectResolverSystem` — the only camera driver after cleanup round 1)
 - GPU-instanced grass baseline (chunk tagging, deterministic scatter tests, indirect render path)
 - Slingshot + glide movement MVP (slingshot launch, air path, glide, landing)
 - Structure placement pipeline (`Scripts/DOTS/Structures/`) — deterministic anchor planning, relic LOD/impostor, family realization
@@ -64,7 +64,7 @@ Full design: [`Archives/TerrainDesign/Stylized_Procedural_Terrain_System_Design.
 
 | Feature | Target Location | Status |
 |---------|----------------|--------|
-| Ground plane impostor | `Scripts/DOTS/World/`, `Shaders/` | ❌ Specced — not started |
+| Ground plane impostor | `Scripts/DOTS/Impostors/`, `Shaders/` | ❌ Specced — not started |
 | Atmospheric fog (URP volume) | URP Global Volume | 🔶 Enabled, not tuned for vista mood |
 | Mountain skybox silhouette | Skybox material/texture | ❌ Not started |
 | Hand mesh validation | `Assets/Models/testAlienHand.fbx` | 🔶 FBX introduced, wired to structure placement — needs visual check |
@@ -95,7 +95,7 @@ Full design: [`Archives/TerrainDesign/Stylized_Procedural_Terrain_System_Design.
 ### Active — Read These
 | Document | Purpose |
 |----------|---------|
-| [`Assets/.cursor/plans/game-production-plan-7ea46cb6.plan.md`](../.cursor/plans/game-production-plan-7ea46cb6.plan.md) | **Sprint priorities, phase detail, to-do checklist — primary task driver** |
+| [`Assets/Docs/TICKETS.md`](TICKETS.md) | **Sprint tickets + backlog — primary task driver** |
 | [`Assets/Docs/Terrain/TERRAIN_ECS_NEXT_STEPS_SPEC.md`](Terrain/TERRAIN_ECS_NEXT_STEPS_SPEC.md) | Active SDF + Surface Nets terrain implementation spec |
 | [`Assets/Docs/Terrain/TERRAIN_BINARY_EDIT_LAYER_SPEC.md`](Terrain/TERRAIN_BINARY_EDIT_LAYER_SPEC.md) | Binary voxel edit layer — hard-edged boxy terrain edits for Magic Hand; additive to SDF pipeline, no density rebuild on edit |
 | [`Assets/Docs/Persistence/PERSISTENCE_SPEC.md`](Persistence/PERSISTENCE_SPEC.md) | World persistence design — edit journals, entity state, NPC history, player data |
@@ -103,7 +103,7 @@ Full design: [`Archives/TerrainDesign/Stylized_Procedural_Terrain_System_Design.
 | [`Assets/Docs/DOCUMENT_INDEX.md`](DOCUMENT_INDEX.md) | Full index of all spec/debug/audit docs |
 | [`Assets/Docs/KNOWN_ISSUES.md`](KNOWN_ISSUES.md) | Master bug and issue tracker |
 | [`Assets/Scripts/Player/Bootstrap/BOOTSTRAP_GUIDE.md`](../Scripts/Player/Bootstrap/BOOTSTRAP_GUIDE.md) | DOTS scene bootstrap patterns with physics setup |
-| [`Assets/Scripts/DOTS/Test/Testing_Documentation.md`](../Scripts/DOTS/Test/Testing_Documentation.md) | Full test catalog (85+ tests) |
+| [`Assets/Scripts/DOTS/Tests/README.md`](../Scripts/DOTS/Tests/README.md) | Test surface: all NUnit suites (EditMode + PlayMode, two assemblies) |
 | [`CLAUDE.md`](../../CLAUDE.md) | AI assistant guidance (Claude Code) |
 | [`.github/copilot-instructions.md`](../../.github/copilot-instructions.md) | AI assistant guidance (GitHub Copilot) |
 
@@ -122,6 +122,7 @@ Full design: [`Archives/TerrainDesign/Stylized_Procedural_Terrain_System_Design.
 | [`Archives/DOTS_Migration_Plan.md`](Archives/DOTS_Migration_Plan.md) | Legacy heightmap migration; SDF pipeline is now primary |
 | [`Archives/PROJECT_NOTES_2025-11.md`](Archives/PROJECT_NOTES_2025-11.md) | Nov 2025 session notes (camera system, test org) |
 | [`Archives/RootLegacy_2026/Unity6_Compatibility_Notes.md`](Archives/RootLegacy_2026/Unity6_Compatibility_Notes.md) | Unity 6 compatibility fixes long since merged (2026-07-02 doc cleanup) |
+| [`Archives/RootLegacy_2026/GameProductionPlan_Cursor_2026-04.md`](Archives/RootLegacy_2026/GameProductionPlan_Cursor_2026-04.md) | Former Cursor plan / task driver — superseded by `TICKETS.md`; retains Phase 3–6 sketches + success metrics (2026-07-03) |
 
 ---
 
@@ -155,7 +156,7 @@ public partial struct MySystem : ISystem
 - SDF pipeline is **primary** for destructible terrain; do not extend heightmap path for SDF work
 
 **Terrain Pipelines**
-- **Heightmap (legacy/stable):** `TerrainEntityManager → TerrainDataBuilder → HybridTerrainGenerationSystem → GPU compute → BlobAsset → Mesh`
+- **Heightmap (legacy/stable):** `TerrainEntityManager → TerrainDataBuilder → LegacyHeightmapTerrainGenerationSystem → GPU compute → BlobAsset → Mesh`
 - **SDF/Surface Nets (primary):** `TerrainChunkDensitySamplingSystem → TerrainChunkMeshBuildSystem → TerrainChunkMeshUploadSystem → TerrainChunkColliderBuildSystem`
 
 ---

@@ -391,6 +391,7 @@ _Tickets for later sprints — not yet scheduled._
 | M4  | BUG: Ballistic-takeoff false-grounding past jump apex — suppress by contact/separation, not velocity sign | Movement |
 | P1  | Basic HUD (charge indicator + chain window indicator) | Phase 1 |
 | P2  | Magic Hand System (raycast, charge, binary terrain edit) | Phase 1 |
+| E1  | Blocked-edit visual feedback — red-X reticle pulse (+ optional tooltip) when a terrain edit is rejected by the player-safety volume. Post-MVP: terrain editing itself needs substantial work first (owner 2026-07-03; salvaged from archived Cursor plan) | Editing UX |
 | W1  | Magic power grid (placeholder — see `Structures/MAGIC_GRID_SPEC.md`) | Phase 2 / World Power |
 | R1  | Low-poly tree/rock LODs + enable relic LOD | Rendering |
 | R2  | Speed-biased scatter LOD (drop detail during fast airborne movement) | Rendering |

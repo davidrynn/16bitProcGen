@@ -1,5 +1,8 @@
 <!-- 7ea46cb6-d292-4a0e-81ab-62bfc39e86b2 6a431e08-afa8-4107-aa8a-e5d07c15a3f1 -->
+
 # 16-Bit ProcGen Game Production Plan
+
+**Status:** ARCHIVED (2026-07-03) - Cursor AI plan (April 2026) formerly at `Assets/.cursor/plans/`; MASTER_PLAN called it the sprint task driver but `TICKETS.md` superseded that role. ~90% duplicated/stale vs MASTER_PLAN (references systems deleted in cleanup rounds 1-2). Residual value: Phase 3-6 component sketches (crafting/tools/progression/audio), success metrics, risk table. Its one untracked action item became backlog ticket E1 (blocked-edit reticle feedback).
 
 ## Current State Assessment
 
