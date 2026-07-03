@@ -1,5 +1,7 @@
 # Test Organization Refactor - Verification Summary
 
+
+**Status:** ARCHIVED (2026-07-03) — records the 2025-11-05 test reorg; superseded by the round-2 consolidation (plan R48): all NUnit tests now live in `Assets/Scripts/DOTS/Tests/{EditMode,PlayMode}` under two assemblies.
 **Date:** 2025-11-05  
 **Status:** ✅ COMPLETED
 

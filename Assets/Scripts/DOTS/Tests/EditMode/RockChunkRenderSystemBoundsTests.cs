@@ -1,8 +1,9 @@
 using DOTS.Terrain.Rocks;
 using NUnit.Framework;
 using UnityEngine;
+using DOTS.Terrain;
 
-namespace DOTS.Terrain.Tests
+namespace DOTS.Tests.EditMode
 {
     [TestFixture]
     public class RockChunkRenderSystemBoundsTests : SurfaceScatterRenderSystemContractTestsBase<RockRenderConfig>

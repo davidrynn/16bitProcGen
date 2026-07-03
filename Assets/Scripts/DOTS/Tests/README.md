@@ -1,133 +1,42 @@
-# DOTS Terrain Tests
+# Project Tests
 
-This directory contains automated tests for the DOTS terrain generation system.
+**Status:** ACTIVE
+**Last Updated:** 2026-07-03 (rewritten for the round-2 test consolidation, plan R48)
 
-## Test Organization
+All NUnit tests for the project live in this directory — terrain, player, bootstrap, and smoke tests alike — under exactly two assemblies:
 
-### Automated Tests (`Automated/`)
+| Folder | Assembly | Runs in | Contents |
+|--------|----------|---------|----------|
+| `EditMode/` | `DOTS.Tests.EditMode` (Editor-only) | Test Runner **EditMode** tab | Fast unit/integration tests needing no play loop (34 files) |
+| `PlayMode/` | `DOTS.Tests.PlayMode` | Test Runner **PlayMode** tab | Tests needing frame updates, physics, scenes, or bootstrap flows (17 files, incl. `TestSystemBootstrap` helper and the `Smoke_BasicPlayable` smoke tests) |
 
-NUnit automated tests that can be run in Unity Test Runner:
-
-- **ComputeShaderTests.cs** - Tests for compute shader manager functionality
-- **TerrainGenerationTests.cs** - Tests for terrain entity creation and data management
-- **WFCSystemTests.cs** - Tests for Wave Function Collapse dungeon generation
-- **PhysicsSystemTests.cs** - Tests for glob physics and terrain interaction
-- **BiomeSystemTests.cs** - Tests for biome component and builder functionality
-- **WeatherSystemTests.cs** - Tests for weather system components
-- **TerrainDataTests.cs** - Tests for TerrainData component creation and management
-- **ModificationSystemTests.cs** - Tests for terrain modification system
-
-**Total: 8 automated test files with 60+ individual tests**
+Namespaces mirror the folders: `DOTS.Tests.EditMode` and `DOTS.Tests.PlayMode`.
 
 ## Running Tests
 
-### In Unity Editor
+**In the editor:** Window > General > Test Runner, pick the EditMode or PlayMode tab, Run All.
 
-1. Open **Window > General > Test Runner** (or press `Ctrl+Alt+T`)
-2. Click the **PlayMode** tab
-3. Expand **DOTS.Terrain.Tests**
-4. Click **Run All** to run all DOTS tests
-5. Or right-click individual test classes to run specific tests
-
-### Command Line
+**Command line** (editor must be closed — single-instance lock):
 
 ```powershell
-# Run all DOTS terrain tests
 & "C:\Program Files\Unity\Hub\Editor\<version>\Editor\Unity.exe" `
-    -batchmode `
+    -runTests -batchmode `
     -projectPath "<project-path>" `
-    -runTests `
-    -testPlatform PlayMode `
-    -testFilter "DOTS.Terrain.Tests" `
-    -logFile -
+    -testPlatform EditMode `   # or PlayMode
+    -testResults results.xml -logFile run.log
 ```
 
-## Test Coverage
+Note: a handful of PlayMode tests use `WaitForEndOfFrame` or spawn player visuals and cannot pass in batchmode — run those in the editor. Known pre-existing failures are tracked in the cleanup plan (§6.7 S14/S15).
 
-### Core Systems (4 test files)
-- ✓ Compute shader loading and validation
-- ✓ Terrain entity creation and positioning
-- ✓ WFC pattern generation
-- ✓ Physics and glob interaction
+## Writing New Tests
 
-### Extended Features (4 test files)
-- ✓ Biome system functionality
-- ✓ Weather component management
-- ✓ Terrain data validation
-- ✓ Modification system operations
+1. EditMode if it needs no play loop, PlayMode otherwise; put the file directly in that folder.
+2. `[TestFixture]` on the class, `[Test]` for simple tests, `[UnityTest]` for coroutine/frame-based tests.
+3. Naming: `MethodUnderTest_Scenario_ExpectedBehavior`.
+4. Tests create and dispose their own DOTS worlds — see `PlayMode/TestSystemBootstrap.cs` for the bootstrap-system helper.
+5. New dependencies go in the folder's `.asmdef` references.
 
-## Related Directories
+## Related Docs
 
-- **../Debug/** - Visual debug tools and inspectors
-- **../TestHelpers/** - Setup utilities for manual testing
-- **../Test/Archive/** - Archived obsolete tests
-- **../Test/Archive/Manual/** - Archived manual test scripts
-
-## Test Guidelines
-
-### Writing New Tests
-
-1. Add tests to appropriate file in `Automated/` directory
-2. Use `[TestFixture]` for test classes
-3. Use `[Test]` for simple tests
-4. Use `[UnityTest]` for tests requiring frame updates
-5. Follow naming pattern: `MethodUnderTest_Scenario_ExpectedBehavior`
-
-### Example Test
-
-```csharp
-[Test]
-public void TerrainData_ValidResolution()
-{
-    var terrainData = TerrainDataBuilder.CreateTerrainData(
-        new int2(0, 0),
-        64,
-        10f,
-        BiomeType.Plains
-    );
-    
-    Assert.AreEqual(64, terrainData.resolution,
-        "Resolution should be stored correctly");
-}
-```
-
-## Dependencies
-
-Tests require these Unity packages:
-- Unity.Entities
-- Unity.Mathematics
-- Unity.Collections
-- Unity.Physics
-- Unity.Transforms
-- NUnit Framework (included with Test Runner)
-
-## Continuous Integration
-
-These tests are designed to run in CI/CD pipelines:
-- All tests should complete within 30 seconds
-- No external dependencies required
-- Tests create and dispose their own DOTS worlds
-
-## Troubleshooting
-
-### Tests Don't Appear
-- Check for compilation errors in Console
-- Verify `DOTS.Terrain.Tests.asmdef` is properly configured
-- Ensure test files are in the `Automated/` directory
-
-### Tests Fail
-- Check that all required components exist in your project
-- Verify DOTS packages are up to date
-- Review Console for specific error messages
-
-### Performance Issues
-- Reduce number of entities created in tests
-- Use smaller resolutions for terrain tests
-- Run tests individually instead of all at once
-
-## Documentation
-
-- See `../Test/Testing_Documentation.md` for comprehensive testing guide
-- See `../../Player/Test/HOW_TO_RUN_TESTS.md` for general test running info
-- See `../../../Docs/PROJECT_NOTES.md` for project-wide testing notes
-
+- `Assets/Docs/Testing/` — smoke-test scene setup and test plans
+- `Assets/Docs/Process/CODEBASE_SIMPLIFICATION_PLAN.md` §6.1 R48 — how this layout came to be

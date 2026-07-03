@@ -9,8 +9,9 @@ using Unity.Transforms;
 using UnityEngine;
 using UnityEngine.TestTools;
 using DOTS.Core;
+using DOTS.Terrain;
 
-namespace DOTS.Terrain.Tests
+namespace DOTS.Tests.PlayMode
 {
     [TestFixture]
     public class TerrainPhysicsPlayModeTests

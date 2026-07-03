@@ -1,7 +1,8 @@
 using NUnit.Framework;
 using DOTS.Terrain.Grass;
+using DOTS.Terrain;
 
-namespace DOTS.Terrain.Tests
+namespace DOTS.Tests.EditMode
 {
     [TestFixture]
     public class TerrainChunkGrassSurfaceTests

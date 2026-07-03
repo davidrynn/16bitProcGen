@@ -1,7 +1,8 @@
 using Unity.Entities;
 using DOTS.Player.Bootstrap;
+using DOTS.Terrain;
 
-namespace DOTS.Player.Bootstrap.Tests
+namespace DOTS.Tests.PlayMode
 {
     /// <summary>
     /// Test helper to bootstrap player systems without requiring ProjectFeatureConfig.

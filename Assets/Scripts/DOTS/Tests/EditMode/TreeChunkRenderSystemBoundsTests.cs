@@ -1,8 +1,9 @@
 using DOTS.Terrain.Trees;
 using NUnit.Framework;
 using UnityEngine;
+using DOTS.Terrain;
 
-namespace DOTS.Terrain.Tests
+namespace DOTS.Tests.EditMode
 {
     [TestFixture]
     public class TreeChunkRenderSystemBoundsTests : SurfaceScatterRenderSystemContractTestsBase<TreeRenderConfig>

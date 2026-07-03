@@ -1,22 +1,30 @@
 {
-    "name": "Smoke.PlayMode.Tests",
-    "rootNamespace": "Tests.PlayMode",
+    "name": "DOTS.Tests.EditMode",
+    "rootNamespace": "DOTS.Tests.EditMode",
     "references": [
+        "Core",
         "UnityEngine.TestRunner",
         "UnityEditor.TestRunner",
-        "Unity.Entities",
-        "Unity.Transforms",
-        "Unity.Mathematics",
-        "Unity.Collections",
-        "Unity.Physics",
+        "DOTS.Terrain",
+        "DOTS.Terrain.Bootstrap",
         "DOTS.Player.Components",
         "DOTS.Player.Bootstrap",
-        "DOTS.Terrain",
-        "Assembly-CSharp"
+        "Unity.Entities",
+        "Unity.Entities.Hybrid",
+        "Unity.Entities.Graphics",
+        "Unity.Transforms",
+        "Unity.Mathematics",
+        "Unity.Mathematics.Extensions",
+        "Unity.Collections",
+        "Unity.Burst",
+        "Unity.Physics",
+        "Unity.Physics.Authoring"
     ],
-    "includePlatforms": [],
+    "includePlatforms": [
+        "Editor"
+    ],
     "excludePlatforms": [],
-    "allowUnsafeCode": false,
+    "allowUnsafeCode": true,
     "overrideReferences": true,
     "precompiledReferences": [
         "nunit.framework.dll"

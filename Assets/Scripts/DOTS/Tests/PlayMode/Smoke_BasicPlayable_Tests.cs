@@ -16,7 +16,7 @@ using UnityEngine.TestTools;
 using UnityEditor.SceneManagement;
 #endif
 
-namespace Tests.PlayMode
+namespace DOTS.Tests.PlayMode
 {
     public class Smoke_BasicPlayable_Tests
     {

@@ -7,11 +7,10 @@ using Unity.Rendering;
 using UnityEngine;
 using UnityEngine.TestTools;
 using DOTS.Player.Components;
-using DOTS.Player.Bootstrap.Tests;
 using DOTS.Terrain;
 using DOTS.Core;
 
-namespace DOTS.Terrain.Tests
+namespace DOTS.Tests.PlayMode
 {
     /// <summary>
     /// Integration tests for basic scene setup - verifies terrain, player, and camera work together

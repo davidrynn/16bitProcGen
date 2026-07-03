@@ -7,7 +7,7 @@ using UnityEngine.TestTools;
 using DOTS.Terrain;
 using DOTS.Terrain.Trees;
 
-namespace DOTS.Terrain.Tests
+namespace DOTS.Tests.PlayMode
 {
     // ── EditMode tests ────────────────────────────────────────────────────────
 

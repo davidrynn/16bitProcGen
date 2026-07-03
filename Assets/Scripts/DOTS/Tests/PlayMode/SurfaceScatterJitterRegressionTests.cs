@@ -3,8 +3,9 @@ using NUnit.Framework;
 using Unity.Mathematics;
 using DOTS.Terrain.Rocks;
 using DOTS.Terrain.Trees;
+using DOTS.Terrain;
 
-namespace DOTS.Terrain.Tests
+namespace DOTS.Tests.PlayMode
 {
     [TestFixture]
     public class SurfaceScatterJitterRegressionTests

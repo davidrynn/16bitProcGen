@@ -7,8 +7,10 @@ using UnityEngine;
 using UnityEngine.TestTools;
 using DOTS.Terrain.Debug;
 using DOTS.Terrain.Meshing;
+using DOTS.Terrain;
+using Streaming = DOTS.Terrain.Streaming;
 
-namespace DOTS.Terrain.Tests
+namespace DOTS.Tests.PlayMode
 {
     /// <summary>
     /// PlayMode tests that validate terrain chunk mesh border continuity.

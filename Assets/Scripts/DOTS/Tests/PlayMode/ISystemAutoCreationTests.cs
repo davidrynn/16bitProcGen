@@ -4,8 +4,9 @@ using System.Collections.Generic;
 using System.Linq;
 using NUnit.Framework;
 using Unity.Entities;
+using DOTS.Terrain;
 
-namespace DOTS.Core.Authoring.Tests
+namespace DOTS.Tests.PlayMode
 {
     public class ISystemAutoCreationTests
     {

@@ -6,7 +6,7 @@ using Unity.Collections;
 using Unity.Mathematics;
 using Unity.Entities;
 
-namespace DOTS.Terrain.Tests
+namespace DOTS.Tests.EditMode
 {
     [TestFixture]
     public class TerrainChunkMeshBuilderTests

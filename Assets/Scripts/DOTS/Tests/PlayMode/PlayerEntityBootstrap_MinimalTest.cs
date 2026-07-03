@@ -7,8 +7,9 @@ using UnityEngine;
 using UnityEngine.TestTools;
 using DOTS.Player.Bootstrap;
 using DOTS.Player.Components;
+using DOTS.Terrain;
 
-namespace Tests.PlayMode
+namespace DOTS.Tests.PlayMode
 {
     /// <summary>
     /// Minimal test to verify PlayerEntityBootstrap creates a player entity.

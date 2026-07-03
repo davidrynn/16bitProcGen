@@ -122,6 +122,7 @@ Quick-reference index of all project documentation. Docs are organized by featur
 | Document | Description |
 |----------|-------------|
 | [Testing/Codex_PlayModeSmokeTestPlan.md](Testing/Codex_PlayModeSmokeTestPlan.md) | Play Mode smoke test plan for `Smoke_BasicPlayable.unity` |
+| [Testing/PlayerMovementTestPlan.md](Testing/PlayerMovementTestPlan.md) | Player movement test plan (moved from Player/Test in R48 consolidation) |
 | [Testing/SmokeSceneSetup.md](Testing/SmokeSceneSetup.md) | Setup notes for the smoke-test scene |
 
 ## Project-Level Docs

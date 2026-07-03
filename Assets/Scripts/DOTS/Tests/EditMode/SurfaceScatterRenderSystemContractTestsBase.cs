@@ -1,8 +1,9 @@
 using System.Collections.Generic;
 using NUnit.Framework;
 using UnityEngine;
+using DOTS.Terrain;
 
-namespace DOTS.Terrain.Tests
+namespace DOTS.Tests.EditMode
 {
     /// <summary>
     /// Contract tests for matrix-instanced scatter render systems.

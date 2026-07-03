@@ -5,7 +5,7 @@ using UnityEngine;
 using DOTS.Terrain;
 using DOTS.Terrain.Weather;
 
-namespace DOTS.Terrain.Tests
+namespace DOTS.Tests.EditMode
 {
     /// <summary>
     /// Automated tests for weather system functionality

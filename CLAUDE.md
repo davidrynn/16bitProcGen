@@ -57,8 +57,12 @@ Follow `Assets/Docs/Terrain/TERRAIN_ECS_NEXT_STEPS_SPEC.md`. Keep heightmap and 
 
 ### Test Locations
 
-- `Assets/Scripts/DOTS/Tests/Automated/` - NUnit automated tests
-- `Assets/Scripts/Player/Bootstrap/Tests/` - Player bootstrap tests
+All NUnit tests live under `Assets/Scripts/DOTS/Tests/` in exactly two assemblies:
+
+- `EditMode/` (`DOTS.Tests.EditMode`, Editor-only) - fast unit/integration tests
+- `PlayMode/` (`DOTS.Tests.PlayMode`) - frame/physics/scene tests incl. smoke tests and the `TestSystemBootstrap` helper
+
+Namespaces mirror the folders (`DOTS.Tests.EditMode` / `DOTS.Tests.PlayMode`). See the folder's `README.md`.
 
 ## Code Conventions
 

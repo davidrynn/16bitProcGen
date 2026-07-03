@@ -4,7 +4,7 @@ using Unity.Entities;
 using Unity.Mathematics;
 using DOTS.Terrain;
 
-namespace DOTS.Terrain.Tests
+namespace DOTS.Tests.EditMode
 {
     [TestFixture]
     public class SDFEditTests

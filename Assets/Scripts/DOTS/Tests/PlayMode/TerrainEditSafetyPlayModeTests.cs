@@ -2,8 +2,9 @@ using System.Collections;
 using NUnit.Framework;
 using Unity.Mathematics;
 using UnityEngine.TestTools;
+using DOTS.Terrain;
 
-namespace DOTS.Terrain.Tests
+namespace DOTS.Tests.PlayMode
 {
     [TestFixture]
     public class TerrainEditSafetyPlayModeTests

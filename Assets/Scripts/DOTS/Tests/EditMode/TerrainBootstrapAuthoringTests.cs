@@ -8,7 +8,7 @@ using Unity.Mathematics;
 using UnityEngine;
 using ChunkComponent = DOTS.Terrain.TerrainChunk;
 
-namespace DOTS.Terrain.Tests
+namespace DOTS.Tests.EditMode
 {
     [TestFixture]
     public class TerrainBootstrapAuthoringTests

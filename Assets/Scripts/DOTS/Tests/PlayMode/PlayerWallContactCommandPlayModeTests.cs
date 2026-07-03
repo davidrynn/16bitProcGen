@@ -12,7 +12,7 @@ using DOTS.Player.Systems;
 using DOTS.Terrain;
 using DOTS.Terrain.Meshing;
 
-namespace DOTS.Player.Test
+namespace DOTS.Tests.PlayMode
 {
     /// <summary>
     /// Captures the velocity command produced by PlayerMovementSystem while the player

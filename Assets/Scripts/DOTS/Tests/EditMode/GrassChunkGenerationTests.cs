@@ -2,8 +2,9 @@ using NUnit.Framework;
 using Unity.Collections;
 using Unity.Mathematics;
 using DOTS.Terrain.Grass;
+using DOTS.Terrain;
 
-namespace DOTS.Terrain.Tests
+namespace DOTS.Tests.EditMode
 {
     /// <summary>
     /// EditMode tests for <see cref="GrassBladeScatter"/> — the pure blade-placement logic

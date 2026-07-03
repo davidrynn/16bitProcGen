@@ -4,7 +4,7 @@ using Unity.Mathematics;
 using DOTS.Terrain;
 using Unity.Jobs;
 
-namespace DOTS.Terrain.Tests
+namespace DOTS.Tests.EditMode
 {
     [TestFixture]
     public class TerrainChunkDensitySamplingSystemTests

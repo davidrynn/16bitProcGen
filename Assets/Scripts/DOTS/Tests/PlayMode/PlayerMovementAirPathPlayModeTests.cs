@@ -9,8 +9,9 @@ using Unity.Transforms;
 using UnityEngine.TestTools;
 using DOTS.Player.Components;
 using DOTS.Player.Systems;
+using DOTS.Terrain;
 
-namespace DOTS.Player.Test
+namespace DOTS.Tests.PlayMode
 {
     /// <summary>
     /// PlayMode tests for validating PlayerMovementSystem branch selection between
