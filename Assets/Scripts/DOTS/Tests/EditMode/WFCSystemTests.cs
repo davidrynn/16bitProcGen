@@ -4,8 +4,9 @@ using Unity.Mathematics;
 using Unity.Collections;
 using UnityEngine;
 using DOTS.Terrain.WFC;
+using DOTS.Terrain;
 
-namespace DOTS.Terrain.Tests
+namespace DOTS.Tests.EditMode
 {
     /// <summary>
     /// Automated tests for WFC (Wave Function Collapse) system functionality

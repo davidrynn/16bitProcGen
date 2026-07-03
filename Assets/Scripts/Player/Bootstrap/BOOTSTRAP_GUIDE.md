@@ -403,7 +403,7 @@ Systems (Auto-Run):
 
 ## Resources
 
-- **AI Instructions:** `Assets/Docs/AI_Instructions.md` (Section 3.1.2 - Minimal Bootstrap Pattern)
+- **Architecture rules:** `/CLAUDE.md` (Core Architecture Principles — Minimal Bootstrap pattern; supersedes the archived AI_Instructions.md)
 - **Test Examples:** `Assets/Scripts/Player/Test/CameraFollowSanityTest.cs`
 - **Camera Follow System:** `Assets/Scripts/Player/Systems/CameraFollowSystem.cs`
 - **Unity Physics Manual:** Unity Documentation → Packages → Unity Physics

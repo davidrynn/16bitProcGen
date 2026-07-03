@@ -34,7 +34,7 @@ Assets/
         SurfaceScatter/          # Shared scatter math/render/delta utilities
         Legacy/        # Quarantined heightmap pipeline (ns DOTS.Terrain.Legacy) — do not extend
         Debug/         # Seam validators, diagnostics
-      Test/ TestHelpers/ Tests/  # Manual harnesses / setup helpers / NUnit suites (consolidation pending, plan R48)
+      Tests/           # ALL NUnit tests: EditMode/ + PlayMode/, one asmdef each (ns DOTS.Tests.*; plan R48)
     Player/            # ns DOTS.Player.* — documented exception: folder lacks the DOTS/ segment
     Rendering/Sky/     # ns DOTS.Rendering.Sky — documented exception, compiled into Core.asmdef
     Terrain/Rendering/ # TerrainChunkRenderSettings only (Core.asmdef; relocation blocked by asmdef cycle, plan S10)
@@ -45,8 +45,8 @@ Assets/
 ---
 
 ## Assembly Definitions (.asmdef) — actual state
-Reality check (2026-07-02): assemblies are **not** per-feature. The bulk of `Assets/Scripts/DOTS/**` compiles into one monolithic `DOTS.Terrain` assembly (Structures, WFC, Weather, Impostors, Compute, Debug included). The other assemblies: `Core` (root loose scripts + Rendering/Sky + Terrain/Rendering), `DOTS.Core.Authoring` (+Tests), `DOTS.Terrain.Bootstrap`, `DOTS.Terrain.SurfaceScatter.Editor`, `DOTS.Player.Components`, `DOTS.Player.Bootstrap` (+Tests), `Player`, `Player.Tests`, test assemblies (`DOTS.Terrain.Tests`, `DOTS.Terrain.EditModeTests`, `Smoke.PlayMode.Tests`). Reference direction that bites: `DOTS.Terrain` → `Core` (so nothing in `Core` can reference DOTS types — see plan row S10 for the modularization follow-up).
-- **Tests**: separate assemblies for PlayMode and EditMode tests
+Reality check (2026-07-03): assemblies are **not** per-feature. The bulk of `Assets/Scripts/DOTS/**` compiles into one monolithic `DOTS.Terrain` assembly (Structures, WFC, Weather, Impostors, Compute included). The other production assemblies: `Core` (root loose scripts + Rendering/Sky + Terrain/Rendering), `DOTS.Core.Authoring`, `DOTS.Terrain.Bootstrap`, `DOTS.Terrain.SurfaceScatter.Editor`, `DOTS.Player.Components`, `DOTS.Player.Bootstrap`, `Player`. Reference direction that bites: `DOTS.Terrain` → `Core` (so nothing in `Core` can reference DOTS types — see plan row S10 for the modularization follow-up).
+- **Tests**: exactly two test assemblies (round-2 consolidation, plan R48): `DOTS.Tests.EditMode` and `DOTS.Tests.PlayMode`, both under `Assets/Scripts/DOTS/Tests/`
 
 ---
 

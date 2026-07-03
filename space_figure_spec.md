@@ -218,7 +218,7 @@ mainCamera.transform.localRotation = Quaternion.identity;
 |---|---|
 | Locomotion (Idle, Walk, Run) | Kevin Iglesias pack (`Assets/Kevin Iglesias/`) — check first; retargets automatically via Humanoid |
 | Airborne (Jump, Fall) | Kevin Iglesias / Mixamo — retargets automatically |
-| Landing (soft, standard, hard, slide) | Kevin Iglesias pack first; full tiered spec in `Assets/Docs/AI/PLAYER_LANDING_ANIMATION_SPEC.md` |
+| Landing (soft, standard, hard, slide) | Kevin Iglesias pack first; full tiered spec in `Assets/Docs/Player/PLAYER_LANDING_ANIMATION_SPEC.md` |
 | Slingshot charge / release | **Custom — author in Blender** (no existing pack source fits this mechanic) |
 
 **Retro style:** Apply **stepped / constant interpolation** in Blender's Graph Editor (`T → Constant`) to all custom clips. This converts smooth spline curves to frame-hold snaps — gives the figure a retro puppet feel consistent with the block aesthetic.
@@ -243,7 +243,7 @@ mainCamera.transform.localRotation = Quaternion.identity;
 | 10 | `SlingshotCharge` | `SlingshotCharging=true` | **Custom** | **Critical** | Arms pull back; loopable hold pose |
 | 11 | `SlingshotRelease` | `SlingshotReleaseTrigger` | **Custom** | **Critical** | Arms fling forward; ~0.15 s, sharp |
 
-> Landing tiered dispatch is controlled by `LandingConfig.UseSimpleLandingTrigger`. Phase 1–3 implementation plan lives in `Assets/Docs/AI/PLAYER_LANDING_ANIMATION_SPEC.md`.
+> Landing tiered dispatch is controlled by `LandingConfig.UseSimpleLandingTrigger`. Phase 1–3 implementation plan lives in `Assets/Docs/Player/PLAYER_LANDING_ANIMATION_SPEC.md`.
 
 ---
 

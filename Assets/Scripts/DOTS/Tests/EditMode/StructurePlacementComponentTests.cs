@@ -3,8 +3,9 @@ using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;
 using DOTS.Structures;
+using DOTS.Terrain;
 
-namespace DOTS.Terrain.Tests
+namespace DOTS.Tests.EditMode
 {
     [TestFixture]
     public class StructurePlacementComponentTests

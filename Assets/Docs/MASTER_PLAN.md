@@ -24,12 +24,12 @@ A deterministic, stylized **16-bit retro sandbox** built in **Unity 6.2 / DOTS**
 
 > *The player crests a rise in a grassy plain. In the far distance, a massive ancient stone hand — four fingers — reaches from the earth. Mountains rim the horizon. The air hazes with distance.*
 
-See: [`AI/MVP_VISTA_MOMENT_SPEC.md`](AI/MVP_VISTA_MOMENT_SPEC.md) and reference image [`ChatGPT Image Apr 22, 2026, 09_34_36 PM.png`](../ChatGPT%20Image%20Apr%2022%2C%202026%2C%2009_34_36%20PM.png).
+See: [`Rendering/MVP_VISTA_MOMENT_SPEC.md`](Rendering/MVP_VISTA_MOMENT_SPEC.md) and reference image [`ChatGPT Image Apr 22, 2026, 09_34_36 PM.png`](../ChatGPT%20Image%20Apr%2022%2C%202026%2C%2009_34_36%20PM.png).
 
 This single moment — player sees a strange, gigantic, ancient relic across an atmospheric plain — is the target feeling for MVP. The hand contains a maze interior accessible via WFC dungeon generation. Every visual system should be evaluated against whether it serves this moment.
 
 Four technical requirements block it:
-1. **Ground plane impostor** (horizontal disc beyond chunk radius — needed for sky-drop intro; ½–1 day) — see [`AI/GROUND_PLANE_IMPOSTOR_SPEC.md`](AI/GROUND_PLANE_IMPOSTOR_SPEC.md)
+1. **Ground plane impostor** (horizontal disc beyond chunk radius — needed for sky-drop intro; ½–1 day) — see [`Rendering/GROUND_PLANE_IMPOSTOR_SPEC.md`](Rendering/GROUND_PLANE_IMPOSTOR_SPEC.md)
 2. **Atmospheric haze** (URP global volume fog tuning, ½ day)
 3. **Mountain horizon** (painted skybox panel for MVP; full seed-driven system is Phase 2)
 4. **4-finger hand mesh** (art task — `testAlienHand.fbx` introduced, needs visual validation)
@@ -56,7 +56,7 @@ Full design: [`Archives/TerrainDesign/Stylized_Procedural_Terrain_System_Design.
 
 ### 🔨 Phase 1 — In Progress (CRITICAL)
 
-**MVP Vista Moment** (see [`AI/MVP_VISTA_MOMENT_SPEC.md`](AI/MVP_VISTA_MOMENT_SPEC.md)) — ordered by impact-per-hour.
+**MVP Vista Moment** (see [`Rendering/MVP_VISTA_MOMENT_SPEC.md`](Rendering/MVP_VISTA_MOMENT_SPEC.md)) — ordered by impact-per-hour.
 
 > **Now the active sprint (re-anchored 2026-06-29).** These are scheduled as **V1–V5** in [`TICKETS.md`](TICKETS.md),
 > with Camera Feel (C1–C3) secondary and the arms viewmodel (A9) deferred. Build statuses below are unchanged —
@@ -75,7 +75,7 @@ Full design: [`Archives/TerrainDesign/Stylized_Procedural_Terrain_System_Design.
 
 | Feature | Target Location | Status |
 |---------|----------------|--------|
-| Magic Hand System | `Scripts/Player/MagicHand/` | ❌ Not started — use binary edit layer for terrain interaction; see [`AI/TERRAIN_BINARY_EDIT_LAYER_SPEC.md`](AI/TERRAIN_BINARY_EDIT_LAYER_SPEC.md) |
+| Magic Hand System | `Scripts/Player/MagicHand/` | ❌ Not started — use binary edit layer for terrain interaction; see [`Terrain/TERRAIN_BINARY_EDIT_LAYER_SPEC.md`](Terrain/TERRAIN_BINARY_EDIT_LAYER_SPEC.md) |
 | Resource Collection | `Scripts/Resources/` | ❌ Not started |
 | Basic HUD | `Scripts/UI/HUD/` | ❌ Not started |
 
@@ -84,7 +84,7 @@ Full design: [`Archives/TerrainDesign/Stylized_Procedural_Terrain_System_Design.
 ### ❌ Phases 2–6 — Not Started
 - **Phase 2:** Enhanced biomes (6+), procedural structures (ruins, caves, towers), world streaming + LOD, biome-driven grass streaming MVP
 - **Phase 3:** Crafting system, tool system (drill/explosive/shaping/grapple hand), progression system
-- **Phase 4:** World persistence (5-layer sparse delta model — see [`AI/PERSISTENCE_SPEC.md`](AI/PERSISTENCE_SPEC.md)), optional building system, visual polish, audio
+- **Phase 4:** World persistence (5-layer sparse delta model — see [`Persistence/PERSISTENCE_SPEC.md`](Persistence/PERSISTENCE_SPEC.md)), optional building system, visual polish, audio
 - **Phase 5:** Content creation (50+ recipes, 20+ structures), balancing, tutorial
 - **Phase 6:** Performance optimization (60 FPS target), bug fixing, release features
 
@@ -96,10 +96,10 @@ Full design: [`Archives/TerrainDesign/Stylized_Procedural_Terrain_System_Design.
 | Document | Purpose |
 |----------|---------|
 | [`Assets/.cursor/plans/game-production-plan-7ea46cb6.plan.md`](../.cursor/plans/game-production-plan-7ea46cb6.plan.md) | **Sprint priorities, phase detail, to-do checklist — primary task driver** |
-| [`Assets/Docs/AI/TERRAIN_ECS_NEXT_STEPS_SPEC.md`](AI/TERRAIN_ECS_NEXT_STEPS_SPEC.md) | Active SDF + Surface Nets terrain implementation spec |
-| [`Assets/Docs/AI/TERRAIN_BINARY_EDIT_LAYER_SPEC.md`](AI/TERRAIN_BINARY_EDIT_LAYER_SPEC.md) | Binary voxel edit layer — hard-edged boxy terrain edits for Magic Hand; additive to SDF pipeline, no density rebuild on edit |
-| [`Assets/Docs/AI/PERSISTENCE_SPEC.md`](AI/PERSISTENCE_SPEC.md) | World persistence design — edit journals, entity state, NPC history, player data |
-| [`Assets/Docs/AI/BIOME_GRASS_STREAMING_MVP_PLAN.md`](AI/BIOME_GRASS_STREAMING_MVP_PLAN.md) | Biome-based, infinite-terrain-safe grass streaming plan (MVP path, future-safe hooks) |
+| [`Assets/Docs/Terrain/TERRAIN_ECS_NEXT_STEPS_SPEC.md`](Terrain/TERRAIN_ECS_NEXT_STEPS_SPEC.md) | Active SDF + Surface Nets terrain implementation spec |
+| [`Assets/Docs/Terrain/TERRAIN_BINARY_EDIT_LAYER_SPEC.md`](Terrain/TERRAIN_BINARY_EDIT_LAYER_SPEC.md) | Binary voxel edit layer — hard-edged boxy terrain edits for Magic Hand; additive to SDF pipeline, no density rebuild on edit |
+| [`Assets/Docs/Persistence/PERSISTENCE_SPEC.md`](Persistence/PERSISTENCE_SPEC.md) | World persistence design — edit journals, entity state, NPC history, player data |
+| [`Assets/Docs/Biomes/BIOME_GRASS_STREAMING_MVP_PLAN.md`](Biomes/BIOME_GRASS_STREAMING_MVP_PLAN.md) | Biome-based, infinite-terrain-safe grass streaming plan (MVP path, future-safe hooks) |
 | [`Assets/Docs/DOCUMENT_INDEX.md`](DOCUMENT_INDEX.md) | Full index of all spec/debug/audit docs |
 | [`Assets/Docs/KNOWN_ISSUES.md`](KNOWN_ISSUES.md) | Master bug and issue tracker |
 | [`Assets/Scripts/Player/Bootstrap/BOOTSTRAP_GUIDE.md`](../Scripts/Player/Bootstrap/BOOTSTRAP_GUIDE.md) | DOTS scene bootstrap patterns with physics setup |
@@ -110,8 +110,8 @@ Full design: [`Archives/TerrainDesign/Stylized_Procedural_Terrain_System_Design.
 ### Reference — Terrain & Art
 | Document | Purpose |
 |----------|---------|
-| [`Assets/Docs/SDF_SurfaceNets_ECS_Overview.md`](SDF_SurfaceNets_ECS_Overview.md) | SDF terrain architecture overview |
-| [`Assets/Docs/AI/ArtAndDOTS_Pipeline.md`](AI/ArtAndDOTS_Pipeline.md) | 16-bit art + DOTS integration guide |
+| [`Assets/Docs/Terrain/SDF_SurfaceNets_ECS_Overview.md`](Terrain/SDF_SurfaceNets_ECS_Overview.md) | SDF terrain architecture overview |
+| [`Assets/Docs/Process/ArtAndDOTS_Pipeline.md`](Process/ArtAndDOTS_Pipeline.md) | 16-bit art + DOTS integration guide |
 | [`Assets/Docs/PROJECT_STRUCTURE_DOTS.md`](PROJECT_STRUCTURE_DOTS.md) | DOTS-first folder layout reference |
 
 ### Archived — Historical / Superseded
@@ -164,7 +164,7 @@ public partial struct MySystem : ISystem
 
 **MVP Vista Moment — do these first (ordered by impact-per-hour).** Active sprint: **V1–V5** in [`TICKETS.md`](TICKETS.md).
 
-1. **Ground plane impostor** — horizontal terrain-colored disc beyond chunk radius; eliminates void from altitude; enables sky-drop intro. Spec: [`AI/GROUND_PLANE_IMPOSTOR_SPEC.md`](AI/GROUND_PLANE_IMPOSTOR_SPEC.md). ½–1 day.
+1. **Ground plane impostor** — horizontal terrain-colored disc beyond chunk radius; eliminates void from altitude; enables sky-drop intro. Spec: [`Rendering/GROUND_PLANE_IMPOSTOR_SPEC.md`](Rendering/GROUND_PLANE_IMPOSTOR_SPEC.md). ½–1 day.
 2. **Atmospheric fog tuning** — shift fog color toward blue-grey (`#8FA8C0`), tune density/start so foreground is sharp and horizon is veiled. Half-day, immediate mood payoff.
 3. **Mountain skybox panel** — paint or source a mountain silhouette texture into the skybox. Sells horizon depth.
 4. **Hand mesh validation** — confirm `testAlienHand.fbx` renders correctly in Play Mode; adjust `scale`/`yOffset` in `RelicVisualBootstrap` inspector as needed.
@@ -172,7 +172,7 @@ public partial struct MySystem : ISystem
 
 **Then continue Phase 1:**
 
-6. **Magic Hand System** — raycast targeting, charge mechanic, visual feedback. Terrain interaction should use the binary edit layer ([`AI/TERRAIN_BINARY_EDIT_LAYER_SPEC.md`](AI/TERRAIN_BINARY_EDIT_LAYER_SPEC.md)) for hard-edged retro edits rather than the legacy `TerrainModificationSystem`.
+6. **Magic Hand System** — raycast targeting, charge mechanic, visual feedback. Terrain interaction should use the binary edit layer ([`Terrain/TERRAIN_BINARY_EDIT_LAYER_SPEC.md`](Terrain/TERRAIN_BINARY_EDIT_LAYER_SPEC.md)) for hard-edged retro edits rather than the legacy `TerrainModificationSystem`.
 7. **Resource Collection** — extend `TerrainGlobComponent`, automatic pickup, inventory component
 8. **Basic HUD** — resource counters, hand charge indicator, slingshot charge indicator
 

@@ -1,8 +1,9 @@
 using System.Runtime.InteropServices;
 using NUnit.Framework;
 using DOTS.Terrain.Grass;
+using DOTS.Terrain;
 
-namespace DOTS.Terrain.Tests
+namespace DOTS.Tests.EditMode
 {
     /// <summary>
     /// Validates the memory layout of <see cref="GrassBladeData"/> against the layout

@@ -10,7 +10,7 @@ using Unity.Rendering;
 using UnityEngine;
 using UnityEngine.Rendering;
 
-namespace DOTS.Terrain.Tests
+namespace DOTS.Tests.EditMode
 {
     [TestFixture]
     public class TerrainChunkMeshUploadSystemTests

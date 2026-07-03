@@ -6,7 +6,7 @@ using DOTS.Terrain;
 
 using TerrainChunkComponent = DOTS.Terrain.TerrainChunk;
 
-namespace DOTS.Terrain.Tests
+namespace DOTS.Tests.EditMode
 {
     [TestFixture]
     public class TerrainChunkComponentTests

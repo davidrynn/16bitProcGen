@@ -1,0 +1,38 @@
+{
+    "name": "DOTS.Tests.EditMode",
+    "rootNamespace": "DOTS.Tests.EditMode",
+    "references": [
+        "Core",
+        "UnityEngine.TestRunner",
+        "UnityEditor.TestRunner",
+        "DOTS.Terrain",
+        "DOTS.Terrain.Bootstrap",
+        "DOTS.Player.Components",
+        "DOTS.Player.Bootstrap",
+        "Unity.Entities",
+        "Unity.Entities.Hybrid",
+        "Unity.Entities.Graphics",
+        "Unity.Transforms",
+        "Unity.Mathematics",
+        "Unity.Mathematics.Extensions",
+        "Unity.Collections",
+        "Unity.Burst",
+        "Unity.Physics",
+        "Unity.Physics.Authoring"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": true,
+    "overrideReferences": true,
+    "precompiledReferences": [
+        "nunit.framework.dll"
+    ],
+    "autoReferenced": false,
+    "defineConstraints": [
+        "UNITY_INCLUDE_TESTS"
+    ],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

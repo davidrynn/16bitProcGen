@@ -7,7 +7,7 @@ using Unity.Collections;
 using UnityEngine;
 using DOTS.Terrain;
 
-namespace DOTS.Terrain.Tests
+namespace DOTS.Tests.EditMode
 {
     /// <summary>
     /// Automated tests for terrain generation functionality

@@ -9,7 +9,7 @@ using Unity.Rendering;
 #endif
 using Unity.Transforms;
 
-namespace DOTS.Terrain.Tests
+namespace DOTS.Tests.EditMode
 {
     [TestFixture]
     public class TerrainChunkRenderPrepSystemTests

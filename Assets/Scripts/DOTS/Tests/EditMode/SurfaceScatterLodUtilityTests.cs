@@ -2,8 +2,9 @@ using System.Collections.Generic;
 using DOTS.Terrain.SurfaceScatter;
 using NUnit.Framework;
 using UnityEngine;
+using DOTS.Terrain;
 
-namespace DOTS.Terrain.Tests
+namespace DOTS.Tests.EditMode
 {
     [TestFixture]
     public class SurfaceScatterLodUtilityTests

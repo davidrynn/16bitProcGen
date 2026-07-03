@@ -5,8 +5,10 @@ using Unity.Entities;
 using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.TestTools;
+using DOTS.Terrain;
+using Streaming = DOTS.Terrain.Streaming;
 
-namespace DOTS.Terrain.Tests
+namespace DOTS.Tests.PlayMode
 {
     /// <summary>
     /// PlayMode test that validates terrain chunk border continuity.

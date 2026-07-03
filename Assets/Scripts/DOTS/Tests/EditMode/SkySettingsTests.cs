@@ -1,8 +1,9 @@
 using NUnit.Framework;
 using UnityEngine;
 using DOTS.Rendering.Sky;
+using DOTS.Terrain;
 
-namespace DOTS.Terrain.Tests
+namespace DOTS.Tests.EditMode
 {
     [TestFixture]
     public class SkySettingsTests

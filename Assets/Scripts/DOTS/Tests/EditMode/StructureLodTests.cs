@@ -4,8 +4,9 @@ using Unity.Entities;
 using Unity.Rendering;
 using DOTS.Structures;
 using Unity.Mathematics;
+using DOTS.Terrain;
 
-namespace DOTS.Terrain.Tests
+namespace DOTS.Tests.EditMode
 {
     /// <summary>
     /// Unit tests for the relic LOD / impostor subsystem. Covers component

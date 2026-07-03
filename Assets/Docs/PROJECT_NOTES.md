@@ -14,8 +14,8 @@ Lightweight scratchpad for current session notes, quick TODOs, and observations 
 | Project vision, status, roadmap | [MASTER_PLAN.md](MASTER_PLAN.md) |
 | Bug/issue tracker | [KNOWN_ISSUES.md](KNOWN_ISSUES.md) |
 | Full document index | [DOCUMENT_INDEX.md](DOCUMENT_INDEX.md) |
-| SDF terrain architecture | [SDF_SurfaceNets_ECS_Overview.md](SDF_SurfaceNets_ECS_Overview.md) |
-| Terrain next-steps spec | [AI/TERRAIN_ECS_NEXT_STEPS_SPEC.md](AI/TERRAIN_ECS_NEXT_STEPS_SPEC.md) |
+| SDF terrain architecture | [Terrain/SDF_SurfaceNets_ECS_Overview.md](Terrain/SDF_SurfaceNets_ECS_Overview.md) |
+| Terrain next-steps spec | [Terrain/TERRAIN_ECS_NEXT_STEPS_SPEC.md](Terrain/TERRAIN_ECS_NEXT_STEPS_SPEC.md) |
 | Claude/AI instructions | [/CLAUDE.md](/CLAUDE.md) |
 
 ---
@@ -70,7 +70,7 @@ Gap analysis from session:
 - 4-finger hand mesh: **missing** — no suitable asset, art task needed
 - Biome work: no second biome needed for MVP; mountains are skybox silhouette
 
-New doc: [`AI/MVP_VISTA_MOMENT_SPEC.md`](AI/MVP_VISTA_MOMENT_SPEC.md) — captures full gap analysis and priority order.
+New doc: [`Rendering/MVP_VISTA_MOMENT_SPEC.md`](Rendering/MVP_VISTA_MOMENT_SPEC.md) — captures full gap analysis and priority order.
 Updated: `MASTER_PLAN.md` vision section + immediate next steps now lead with vista work.
 Updated: `HORIZON_IMPOSTOR_SEED_DRIVEN_SPEC.md` — clarified as Phase 2, not MVP.
 
@@ -82,11 +82,11 @@ Updated: `HORIZON_IMPOSTOR_SEED_DRIVEN_SPEC.md` — clarified as Phase 2, not MV
 ## Current Session (2026-04-11)
 
 - Added first Surface Scatter ECS/data breakdown doc for tree-plus-rock rollout:
-	- `Assets/Docs/AI/TerrainHeightMaps/TERRAIN_SURFACE_SCATTER_SCHEMA.md`
+	- `Assets/Docs/Terrain/Scatter/TERRAIN_SURFACE_SCATTER_SCHEMA.md`
 - Cross-linked the new Surface Scatter schema from:
-	- `Assets/Docs/AI/TerrainHeightMaps/TERRAIN_SURFACE_SCATTER_PLAN.md`
-	- `Assets/Docs/AI/TerrainHeightMaps/TERRAIN_SURFACE_SCATTER_SPEC.md`
-	- `Assets/Docs/AI/TerrainHeightMaps/TERRAIN_TREE_PLACEMENT_SPEC.md`
+	- `Assets/Docs/Terrain/Scatter/TERRAIN_SURFACE_SCATTER_PLAN.md`
+	- `Assets/Docs/Terrain/Scatter/TERRAIN_SURFACE_SCATTER_SPEC.md`
+	- `Assets/Docs/Terrain/Scatter/TERRAIN_TREE_PLACEMENT_SPEC.md`
 	- `Assets/Docs/DOCUMENT_INDEX.md`
 - Validation status update for player grounding regression:
 	- Targeted CLI batch run still exits with code 1 and no XML output in current editor state.

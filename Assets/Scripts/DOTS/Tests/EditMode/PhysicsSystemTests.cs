@@ -7,7 +7,7 @@ using UnityEngine;
 using DOTS.Terrain;
 using DOTS.Terrain.Modification;
 
-namespace DOTS.Terrain.Tests
+namespace DOTS.Tests.EditMode
 {
     /// <summary>
     /// Automated tests for physics system functionality (glob physics)

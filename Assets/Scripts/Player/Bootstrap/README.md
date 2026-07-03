@@ -52,7 +52,7 @@ This folder contains a **pure-code DOTS bootstrap** that spawns player and camer
 ## 🔗 Related Documentation
 
 - **Complete Guide:** [`BOOTSTRAP_GUIDE.md`](BOOTSTRAP_GUIDE.md) ← Start here!
-- **AI Instructions:** `Assets/Docs/AI_Instructions.md` (Section 3.1.2)
+- **Architecture rules:** `/CLAUDE.md` (Core Architecture Principles — Minimal Bootstrap pattern)
 - **Test Examples:** `../Test/CameraFollowSanityTest.cs`
 - **Camera System:** `../Systems/CameraFollowSystem.cs`
 

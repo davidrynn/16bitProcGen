@@ -1,0 +1,37 @@
+{
+    "name": "DOTS.Tests.PlayMode",
+    "rootNamespace": "",
+    "references": [
+        "Core",
+        "UnityEngine.TestRunner",
+        "UnityEditor.TestRunner",
+        "DOTS.Terrain",
+        "DOTS.Terrain.Bootstrap",
+        "DOTS.Core.Authoring",
+        "DOTS.Player.Components",
+        "DOTS.Player.Bootstrap",
+        "Player",
+        "Assembly-CSharp",
+        "Unity.Entities",
+        "Unity.Entities.Hybrid",
+        "Unity.Entities.Graphics",
+        "Unity.Transforms",
+        "Unity.Mathematics",
+        "Unity.Mathematics.Extensions",
+        "Unity.Collections",
+        "Unity.Burst",
+        "Unity.Physics",
+        "Unity.Physics.Authoring"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [
+        "UNITY_INCLUDE_TESTS"
+    ],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

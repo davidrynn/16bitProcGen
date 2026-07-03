@@ -6,7 +6,7 @@ using Unity.Mathematics;
 using UnityEngine;
 using DOTS.Terrain;
 
-namespace DOTS.Terrain.Tests
+namespace DOTS.Tests.EditMode
 {
     /// <summary>
     /// Automated tests for TerrainData component
