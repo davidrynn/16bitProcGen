@@ -1,7 +1,7 @@
 # Project Structure – DOTS-First Overview
 
-**Status:** ACTIVE — PARTIALLY STALE (content rewrite pending after cleanup code moves land; see `AI/CODEBASE_SIMPLIFICATION_PLAN.md` §6.3 D12)
-**Last Updated:** 2026-01-10
+**Status:** ACTIVE
+**Last Updated:** 2026-07-02 (rewritten to post-cleanup-round-1 reality; see `AI/CODEBASE_SIMPLIFICATION_PLAN.md`)
 
 ## Purpose
 This document describes the high-level structure of the 16bitProcGen project as it relates to Unity DOTS (Entities/ECS), including folder layout, assembly definitions, and best practices for modular, scalable DOTS development.
@@ -12,27 +12,41 @@ This document describes the high-level structure of the 16bitProcGen project as 
 
 ```
 Assets/
-  Docs/                # Project documentation (this file, migration plans, specs)
+  Docs/                # Project documentation (DOCUMENT_INDEX.md is the entry point)
   Scripts/
-    Authoring/         # MonoBehaviours, ScriptableObjects, and DOTS bootstraps
-    DOTS/              # Pure DOTS systems, components, jobs, and ECS logic
-      Core/            # Core ECS utilities, debug, and shared logic
-      WFC/             # Wave Function Collapse systems and data
-      Terrain/         # Terrain generation, SDF, and mesh systems
-      ...              # Other DOTS feature areas
-    Player/            # Player systems, input, camera, and bootstrap logic
-    ...                # Other gameplay or feature modules
-  ScriptableObjects/   # (Legacy) ScriptableObject assets (migrating to Authoring/)
-  ...
+    DOTS/
+      Core/            # DebugSettings + debug controllers (namespace DOTS.Core)
+        Authoring/     # DotsSystemBootstrap + ProjectFeatureConfig (own asmdef, ns DOTS.Core.Authoring)
+      Compute/         # ComputeShaderManager (ns DOTS.Compute)
+      Impostors/       # Ground-plane horizon impostor (ns DOTS.Impostors)
+      Structures/      # Relic/structure placement (ns DOTS.Structures)
+      Modification/    # Live glob physics (ns DOTS.Terrain.Modification)
+      Weather/         # WeatherSimulationSystem + WeatherGpuEffectsSystem (ns DOTS.Terrain.Weather)
+      WFC/             # Dungeon WFC — paused, resuming (ns DOTS.Terrain.WFC)
+      Terrain/         # SDF terrain (ns DOTS.Terrain.*)
+        SDF/           # Density field, edits, sampling systems
+        Meshing/       # Surface Nets mesh build/upload/prep
+        Physics/       # Collider build
+        Streaming/     # Chunk streaming window
+        LOD/           # Chunk LOD selection/apply
+        Grass/         # GPU grass (ns DOTS.Terrain.Grass)
+        Trees/ Rocks/ Pebbles/   # Scatter families
+        SurfaceScatter/          # Shared scatter math/render/delta utilities
+        Legacy/        # Quarantined heightmap pipeline (ns DOTS.Terrain.Legacy) — do not extend
+        Debug/         # Seam validators, diagnostics
+      Test/ TestHelpers/ Tests/  # Manual harnesses / setup helpers / NUnit suites (consolidation pending, plan R48)
+    Player/            # ns DOTS.Player.* — documented exception: folder lacks the DOTS/ segment
+    Rendering/Sky/     # ns DOTS.Rendering.Sky — documented exception, compiled into Core.asmdef
+    Terrain/Rendering/ # TerrainChunkRenderSettings only (Core.asmdef; relocation blocked by asmdef cycle, plan S10)
+  ScriptableObjects/   # ProjectFeatureConfig.asset and friends
+  Resources/           # Runtime-loaded settings + compute shaders
 ```
 
 ---
 
-## Assembly Definitions (.asmdef)
-- **Modular assemblies** for each major feature (e.g., DOTS.Terrain, DOTS.Player.Bootstrap, Core, etc.)
-- **Authoring**: MonoBehaviours and ScriptableObjects for scene setup and configuration
-- **DOTS**: Pure ECS systems and components, grouped by feature
-- **Tests**: Separate assemblies for PlayMode and EditMode tests
+## Assembly Definitions (.asmdef) — actual state
+Reality check (2026-07-02): assemblies are **not** per-feature. The bulk of `Assets/Scripts/DOTS/**` compiles into one monolithic `DOTS.Terrain` assembly (Structures, WFC, Weather, Impostors, Compute, Debug included). The other assemblies: `Core` (root loose scripts + Rendering/Sky + Terrain/Rendering), `DOTS.Core.Authoring` (+Tests), `DOTS.Terrain.Bootstrap`, `DOTS.Terrain.SurfaceScatter.Editor`, `DOTS.Player.Components`, `DOTS.Player.Bootstrap` (+Tests), `Player`, `Player.Tests`, test assemblies (`DOTS.Terrain.Tests`, `DOTS.Terrain.EditModeTests`, `Smoke.PlayMode.Tests`). Reference direction that bites: `DOTS.Terrain` → `Core` (so nothing in `Core` can reference DOTS types — see plan row S10 for the modularization follow-up).
+- **Tests**: separate assemblies for PlayMode and EditMode tests
 
 ---
 
@@ -79,37 +93,32 @@ The project uses an SDF-based terrain system as the primary terrain generation a
 
 Note: Streaming radius is mirrored into an ECS singleton (`ProjectFeatureConfigSingleton`) by `DotsSystemBootstrap` so unmanaged systems can read it.
 
-**Legacy Terrain Systems (⚠️ Deprecated):**
-These systems use the legacy `DOTS.Terrain.TerrainData` component and are maintained for backward compatibility only. New development should use the SDF terrain pipeline.
-- `TerrainSystem` - [LEGACY] Core terrain validation system for legacy TerrainData component
-- `HybridTerrainGenerationSystem` - [LEGACY] Terrain generation using compute shaders with legacy TerrainData (gated by `EnableHybridTerrainGenerationSystem`)
-- `TerrainGenerationSystem` - [LEGACY] Legacy terrain generation system (currently disabled internally)
-- `TerrainModificationSystem` - [LEGACY] Terrain modification for legacy TerrainData component (gated by `EnableTerrainModificationSystem`)
-- `TerrainCleanupSystem` - Blob asset cleanup (gated by `EnableTerrainCleanupSystem`)
-- `ChunkProcessor` - Chunk processing (gated by `EnableChunkProcessor`)
-- `TerrainGlobPhysicsSystem` - Terrain glob physics (gated by `EnableTerrainGlobPhysicsSystem`)
+**Legacy Terrain Systems (⚠️ quarantined in `DOTS/Terrain/Legacy`, namespace `DOTS.Terrain.Legacy`):**
+These use the legacy heightmap `TerrainData` component; kept compiling for reference, do not extend (retirement tracked as plan row S11).
+- `TerrainDataValidationSystem` - [LEGACY] validates legacy TerrainData (created unconditionally; survivor of the ChunkProcessor/TerrainSystem merge)
+- `LegacyHeightmapTerrainGenerationSystem` - [LEGACY] compute-shader heightmap generation (gated by `EnableLegacyHeightmapTerrainGenerationSystem`)
+- `TerrainCleanupSystem` - Blob asset cleanup for legacy components (gated by `EnableTerrainCleanupSystem`)
+
+**Live but heightmap-adjacent:**
+- `TerrainGlobPhysicsSystem` - Terrain glob physics (gated by `EnableTerrainGlobPhysicsSystem`; in `DOTS.Terrain.Modification`)
 
 **For new terrain development:** Use `TerrainBootstrapAuthoring` or create entities with SDF components (`DOTS.Terrain.TerrainChunk`, `TerrainChunkGridInfo`, `TerrainChunkBounds`, etc.). See `Assets/Docs/SDF_SurfaceNets_ECS_Overview.md` for details.
 
 #### Player Systems (gated by `EnablePlayerSystem`)
 - `PlayerBootstrapFixedRateInstaller` - Fixed rate installer (gated by `EnablePlayerBootstrapFixedRateInstaller`)
 - `PlayerEntityBootstrap` - Entity bootstrap (gated by `EnablePlayerEntityBootstrap`)
-- `PlayerEntityBootstrap_PureECS` - Pure ECS bootstrap (gated by `EnablePlayerEntityBootstrapPureEcs`)
-- `PlayerInputSystem` - Player input (gated by `EnablePlayerInputSystem`)
-- `PlayerLookSystem` - Player look (gated by `EnablePlayerLookSystem`)
-- `PlayerMovementSystem` - Player movement (gated by `EnablePlayerMovementSystem`)
-- `PlayerGroundingSystem` - Player grounding (gated by `EnablePlayerGroundingSystem`)
-- `PlayerCameraSystem` - Player camera (gated by `EnablePlayerCameraSystem`)
-- `PlayerCinemachineCameraSystem` - Cinemachine camera (gated by `EnablePlayerCinemachineCameraSystem`)
-- `CameraFollowSystem` - Camera follow (gated by `EnableCameraFollowSystem`)
-- `SimplePlayerMovementSystem` - Simple movement (gated by `EnableSimplePlayerMovementSystem`, conditional compile)
+- `PlayerInputSystem` / `PlayerLookSystem` / `PlayerMovementSystem` / `PlayerGroundingSystem` / `PlayerTerrainSafetySystem` - core loop (individually gated)
+- Movement MVP: `SlingshotChargeSystem`, `SlingshotLaunchSystem`, `ChainWindowSystem`, `GlideSystem`, `LandingDetectionSystem`, `MovementStateBookkeepingSystem`
+- Camera: `CameraEffectResolverSystem` is the **only** camera driver (superseded variants were removed in cleanup round 1), plus the Camera*FeedbackSystem writers and `ScreenEffectResolverSystem`
 
-#### Dungeon Systems (gated by `EnableDungeonSystem`)
-- `DungeonRenderingSystem` - Dungeon rendering (gated by `EnableDungeonRenderingSystem`)
-- `DungeonVisualizationSystem` - Dungeon visualization
+#### Dungeon Systems (gated by `EnableDungeonSystem`) — paused, resuming
+- `DungeonEntitySpawningSystem` - spawns prefab entities from collapsed WFC cells (gated by `EnableDungeonEntitySpawningSystem`)
+- `DungeonDebugVisualizationSystem` - editor-only debug visualization
+- `WFCCollapseSystem` - the WFC solver; **known gap:** not yet created by the bootstrap (TICKETS.md:472)
 
 #### Weather Systems (gated by `EnableWeatherSystem`)
-- `WeatherSystem` - Weather effects system
+- `WeatherSimulationSystem` - per-chunk weather state simulation
+- `WeatherGpuEffectsSystem` - applies weather via compute shaders (gated by `EnableWeatherGpuEffectsSystem`)
 
 **Note**: All systems listed above have `[DisableAutoCreation]` to prevent Unity's automatic system discovery. They are only created when explicitly enabled via the bootstrap and config.
 

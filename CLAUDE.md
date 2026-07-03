@@ -29,11 +29,12 @@ If instructions conflict: **safety > architecture rules > performance > style > 
 
 ### Dual Terrain Pipelines
 
-**Heightmap Path (Legacy/Parallel):**
-`TerrainEntityManager → TerrainDataBuilder → HybridTerrainGenerationSystem → GPU compute → BlobAsset → Mesh`
+**Heightmap Path (Legacy — quarantined in `Assets/Scripts/DOTS/Terrain/Legacy/`, namespace `DOTS.Terrain.Legacy`):**
+`TerrainEntityManager → TerrainDataBuilder → LegacyHeightmapTerrainGenerationSystem → GPU compute → BlobAsset → Mesh`
+Do not extend this pipeline; retirement is tracked in `CODEBASE_SIMPLIFICATION_PLAN.md` §6.7 (S11).
 
 **SDF / Surface Nets Path (Primary for destructible terrain):**
-Follow `Assets/Docs/AI/TERRAIN_ECS_NEXT_STEPS_SPEC.md`. Do not extend HybridTerrainGenerationSystem for SDF unless the spec explicitly instructs. Keep heightmap and SDF pipelines decoupled.
+Follow `Assets/Docs/AI/TERRAIN_ECS_NEXT_STEPS_SPEC.md`. Keep heightmap and SDF pipelines decoupled.
 
 ## Build & Test Commands
 
@@ -123,18 +124,26 @@ namespace DOTS.Player.Systems
 
 ### Namespace Structure
 
+Namespaces mirror folders under `Assets/Scripts/DOTS/` except the two documented exceptions at the bottom.
+
 ```
 DOTS.
-├── Terrain           # SDF terrain systems
-├── Modification      # Destruction/editing
-├── Player.Systems    # Player ISystem implementations
-├── Player.Components # Player IComponentData
-├── Player.Bootstrap  # Entity spawning
-├── Biome             # Biome system
-├── Generation        # Procedural generation
-├── Weather           # Environmental effects
-├── WFC               # Dungeon generation
-└── Compute           # GPU management
+├── Core                    # DebugSettings + debug controllers (DOTS/Core)
+├── Core.Authoring          # DotsSystemBootstrap, ProjectFeatureConfig (own asmdef)
+├── Compute                 # ComputeShaderManager
+├── Impostors               # Ground-plane horizon impostor
+├── Structures              # Relic/structure placement
+├── Terrain                 # SDF terrain core (SDF/, chunk components, physics)
+│   ├── .Meshing / .Streaming / .LOD    # Surface Nets, chunk window, LOD
+│   ├── .Grass / .Trees / .Rocks / .Pebbles   # Scatter families
+│   ├── .SurfaceScatter     # Shared scatter math/render/delta utilities
+│   ├── .Modification       # Glob physics (live)
+│   ├── .Weather            # WeatherSimulationSystem + WeatherGpuEffectsSystem
+│   ├── .WFC                # Dungeon generation (paused, resuming)
+│   ├── .Debug              # Seam validators, diagnostics
+│   └── .Legacy             # Quarantined heightmap pipeline — do not extend
+├── Player.Systems / .Components / .Bootstrap   # Folder: Assets/Scripts/Player (exception: no DOTS/ segment)
+└── Rendering.Sky           # Folder: Assets/Scripts/Rendering/Sky (exception; Core.asmdef)
 ```
 
 ## Debug Logging
@@ -142,7 +151,7 @@ DOTS.
 **Never use `Debug.Log` directly in systems.** Use the centralized debug system:
 
 ```csharp
-using DOTS.Terrain.Core;
+using DOTS.Core;
 
 DebugSettings.LogTerrain("Terrain message");
 DebugSettings.LogWFC("WFC message");
@@ -189,14 +198,14 @@ Debug flags controlled via `DebugSettings` static class (all default to `false`)
 1. `PlayerInputSystem` - Input capture
 2. `PlayerMovementSystem` - Physics-based movement
 3. `PlayerGroundingSystem` - Ground detection
-4. `CameraFollowSystem` - Third-person camera
+4. `CameraEffectResolverSystem` - The camera driver (third-person orbit + effects)
 
-### WFC Dungeon Flow
+### WFC Dungeon Flow (paused — known bootstrap gap, TICKETS.md)
 
-`Collapse state → compute shader → prefab instantiation → rendering`
-- `HybridWFCSystem` with deterministic seeding (`DebugSettings.UseFixedWFCSeed`, default seed: 12345)
+`Collapse state → prefab instantiation → rendering`
+- `WFCCollapseSystem` with deterministic seeding (`DebugSettings.UseFixedWFCSeed`, default seed: 12345); its compute-shader propagation path is an unimplemented stub
 - `DungeonPrefabRegistry` supplies baked entity prefabs
-- `DungeonRenderingSystem` / `DungeonVisualizationSystem` handle instantiation
+- `DungeonEntitySpawningSystem` spawns entities; `DungeonDebugVisualizationSystem` is editor-only debug
 
 ### Bootstrap Pattern
 
@@ -227,7 +236,7 @@ public class PlayerCameraBootstrap : MonoBehaviour
 ### Extending Systems
 
 - Prefer augmenting existing systems via `partial class` in a new file
-- Key systems to extend: `HybridTerrainGenerationSystem`, `HybridWFCSystem`, `DungeonRenderingSystem`, `TerrainTransformSystem`, `TerrainModificationSystem`
+- Never extend anything in `DOTS.Terrain.Legacy` — that pipeline is quarantined pending retirement
 
 ## Common Pitfalls
 
