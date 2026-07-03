@@ -13,9 +13,9 @@ namespace DOTS.Terrain.WFC
     /// This bridges the gap between DOTS entities and visible GameObjects
     /// </summary>
     [UpdateInGroup(typeof(SimulationSystemGroup))]
-    [UpdateAfter(typeof(DungeonRenderingSystem))]
+    [UpdateAfter(typeof(DungeonEntitySpawningSystem))]
     [DisableAutoCreation]
-    public partial class DungeonVisualizationSystem : SystemBase
+    public partial class DungeonDebugVisualizationSystem : SystemBase
     {
         private GameObject visualizationParent;
         private EntityCommandBuffer ecb;
@@ -27,7 +27,7 @@ namespace DOTS.Terrain.WFC
         
         protected override void OnCreate()
         {
-            DOTS.Core.DebugSettings.LogRendering("DungeonVisualizationSystem: OnCreate called", true);
+            DOTS.Core.DebugSettings.LogRendering("DungeonDebugVisualizationSystem: OnCreate called", true);
             
             // Create a parent GameObject for all dungeon visualizations
             visualizationParent = new GameObject("Dungeon Visualization");
@@ -36,7 +36,7 @@ namespace DOTS.Terrain.WFC
             registryAuthoring = Object.FindFirstObjectByType<DungeonPrefabRegistryAuthoring>();
             if (registryAuthoring != null)
             {
-                DOTS.Core.DebugSettings.LogRendering("DungeonVisualizationSystem (Macro-only): Found DungeonPrefabRegistryAuthoring in scene - will use assigned roomFloor/roomEdge prefabs");
+                DOTS.Core.DebugSettings.LogRendering("DungeonDebugVisualizationSystem (Macro-only): Found DungeonPrefabRegistryAuthoring in scene - will use assigned roomFloor/roomEdge prefabs");
             }
         }
         
@@ -75,12 +75,12 @@ namespace DOTS.Terrain.WFC
             }
             if (registryAuthoring == null)
             {
-                DOTS.Core.DebugSettings.LogError("DungeonVisualizationSystem (Macro-only): Missing DungeonPrefabRegistryAuthoring in scene. Cannot visualize.");
+                DOTS.Core.DebugSettings.LogError("DungeonDebugVisualizationSystem (Macro-only): Missing DungeonPrefabRegistryAuthoring in scene. Cannot visualize.");
                 return;
             }
             if (registryAuthoring.roomFloorPrefab == null || registryAuthoring.roomEdgePrefab == null)
             {
-                DOTS.Core.DebugSettings.LogError("DungeonVisualizationSystem (Macro-only): roomFloorPrefab or roomEdgePrefab not assigned on DungeonPrefabRegistryAuthoring.");
+                DOTS.Core.DebugSettings.LogError("DungeonDebugVisualizationSystem (Macro-only): roomFloorPrefab or roomEdgePrefab not assigned on DungeonPrefabRegistryAuthoring.");
                 return;
             }
             
@@ -88,7 +88,7 @@ namespace DOTS.Terrain.WFC
             updateCounter++;
             if (updateCounter % 50 == 0) // Log more frequently for debugging
             {
-                DOTS.Core.DebugSettings.LogRendering($"DungeonVisualizationSystem (Macro-only): OnUpdate called (update {updateCounter})");
+                DOTS.Core.DebugSettings.LogRendering($"DungeonDebugVisualizationSystem (Macro-only): OnUpdate called (update {updateCounter})");
             }
             
             // Only create command buffer if we need to process entities
@@ -146,7 +146,7 @@ namespace DOTS.Terrain.WFC
 
                         if (processedCount < 3)
                         {
-                            DOTS.Core.DebugSettings.LogRendering($"DungeonVisualizationSystem: Processing entity {entity.Index} - {element.elementType} at {transform.Position}");
+                            DOTS.Core.DebugSettings.LogRendering($"DungeonDebugVisualizationSystem: Processing entity {entity.Index} - {element.elementType} at {transform.Position}");
                         }
 
                         CreateVisualization(entity, element, transform);
@@ -155,7 +155,7 @@ namespace DOTS.Terrain.WFC
                 
                     if (processedCount > 0)
                     {
-                        DOTS.Core.DebugSettings.LogRendering($"DungeonVisualizationSystem: Processed {processedCount} entities for visualization");
+                        DOTS.Core.DebugSettings.LogRendering($"DungeonDebugVisualizationSystem: Processed {processedCount} entities for visualization");
                     }
                     
                     // Play back the command buffer to apply structural changes
@@ -181,7 +181,7 @@ namespace DOTS.Terrain.WFC
                 }
                 if (wfcComplete)
                 {
-                    DOTS.Core.DebugSettings.LogRendering("DungeonVisualizationSystem (Macro-only): No element entities. Visualizing WFCCells directly.", true);
+                    DOTS.Core.DebugSettings.LogRendering("DungeonDebugVisualizationSystem (Macro-only): No element entities. Visualizing WFCCells directly.", true);
                     int spawned = 0;
                     var wfcSingleton = SystemAPI.GetSingleton<WFCComponent>();
                     ref var patterns = ref wfcSingleton.patterns.Value.patterns; // required ref access per EA0001
@@ -209,7 +209,7 @@ namespace DOTS.Terrain.WFC
                         }
                     }
                     patternTypes.Dispose();
-                    DOTS.Core.DebugSettings.LogRendering($"DungeonVisualizationSystem (Macro-only): Spawned {spawned} GameObjects from WFCCells.", true);
+                    DOTS.Core.DebugSettings.LogRendering($"DungeonDebugVisualizationSystem (Macro-only): Spawned {spawned} GameObjects from WFCCells.", true);
                     if (spawned > 0)
                     {
                         visualizationComplete = true;
@@ -220,7 +220,7 @@ namespace DOTS.Terrain.WFC
             // Handle completion logic (outside the command buffer block)
             if (!hasUnvisualizedEntities && totalEntities > 0)
             {
-                DOTS.Core.DebugSettings.LogRendering($"DungeonVisualizationSystem: All {totalEntities} entities visualized - stopping updates");
+                DOTS.Core.DebugSettings.LogRendering($"DungeonDebugVisualizationSystem: All {totalEntities} entities visualized - stopping updates");
                 visualizationComplete = true;
             }
             else if (totalEntities == 0)
@@ -230,7 +230,7 @@ namespace DOTS.Terrain.WFC
                 
                 if (wfcComplete)
                 {
-                    DOTS.Core.DebugSettings.LogRendering("DungeonVisualizationSystem: WFC complete and no more entities to visualize - stopping updates");
+                    DOTS.Core.DebugSettings.LogRendering("DungeonDebugVisualizationSystem: WFC complete and no more entities to visualize - stopping updates");
                     visualizationComplete = true;
                 }
             }
@@ -238,18 +238,18 @@ namespace DOTS.Terrain.WFC
         
         private void CreateVisualization(Entity entity, DungeonElementComponent element, LocalTransform transform)
         {
-            DOTS.Core.DebugSettings.LogRendering($"DungeonVisualizationSystem (Macro-only): Creating visualization for entity {entity.Index} - {element.elementType} at {transform.Position}");
+            DOTS.Core.DebugSettings.LogRendering($"DungeonDebugVisualizationSystem (Macro-only): Creating visualization for entity {entity.Index} - {element.elementType} at {transform.Position}");
             
             // Create a GameObject for this entity
             var go = CreateDungeonGameObject(element.elementType, transform);
             
             if (go != null)
             {
-                DOTS.Core.DebugSettings.LogRendering($"DungeonVisualizationSystem (Macro-only): Successfully created GameObject '{go.name}' at {go.transform.position}");
+                DOTS.Core.DebugSettings.LogRendering($"DungeonDebugVisualizationSystem (Macro-only): Successfully created GameObject '{go.name}' at {go.transform.position}");
             }
             else
             {
-                DOTS.Core.DebugSettings.LogError($"DungeonVisualizationSystem (Macro-only): Failed to create GameObject for {element.elementType}");
+                DOTS.Core.DebugSettings.LogError($"DungeonDebugVisualizationSystem (Macro-only): Failed to create GameObject for {element.elementType}");
             }
             
             // Mark this entity as visualized (deferred via command buffer)
@@ -375,12 +375,12 @@ namespace DOTS.Terrain.WFC
             if (shader == null)
             {
                 shader = Shader.Find("Standard");
-                DOTS.Core.DebugSettings.LogWarning("DungeonVisualizationSystem: URP shader not found, using Standard shader");
+                DOTS.Core.DebugSettings.LogWarning("DungeonDebugVisualizationSystem: URP shader not found, using Standard shader");
             }
             
             if (shader == null)
             {
-                DOTS.Core.DebugSettings.LogError("DungeonVisualizationSystem: No shader found! Using default material");
+                DOTS.Core.DebugSettings.LogError("DungeonDebugVisualizationSystem: No shader found! Using default material");
                 return new Material(Shader.Find("Hidden/InternalErrorShader"));
             }
             
@@ -388,7 +388,7 @@ namespace DOTS.Terrain.WFC
             material.color = color;
             
             // Debug: Log the material creation
-            DOTS.Core.DebugSettings.LogRendering($"DungeonVisualizationSystem: Created material with color {color}");
+            DOTS.Core.DebugSettings.LogRendering($"DungeonDebugVisualizationSystem: Created material with color {color}");
             
             return material;
         }

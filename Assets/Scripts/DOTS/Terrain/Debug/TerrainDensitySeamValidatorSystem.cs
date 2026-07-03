@@ -15,7 +15,7 @@ namespace DOTS.Terrain.Debug
     [DisableAutoCreation]
     [UpdateInGroup(typeof(SimulationSystemGroup))]
     [UpdateAfter(typeof(TerrainChunkDensitySamplingSystem))]
-    public partial struct TerrainSeamValidatorSystem : ISystem
+    public partial struct TerrainDensitySeamValidatorSystem : ISystem
     {
         public void OnCreate(ref SystemState state)
         {

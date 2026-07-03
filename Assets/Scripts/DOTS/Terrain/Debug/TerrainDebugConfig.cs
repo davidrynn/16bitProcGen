@@ -36,7 +36,7 @@ namespace DOTS.Terrain.Debug
         public float SeamEpsilon;
 
         /// <summary>
-        /// If true, log seam mismatches detected by TerrainSeamValidatorSystem.
+        /// If true, log seam mismatches detected by TerrainDensitySeamValidatorSystem.
         /// </summary>
         public bool EnableSeamLogging;
 

@@ -18,7 +18,7 @@ namespace DOTS.Terrain.WFC
     [UpdateInGroup(typeof(SimulationSystemGroup))]
     [UpdateAfter(typeof(DOTS.Terrain.Legacy.LegacyHeightmapTerrainGenerationSystem))]
     [DisableAutoCreation]
-    public partial class HybridWFCSystem : SystemBase
+    public partial class WFCCollapseSystem : SystemBase
     {
         private ComputeShaderManager computeManager;
         private EntityQuery wfcQuery;
@@ -35,13 +35,13 @@ namespace DOTS.Terrain.WFC
         
         protected override void OnCreate()
         {
-            DOTS.Core.DebugSettings.LogWFC("HybridWFCSystem: Initializing...");
+            DOTS.Core.DebugSettings.LogWFC("WFCCollapseSystem: Initializing...");
             
             // Get compute shader manager
             computeManager = ComputeShaderManager.Instance;
             if (computeManager == null)
             {
-                DOTS.Core.DebugSettings.LogError("HybridWFCSystem: ComputeShaderManager not found!");
+                DOTS.Core.DebugSettings.LogError("WFCCollapseSystem: ComputeShaderManager not found!");
                 return;
             }
             
@@ -67,15 +67,15 @@ namespace DOTS.Terrain.WFC
             if (DOTS.Core.DebugSettings.UseFixedWFCSeed)
             {
                 random = new Unity.Mathematics.Random((uint)DOTS.Core.DebugSettings.FixedWFCSeed);
-                DOTS.Core.DebugSettings.LogWFC($"HybridWFCSystem: Random seed initialized to {DOTS.Core.DebugSettings.FixedWFCSeed} for deterministic testing");
+                DOTS.Core.DebugSettings.LogWFC($"WFCCollapseSystem: Random seed initialized to {DOTS.Core.DebugSettings.FixedWFCSeed} for deterministic testing");
             }
             else
             {
                 random = new Unity.Mathematics.Random((uint)System.DateTime.Now.Ticks);
-                DOTS.Core.DebugSettings.LogWFC("HybridWFCSystem: Random generator initialized with time-based seed");
+                DOTS.Core.DebugSettings.LogWFC("WFCCollapseSystem: Random generator initialized with time-based seed");
             }
             
-            DOTS.Core.DebugSettings.LogWFC("HybridWFCSystem: Initialization complete");
+            DOTS.Core.DebugSettings.LogWFC("WFCCollapseSystem: Initialization complete");
         }
         
         private bool HasAdjacentWall(int2 pos)
@@ -600,7 +600,7 @@ namespace DOTS.Terrain.WFC
         /// </summary>
         private void DebugLog(string message, bool force = false)
         {
-            DOTS.Core.DebugSettings.LogWFC($"HybridWFCSystem: {message}", force);
+            DOTS.Core.DebugSettings.LogWFC($"WFCCollapseSystem: {message}", force);
         }
         
         /// <summary>
@@ -608,12 +608,12 @@ namespace DOTS.Terrain.WFC
         /// </summary>
         private void DebugWarning(string message)
         {
-            DOTS.Core.DebugSettings.LogWarning($"HybridWFCSystem: {message}");
+            DOTS.Core.DebugSettings.LogWarning($"WFCCollapseSystem: {message}");
         }
         
         protected override void OnDestroy()
         {
-            DOTS.Core.DebugSettings.LogWFC("HybridWFCSystem: Destroyed");
+            DOTS.Core.DebugSettings.LogWFC("WFCCollapseSystem: Destroyed");
         }
     }
     

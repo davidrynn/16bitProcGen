@@ -266,8 +266,8 @@ namespace DOTS.Terrain.Test
             DebugSettings.LogTest($"  - TerrainComputeBufferManager: {(bufferManager != null ? "Found" : "Missing")}");
             DebugSettings.LogTest($"  - DOTS World: {(world != null ? "Found" : "Missing")}");
             DebugSettings.LogTest($"  - LegacyHeightmapTerrainGenerationSystem: {(hybridSystemHandle != SystemHandle.Null ? "Found" : "Missing")}");
-            DebugSettings.LogTest($"  - WeatherSystem: Auto-registered by DOTS");
-            DebugSettings.LogTest($"  - HybridWeatherSystem: Auto-registered by DOTS");
+            DebugSettings.LogTest($"  - WeatherSimulationSystem: Auto-registered by DOTS");
+            DebugSettings.LogTest($"  - WeatherGpuEffectsSystem: Auto-registered by DOTS");
             
             return true;
         }

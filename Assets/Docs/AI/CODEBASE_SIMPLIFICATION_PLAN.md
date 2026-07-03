@@ -257,6 +257,7 @@ Batch protocol — every batch, no exceptions:
 | — (verify) | 2026-07-02 | PlayMode regression check after batches 1–8 | branch **86/96** = baseline (a9ec90e) **86/96**, identical failure lists — **zero regressions** | — | 9 failures all pre-existing: 6 headless-CLI artifacts (WaitForEndOfFrame; player-visual spawn needs rendered frames), 1 skip, 2 genuine pre-existing failures → S14/S15 |
 | 9 | 2026-07-02 | R26 | 210/210 | d660fe8 | DebugSettings/DebugController/DebugTestController → DOTS.Core; 45 usings + 7 qualified refs updated project-wide |
 | 10 | 2026-07-02 | R41, R44 | 210/210 | 8f69e31 | DOTS/World → DOTS/Impostors; Diagnostics folder merged into Terrain/Debug; metas preserved |
+| 11 | 2026-07-02 | R42, R43 | 210/210 | c9b01d7 | Grass folder+namespace renamed. **R43 AMENDED:** TerrainChunkRenderSettings stays put — physical move would need circular asmdef ref (DOTS.Terrain already references Core); namespace collision resolved by R42 alone, relocation deferred to S10 |
 
 ### 6.7 Improvement Suggestions (out of scope — follow-up work)
 

@@ -88,7 +88,7 @@ namespace DOTS.Terrain.Tests
             // Create and add systems
             var streamingSystem = testWorld.CreateSystem<DOTS.Terrain.Streaming.TerrainChunkStreamingSystem>();
             var densitySystem = testWorld.CreateSystem<TerrainChunkDensitySamplingSystem>();
-            var validatorSystem = testWorld.CreateSystem<DOTS.Terrain.Debug.TerrainSeamValidatorSystem>();
+            var validatorSystem = testWorld.CreateSystem<DOTS.Terrain.Debug.TerrainDensitySeamValidatorSystem>();
 
             // Run streaming to spawn 2x2 grid
             streamingSystem.Update(testWorld.Unmanaged);

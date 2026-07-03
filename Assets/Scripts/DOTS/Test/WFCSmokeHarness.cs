@@ -62,7 +62,7 @@ namespace DOTS.Terrain.Test
                 wfcEntity = em.CreateEntity();
             }
 
-            // WFC component (patterns/constraints will be initialized lazily by HybridWFCSystem)
+            // WFC component (patterns/constraints will be initialized lazily by WFCCollapseSystem)
             var wfc = WFCBuilder.CreateWFCComponent(new int2(gridWidth, gridHeight), 1, cellSize);
             wfc.maxIterations = math.max(1, gridWidth * gridHeight * 2);
             em.AddComponentData(wfcEntity, wfc);
@@ -113,7 +113,7 @@ namespace DOTS.Terrain.Test
                         patternCount = 0,
                         needsUpdate = true,
                         visualized = false,
-                        possiblePatternsMask = 0u // HybridWFCSystem will initialize this based on pattern blob
+                        possiblePatternsMask = 0u // WFCCollapseSystem will initialize this based on pattern blob
                     };
                     em.AddComponentData(cellEntity, cell);
                 }

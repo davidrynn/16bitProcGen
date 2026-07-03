@@ -135,7 +135,8 @@ namespace DOTS.Core.Authoring
         public bool EnablePebbleRenderSystem = true;
     
         [Header("Terrain Debug Systems")]
-        public bool EnableTerrainSeamValidatorSystem = false;
+        [FormerlySerializedAs("EnableTerrainSeamValidatorSystem")]
+        public bool EnableTerrainDensitySeamValidatorSystem = false;
         public bool EnableTerrainMeshSeamValidatorSystem = false;
         public bool EnableTerrainMeshBorderDebugSystem = false;
         public bool EnablePlayerFallThroughDiagnosticSystem = false;
@@ -165,10 +166,12 @@ namespace DOTS.Core.Authoring
         public bool EnableRelicLodSelectionSystem = true;
     
         [Header("Dungeon Systems")]
-        public bool EnableDungeonRenderingSystem = false;
+        [FormerlySerializedAs("EnableDungeonRenderingSystem")]
+        public bool EnableDungeonEntitySpawningSystem = false;
     
         [Header("Weather Systems")]
-        public bool EnableHybridWeatherSystem = false;
+        [FormerlySerializedAs("EnableHybridWeatherSystem")]
+        public bool EnableWeatherGpuEffectsSystem = false;
     
         // ── Vista / Camera ──
     

@@ -145,7 +145,7 @@ namespace DOTS.Terrain.WFC
         {
             var constraints = new List<WFCConstraint>();
             
-            // Note: Current HybridWFCSystem does not apply constraints during propagation.
+            // Note: Current WFCCollapseSystem does not apply constraints during propagation.
             // We keep a placeholder list to remain API-compatible.
             
             return constraints;

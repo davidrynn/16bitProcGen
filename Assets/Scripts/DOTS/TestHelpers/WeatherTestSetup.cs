@@ -37,8 +37,8 @@ namespace DOTS.Test
         
         private EntityManager entityManager;
         private EntityQuery terrainQuery;
-        private DOTS.Terrain.Weather.WeatherSystem weatherSystem;
-        private DOTS.Terrain.Weather.HybridWeatherSystem hybridWeatherSystem;
+        private DOTS.Terrain.Weather.WeatherSimulationSystem weatherSystem;
+        private DOTS.Terrain.Weather.WeatherGpuEffectsSystem hybridWeatherSystem;
         
         // Debug data
         private WeatherType currentWeather = WeatherType.Clear;
@@ -110,28 +110,28 @@ namespace DOTS.Test
             // Get weather systems - they might not exist yet, so we'll check for them in Update
             try
             {
-                weatherSystem = world.GetOrCreateSystemManaged<DOTS.Terrain.Weather.WeatherSystem>();
+                weatherSystem = world.GetOrCreateSystemManaged<DOTS.Terrain.Weather.WeatherSimulationSystem>();
                 if (weatherSystem != null)
                 {
-                    Debug.Log("[WeatherTest] Found WeatherSystem");
+                    Debug.Log("[WeatherTest] Found WeatherSimulationSystem");
                 }
             }
             catch (System.Exception e)
             {
-                Debug.LogWarning($"[WeatherTest] WeatherSystem not found: {e.Message}");
+                Debug.LogWarning($"[WeatherTest] WeatherSimulationSystem not found: {e.Message}");
             }
             
             try
             {
-                hybridWeatherSystem = world.GetOrCreateSystemManaged<DOTS.Terrain.Weather.HybridWeatherSystem>();
+                hybridWeatherSystem = world.GetOrCreateSystemManaged<DOTS.Terrain.Weather.WeatherGpuEffectsSystem>();
                 if (hybridWeatherSystem != null)
                 {
-                    Debug.Log("[WeatherTest] Found HybridWeatherSystem");
+                    Debug.Log("[WeatherTest] Found WeatherGpuEffectsSystem");
                 }
             }
             catch (System.Exception e)
             {
-                Debug.LogWarning($"[WeatherTest] HybridWeatherSystem not found: {e.Message}");
+                Debug.LogWarning($"[WeatherTest] WeatherGpuEffectsSystem not found: {e.Message}");
             }
             
             // Create query for terrain entities
@@ -251,7 +251,7 @@ namespace DOTS.Test
                 {
                     try
                     {
-                        weatherSystem = world.GetOrCreateSystemManaged<DOTS.Terrain.Weather.WeatherSystem>();
+                        weatherSystem = world.GetOrCreateSystemManaged<DOTS.Terrain.Weather.WeatherSimulationSystem>();
                     }
                     catch { }
                 }
@@ -264,7 +264,7 @@ namespace DOTS.Test
                 {
                     try
                     {
-                        hybridWeatherSystem = world.GetOrCreateSystemManaged<DOTS.Terrain.Weather.HybridWeatherSystem>();
+                        hybridWeatherSystem = world.GetOrCreateSystemManaged<DOTS.Terrain.Weather.WeatherGpuEffectsSystem>();
                     }
                     catch { }
                 }
@@ -370,8 +370,8 @@ namespace DOTS.Test
             // System status
             GUILayout.Space(10);
             GUILayout.Label("=== SYSTEM STATUS ===", GUI.skin.box);
-            GUILayout.Label($"WeatherSystem: {(weatherSystem != null ? "✓ Active" : "✗ Missing")}");
-            GUILayout.Label($"HybridWeatherSystem: {(hybridWeatherSystem != null ? "✓ Active" : "✗ Missing")}");
+            GUILayout.Label($"WeatherSimulationSystem: {(weatherSystem != null ? "✓ Active" : "✗ Missing")}");
+            GUILayout.Label($"WeatherGpuEffectsSystem: {(hybridWeatherSystem != null ? "✓ Active" : "✗ Missing")}");
             
             GUILayout.EndVertical();
             GUILayout.EndArea();

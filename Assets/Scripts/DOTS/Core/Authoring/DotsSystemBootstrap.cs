@@ -243,11 +243,11 @@ namespace DOTS.Core.Authoring
                     DebugSettings.Log("Bootstrap: RelicLodSelectionSystem enabled and added to PresentationSystemGroup.");
                 }
     
-                if (config.EnableTerrainSeamValidatorSystem)
+                if (config.EnableTerrainDensitySeamValidatorSystem)
                 {
-                    var handle = world.CreateSystem<DOTS.Terrain.Debug.TerrainSeamValidatorSystem>();
+                    var handle = world.CreateSystem<DOTS.Terrain.Debug.TerrainDensitySeamValidatorSystem>();
                     simGroup.AddSystemToUpdateList(handle);
-                    DebugSettings.Log("Bootstrap: TerrainSeamValidatorSystem enabled and added to SimulationSystemGroup.");
+                    DebugSettings.Log("Bootstrap: TerrainDensitySeamValidatorSystem enabled and added to SimulationSystemGroup.");
                 }
     
                 if (config.EnableTerrainMeshSeamValidatorSystem)
@@ -445,25 +445,25 @@ namespace DOTS.Core.Authoring
     
             if (config.EnableDungeonSystem)
             {
-                if (config.EnableDungeonRenderingSystem)
+                if (config.EnableDungeonEntitySpawningSystem)
                 {
-                    world.CreateSystem<DungeonRenderingSystem>();
-                    DebugSettings.Log("Bootstrap: DungeonRenderingSystem enabled via config.");
+                    world.CreateSystem<DungeonEntitySpawningSystem>();
+                    DebugSettings.Log("Bootstrap: DungeonEntitySpawningSystem enabled via config.");
                 }
     
-                world.CreateSystem<DungeonVisualizationSystem>();
-                DebugSettings.Log("Bootstrap: DungeonVisualizationSystem enabled via config.");
+                world.CreateSystem<DungeonDebugVisualizationSystem>();
+                DebugSettings.Log("Bootstrap: DungeonDebugVisualizationSystem enabled via config.");
             }
     
             if (config.EnableWeatherSystem)
             {
-                world.CreateSystem<WeatherSystem>();
-                DebugSettings.Log("Bootstrap: WeatherSystem enabled via config.");
+                world.CreateSystem<WeatherSimulationSystem>();
+                DebugSettings.Log("Bootstrap: WeatherSimulationSystem enabled via config.");
     
-                if (config.EnableHybridWeatherSystem)
+                if (config.EnableWeatherGpuEffectsSystem)
                 {
-                    world.CreateSystem<HybridWeatherSystem>();
-                    DebugSettings.Log("Bootstrap: HybridWeatherSystem enabled via config.");
+                    world.CreateSystem<WeatherGpuEffectsSystem>();
+                    DebugSettings.Log("Bootstrap: WeatherGpuEffectsSystem enabled via config.");
                 }
             }
     

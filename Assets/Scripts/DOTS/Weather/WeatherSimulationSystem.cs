@@ -15,7 +15,7 @@ namespace DOTS.Terrain.Weather
     [UpdateInGroup(typeof(SimulationSystemGroup))]
     [UpdateAfter(typeof(DOTS.Terrain.Legacy.LegacyHeightmapTerrainGenerationSystem))]
     [DisableAutoCreation]
-    public partial class WeatherSystem : SystemBase
+    public partial class WeatherSimulationSystem : SystemBase
     {
         // Weather settings
         private float weatherChangeInterval = 30f;
@@ -27,11 +27,11 @@ namespace DOTS.Terrain.Weather
         
         protected override void OnCreate()
         {
-            DOTS.Core.DebugSettings.LogWeather("WeatherSystem: Initializing...");
+            DOTS.Core.DebugSettings.LogWeather("WeatherSimulationSystem: Initializing...");
             lastWeatherChange = 0f;
             chunksWithWeather = 0;
             lastUpdateTime = 0f;
-            DOTS.Core.DebugSettings.LogWeather("WeatherSystem: Initialization complete");
+            DOTS.Core.DebugSettings.LogWeather("WeatherSimulationSystem: Initialization complete");
         }
         
         protected override void OnUpdate()
@@ -212,7 +212,7 @@ namespace DOTS.Terrain.Weather
         
         private void DebugLog(string message)
         {
-            DOTS.Core.DebugSettings.LogWeather($"WeatherSystem: {message}");
+            DOTS.Core.DebugSettings.LogWeather($"WeatherSimulationSystem: {message}");
         }
     }
 } 
