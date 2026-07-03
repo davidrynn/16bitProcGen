@@ -1,5 +1,6 @@
 using Unity.Collections;
 using Unity.Mathematics;
+using DOTS.Terrain.SurfaceScatter;
 using static Unity.Mathematics.noise;
 
 namespace DOTS.Terrain.Trees
@@ -59,13 +60,13 @@ namespace DOTS.Terrain.Trees
                 float localX = (cellX + 0.5f) * MinTreeSpacing;
                 float localZ = (cellZ + 0.5f) * MinTreeSpacing;
 
-                uint candidateHash = CandidateHash(worldSeed, chunkCoord, cellX, cellZ);
+                uint candidateHash = SurfaceScatterPlacementMath.CandidateHash(worldSeed, chunkCoord, cellX, cellZ);
                 var jitter   = CandidateJitterFromHash(candidateHash);
                 float worldX = worldOrigin.x + localX + jitter.x;
                 float worldZ = worldOrigin.z + localZ + jitter.y;
 
-                // a. Binary-search the density blob along Y for the surface height.
-                if (!TryFindSurfaceHeight(worldX, worldZ, ref blob, out float surfaceY, out int surfaceIY))
+                // a. Scan the density blob along Y for the surface height.
+                if (!SurfaceScatterPlacementMath.TryFindSurfaceHeight(worldX, worldZ, ref blob, out float surfaceY, out int surfaceIY))
                     continue;
 
                 // b/c. Compute grid indices and surface normal via central difference.
@@ -76,7 +77,7 @@ namespace DOTS.Terrain.Trees
                     (int)math.round((worldZ - blob.WorldOrigin.z) / blob.VoxelSize),
                     0, blob.Resolution.z - 1);
 
-                float3 normal  = ComputeNormal(ix, surfaceIY, iz, ref blob);
+                float3 normal  = SurfaceScatterPlacementMath.ComputeNormal(ix, surfaceIY, iz, ref blob);
                 float  normalY = normal.y;
 
                 // d. Slope filter — reject steep terrain.
@@ -140,7 +141,7 @@ namespace DOTS.Terrain.Trees
         /// </summary>
         public static float2 CandidateJitter(uint worldSeed, int3 chunkCoord, int cellX, int cellZ)
         {
-            return CandidateJitterFromHash(CandidateHash(worldSeed, chunkCoord, cellX, cellZ));
+            return CandidateJitterFromHash(SurfaceScatterPlacementMath.CandidateHash(worldSeed, chunkCoord, cellX, cellZ));
         }
 
         private static float2 CandidateJitterFromHash(uint hash)
@@ -151,78 +152,9 @@ namespace DOTS.Terrain.Trees
             return new float2(jx, jz) * CellJitterRadius;
         }
 
-        private static uint CandidateHash(uint worldSeed, int3 chunkCoord, int cellX, int cellZ)
-        {
-            var hash = worldSeed;
-            hash ^= (uint)chunkCoord.x * 2654435761u;
-            hash ^= (uint)chunkCoord.z * 1013904223u;
-            hash ^= (uint)cellX * 374761393u;
-            hash ^= (uint)cellZ * 668265263u;
-            hash *= 0x9e3779b9u;
-            return hash;
-        }
-
-        // ── Private helpers ───────────────────────────────────────────────────
-
-        /// <summary>
-        /// Finds the world-space surface height and the Y grid index of the surface voxel
-        /// for a given (worldX, worldZ) position in the density blob.
-        /// Returns false if no surface crossing is found in the blob column.
-        /// </summary>
-        private static bool TryFindSurfaceHeight(
-            float worldX, float worldZ,
-            ref TerrainChunkDensityBlob blob,
-            out float surfaceY, out int surfaceIY)
-        {
-            surfaceY  = 0f;
-            surfaceIY = 0;
-
-            int ix = math.clamp(
-                (int)math.round((worldX - blob.WorldOrigin.x) / blob.VoxelSize),
-                0, blob.Resolution.x - 1);
-            int iz = math.clamp(
-                (int)math.round((worldZ - blob.WorldOrigin.z) / blob.VoxelSize),
-                0, blob.Resolution.z - 1);
-
-            // Walk from top (air) down to find first solid-above-air crossing.
-            for (int iy = blob.Resolution.y - 2; iy >= 0; iy--)
-            {
-                float dAbove = blob.GetDensity(ix, iy + 1, iz);
-                float dBelow = blob.GetDensity(ix, iy,     iz);
-
-                // Surface crossing: above is air (≥ 0), below is solid (< 0).
-                if (dAbove >= 0f && dBelow < 0f)
-                {
-                    // Linear interpolation within the voxel to sub-voxel precision.
-                    float t   = dAbove / (dAbove - dBelow);        // fraction from iy+1 down to iy
-                    surfaceY  = blob.WorldOrigin.y + (iy + 1 - t) * blob.VoxelSize;
-                    surfaceIY = iy + 1;                            // voxel just above solid
-                    return true;
-                }
-            }
-
-            return false;
-        }
-
-        /// <summary>
-        /// Computes the outward surface normal via central differences on the density blob.
-        /// Falls back to (0,1,0) if the gradient is zero (degenerate flat region).
-        /// </summary>
-        private static float3 ComputeNormal(int ix, int iy, int iz, ref TerrainChunkDensityBlob blob)
-        {
-            int ixp = math.min(ix + 1, blob.Resolution.x - 1);
-            int ixm = math.max(ix - 1, 0);
-            int iyp = math.min(iy + 1, blob.Resolution.y - 1);
-            int iym = math.max(iy - 1, 0);
-            int izp = math.min(iz + 1, blob.Resolution.z - 1);
-            int izm = math.max(iz - 1, 0);
-
-            var grad = new float3(
-                blob.GetDensity(ixp, iy,  iz)  - blob.GetDensity(ixm, iy,  iz),
-                blob.GetDensity(ix,  iyp, iz)  - blob.GetDensity(ix,  iym, iz),
-                blob.GetDensity(ix,  iy,  izp) - blob.GetDensity(ix,  iy,  izm));
-
-            return math.normalizesafe(grad, new float3(0f, 1f, 0f));
-        }
+        // Hash, surface-height, and normal math now come from SurfaceScatterPlacementMath
+        // (cleanup round 1, plan row C2) — trees were the last family carrying private
+        // copies; the shared implementations are constant-for-constant identical, so
+        // placement determinism is unchanged.
     }
 }
