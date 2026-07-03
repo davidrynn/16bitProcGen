@@ -294,6 +294,16 @@ Batch protocol — every batch, no exceptions:
 
 ---
 
+### 6.8 Merge Notes (round 1 → main)
+
+> Playtest observations and conflict analysis recorded 2026-07-03 before merging `chore/codebase-cleanup` into `main`. **Resolution rule if any conflict arises in gameplay/terrain-render logic: keep the main-side logic, re-apply only the cleanup-side structural change (namespace/using renames, file moves).**
+
+1. **Terrain material broken in worktree playtest** — David saw the terrain material not rendering when playing in the *worktree* editor. Investigated: the branch changes **zero** `.mat`/`.shader`/`Resources/**` files; the chunk material comes from `Resources/TerrainChunkRenderSettings.asset` (untouched). Diagnosis: worktree-Library import artifact, not a branch change. **Action: re-verify terrain material in the main checkout after merge; do not "fix" it on this branch.**
+2. **Animation feels better in the original folder** — explained: the main checkout is on `fix/v7-fallthrough` (65adabb, sky-drop readiness-probe fix), one commit past the cleanup branch point. That commit is in neither `main` nor this branch; the difference is not a cleanup regression.
+3. **Conflict analysis vs. `fix/v7-fallthrough`** — exactly one file is touched by both branches: `Assets/Scripts/Player/Bootstrap/PlayerEntityBootstrap.cs`. Cleanup changed only `using DOTS.Terrain.Core;` → `using DOTS.Core;` (line 8); V7 changed the `ProbeDistance` block (~line 213). Non-overlapping hunks → git auto-merges cleanly. No blanket `-X ours` / `merge=ours` driver needed (a `merge=ours` driver would keep whole files and silently drop the using-rename this branch needs).
+
+---
+
 ## 7. Acceptance Criteria (per round)
 
 - Every applied change traces to an approved row in §6.1–§6.4 and a §6.6 batch entry with passing tests.
