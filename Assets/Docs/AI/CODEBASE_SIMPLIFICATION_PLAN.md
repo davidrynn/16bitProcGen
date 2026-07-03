@@ -253,6 +253,7 @@ Batch protocol — every batch, no exceptions:
 | 5 | 2026-07-02 | A13, A18 | 210/210 (9 tests of deleted obsolete component removed with it) | fb35c9a | GlobRemovalType extracted to own file (live glob physics uses it); TerrainGlobPhysicsSystem [UpdateAfter] on deleted system stripped with why-comment; bootstrap + config wiring removed. Commit message says 211 — correct count is 210 |
 | 6 | 2026-07-02 | C5, A17, R9 | 210/210 (first run failed: missed `[UpdateAfter(typeof(TerrainSystem))]` in HybridTerrainGenerationSystem — fixed, re-ran green) | efb3b4f | Validators merged; survivor TerrainDataValidationSystem in the unconditional slot; warnings now DebugSettings-gated (approved). Sweep lesson: use precise `typeof(X)` greps, no line-exclusion filters |
 | 7 | 2026-07-02 | R40, R7, A19 | 210/210 (after 3 compile-fix iterations) | 777d2b4 | 15 files → DOTS/Terrain/Legacy + ns DOTS.Terrain.Legacy; R7 rename + [FormerlySerializedAs] flag; 17 consumers updated. Hazards hit & fixed: UnityEngine.TerrainData ambiguity (aliases), DOTS.Terrain.Debug namespace shadowing UnityEngine.Debug, fully-qualified old-ns refs |
+| 8 | 2026-07-02 | R22, R24, R25, R27, R28 | 210/210 (after removing over-added usings) | c29908a | Namespaces added; key finding: NOTHING outside DOTS.Core.Authoring's own assembly uses the config/bootstrap types in code — all other grep matches were comments. Lesson: before adding `using X` to a consumer, confirm its asmdef references X's assembly |
 
 ### 6.7 Improvement Suggestions (out of scope — follow-up work)
 
