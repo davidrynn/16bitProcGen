@@ -57,7 +57,6 @@ Follow `Assets/Docs/Terrain/TERRAIN_ECS_NEXT_STEPS_SPEC.md`. Keep heightmap and 
 
 ### Test Locations
 
-- `Assets/Scripts/DOTS/Test/` - Manual/hybrid test MonoBehaviours
 - `Assets/Scripts/DOTS/Tests/Automated/` - NUnit automated tests
 - `Assets/Scripts/Player/Bootstrap/Tests/` - Player bootstrap tests
 
@@ -266,5 +265,5 @@ public class PlayerCameraBootstrap : MonoBehaviour
 - `Assets/Docs/DOCUMENTATION_SYSTEM_SPEC.md` - Documentation structure and AI-discovery rules
 - `Assets/Docs/Terrain/TERRAIN_ECS_NEXT_STEPS_SPEC.md` - SDF terrain implementation roadmap
 - `Assets/Scripts/Player/Bootstrap/BOOTSTRAP_GUIDE.md` - Bootstrap pattern guide with physics setup
-- `Assets/Scripts/DOTS/Test/Testing_Documentation.md` - Complete test catalog
+- NUnit suites under `Assets/Scripts/DOTS/Tests/` are the test surface (manual-harness catalog archived to `Assets/Docs/Archives/ManualTestScripts_2026/`)
 - `.github/copilot-instructions.md` - Additional context including current development focus

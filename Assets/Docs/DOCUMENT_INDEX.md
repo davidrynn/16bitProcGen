@@ -155,6 +155,7 @@ Quick-reference index of all project documentation. Docs are organized by featur
 
 | Folder | Contents |
 |--------|----------|
+| [Archives/ManualTestScripts_2026/](Archives/ManualTestScripts_2026/) | Manual test-harness catalog + notes (harnesses deleted in cleanup round 2, plan A22) |
 | [Archives/FirstPersonController/](Archives/FirstPersonController/) | Archived first-person controller docs |
 | [Archives/TerrainDesign/](Archives/TerrainDesign/) | Early terrain design explorations |
 | [Archives/Fixes/](Archives/Fixes/) | Test planning archives |

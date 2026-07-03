@@ -1,5 +1,7 @@
 # DOTS Terrain Testing Documentation
 
+**Status:** ARCHIVED (2026-07-03) — documents the manual test MonoBehaviours deleted in cleanup round 2 batch 23 (plan A22); the NUnit suites in `Assets/Scripts/DOTS/Tests/` are the live test surface.
+
 This document describes all major test scripts in the DOTS terrain system, what each test covers, why it works, and how to set it up and run it. Use this as a living reference for regression, feature, and integration testing.
 
 ---

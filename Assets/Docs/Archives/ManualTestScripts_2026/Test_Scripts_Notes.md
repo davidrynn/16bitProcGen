@@ -1,5 +1,7 @@
 # Test Scripts Editable Settings
 
+**Status:** ARCHIVED (2026-07-03) — documents the manual test MonoBehaviours deleted in cleanup round 2 batch 23 (plan A22); the NUnit suites in `Assets/Scripts/DOTS/Tests/` are the live test surface.
+
 The test scripts provide several key editable settings that control terrain generation and testing:
 
 ## 1. **AutoTestSetup.cs** - Basic Test Environment
