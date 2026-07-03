@@ -1,3 +1,4 @@
+using DOTS.Compute;
 using Unity.Entities;
 using Unity.Mathematics;
 using Unity.Collections;

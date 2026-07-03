@@ -1,3 +1,4 @@
+using DOTS.Core.Authoring;
 using System;
 using System.Collections.Generic;
 using System.Linq;

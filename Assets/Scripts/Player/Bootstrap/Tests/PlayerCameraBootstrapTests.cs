@@ -12,7 +12,7 @@ using DOTS.Player.Bootstrap;
 using DOTS.Player.Components;
 using DOTS.Terrain;
 
-namespace DOTS.Player.Tests.Bootstrap
+namespace DOTS.Player.Bootstrap.Tests
 {
     [TestFixture]
     public class PlayerEntityBootstrapTests

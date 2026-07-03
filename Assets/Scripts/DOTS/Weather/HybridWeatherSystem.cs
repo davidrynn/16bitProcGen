@@ -1,3 +1,4 @@
+using DOTS.Compute;
 using DOTS.Terrain.Legacy;
 using TerrainData = DOTS.Terrain.Legacy.TerrainData;
 using Unity.Entities;
