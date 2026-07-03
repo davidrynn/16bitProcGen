@@ -261,6 +261,7 @@ Batch protocol — every batch, no exceptions:
 | 12 | 2026-07-02 | R1–R6, R63 | 210/210 | d8f67b3 | 6 system renames + 3 flag renames w/ [FormerlySerializedAs] + DungeonGenerationRequest extracted. **R63 AMENDED:** DungeonVisualized stays in its preprocessor-guarded editor-only file |
 | 13 | 2026-07-02 | R60, R64, R65 | 210/210 | bf9141a | PlayerComponents.cs split 8-ways (byte-identical definitions); SurfaceNetsJob.cs + PlayerEntityBootstrapTests.cs file renames |
 | 14 | 2026-07-02 | R61 | 210/210 | 47e0146 | WFCComponent.cs split into 13 one-type files |
+| 15 | 2026-07-02 | C2 | 210/210 (incl. jitter regression + tree determinism tests) | 75628ef | Trees adopt shared placement math; private copies verified constant-identical before deletion |
 
 ### 6.7 Improvement Suggestions (out of scope — follow-up work)
 
