@@ -24,7 +24,7 @@ namespace DOTS.Terrain.Legacy
             terrainQuery = GetEntityQuery(typeof(TerrainData));
             biomeQuery = GetEntityQuery(typeof(BiomeComponent));
             
-            DOTS.Terrain.Core.DebugSettings.LogTerrain("TerrainCleanupSystem: Initialized");
+            DOTS.Core.DebugSettings.LogTerrain("TerrainCleanupSystem: Initialized");
         }
         
         protected override void OnUpdate()
@@ -70,11 +70,11 @@ namespace DOTS.Terrain.Legacy
                 }
                 biomeEntities.Dispose();
                 
-                DOTS.Terrain.Core.DebugSettings.LogTerrain("TerrainCleanupSystem: Cleaned up all blob assets");
+                DOTS.Core.DebugSettings.LogTerrain("TerrainCleanupSystem: Cleaned up all blob assets");
             }
             catch (System.Exception e)
             {
-                DOTS.Terrain.Core.DebugSettings.LogWarning($"TerrainCleanupSystem: Error during cleanup: {e.Message}");
+                DOTS.Core.DebugSettings.LogWarning($"TerrainCleanupSystem: Error during cleanup: {e.Message}");
             }
         }
         

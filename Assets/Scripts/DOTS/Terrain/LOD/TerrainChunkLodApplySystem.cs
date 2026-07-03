@@ -1,4 +1,4 @@
-using DOTS.Terrain.Core;
+using DOTS.Core;
 using DOTS.Terrain.Rocks;
 using DOTS.Terrain.Rendering;
 using DOTS.Terrain.Trees;

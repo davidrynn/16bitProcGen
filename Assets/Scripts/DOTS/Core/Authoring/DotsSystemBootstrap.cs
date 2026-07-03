@@ -1,7 +1,7 @@
 using DOTS.Terrain.Legacy;
 using DOTS.Player.Bootstrap;
 using DOTS.Player.Systems;
-using DOTS.Terrain.Core;
+using DOTS.Core;
 using DOTS.Terrain;
 using DOTS.Terrain.LOD;
 using DOTS.Terrain.Meshing;

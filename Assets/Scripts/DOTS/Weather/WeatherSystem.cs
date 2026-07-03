@@ -27,11 +27,11 @@ namespace DOTS.Terrain.Weather
         
         protected override void OnCreate()
         {
-            DOTS.Terrain.Core.DebugSettings.LogWeather("WeatherSystem: Initializing...");
+            DOTS.Core.DebugSettings.LogWeather("WeatherSystem: Initializing...");
             lastWeatherChange = 0f;
             chunksWithWeather = 0;
             lastUpdateTime = 0f;
-            DOTS.Terrain.Core.DebugSettings.LogWeather("WeatherSystem: Initialization complete");
+            DOTS.Core.DebugSettings.LogWeather("WeatherSystem: Initialization complete");
         }
         
         protected override void OnUpdate()
@@ -212,7 +212,7 @@ namespace DOTS.Terrain.Weather
         
         private void DebugLog(string message)
         {
-            DOTS.Terrain.Core.DebugSettings.LogWeather($"WeatherSystem: {message}");
+            DOTS.Core.DebugSettings.LogWeather($"WeatherSystem: {message}");
         }
     }
 } 

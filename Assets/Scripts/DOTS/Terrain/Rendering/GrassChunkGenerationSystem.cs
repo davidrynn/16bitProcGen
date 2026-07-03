@@ -1,4 +1,4 @@
-using DOTS.Terrain.Core;
+using DOTS.Core;
 using DOTS.Terrain.LOD;
 using DOTS.Terrain.Settings;
 using Unity.Collections;

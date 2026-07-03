@@ -3,7 +3,7 @@ using DOTS.Terrain.Legacy;
 using UnityEngine;
 using Unity.Entities;
 using DOTS.Terrain.Weather;
-using DOTS.Terrain.Core;
+using DOTS.Core;
 
 namespace DOTS.Terrain.Test
 {

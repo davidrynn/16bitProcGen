@@ -3,7 +3,7 @@ using Unity.Entities;
 using Unity.Mathematics;
 using Unity.Physics.Systems;
 using DOTS.Player.Components;
-using DOTS.Terrain.Core;
+using DOTS.Core;
 
 namespace DOTS.Player.Systems
 {

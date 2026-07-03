@@ -8,7 +8,7 @@ using Unity.Physics.Systems;
 using Unity.Transforms;
 using UnityEngine;
 using UnityEngine.TestTools;
-using DOTS.Terrain.Core;
+using DOTS.Core;
 
 namespace DOTS.Terrain.Tests
 {

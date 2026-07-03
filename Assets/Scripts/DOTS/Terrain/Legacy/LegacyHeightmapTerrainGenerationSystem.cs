@@ -5,7 +5,7 @@ using Unity.Collections;
 using Unity.Jobs;
 using Unity.Burst;
 using UnityEngine;
-using DOTS.Terrain.Core;
+using DOTS.Core;
 namespace DOTS.Terrain.Legacy
 {
     /// <summary>

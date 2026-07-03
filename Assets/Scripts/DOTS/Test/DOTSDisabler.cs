@@ -1,7 +1,7 @@
 using UnityEngine;
 using Unity.Entities;
 using DOTS.Terrain.WFC;
-using DOTS.Terrain.Core;
+using DOTS.Core;
 
 namespace DOTS.Terrain.Test
 {

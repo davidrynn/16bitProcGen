@@ -1,5 +1,5 @@
 using DOTS.Terrain;
-using DOTS.Terrain.Core;
+using DOTS.Core;
 using DOTS.Terrain.LOD;
 using Unity.Entities;
 using Unity.Mathematics;

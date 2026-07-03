@@ -43,13 +43,13 @@ namespace DOTS.Terrain.WFC
         /// </summary>
         public void RequestDungeonGeneration()
         {
-            DOTS.Terrain.Core.DebugSettings.LogRendering($"DungeonManager: Requesting dungeon generation at {dungeonPosition}", true);
+            DOTS.Core.DebugSettings.LogRendering($"DungeonManager: Requesting dungeon generation at {dungeonPosition}", true);
             
             // Get DOTS world
             dotsWorld = World.DefaultGameObjectInjectionWorld;
             if (dotsWorld == null)
             {
-                DOTS.Terrain.Core.DebugSettings.LogError("DungeonManager: DOTS World not found!");
+                DOTS.Core.DebugSettings.LogError("DungeonManager: DOTS World not found!");
                 return;
             }
             
@@ -70,7 +70,7 @@ namespace DOTS.Terrain.WFC
             
             dotsWorld.EntityManager.AddComponentData(dungeonRequestEntity, request);
             
-            DOTS.Terrain.Core.DebugSettings.LogRendering($"DungeonManager: Dungeon generation request created for {dungeonSize.x}x{dungeonSize.y} dungeon");
+            DOTS.Core.DebugSettings.LogRendering($"DungeonManager: Dungeon generation request created for {dungeonSize.x}x{dungeonSize.y} dungeon");
         }
         
         /// <summary>
@@ -84,7 +84,7 @@ namespace DOTS.Terrain.WFC
                 request.isActive = false;
                 dotsWorld.EntityManager.SetComponentData(dungeonRequestEntity, request);
                 
-                DOTS.Terrain.Core.DebugSettings.LogRendering("DungeonManager: Dungeon generation stopped");
+                DOTS.Core.DebugSettings.LogRendering("DungeonManager: Dungeon generation stopped");
             }
         }
         

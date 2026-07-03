@@ -1,6 +1,6 @@
 using System.Collections;
 using DOTS.Player.Components;
-using DOTS.Terrain.Core;
+using DOTS.Core;
 using DOTS.Terrain.Streaming;
 using Unity.Collections;
 using Unity.Entities;

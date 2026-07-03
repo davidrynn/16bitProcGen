@@ -52,7 +52,7 @@ namespace DOTS.Terrain.WFC
         
         protected override void OnCreate()
         {
-            DOTS.Terrain.Core.DebugSettings.LogRendering("DungeonRenderingSystem: OnCreate called", true);
+            DOTS.Core.DebugSettings.LogRendering("DungeonRenderingSystem: OnCreate called", true);
             
             // Query for WFC cells
             wfcCellsQuery = GetEntityQuery(ComponentType.ReadOnly<WFCCell>());
@@ -65,14 +65,14 @@ namespace DOTS.Terrain.WFC
             // Macro-only: Require baked FBX-based prefabs from the registry
             if (!SystemAPI.HasSingleton<DOTS.Terrain.WFC.Authoring.DungeonPrefabRegistry>())
             {
-                DOTS.Terrain.Core.DebugSettings.LogRendering("DungeonRenderingSystem (Macro-only): Waiting for DungeonPrefabRegistry (not baked yet)");
+                DOTS.Core.DebugSettings.LogRendering("DungeonRenderingSystem (Macro-only): Waiting for DungeonPrefabRegistry (not baked yet)");
                 return;
             }
 
             var registry = SystemAPI.GetSingleton<DOTS.Terrain.WFC.Authoring.DungeonPrefabRegistry>();
             if (registry.roomFloorPrefab == Entity.Null || registry.roomEdgePrefab == Entity.Null)
             {
-                DOTS.Terrain.Core.DebugSettings.LogError("DungeonRenderingSystem (Macro-only): roomFloorPrefab or roomEdgePrefab is not assigned in DungeonPrefabRegistry.");
+                DOTS.Core.DebugSettings.LogError("DungeonRenderingSystem (Macro-only): roomFloorPrefab or roomEdgePrefab is not assigned in DungeonPrefabRegistry.");
                 return;
             }
 
@@ -105,7 +105,7 @@ namespace DOTS.Terrain.WFC
             var registryNow = SystemAPI.GetSingleton<DOTS.Terrain.WFC.Authoring.DungeonPrefabRegistry>();
             if (registryNow.roomFloorPrefab == Entity.Null || registryNow.roomEdgePrefab == Entity.Null)
             {
-                DOTS.Terrain.Core.DebugSettings.LogError("DungeonRenderingSystem (Macro-only): roomFloorPrefab or roomEdgePrefab is not assigned in DungeonPrefabRegistry.");
+                DOTS.Core.DebugSettings.LogError("DungeonRenderingSystem (Macro-only): roomFloorPrefab or roomEdgePrefab is not assigned in DungeonPrefabRegistry.");
                 ecb.Dispose();
                 return;
             }
@@ -142,14 +142,14 @@ namespace DOTS.Terrain.WFC
                 }
             }
                 
-            if (DOTS.Terrain.Core.DebugSettings.EnableRenderingDebug)
+            if (DOTS.Core.DebugSettings.EnableRenderingDebug)
             {
-                DOTS.Terrain.Core.DebugSettings.LogRendering($"DungeonRenderingSystem (Macro-only): Requests={requestCount}, active={dungeonGenerationRequested}");
+                DOTS.Core.DebugSettings.LogRendering($"DungeonRenderingSystem (Macro-only): Requests={requestCount}, active={dungeonGenerationRequested}");
             }
                 
             if (!dungeonGenerationRequested)
             {
-                DOTS.Terrain.Core.DebugSettings.LogRendering("DungeonRenderingSystem (Macro-only): No active DungeonGenerationRequest. Skipping.", true);
+                DOTS.Core.DebugSettings.LogRendering("DungeonRenderingSystem (Macro-only): No active DungeonGenerationRequest. Skipping.", true);
                 ecb.Dispose();
                 return;
             }
@@ -157,26 +157,26 @@ namespace DOTS.Terrain.WFC
             // Only log every 500 updates to reduce spam
             if (updateCounter % 500 == 0)
             {
-                DOTS.Terrain.Core.DebugSettings.LogRendering($"DungeonRenderingSystem: Processing dungeon generation (update {updateCounter})");
+                DOTS.Core.DebugSettings.LogRendering($"DungeonRenderingSystem: Processing dungeon generation (update {updateCounter})");
             }
             
             if (!SystemAPI.HasSingleton<WFCComponent>())
             {
-                DOTS.Terrain.Core.DebugSettings.LogRendering("DungeonRenderingSystem (Macro-only): No WFCComponent found.", true);
+                DOTS.Core.DebugSettings.LogRendering("DungeonRenderingSystem (Macro-only): No WFCComponent found.", true);
                 ecb.Dispose();
                 return;
             }
                 
             var wfcComponent = SystemAPI.GetSingleton<WFCComponent>();
-            if (DOTS.Terrain.Core.DebugSettings.EnableRenderingDebug)
+            if (DOTS.Core.DebugSettings.EnableRenderingDebug)
             {
-                DOTS.Terrain.Core.DebugSettings.LogRendering($"DungeonRenderingSystem (Macro-only): WFC state isCollapsed={wfcComponent.isCollapsed}, isGenerating={wfcComponent.isGenerating}, iterations={wfcComponent.iterations}");
+                DOTS.Core.DebugSettings.LogRendering($"DungeonRenderingSystem (Macro-only): WFC state isCollapsed={wfcComponent.isCollapsed}, isGenerating={wfcComponent.isGenerating}, iterations={wfcComponent.iterations}");
             }
             
             // Only process if WFC is complete
             if (!wfcComponent.isCollapsed)
             {
-                DOTS.Terrain.Core.DebugSettings.LogRendering("DungeonRenderingSystem (Macro-only): WFC not collapsed yet. Waiting.", true);
+                DOTS.Core.DebugSettings.LogRendering("DungeonRenderingSystem (Macro-only): WFC not collapsed yet. Waiting.", true);
                 ecb.Dispose();
                 return;
             }
@@ -215,9 +215,9 @@ namespace DOTS.Terrain.WFC
                 collapsedCount++;
             }
             patternTypes.Dispose();
-            if (DOTS.Terrain.Core.DebugSettings.EnableRenderingDebug)
+            if (DOTS.Core.DebugSettings.EnableRenderingDebug)
             {
-                DOTS.Terrain.Core.DebugSettings.LogRendering($"DungeonRenderingSystem (Macro-only): Collapsed cells counted={collapsedCount}");
+                DOTS.Core.DebugSettings.LogRendering($"DungeonRenderingSystem (Macro-only): Collapsed cells counted={collapsedCount}");
             }
 
             // Process cells that need visualization
@@ -246,14 +246,14 @@ namespace DOTS.Terrain.WFC
 
                 if (sampleCount < 5)
                 {
-                    DOTS.Terrain.Core.DebugSettings.LogRendering($"DungeonRenderingSystem (Macro-only): Sample cell at ({cell.position.x},{cell.position.y}) - collapsed: {cell.collapsed}, visualized: {cell.visualized}, pattern: {cell.selectedPattern}");
+                    DOTS.Core.DebugSettings.LogRendering($"DungeonRenderingSystem (Macro-only): Sample cell at ({cell.position.x},{cell.position.y}) - collapsed: {cell.collapsed}, visualized: {cell.visualized}, pattern: {cell.selectedPattern}");
                     sampleCount++;
                 }
 
                 if (cell.collapsed && !cell.visualized)
                 {
                     collapsedNotVisualized++;
-                    DOTS.Terrain.Core.DebugSettings.LogRendering($"DungeonRenderingSystem (Macro-only): Spawning element for cell ({cell.position.x},{cell.position.y}) pattern={cell.selectedPattern}", true);
+                    DOTS.Core.DebugSettings.LogRendering($"DungeonRenderingSystem (Macro-only): Spawning element for cell ({cell.position.x},{cell.position.y}) pattern={cell.selectedPattern}", true);
                     SpawnDungeonElement(ref cell);
                     cell.visualized = true;
                     processedCells++;
@@ -266,23 +266,23 @@ namespace DOTS.Terrain.WFC
                 }
             }
                 
-            if (DOTS.Terrain.Core.DebugSettings.EnableRenderingDebug)
+            if (DOTS.Core.DebugSettings.EnableRenderingDebug)
             {
-                DOTS.Terrain.Core.DebugSettings.LogRendering($"DungeonRenderingSystem (Macro-only): Processed {processedCells}/{totalCells} cells for rendering");
-                DOTS.Terrain.Core.DebugSettings.LogRendering($"DungeonRenderingSystem (Macro-only): Cell state breakdown - Total: {totalCells}, Collapsed: {collapsedCells}, Visualized: {visualizedCells}, CollapsedNotVisualized: {collapsedNotVisualized}");
+                DOTS.Core.DebugSettings.LogRendering($"DungeonRenderingSystem (Macro-only): Processed {processedCells}/{totalCells} cells for rendering");
+                DOTS.Core.DebugSettings.LogRendering($"DungeonRenderingSystem (Macro-only): Cell state breakdown - Total: {totalCells}, Collapsed: {collapsedCells}, Visualized: {visualizedCells}, CollapsedNotVisualized: {collapsedNotVisualized}");
             }
             
             // Check if all cells are now visualized
             if (processedCells == 0 && totalCells > 0)
             {
-                DOTS.Terrain.Core.DebugSettings.LogRendering($"DungeonRenderingSystem: RENDERING COMPLETE! All {totalCells} cells processed.");
+                DOTS.Core.DebugSettings.LogRendering($"DungeonRenderingSystem: RENDERING COMPLETE! All {totalCells} cells processed.");
                 renderingComplete = true;
             }
             
             // If rendering is complete, stop processing
             if (renderingComplete)
             {
-                DOTS.Terrain.Core.DebugSettings.LogRendering("DungeonRenderingSystem: Rendering complete - stopping updates");
+                DOTS.Core.DebugSettings.LogRendering("DungeonRenderingSystem: Rendering complete - stopping updates");
                 return;
             }
             
@@ -293,7 +293,7 @@ namespace DOTS.Terrain.WFC
             // Force a frame delay to ensure components are applied before visualization system runs
             if (processedCells > 0)
             {
-                DOTS.Terrain.Core.DebugSettings.LogRendering($"DungeonRenderingSystem: Applied {processedCells} entities with DungeonElementInstance components");
+                DOTS.Core.DebugSettings.LogRendering($"DungeonRenderingSystem: Applied {processedCells} entities with DungeonElementInstance components");
             }
         }
         
@@ -308,8 +308,8 @@ namespace DOTS.Terrain.WFC
             
             if (cell.selectedPattern < 0 || cell.selectedPattern >= blobPatterns.Length)
             {
-                DOTS.Terrain.Core.DebugSettings.LogRendering($"DungeonRenderingSystem: Invalid pattern {cell.selectedPattern} for cell at {cell.position}, skipping spawn (valid range: 0-{blobPatterns.Length - 1})");
-                DOTS.Terrain.Core.DebugSettings.LogRendering($"DungeonRenderingSystem: Cell state - collapsed: {cell.collapsed}, visualized: {cell.visualized}");
+                DOTS.Core.DebugSettings.LogRendering($"DungeonRenderingSystem: Invalid pattern {cell.selectedPattern} for cell at {cell.position}, skipping spawn (valid range: 0-{blobPatterns.Length - 1})");
+                DOTS.Core.DebugSettings.LogRendering($"DungeonRenderingSystem: Cell state - collapsed: {cell.collapsed}, visualized: {cell.visualized}");
                 return; // Skip this cell instead of crashing
             }
 
@@ -320,9 +320,9 @@ namespace DOTS.Terrain.WFC
             ValidateWFCConstraints(ref cell, pat, ref blobPatterns);
 
             // Log pattern and rotation for model alignment testing
-            if (DOTS.Terrain.Core.DebugSettings.EnableRenderingDebug)
+            if (DOTS.Core.DebugSettings.EnableRenderingDebug)
             {
-                DOTS.Terrain.Core.DebugSettings.LogRendering($"MODEL ALIGNMENT TEST: Cell at ({cell.position.x},{cell.position.y}) - Pattern: {pat.type} sockets={GetSocketString(pat)} selectedPattern={cell.selectedPattern}");
+                DOTS.Core.DebugSettings.LogRendering($"MODEL ALIGNMENT TEST: Cell at ({cell.position.x},{cell.position.y}) - Pattern: {pat.type} sockets={GetSocketString(pat)} selectedPattern={cell.selectedPattern}");
             }
 
             // Select prefab by domain type
@@ -360,11 +360,11 @@ namespace DOTS.Terrain.WFC
                 {
                     prefabToSpawn = prefabs.floorPrefab;
                     rotation = quaternion.identity;
-                    DOTS.Terrain.Core.DebugSettings.LogRendering($"DungeonRenderingSystem (Macro-only): Pattern {cell.selectedPattern} mapped to RoomFloor as fallback at ({cell.position.x}, {cell.position.y})");
+                    DOTS.Core.DebugSettings.LogRendering($"DungeonRenderingSystem (Macro-only): Pattern {cell.selectedPattern} mapped to RoomFloor as fallback at ({cell.position.x}, {cell.position.y})");
                 }
                 else
                 {
-                    DOTS.Terrain.Core.DebugSettings.LogWarning($"DungeonRenderingSystem (Macro-only): No prefab for pattern {cell.selectedPattern} and no RoomFloor fallback available");
+                    DOTS.Core.DebugSettings.LogWarning($"DungeonRenderingSystem (Macro-only): No prefab for pattern {cell.selectedPattern} and no RoomFloor fallback available");
                 }
             }
             
@@ -399,11 +399,11 @@ namespace DOTS.Terrain.WFC
                 if (EntityManager.HasComponent<DungeonElementComponent>(instance))
                 {
                     var elementData = EntityManager.GetComponentData<DungeonElementComponent>(instance);
-                    DOTS.Terrain.Core.DebugSettings.LogRendering($"DungeonRenderingSystem: Spawned {elementData.elementType} at ({cell.position.x}, {cell.position.y}) with transform {transform.Position}");
+                    DOTS.Core.DebugSettings.LogRendering($"DungeonRenderingSystem: Spawned {elementData.elementType} at ({cell.position.x}, {cell.position.y}) with transform {transform.Position}");
                 }
                 else
                 {
-                    DOTS.Terrain.Core.DebugSettings.LogWarning($"DungeonRenderingSystem: Spawned entity missing DungeonElementComponent at ({cell.position.x}, {cell.position.y})");
+                    DOTS.Core.DebugSettings.LogWarning($"DungeonRenderingSystem: Spawned entity missing DungeonElementComponent at ({cell.position.x}, {cell.position.y})");
                 }
                 
                 // Add a component to track this as a spawned dungeon element (deferred via command buffer)
@@ -500,7 +500,7 @@ namespace DOTS.Terrain.WFC
             if (pat.west == (byte)'F') return quaternion.Euler(0, math.radians(270f), 0);  // 270° - Opens West
             
             // Fallback (should never occur for valid DeadEnd patterns)
-            DOTS.Terrain.Core.DebugSettings.LogWarning($"DetermineDeadEndRotation: No open edge found for pattern {pat.patternId}");
+            DOTS.Core.DebugSettings.LogWarning($"DetermineDeadEndRotation: No open edge found for pattern {pat.patternId}");
             return quaternion.identity;
         }
 
@@ -526,7 +526,7 @@ namespace DOTS.Terrain.WFC
         /// </summary>
         private void ValidateWFCConstraints(ref WFCCell cell, WFCPattern pattern, ref BlobArray<WFCPattern> blobPatterns)
         {
-            if (!DOTS.Terrain.Core.DebugSettings.EnableRenderingDebug) return;
+            if (!DOTS.Core.DebugSettings.EnableRenderingDebug) return;
 
             int2 pos = cell.position;
 
@@ -557,15 +557,15 @@ namespace DOTS.Terrain.WFC
             // Check constraint violation
             if (thisSocket == (byte)'F' && neighborSocket == (byte)'W')
             {
-                DOTS.Terrain.Core.DebugSettings.LogRendering($"WFC CONSTRAINT VIOLATION: Cell at {pos} has {direction} open (F) but neighbor at {neighborPos} has {neighborSocketName} closed (W)");
-                DOTS.Terrain.Core.DebugSettings.LogRendering($"  - This pattern: {pattern.type} sockets={GetSocketString(pattern)}");
-                DOTS.Terrain.Core.DebugSettings.LogRendering($"  - Neighbor pattern: {neighborPattern.type} sockets={GetSocketString(neighborPattern)}");
+                DOTS.Core.DebugSettings.LogRendering($"WFC CONSTRAINT VIOLATION: Cell at {pos} has {direction} open (F) but neighbor at {neighborPos} has {neighborSocketName} closed (W)");
+                DOTS.Core.DebugSettings.LogRendering($"  - This pattern: {pattern.type} sockets={GetSocketString(pattern)}");
+                DOTS.Core.DebugSettings.LogRendering($"  - Neighbor pattern: {neighborPattern.type} sockets={GetSocketString(neighborPattern)}");
             }
             else if (thisSocket == (byte)'W' && neighborSocket == (byte)'F')
             {
-                DOTS.Terrain.Core.DebugSettings.LogRendering($"WFC CONSTRAINT VIOLATION: Cell at {pos} has {direction} closed (W) but neighbor at {neighborPos} has {neighborSocketName} open (F)");
-                DOTS.Terrain.Core.DebugSettings.LogRendering($"  - This pattern: {pattern.type} sockets={GetSocketString(pattern)}");
-                DOTS.Terrain.Core.DebugSettings.LogRendering($"  - Neighbor pattern: {neighborPattern.type} sockets={GetSocketString(neighborPattern)}");
+                DOTS.Core.DebugSettings.LogRendering($"WFC CONSTRAINT VIOLATION: Cell at {pos} has {direction} closed (W) but neighbor at {neighborPos} has {neighborSocketName} open (F)");
+                DOTS.Core.DebugSettings.LogRendering($"  - This pattern: {pattern.type} sockets={GetSocketString(pattern)}");
+                DOTS.Core.DebugSettings.LogRendering($"  - Neighbor pattern: {neighborPattern.type} sockets={GetSocketString(neighborPattern)}");
             }
         }
 

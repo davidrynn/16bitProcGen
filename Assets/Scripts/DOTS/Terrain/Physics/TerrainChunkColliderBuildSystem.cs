@@ -5,7 +5,7 @@ using Unity.Physics;
 using Unity.Physics.Systems;
 using UnityEngine;
 using Unity.Transforms;
-using DOTS.Terrain.Core;
+using DOTS.Core;
 using System;
 
 namespace DOTS.Terrain

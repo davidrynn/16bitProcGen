@@ -35,13 +35,13 @@ namespace DOTS.Terrain.WFC
         
         protected override void OnCreate()
         {
-            DOTS.Terrain.Core.DebugSettings.LogWFC("HybridWFCSystem: Initializing...");
+            DOTS.Core.DebugSettings.LogWFC("HybridWFCSystem: Initializing...");
             
             // Get compute shader manager
             computeManager = ComputeShaderManager.Instance;
             if (computeManager == null)
             {
-                DOTS.Terrain.Core.DebugSettings.LogError("HybridWFCSystem: ComputeShaderManager not found!");
+                DOTS.Core.DebugSettings.LogError("HybridWFCSystem: ComputeShaderManager not found!");
                 return;
             }
             
@@ -64,18 +64,18 @@ namespace DOTS.Terrain.WFC
             totalGenerationTime = 0f;
             
             // Initialize random generator (configurable seed for testing)
-            if (DOTS.Terrain.Core.DebugSettings.UseFixedWFCSeed)
+            if (DOTS.Core.DebugSettings.UseFixedWFCSeed)
             {
-                random = new Unity.Mathematics.Random((uint)DOTS.Terrain.Core.DebugSettings.FixedWFCSeed);
-                DOTS.Terrain.Core.DebugSettings.LogWFC($"HybridWFCSystem: Random seed initialized to {DOTS.Terrain.Core.DebugSettings.FixedWFCSeed} for deterministic testing");
+                random = new Unity.Mathematics.Random((uint)DOTS.Core.DebugSettings.FixedWFCSeed);
+                DOTS.Core.DebugSettings.LogWFC($"HybridWFCSystem: Random seed initialized to {DOTS.Core.DebugSettings.FixedWFCSeed} for deterministic testing");
             }
             else
             {
                 random = new Unity.Mathematics.Random((uint)System.DateTime.Now.Ticks);
-                DOTS.Terrain.Core.DebugSettings.LogWFC("HybridWFCSystem: Random generator initialized with time-based seed");
+                DOTS.Core.DebugSettings.LogWFC("HybridWFCSystem: Random generator initialized with time-based seed");
             }
             
-            DOTS.Terrain.Core.DebugSettings.LogWFC("HybridWFCSystem: Initialization complete");
+            DOTS.Core.DebugSettings.LogWFC("HybridWFCSystem: Initialization complete");
         }
         
         private bool HasAdjacentWall(int2 pos)
@@ -600,7 +600,7 @@ namespace DOTS.Terrain.WFC
         /// </summary>
         private void DebugLog(string message, bool force = false)
         {
-            DOTS.Terrain.Core.DebugSettings.LogWFC($"HybridWFCSystem: {message}", force);
+            DOTS.Core.DebugSettings.LogWFC($"HybridWFCSystem: {message}", force);
         }
         
         /// <summary>
@@ -608,12 +608,12 @@ namespace DOTS.Terrain.WFC
         /// </summary>
         private void DebugWarning(string message)
         {
-            DOTS.Terrain.Core.DebugSettings.LogWarning($"HybridWFCSystem: {message}");
+            DOTS.Core.DebugSettings.LogWarning($"HybridWFCSystem: {message}");
         }
         
         protected override void OnDestroy()
         {
-            DOTS.Terrain.Core.DebugSettings.LogWFC("HybridWFCSystem: Destroyed");
+            DOTS.Core.DebugSettings.LogWFC("HybridWFCSystem: Destroyed");
         }
     }
     

@@ -1,6 +1,6 @@
 using Unity.Entities;
 using UnityEngine;
-using DOTS.Terrain.Core;
+using DOTS.Core;
 using DOTS.Terrain.Rendering;
 
 namespace DOTS.Impostors

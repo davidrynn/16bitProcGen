@@ -9,7 +9,7 @@ using UnityEngine.TestTools;
 using DOTS.Player.Components;
 using DOTS.Player.Bootstrap.Tests;
 using DOTS.Terrain;
-using DOTS.Terrain.Core;
+using DOTS.Core;
 
 namespace DOTS.Terrain.Tests
 {

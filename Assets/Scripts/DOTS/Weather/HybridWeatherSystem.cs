@@ -39,7 +39,7 @@ namespace DOTS.Terrain.Weather
         
         protected override void OnCreate()
         {
-            DOTS.Terrain.Core.DebugSettings.LogWeather("HybridWeatherSystem: Initializing...");
+            DOTS.Core.DebugSettings.LogWeather("HybridWeatherSystem: Initializing...");
             lastWeatherUpdateTime = 0f;
             chunksWithWeatherEffects = 0;
             
@@ -74,7 +74,7 @@ namespace DOTS.Terrain.Weather
                 DebugError($"Failed to get ComputeShaderManager: {e.Message}");
             }
             
-            DOTS.Terrain.Core.DebugSettings.LogWeather("HybridWeatherSystem: Initialization complete");
+            DOTS.Core.DebugSettings.LogWeather("HybridWeatherSystem: Initialization complete");
         }
         
         protected override void OnUpdate()
@@ -159,7 +159,7 @@ namespace DOTS.Terrain.Weather
         {
             if (enableDebugLogs)
             {
-                DOTS.Terrain.Core.DebugSettings.LogWeather($"Applying weather effects: {weather.weatherType} to terrain at {terrain.chunkPosition}");
+                DOTS.Core.DebugSettings.LogWeather($"Applying weather effects: {weather.weatherType} to terrain at {terrain.chunkPosition}");
             }
             
             if (computeManager?.WeatherShader == null)
@@ -318,22 +318,22 @@ namespace DOTS.Terrain.Weather
                 temperatureBuffer = null;
             }
             
-            DOTS.Terrain.Core.DebugSettings.LogWeather("HybridWeatherSystem: Cleanup complete");
+            DOTS.Core.DebugSettings.LogWeather("HybridWeatherSystem: Cleanup complete");
         }
         
         private void DebugLog(string message, bool verbose = false)
         {
-            DOTS.Terrain.Core.DebugSettings.LogWeather($"HybridWeatherSystem: {message}", verbose);
+            DOTS.Core.DebugSettings.LogWeather($"HybridWeatherSystem: {message}", verbose);
         }
         
         private void DebugError(string message)
         {
-            DOTS.Terrain.Core.DebugSettings.LogError($"HybridWeatherSystem: {message}");
+            DOTS.Core.DebugSettings.LogError($"HybridWeatherSystem: {message}");
         }
         
         private void DebugWarning(string message)
         {
-            DOTS.Terrain.Core.DebugSettings.LogWarning($"HybridWeatherSystem: {message}");
+            DOTS.Core.DebugSettings.LogWarning($"HybridWeatherSystem: {message}");
         }
     }
 } 

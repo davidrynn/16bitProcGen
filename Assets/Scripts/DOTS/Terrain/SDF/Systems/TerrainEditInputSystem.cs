@@ -3,7 +3,7 @@ using Unity.Entities;
 using Unity.Mathematics;
 using Unity.Physics;
 using DOTS.Player.Components;
-using DOTS.Terrain.Core;
+using DOTS.Core;
 using Unity.Transforms;
 using UnityEngine;
 using UnityEngine.InputSystem;

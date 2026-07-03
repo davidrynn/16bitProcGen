@@ -5,7 +5,7 @@ using Unity.Transforms;
 using UnityEngine;
 using UnityEngine.Rendering.Universal;
 using DOTS.Player.Components;
-using DOTS.Terrain.Core;
+using DOTS.Core;
 
 namespace DOTS.Player.Bootstrap
 {

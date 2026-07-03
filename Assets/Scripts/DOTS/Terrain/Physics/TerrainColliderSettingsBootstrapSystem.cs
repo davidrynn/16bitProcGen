@@ -1,5 +1,5 @@
 using Unity.Entities;
-using DOTS.Terrain.Core;
+using DOTS.Core;
 
 namespace DOTS.Terrain
 {

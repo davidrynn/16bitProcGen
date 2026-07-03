@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace DOTS.Terrain.Core
+namespace DOTS.Core
 {
     /// <summary>
     /// Centralized debug settings for controlling debug output across all DOTS systems

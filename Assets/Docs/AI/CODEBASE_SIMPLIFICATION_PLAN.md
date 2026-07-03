@@ -254,6 +254,7 @@ Batch protocol — every batch, no exceptions:
 | 6 | 2026-07-02 | C5, A17, R9 | 210/210 (first run failed: missed `[UpdateAfter(typeof(TerrainSystem))]` in HybridTerrainGenerationSystem — fixed, re-ran green) | efb3b4f | Validators merged; survivor TerrainDataValidationSystem in the unconditional slot; warnings now DebugSettings-gated (approved). Sweep lesson: use precise `typeof(X)` greps, no line-exclusion filters |
 | 7 | 2026-07-02 | R40, R7, A19 | 210/210 (after 3 compile-fix iterations) | 777d2b4 | 15 files → DOTS/Terrain/Legacy + ns DOTS.Terrain.Legacy; R7 rename + [FormerlySerializedAs] flag; 17 consumers updated. Hazards hit & fixed: UnityEngine.TerrainData ambiguity (aliases), DOTS.Terrain.Debug namespace shadowing UnityEngine.Debug, fully-qualified old-ns refs |
 | 8 | 2026-07-02 | R22, R24, R25, R27, R28 | 210/210 (after removing over-added usings) | c29908a | Namespaces added; key finding: NOTHING outside DOTS.Core.Authoring's own assembly uses the config/bootstrap types in code — all other grep matches were comments. Lesson: before adding `using X` to a consumer, confirm its asmdef references X's assembly |
+| — (verify) | 2026-07-02 | PlayMode regression check after batches 1–8 | branch **86/96** = baseline (a9ec90e) **86/96**, identical failure lists — **zero regressions** | — | 9 failures all pre-existing: 6 headless-CLI artifacts (WaitForEndOfFrame; player-visual spawn needs rendered frames), 1 skip, 2 genuine pre-existing failures → S14/S15 |
 
 ### 6.7 Improvement Suggestions (out of scope — follow-up work)
 
@@ -273,6 +274,8 @@ Batch protocol — every batch, no exceptions:
 | S10 | `DOTS.Terrain.asmdef` | Monolith swallows nearly every DOTS feature (Structures, WFC, Weather, Impostors, Biome, Compute, Debug), contradicting `PROJECT_STRUCTURE_DOTS.md`'s "modular assemblies" claim. Silver lining: makes §6.1 namespace renames low-risk. Modularization = separate spec | 1, 3 | open |
 | S11 | Heightmap pipeline (`HybridTerrainGenerationSystem` + `DOTS/Core` data types + `TerrainEntityManager`/`TerrainDataBuilder`) | Retire the legacy heightmap path entirely once confirmed the SDF path covers all needs — the architectural migration CLAUDE.md anticipates. Own spec; A12/A13/R40 only quarantine it | 2 | open |
 | S12 | `HybridWFCSystem.PropagateConstraintsWithComputeShader` | Unused GPU stub ("TODO: implement") + O(n) linear neighbor scans per frame — if WFC survives A16, replace scans with a position-keyed lookup | 3 | open |
+| S14 | `TreePlacementEditModeTests.GeneratePlacements_VariantAndYaw_AssignedWithinExpectedRange` | **Pre-existing test failure** (fails on pre-cleanup baseline too; found during round-1 PlayMode verification): no accepted placement ever selects a non-zero tree variant — variant-selection logic or test expectation is wrong | 3 | open |
+| S15 | `PlayerWallContactCommandPlayModeTests.GroundedJump_DoesNotImmediatelyRegroundWhileStillAscending` | **Pre-existing test failure** (fails on baseline too): grounded jump does not switch to Ballistic on the takeoff frame — possible regrounding bug in movement/grounding hand-off | 3 | open |
 
 ---
 
