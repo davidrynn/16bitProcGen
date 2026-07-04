@@ -17,8 +17,18 @@ namespace DOTS.Terrain
     {
         private const int DefaultMaxCollidersPerFrame = 4;
         private const int MaxDisableRemovalsPerFrame = 16;
+        // Chebyshev chunk radius around the player whose colliders are built every frame
+        // regardless of the per-frame budget. Radius 1 = the 3x3 ring under/around the player.
+        // This guarantees the player always has ground beneath it even when a freshly streamed
+        // or LOD-promoted chunk would otherwise wait in the (arbitrary-order) build backlog.
+        // Widen if fast traversal (e.g. slingshot landings) still outruns collider coverage.
+        private const int NearPlayerColliderRadius = 1;
         private EntityQuery pendingColliderQuery;
         private EntityQuery colliderLodCleanupQuery;
+        // Player position drives near-player build prioritization; chunks needing a collider
+        // that also already have a mesh are the only ones actually buildable this frame.
+        private EntityQuery playerQuery;
+        private EntityQuery buildableColliderQuery;
 
         public void OnCreate(ref SystemState state)
         {
@@ -28,6 +38,14 @@ namespace DOTS.Terrain
                 .WithAll<TerrainChunk, DOTS.Terrain.LOD.TerrainChunkLodState, PhysicsCollider>()
                 .WithNone<TerrainChunkNeedsColliderBuild>()
                 .Build(ref state);
+            playerQuery = state.GetEntityQuery(
+                ComponentType.ReadOnly<DOTS.Player.Components.PlayerTag>(),
+                ComponentType.ReadOnly<LocalTransform>());
+            buildableColliderQuery = state.GetEntityQuery(
+                ComponentType.ReadOnly<TerrainChunk>(),
+                ComponentType.ReadOnly<TerrainChunkMeshData>(),
+                ComponentType.ReadOnly<LocalTransform>(),
+                ComponentType.ReadOnly<TerrainChunkNeedsColliderBuild>());
         }
 
         public void OnUpdate(ref SystemState state)
@@ -116,88 +134,87 @@ namespace DOTS.Terrain
                     $"maxPerFrame={maxCollidersThisFrame}");
             }
 
-            foreach (var (chunk, meshData, entity) in SystemAPI
-                         .Query<RefRO<TerrainChunk>, RefRO<TerrainChunkMeshData>>()
-                         .WithAll<LocalTransform>()
-                         .WithAll<TerrainChunkNeedsColliderBuild>()
-                         .WithEntityAccess())
+            // Determine the player's chunk so chunks near the player build first — and, within the
+            // near ring, build unconditionally (exempt from the per-frame budget). Without this the
+            // 4/frame builds happen in arbitrary archetype order, so a freshly streamed / LOD-promoted
+            // chunk under the player can sit collider-less for several frames and the player falls
+            // through it (DOTS Physics has no CCD, and PlayerTerrainSafetySystem cannot snap the
+            // player back through a collider that does not yet exist). Stride matches the LOD system
+            // so the player-chunk math stays consistent with the LOD rings.
+            bool havePlayerChunk = false;
+            int2 playerChunkCoord = default;
+            if (lodPolicyValid && !playerQuery.IsEmpty)
             {
-                if (builtCount >= maxCollidersThisFrame)
+                var stride = math.max(0, lodPolicy.Lod0Resolution.x - 1) * lodPolicy.Lod0VoxelSize;
+                if (stride > 0f)
                 {
-                    break;
+                    var playerPos = entityManager
+                        .GetComponentData<LocalTransform>(playerQuery.GetSingletonEntity()).Position;
+                    playerChunkCoord = new int2(
+                        (int)math.floor(playerPos.x / stride),
+                        (int)math.floor(playerPos.z / stride));
+                    havePlayerChunk = true;
+                }
+            }
+
+            if (havePlayerChunk)
+            {
+                using var buildEntities = buildableColliderQuery.ToEntityArray(Allocator.Temp);
+                using var buildChunks = buildableColliderQuery.ToComponentDataArray<TerrainChunk>(Allocator.Temp);
+                using var buildMeshes = buildableColliderQuery.ToComponentDataArray<TerrainChunkMeshData>(Allocator.Temp);
+
+                // Sort pending buildable chunks by Chebyshev chunk distance so the nearest build first.
+                var order = new NativeArray<PendingColliderChunk>(buildEntities.Length, Allocator.Temp);
+                for (int i = 0; i < buildEntities.Length; i++)
+                {
+                    var coord = buildChunks[i].ChunkCoord;
+                    int dist = math.max(
+                        math.abs(coord.x - playerChunkCoord.x),
+                        math.abs(coord.z - playerChunkCoord.y));
+                    order[i] = new PendingColliderChunk { Distance = dist, Index = i };
+                }
+                order.Sort();
+
+                for (int o = 0; o < order.Length; o++)
+                {
+                    // order is sorted ascending, so all near-player chunks come before far ones.
+                    // Once we reach a far chunk with the budget spent, everything after is also far.
+                    bool nearPlayer = order[o].Distance <= NearPlayerColliderRadius;
+                    if (!nearPlayer && builtCount >= maxCollidersThisFrame)
+                        break;
+
+                    var idx = order[o].Index;
+                    bool built = TryBuildChunkCollider(
+                        entityManager, ecb, staleBlobs, buildEntities[idx],
+                        buildChunks[idx], buildMeshes[idx], lodPolicyValid, lodPolicy, terrainMaterial);
+
+                    // Near-player builds are budget-exempt; only throttled far builds count.
+                    if (built && !nearPlayer)
+                        builtCount++;
                 }
 
-                // Skip collider builds for chunks above ColliderMaxLod — they are far from the
-                // player and will be promoted before the player can reach them. This keeps the
-                // 4/frame budget free for near-player LOD0/1 chunks.
-                if (lodPolicyValid && entityManager.HasComponent<DOTS.Terrain.LOD.TerrainChunkLodState>(entity))
+                order.Dispose();
+            }
+            else
+            {
+                // Fallback for worlds with no player / no LOD policy (e.g. automated tests):
+                // original arbitrary-order, budget-limited build.
+                foreach (var (chunk, meshData, entity) in SystemAPI
+                             .Query<RefRO<TerrainChunk>, RefRO<TerrainChunkMeshData>>()
+                             .WithAll<LocalTransform>()
+                             .WithAll<TerrainChunkNeedsColliderBuild>()
+                             .WithEntityAccess())
                 {
-                    var lodState = entityManager.GetComponentData<DOTS.Terrain.LOD.TerrainChunkLodState>(entity);
-                    if (lodState.CurrentLod > lodPolicy.ColliderMaxLod)
+                    if (builtCount >= maxCollidersThisFrame)
+                        break;
+
+                    if (TryBuildChunkCollider(
+                            entityManager, ecb, staleBlobs, entity,
+                            chunk.ValueRO, meshData.ValueRO, lodPolicyValid, lodPolicy, terrainMaterial))
                     {
-                        CollectAndRemoveCollider(entityManager, ecb, staleBlobs, entity);
-                        if (DebugSettings.EnableTerrainColliderPipelineDebug)
-                            DebugSettings.LogTerrainColliderPipeline(
-                                $"collider removed (LOD {lodState.CurrentLod} > max {lodPolicy.ColliderMaxLod}) chunk={entity.Index}");
-                        continue;
+                        builtCount++;
                     }
                 }
-
-                var mesh = meshData.ValueRO.Mesh;
-                var chunkCoord = chunk.ValueRO.ChunkCoord;
-                if (!mesh.IsCreated || mesh.Value.Vertices.Length == 0 || mesh.Value.Indices.Length == 0)
-                {
-                    if (DebugSettings.EnableTerrainColliderPipelineDebug)
-                    {
-                        DebugSettings.LogTerrainColliderPipeline(
-                            $"collider skipped (empty mesh) chunk={chunkCoord} entity={entity.Index} — preserving existing collider");
-                    }
-
-                    // Preserve any existing collider as a safety net (e.g. previous LOD's collider
-                    // while a coarser LOD mesh is empty). Just clear the pending tag.
-                    if (entityManager.HasComponent<TerrainChunkNeedsColliderBuild>(entity))
-                        ecb.RemoveComponent<TerrainChunkNeedsColliderBuild>(entity);
-                    continue;
-                }
-
-                var vertexCount = mesh.Value.Vertices.Length;
-                var indexCount = mesh.Value.Indices.Length;
-                if (indexCount % 3 != 0 || !IndicesWithinBounds(mesh, vertexCount))
-                {
-                    LogInvalidMesh(chunkCoord, entity, indexCount, vertexCount);
-                    CollectAndRemoveCollider(entityManager, ecb, staleBlobs, entity);
-                    continue;
-                }
-
-                var filter = new CollisionFilter
-                {
-                    BelongsTo = 2u,
-                    CollidesWith = ~0u,
-                    GroupIndex = 0
-                };
-
-                var newCollider = BuildMeshCollider(mesh, filter, terrainMaterial);
-                if (!newCollider.IsCreated)
-                {
-                    if (DebugSettings.EnableTerrainColliderPipelineDebug)
-                    {
-                        DebugSettings.LogTerrainColliderPipeline(
-                            $"collider build failed (MeshCollider.Create) chunk={chunkCoord} entity={entity.Index}");
-                    }
-
-                    CollectAndRemoveCollider(entityManager, ecb, staleBlobs, entity);
-                    continue;
-                }
-
-                ApplyCollider(entityManager, ecb, staleBlobs, entity, newCollider);
-                if (DebugSettings.EnableTerrainColliderPipelineDebug)
-                {
-                    var triCount = indexCount / 3;
-                    DebugSettings.LogTerrainColliderPipeline(
-                        $"collider applied chunk={chunkCoord} entity={entity.Index} tris={triCount} verts={vertexCount}");
-                }
-
-                builtCount++;
             }
 
             ecb.Playback(entityManager);
@@ -215,6 +232,102 @@ namespace DOTS.Terrain
                         $"(built={builtCount} this frame, maxPerFrame={maxCollidersThisFrame})");
                 }
             }
+        }
+
+        /// <summary>
+        /// Builds and applies a mesh collider for a single pending chunk, mirroring the original
+        /// inline loop's LOD-skip / empty-mesh / invalid-mesh handling. Returns true only when a
+        /// collider was actually built and applied — i.e. when the call should count against the
+        /// per-frame build budget. Skip / preserve / remove paths return false.
+        /// </summary>
+        private bool TryBuildChunkCollider(
+            EntityManager entityManager,
+            EntityCommandBuffer ecb,
+            NativeList<BlobAssetReference<Unity.Physics.Collider>> staleBlobs,
+            Entity entity,
+            in TerrainChunk chunk,
+            in TerrainChunkMeshData meshData,
+            bool lodPolicyValid,
+            in DOTS.Terrain.LOD.TerrainLodSettings lodPolicy,
+            Unity.Physics.Material terrainMaterial)
+        {
+            // Skip collider builds for chunks above ColliderMaxLod — they are far from the player
+            // and will be promoted before the player can reach them. Keeps the budget free for
+            // near-player LOD0/1 chunks.
+            if (lodPolicyValid && entityManager.HasComponent<DOTS.Terrain.LOD.TerrainChunkLodState>(entity))
+            {
+                var lodState = entityManager.GetComponentData<DOTS.Terrain.LOD.TerrainChunkLodState>(entity);
+                if (lodState.CurrentLod > lodPolicy.ColliderMaxLod)
+                {
+                    CollectAndRemoveCollider(entityManager, ecb, staleBlobs, entity);
+                    if (DebugSettings.EnableTerrainColliderPipelineDebug)
+                        DebugSettings.LogTerrainColliderPipeline(
+                            $"collider removed (LOD {lodState.CurrentLod} > max {lodPolicy.ColliderMaxLod}) chunk={entity.Index}");
+                    return false;
+                }
+            }
+
+            var mesh = meshData.Mesh;
+            var chunkCoord = chunk.ChunkCoord;
+            if (!mesh.IsCreated || mesh.Value.Vertices.Length == 0 || mesh.Value.Indices.Length == 0)
+            {
+                if (DebugSettings.EnableTerrainColliderPipelineDebug)
+                    DebugSettings.LogTerrainColliderPipeline(
+                        $"collider skipped (empty mesh) chunk={chunkCoord} entity={entity.Index} — preserving existing collider");
+
+                // Preserve any existing collider as a safety net (e.g. previous LOD's collider while
+                // a coarser LOD mesh is empty). Just clear the pending tag.
+                if (entityManager.HasComponent<TerrainChunkNeedsColliderBuild>(entity))
+                    ecb.RemoveComponent<TerrainChunkNeedsColliderBuild>(entity);
+                return false;
+            }
+
+            var vertexCount = mesh.Value.Vertices.Length;
+            var indexCount = mesh.Value.Indices.Length;
+            if (indexCount % 3 != 0 || !IndicesWithinBounds(mesh, vertexCount))
+            {
+                LogInvalidMesh(chunkCoord, entity, indexCount, vertexCount);
+                CollectAndRemoveCollider(entityManager, ecb, staleBlobs, entity);
+                return false;
+            }
+
+            var filter = new CollisionFilter
+            {
+                BelongsTo = 2u,
+                CollidesWith = ~0u,
+                GroupIndex = 0
+            };
+
+            var newCollider = BuildMeshCollider(mesh, filter, terrainMaterial);
+            if (!newCollider.IsCreated)
+            {
+                if (DebugSettings.EnableTerrainColliderPipelineDebug)
+                    DebugSettings.LogTerrainColliderPipeline(
+                        $"collider build failed (MeshCollider.Create) chunk={chunkCoord} entity={entity.Index}");
+
+                CollectAndRemoveCollider(entityManager, ecb, staleBlobs, entity);
+                return false;
+            }
+
+            ApplyCollider(entityManager, ecb, staleBlobs, entity, newCollider);
+            if (DebugSettings.EnableTerrainColliderPipelineDebug)
+            {
+                var triCount = indexCount / 3;
+                DebugSettings.LogTerrainColliderPipeline(
+                    $"collider applied chunk={chunkCoord} entity={entity.Index} tris={triCount} verts={vertexCount}");
+            }
+
+            return true;
+        }
+
+        /// <summary>
+        /// Sort key for pending collider builds: ascending Chebyshev chunk distance from the player.
+        /// </summary>
+        private struct PendingColliderChunk : IComparable<PendingColliderChunk>
+        {
+            public int Distance;
+            public int Index;
+            public int CompareTo(PendingColliderChunk other) => Distance.CompareTo(other.Distance);
         }
 
         private int RemoveCollidersOutsideLodPolicy(

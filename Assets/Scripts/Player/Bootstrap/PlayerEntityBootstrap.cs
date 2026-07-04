@@ -213,7 +213,12 @@ namespace DOTS.Player.Bootstrap
                 {
                     StartTime = -1d,
                     TimeoutSeconds = readinessTimeout,
-                    ProbeDistance = 96f,
+                    // Probe must reach the ground from the spawn height, otherwise readiness
+                    // can never be detected and the gate always falls back to the timeout,
+                    // releasing gravity before the collider under the landing point is confirmed
+                    // (V7 fall-through). Ground sits near Y=0; the +64 buffer clears SDF amplitude.
+                    // Floored at 96 to preserve the non-sky-drop (Y=PlayerStartHeight) behaviour.
+                    ProbeDistance = math.max(96f, spawnY + 64f),
                     ReleasedGravityFactor = 1f
                 });
 
