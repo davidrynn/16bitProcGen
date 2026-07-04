@@ -1,9 +1,13 @@
 # Tickets
 
 **Status:** ACTIVE
-**Last Updated:** 2026-07-02
+**Last Updated:** 2026-07-03
 
 Lightweight task tracker. Status: `[ ]` pending · `[x]` done · `[-]` blocked
+
+**Ticket ID scheme** _(inferred from existing usage — owner to confirm as canonical)_: prefix = track,
+number increments within the track and is never reused. `V` Vista Moment · `C` Camera Feel · `A` Animation ·
+`M` Movement · `P` Phase 1 core · `W` World Power/WFC · `R` Rendering · `T` Testing · `B` Biome Art.
 
 ---
 
@@ -44,9 +48,10 @@ Lightweight task tracker. Status: `[ ]` pending · `[x]` done · `[-]` blocked
 | V4  | [ ] | Hand mesh validation — confirm `testAlienHand.fbx` renders; tune scale/yOffset |
 | V5  | [-] | _(Deferred — out of MVP "look at" scope)_ Relic → WFC maze interior — connect relic anchor to dungeon interior generation |
 | V6  | [x] | Time-of-day + biome-dependent sky & tracking fog — Plains "Cloudbreak" preset; haze color follows the horizon (2026-07-01) |
-| V7  | [ ] | BUG: player intermittently falls through the ground (collider-build timing / sky-drop landing) |
+| V7  | [x] | BUG: player falls through ground on sky-drop landing — readiness-gate probe now reaches terrain (65adabb, 2026-07-03) |
 | V8  | [ ] | Distance-graded fog density — see the ground from height while still veiling the far horizon _(consumes V9 `_AtmoHorizon`)_ |
 | V9  | [ ] | Atmosphere color authority — one palette source + global `_Atmo*` uniforms + shared aerial-perspective HLSL; unifies sky, disc, mountains, terrain, hero relic & fog color (supersedes disc `SyncTerrainColor`; folds V3 color path; hero relic gets reduced-strength fog exemption) |
+| V10 | [x] | BUG: player falls through terrain during traversal — colliders built player-nearest-first, 3×3 ring budget-exempt (1883659, 2026-07-03) |
 
 #### V1 — Ground plane impostor
 **Spec:** `Rendering/GROUND_PLANE_IMPOSTOR_SPEC.md`. Horizontal terrain-colored disc (~1500u radius) on the XZ
@@ -140,11 +145,24 @@ to the single MVP biome and leave the biome-switch bridge as a marked seam.
   with the 2nd biome. Clouds use default coverage; bump on `TimeOfDayController.defaultCloudSettings` for a
   more overcast sky.
 
-#### V7 — BUG: player falls through the ground _(flagged 2026-07-01)_
-Intermittent — the player sometimes drops through terrain. Suspect collider-build timing vs. player arrival,
-especially on sky-drop landing. Investigate: `PlayerTerrainSafetySystem`, `TerrainChunkColliderBuildSystem`,
-the sky-drop readiness gate (`SkyDropGravityHoldSeconds` in `ProjectFeatureConfig`). Enable
-`EnablePlayerFallThroughDiagnosticSystem` to capture repro data. _(Not yet investigated.)_
+#### V7 — BUG: player falls through ground on sky-drop landing _(fixed 2026-07-03)_
+The sky-drop spawn (Y≈400) could drop the player through terrain on landing. Root cause: the readiness-gate
+ground probe didn't reach the ground from spawn height, so the gate released on the 8 s timeout rather than on
+true collider readiness. Fix: `ProbeDistance = math.max(96f, spawnY + 64f)` in `PlayerEntityBootstrap` so the
+probe reaches terrain and the gate releases on readiness (`65adabb`). Validated in-editor 2026-07-03 — lands
+stably at Y≈5.23, no fall-through. General-traversal fall-through split out to **V10**; residual high-speed
+tunneling fragility tracked as **M5**.
+
+#### V10 — BUG: player falls through terrain during traversal _(fixed 2026-07-03)_
+Split from V7 after the reframe that fall-through "might happen any time going over the terrain," not only on
+sky-drop. Root cause: `TerrainChunkColliderBuildSystem` built colliders 4/frame in arbitrary archetype order
+with no player awareness, so freshly streamed or LOD-promoted chunks near the player could sit collider-less
+for several frames. With no CCD (Unity DOTS Physics is discrete-collision) and a safety net that cannot
+ray-hit a collider that does not yet exist, the player drops straight through the gap. Fix: each frame compute
+the player's chunk, sort buildable chunks by Chebyshev distance to it, and build nearest-first; the 3×3
+near-player ring (`NearPlayerColliderRadius = 1`) is built unconditionally (budget-exempt) while far chunks
+respect the 4/frame throttle. Falls back to the original arbitrary-order loop when there is no player / LOD
+policy (tests). Commit `1883659`, validated 2026-07-03.
 
 #### V8 — Distance-graded fog density _(flagged 2026-07-01; approach decided 2026-07-02)_
 The uniform-density fog (V6 landed at `0.0022`, Exp²) is too thick to see the ground from altitude — raising
@@ -389,6 +407,7 @@ _Tickets for later sprints — not yet scheduled._
 | M2  | Chain slingshot (chain window + additive velocity) | Movement |
 | M3  | Thermal columns (vertical lift volumes) | Movement |
 | M4  | BUG: Ballistic-takeoff false-grounding past jump apex — suppress by contact/separation, not velocity sign | Movement |
+| M5  | Harden sky-drop landing against high-speed tunneling (thin/absent collider under landing XZ; no CCD) | Movement |
 | P1  | Basic HUD (charge indicator + chain window indicator) | Phase 1 |
 | P2  | Magic Hand System (raycast, charge, binary terrain edit) | Phase 1 |
 | E1  | Blocked-edit visual feedback — red-X reticle pulse (+ optional tooltip) when a terrain edit is rejected by the player-safety volume. Post-MVP: terrain editing itself needs substantial work first (owner 2026-07-03; salvaged from archived Cursor plan) | Editing UX |
@@ -422,6 +441,13 @@ marks `IsGrounded = true` mid-air — firing landing logic before real touchdown
 - **Notes:** pre-existing on `main` (not introduced by the vista PR). Related to the grounding/landing cluster
   (**V7** fall-through, `LandingDetectionSystem`, Mode hysteresis). Needs playtesting — behavior change, not a
   cosmetic fix. Enable `DebugSettings.EnableFallThroughDebug` to observe the ungrounded/grounded transitions.
+
+### M5 — Harden sky-drop landing against high-speed tunneling _(open — spun off from V7, 2026-07-03)_
+The sky-drop (V7) lands stably today only because the landing chunk carries a *thick* Surface Nets mesh
+collider — Unity.Physics penetration recovery catches the ~−87 m/s body without CCD. A thin or absent collider
+under the landing XZ could still tunnel. Direction: guarantee a built collider under the spawn XZ before the
+readiness gate releases (and/or thicken the landing-zone collider), so the sky-drop does not depend on
+penetration-recovery luck. Related to the grounding/landing cluster — **V7**, **V10**, **M4**.
 
 ### R1 — Low-poly tree/rock LODs + enable relic LOD
 **Intent:** Reduce environment-object render cost via LOD. **Priority: trees and rocks first** — they cost more FPS than the giant relics. Relics second.
