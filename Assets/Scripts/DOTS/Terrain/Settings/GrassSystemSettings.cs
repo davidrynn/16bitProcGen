@@ -5,7 +5,7 @@ namespace DOTS.Terrain.Settings
     /// <summary>
     /// Singleton ScriptableObject with global grass rendering configuration.
     ///
-    /// Location: Assets/Resources/GrassSystemSettings.asset (required for Resources.Load).
+    /// Location: Assets/Resources/Terrain/GrassSystemSettings.asset (required for Resources.Load).
     /// Create via Assets > Create > DOTS Terrain > Grass System Settings.
     ///
     /// Systems that need this call <see cref="Load"/> once and cache the result.
@@ -15,7 +15,10 @@ namespace DOTS.Terrain.Settings
     [CreateAssetMenu(menuName = "DOTS Terrain/Grass System Settings", fileName = "GrassSystemSettings")]
     public class GrassSystemSettings : ScriptableObject
     {
-        private const string ResourcePath = "GrassSystemSettings";
+        // Must match the asset's location under Resources/ — it lives in Resources/Terrain/.
+        // The old bare "GrassSystemSettings" silently returned null (plan S17), so every
+        // grass system ran on GrassDefaults instead of the tuned asset.
+        private const string ResourcePath = "Terrain/GrassSystemSettings";
 
         [Header("Blade Mesh & Material")]
         [Tooltip("Simple cross or quad mesh for one blade. Created by DOTS Terrain > Build Grass Blade Mesh.")]
@@ -45,7 +48,7 @@ namespace DOTS.Terrain.Settings
         public GrassBiomeSettings[] Biomes = System.Array.Empty<GrassBiomeSettings>();
 
         /// <summary>
-        /// Loads the singleton asset from Resources/GrassSystemSettings.
+        /// Loads the singleton asset from Resources/Terrain/GrassSystemSettings.
         /// Returns null if the asset has not been created yet.
         /// </summary>
         public static GrassSystemSettings Load() =>

@@ -100,7 +100,7 @@ Architecture principle: if legacy code conflicts with DOTS-first, prefer pure DO
 - Assets/Docs/DOCUMENTATION_SYSTEM_SPEC.md — documentation structure and AI-discovery rules
 - Assets/Scripts/DOTS/Test/Testing_Documentation.md — test harness catalog
 - Assets/Scripts/Player/Bootstrap/BOOTSTRAP_GUIDE.md — pure-code DOTS scene setup patterns
-- Assets/README.md — DOTS authoring checklist
+- /CLAUDE.md — DOTS authoring conventions (former Assets/README.md checklist folded in 2026-07-03)
 - Assets/Docs/Terrain/TERRAIN_ECS_NEXT_STEPS_SPEC.md — SDF terrain roadmap
 
 ## Common Pitfalls

@@ -1,0 +1,10 @@
+---
+description: Project documentation entry points — read before planning or broad searches
+alwaysApply: true
+---
+
+- Authoritative project overview (vision, status, roadmap): `Assets/Docs/MASTER_PLAN.md`
+- Active sprint tasks and backlog: `Assets/Docs/TICKETS.md`
+- Documentation index (start discovery here, not with folder scans): `Assets/Docs/DOCUMENT_INDEX.md`
+- Architecture rules and conventions: `/CLAUDE.md` (applies to all AI assistants, not just Claude)
+- Do not create plan documents outside `Assets/Docs/` — the folder taxonomy is defined in `Assets/Docs/DOCUMENTATION_SYSTEM_SPEC.md` §6.4.

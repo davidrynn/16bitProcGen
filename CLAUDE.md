@@ -244,6 +244,7 @@ public class PlayerCameraBootstrap : MonoBehaviour
 ## Common Pitfalls
 
 - Missing `partial` on systems → source generators fail
+- "namespace already contains a definition for X" after a rename/refactor → stale source-generator output; check `Temp/GeneratedCode/<Assembly>/` and clear `Library/`, `Temp/`, `obj/`
 - `Debug.Log` in systems → use `DebugSettings.*` loggers
 - BlobAsset leaks → dispose before reassigning
 - Compute shader name/kernel mismatches → verify Resources.Load names and kernel strings
