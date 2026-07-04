@@ -75,8 +75,8 @@ MonoBehaviour:
   EnableTerrainSeamValidatorSystem: 0
   EnableTerrainMeshSeamValidatorSystem: 0
   EnableTerrainMeshBorderDebugSystem: 0
-  EnablePlayerFallThroughDiagnosticSystem: 1
-  EnableTerrainColliderTimingSystem: 1
+  EnablePlayerFallThroughDiagnosticSystem: 0
+  EnableTerrainColliderTimingSystem: 0
   EnableGroundPlaneImpostor: 1
   EnableSkyDropSpawn: 1
   SkyDropSpawnHeight: 400
