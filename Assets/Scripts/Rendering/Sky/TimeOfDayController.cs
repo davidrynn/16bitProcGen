@@ -12,6 +12,16 @@ namespace DOTS.Rendering.Sky
         [Tooltip("Full day-night cycle duration in seconds. 0 = paused.")]
         [SerializeField] private float cycleDurationSeconds = 600f;
 
+        [Header("Dev Pin")]
+        [Tooltip("Hold the cycle at Pinned Normalized Time while enabled (overrides the running cycle). " +
+                 "Dev determinism pin for debugging and screenshot validation — see the dev-pin convention in CLAUDE.md.")]
+        [SerializeField] private bool pinTimeOfDay;
+
+        [Tooltip("Raw cycle time to hold while pinned. 0.08 = midday under the default remap " +
+                 "(raw 0 = dawn, 0.08 = noon, 0.58 = dusk) and matches the scene's default start time.")]
+        [Range(0f, 1f)]
+        [SerializeField] private float pinnedNormalizedTime = 0.08f;
+
         [Tooltip("Maps raw cycle time (X 0-1) to apparent sky time (Y 0-1). " +
                  "Steep slope = fast transition (dawn/dusk). Shallow slope = long phase (day/night). " +
                  "Leave empty to use the built-in default (dawn/dusk ~8%, day/night ~42% of cycle).")]
@@ -57,6 +67,23 @@ namespace DOTS.Rendering.Sky
             set => activePreset = value;
         }
 
+        /// <summary>
+        /// Dev determinism pin: while true, the cycle holds at <see cref="PinnedNormalizedTime"/>
+        /// instead of advancing. Exposed for runtime toggling from debug tooling.
+        /// </summary>
+        public bool PinTimeOfDay
+        {
+            get => pinTimeOfDay;
+            set => pinTimeOfDay = value;
+        }
+
+        /// <summary>Raw (pre-remap) cycle time held while <see cref="PinTimeOfDay"/> is enabled.</summary>
+        public float PinnedNormalizedTime
+        {
+            get => pinnedNormalizedTime;
+            set => pinnedNormalizedTime = Mathf.Repeat(value, 1f);
+        }
+
         private void Start()
         {
             if (skyController == null)
@@ -92,7 +119,14 @@ namespace DOTS.Rendering.Sky
 
         private void Update()
         {
-            if (cycleDurationSeconds > 0f)
+            // The pin wins over the running cycle: with a 240s scene day, lighting drifts from
+            // midday to night inside a single debugging/screenshot session, which invalidates any
+            // visual comparison. Pinning holds one deterministic lighting state for the whole run.
+            if (pinTimeOfDay)
+            {
+                normalizedTime = Mathf.Repeat(pinnedNormalizedTime, 1f);
+            }
+            else if (cycleDurationSeconds > 0f)
             {
                 normalizedTime += Time.deltaTime / cycleDurationSeconds;
                 normalizedTime = Mathf.Repeat(normalizedTime, 1f);

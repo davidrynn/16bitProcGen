@@ -88,8 +88,8 @@ MonoBehaviour:
   EnableHybridWeatherSystem: 0
   VistaCameraFarClip: 600
   EnableDistanceFog: 1
-  FogMode: 1
+  FogMode: 3
   FogColor: {r: 0.62, g: 0.74, b: 0.85, a: 1}
   FogDensity: 0.0022
-  FogStartRatio: 0.55
-  FogEndRatio: 1
+  FogStartRatio: 0.14
+  FogEndRatio: 0.308

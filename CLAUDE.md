@@ -179,6 +179,15 @@ Debug flags controlled via `DebugSettings` static class (all default to `false`)
 - `ProjectFeatureConfig` - Controls which systems are enabled
 - `DebugSettings.EnableTestSystems` - Gates test-only systems
 
+### Dev Determinism Pins
+
+Dynamic/randomized systems each expose a **pin** in their existing config so debugging and visual
+validation run against stable data — added case-by-case when a system first causes pain, not as a
+central framework. Existing pins: `TimeOfDayController.pinTimeOfDay` (+ `pinnedNormalizedTime`) holds
+the day/night cycle; `DebugSettings.UseFixedWFCSeed` fixes WFC seeding. Relic/structure placement is
+already seed-deterministic (hash-jittered stable anchor IDs) and needs no pin; *authored* placement
+(quests, hero relics) is a product feature, not a pin — see ticket V12.
+
 ### Compute Shaders
 
 - **Location**: `Assets/Resources/Shaders/`
@@ -203,7 +212,7 @@ Debug flags controlled via `DebugSettings` static class (all default to `false`)
 3. `PlayerGroundingSystem` - Ground detection
 4. `CameraEffectResolverSystem` - The camera driver (third-person orbit + effects)
 
-### WFC Dungeon Flow (paused — known bootstrap gap, TICKETS.md)
+### WFC Dungeon Flow (paused — known bootstrap gap, `Assets/Docs/Tickets/TICKETS.md`)
 
 `Collapse state → prefab instantiation → rendering`
 - `WFCCollapseSystem` with deterministic seeding (`DebugSettings.UseFixedWFCSeed`, default seed: 12345); its compute-shader propagation path is an unimplemented stub

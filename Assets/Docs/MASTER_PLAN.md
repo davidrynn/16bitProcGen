@@ -4,7 +4,7 @@
 _Last updated: 2026-06-29_
 
 > **Start here.** This document is the authoritative project overview: vision, current status, phase roadmap, and document map.  
-> Sprint-level task detail lives in [`TICKETS.md`](TICKETS.md).
+> Sprint-level task detail lives in [`TICKETS.md`](Tickets/TICKETS.md).
 
 ---
 
@@ -58,7 +58,7 @@ Full design: [`Archives/TerrainDesign/Stylized_Procedural_Terrain_System_Design.
 
 **MVP Vista Moment** (see [`Rendering/MVP_VISTA_MOMENT_SPEC.md`](Rendering/MVP_VISTA_MOMENT_SPEC.md)) — ordered by impact-per-hour.
 
-> **Now the active sprint (re-anchored 2026-06-29).** These are scheduled as **V1–V5** in [`TICKETS.md`](TICKETS.md),
+> **Now the active sprint (re-anchored 2026-06-29).** These are scheduled as **V1–V5** in [`TICKETS.md`](Tickets/TICKETS.md),
 > with Camera Feel (C1–C3) secondary and the arms viewmodel (A9) deferred. Build statuses below are unchanged —
 > the change is that this work is now the active sprint rather than sitting in the backlog.
 
@@ -95,7 +95,7 @@ Full design: [`Archives/TerrainDesign/Stylized_Procedural_Terrain_System_Design.
 ### Active — Read These
 | Document | Purpose |
 |----------|---------|
-| [`Assets/Docs/TICKETS.md`](TICKETS.md) | **Sprint tickets + backlog — primary task driver** |
+| [`Assets/Docs/Tickets/TICKETS.md`](Tickets/TICKETS.md) | **Sprint tickets + backlog — primary task driver** |
 | [`Assets/Docs/Terrain/TERRAIN_ECS_NEXT_STEPS_SPEC.md`](Terrain/TERRAIN_ECS_NEXT_STEPS_SPEC.md) | Active SDF + Surface Nets terrain implementation spec |
 | [`Assets/Docs/Terrain/TERRAIN_BINARY_EDIT_LAYER_SPEC.md`](Terrain/TERRAIN_BINARY_EDIT_LAYER_SPEC.md) | Binary voxel edit layer — hard-edged boxy terrain edits for Magic Hand; additive to SDF pipeline, no density rebuild on edit |
 | [`Assets/Docs/Persistence/PERSISTENCE_SPEC.md`](Persistence/PERSISTENCE_SPEC.md) | World persistence design — edit journals, entity state, NPC history, player data |
@@ -163,7 +163,7 @@ public partial struct MySystem : ISystem
 
 ## 5. Immediate Next Steps
 
-**MVP Vista Moment — do these first (ordered by impact-per-hour).** Active sprint: **V1–V5** in [`TICKETS.md`](TICKETS.md).
+**MVP Vista Moment — do these first (ordered by impact-per-hour).** Active sprint: **V1–V5** in [`TICKETS.md`](Tickets/TICKETS.md).
 
 1. **Ground plane impostor** — horizontal terrain-colored disc beyond chunk radius; eliminates void from altitude; enables sky-drop intro. Spec: [`Rendering/GROUND_PLANE_IMPOSTOR_SPEC.md`](Rendering/GROUND_PLANE_IMPOSTOR_SPEC.md). ½–1 day.
 2. **Atmospheric fog tuning** — shift fog color toward blue-grey (`#8FA8C0`), tune density/start so foreground is sharp and horizon is veiled. Half-day, immediate mood payoff.

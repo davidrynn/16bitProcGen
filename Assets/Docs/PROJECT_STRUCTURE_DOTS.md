@@ -114,7 +114,7 @@ These use the legacy heightmap `TerrainData` component; kept compiling for refer
 #### Dungeon Systems (gated by `EnableDungeonSystem`) — paused, resuming
 - `DungeonEntitySpawningSystem` - spawns prefab entities from collapsed WFC cells (gated by `EnableDungeonEntitySpawningSystem`)
 - `DungeonDebugVisualizationSystem` - editor-only debug visualization
-- `WFCCollapseSystem` - the WFC solver; **known gap:** not yet created by the bootstrap (TICKETS.md:472)
+- `WFCCollapseSystem` - the WFC solver; **known gap:** not yet created by the bootstrap (`Assets/Docs/Tickets/backlog.md`, ticket W1)
 
 #### Weather Systems (gated by `EnableWeatherSystem`)
 - `WeatherSimulationSystem` - per-chunk weather state simulation

@@ -1,17 +1,11 @@
-# Tickets
+# Work-set: MVP Vista Moment
 
 **Status:** ACTIVE
-**Last Updated:** 2026-07-03
+**Last Updated:** 2026-07-05
 
-Lightweight task tracker. Status: `[ ]` pending · `[x]` done · `[-]` blocked
-
-**Ticket ID scheme** _(inferred from existing usage — owner to confirm as canonical)_: prefix = track,
-number increments within the track and is never reused. `V` Vista Moment · `C` Camera Feel · `A` Animation ·
-`M` Movement · `P` Phase 1 core · `W` World Power/WFC · `R` Rendering · `T` Testing · `B` Biome Art.
+Board: [`TICKETS.md`](TICKETS.md)
 
 ---
-
-## Sprint: MVP Vista Moment
 
 > **FPS-only reversal + re-sequence (2026-06-20):** MVP ships **first-person only**. `PlayerCameraSettings.IsThirdPerson`
 > now defaults to `false` and the third-person body is hidden in first-person (`PlayerFirstPersonVisibility`).
@@ -39,19 +33,6 @@ number increments within the track and is never reused. `V` Vista Moment · `C` 
 > Target: player crests a plain, sees the giant stone hand across atmospheric haze, and slingshots toward
 > it. (Entering the hand is out of MVP scope — see the "look at" scope note above.) Ordered by
 > impact-per-hour per `Rendering/MVP_VISTA_MOMENT_SPEC.md` §4.
-
-| ID  | Status | Subject |
-|-----|--------|---------|
-| V1  | [x] | Ground plane impostor — built & enabled; now receives fog so the plain hazes into the horizon (2026-07-01) |
-| V2  | [x] | Atmospheric fog — enabled + impostor fog wired; "square from height" diagnosed as skybox horizon, not a fog plane (2026-07-01). Dynamic sky-tracking color → V6 |
-| V3  | [ ] | Mountain skybox panel — painted silhouette framing the horizon _(color path folds into V9 P4)_ |
-| V4  | [ ] | Hand mesh validation — confirm `testAlienHand.fbx` renders; tune scale/yOffset |
-| V5  | [-] | _(Deferred — out of MVP "look at" scope)_ Relic → WFC maze interior — connect relic anchor to dungeon interior generation |
-| V6  | [x] | Time-of-day + biome-dependent sky & tracking fog — Plains "Cloudbreak" preset; haze color follows the horizon (2026-07-01) |
-| V7  | [x] | BUG: player falls through ground on sky-drop landing — readiness-gate probe now reaches terrain (65adabb, 2026-07-03) |
-| V8  | [ ] | Distance-graded fog density — see the ground from height while still veiling the far horizon _(consumes V9 `_AtmoHorizon`)_ |
-| V9  | [ ] | Atmosphere color authority — one palette source + global `_Atmo*` uniforms + shared aerial-perspective HLSL; unifies sky, disc, mountains, terrain, hero relic & fog color (supersedes disc `SyncTerrainColor`; folds V3 color path; hero relic gets reduced-strength fog exemption) |
-| V10 | [x] | BUG: player falls through terrain during traversal — colliders built player-nearest-first, 3×3 ring budget-exempt (1883659, 2026-07-03) |
 
 #### V1 — Ground plane impostor
 **Spec:** `Rendering/GROUND_PLANE_IMPOSTOR_SPEC.md`. Horizontal terrain-colored disc (~1500u radius) on the XZ
@@ -92,10 +73,19 @@ Paint or source a mountain silhouette into the skybox (MVP Option A per `MVP_VIS
 2–4 hrs). Sells horizon depth. The seed-driven horizon ring (`HORIZON_IMPOSTOR_SEED_DRIVEN_SPEC.md`) is the
 Phase 2 system, deferred.
 
-#### V4 — Hand mesh validation
+#### V4 — Hand mesh validation _(validated 2026-07-05 — renders correctly; readability spun off to V11/V12)_
 Confirm `Assets/Models/testAlienHand.fbx` renders correctly at scene scale in Play Mode (already wired as
 `Relic.asset` `DefaultTemplateId: relic_hand`). Tune `scale` / `yOffset` in `RelicVisualBootstrap` inspector
 so the four-finger hand reads from ~200–400u. Per `MVP_VISTA_MOMENT_SPEC.md` §2.1.
+- **Validated (2026-07-05, Play Mode + MCP screenshots):** the pipeline works end to end. This seed places two
+  relics ~250–300u from spawn toward +Z; the right one is confirmed `relic_hand` (silhouette matches the FBX
+  asset preview). `scale: 500` / `yOffset: -5` yields a ~40–50u-tall object; renders stable with no LOD
+  interference (`lodSwapDistance: 1000` > 600u far clip, null impostor → always the full mesh).
+- **Finding — it does not read as a *hand*:** `testAlienHand.fbx` has short, fused finger-lobes, so at vista
+  distance it reads as a weathered boulder. No `scale`/`yOffset` tuning fixes silhouette readability — that
+  needs a better mesh → **V11**. Placement is also seed-luck across ±1024u (this seed was lucky); a
+  *guaranteed* hand in view of spawn → **V12**. Closed as validated; the wow-moment readability lives in the
+  follow-ups.
 
 #### V5 — Relic → WFC maze interior _(deferred — out of MVP "look at" scope, 2026-06-29)_
 Connect the relic anchor to WFC dungeon interior generation so the hand is enterable. Bridges structure
@@ -214,6 +204,32 @@ real terrain (≤180u streaming radius) is inside the clear zone; only the impos
 still driven live from the horizon by `SkyController._driveFogColor` (V6) — unchanged. **Pending judgement in
 Unity at altitude;** retune the two ratios if the near-zone reads too crisp or the horizon too thin.
 
+**Route A judged (2026-07-05, Play Mode + MCP screenshots): REJECTED — revert to the Exp² baseline.** Failed
+on both ends:
+1. **Altitude:** from the 400u sky-drop the ground below is a featureless fog-grey void, not the predicted
+   ~74%-visible — every surface is ≥400u away (deep inside the 330–600 ramp) and the below-horizon view is
+   mostly the impostor at 400–600u slant distances, i.e. fully fogged. The "single start/end compromise"
+   failure mode, confirmed empirically.
+2. **No ground-level benefit either** — the Linear near-zone reads essentially the same as the Exp² baseline
+   at ground level, so Route A carried risk without gain on the axis it was meant to fix.
+
+**Correction during verification:** the *dark green band* along the horizon (a dark wall behind the pale
+fogged plain) was initially read as a Route A regression, but it appears **identically under the restored
+Exp² baseline** — it is fog-mode-independent, most likely the skybox ground hemisphere showing in the gap
+between the 600u far clip and the geometric horizon. That is **V3 horizon-panel / V9 hue-unification**
+territory, not a fog-mode bug.
+
+Also confirmed V9's hero-relic concern from altitude: the relics vanish entirely into the fog wash.
+**Outcome (2026-07-05):** baseline restored per the restore point above (`FogMode: 3`, `FogDensity: 0.0022`,
+ratios `0.14`/`0.308`) and verified in Play Mode at midday (pinned per T2) — ground vista reads as before.
+
+**Folded into V9 (owner decision 2026-07-05):** Route B ships as the height-aware term inside V9's shared
+`ApplyAerialPerspective` (`ATMOSPHERE_COLOR_AUTHORITY_SPEC.md` §5.3a) — both efforts touch the same shader
+set, so each consumer's fog call is visited once, not twice. Density is a zero-sum knob under any
+distance-only model (owner screenshot 2026-07-05: the sky-drop reads as falling into featureless haze at
+`0.0022` Exp²), so no further tuning; the model change is the fix. V8's acceptance moved to that spec
+(§11.8). **This ticket closes as merged — remaining work tracks under V9.**
+
 #### V9 — Atmosphere color authority _(specced 2026-07-02)_
 **Spec:** `Rendering/ATMOSPHERE_COLOR_AUTHORITY_SPEC.md`.
 **Intent:** Make one authority own the scene palette and have every distance-facing surface *consume* it, so
@@ -255,6 +271,54 @@ to all surfaces.
 - **Status:** specced, not started. Acceptance = §11 of the spec (no surface holds a private base-color literal;
   cycle shifts all surfaces together; disc-edge/mountain-base/horizon read as one hue band) **+ the hero relic
   reads as a legible silhouette at vista distance, not a fog-saturated wash**.
+- **Scope amendment (2026-07-05) — height-aware from day one; V8 folds in; next build.** After Route A's
+  rejection (V8) and the owner's sky-drop screenshot (dropping into featureless haze), `ApplyAerialPerspective`
+  ships **height-aware from its first version** (spec §5.3a: haze density decays exponentially with altitude,
+  analytic closed form — the owner's "exponentially less in the real world" observation, and the JC3 look).
+  Two consumers added: the **hero relic** (reduced-strength exemption, now spec §5.4 + P4b) and the **skybox
+  haze band** (mountain silhouette in `ProceduralGradientSky.shader` pulls toward the per-frame horizon color —
+  works with the live day/night cycle by construction, so the cycle stays in MVP). **MVP slice = P1 + P4 +
+  P4b** — fixes the white-relic-vs-dark-mountains clash *and* the obscured sky-drop in one pass. This is the
+  designated next build.
+
+#### V11 — Hero hand mesh authoring _(opened 2026-07-05 — spun off V4)_
+`testAlienHand.fbx` renders fine but reads as a boulder: short, fused finger-lobes with no silhouette
+separation. Author (or re-pose in Blender) a hero hand whose four fingers read at 200–400u *through haze* —
+silhouette-first: long separated fingers, a readable gesture (reference `Docs/Temp_OpeningInspiration.png`,
+`MVP_VISTA_MOMENT_SPEC.md` §2.1). Keep the current asset as placeholder until swap. Source in
+`BlenderSource/`, export to `Assets/Models/` per the B-ticket conventions. Retune `scale`/`yOffset` on the
+new mesh (current 500/−5 ≈ 40–50u tall; colossus presence likely wants 80–150u) — judge via screenshots.
+
+#### V12 — Authored anchor candidate source (guaranteed hero hand) _(opened 2026-07-05 — spun off V4)_
+Relic placement is seed-deterministic but not *authorable*: anchors hash-jitter across ±1024u around origin,
+so a hand in view of spawn is seed-luck (the 2026-07-05 seed was lucky: two relics ~250–300u out). Add an
+**authored anchor** candidate source to the structure-placement pipeline — explicit position + template
+(+ optional constraints), merged with / overriding the procedural planner. One mechanism, three consumers:
+the guaranteed vista hero hand, quest placement later, and "spawn a known layout" debugging. Fits the
+pipeline's existing candidate-source shape — the W1 magic grid is specced as exactly such a variant
+(`Structures/MAGIC_GRID_SPEC.md`, `STRUCTURE_PLACEMENT_SPEC.md`). Per the owner decision (2026-07-05,
+dev-pins discussion): design it so quests inherit it for free; this is a product feature, **not** a dev pin.
+Also feeds the far-field: authored anchors are the data source for hero relic silhouette cards in the
+Phase 2 horizon ring (**R5**, `HORIZON_IMPOSTOR_SEED_DRIVEN_SPEC.md` §19) — only authored heroes are
+far-visible by design.
+
+---
+
+### Dev Tooling _(pulled into current focus 2026-07-05)_
+
+#### T2 — Dev determinism pins (shared convention + time-of-day pin)
+**Decision (2026-07-05):** dynamic/randomized systems get a **pin** in their existing config, added
+case-by-case when a system first causes debugging pain — no central dev-mode framework. Convention recorded
+in `CLAUDE.md` § Dev Determinism Pins. Precedent: `DebugSettings.UseFixedWFCSeed`. Relic placement needs no
+pin (already seed-deterministic); authored placement is product work → **V12**.
+- **Time-of-day pin (built 2026-07-05):** `TimeOfDayController.pinTimeOfDay` + `pinnedNormalizedTime`
+  (default `0.08` = midday raw cycle time, matching the scene's default start). Motivation: the scene's 240 s
+  day cycle drifts midday→night inside a single debugging/screenshot session, which invalidated visual
+  comparisons during the 2026-07-05 V4/V8 validation.
+- **Enabled in `Basic Terrain Scene`** so visual validation always runs at midday; un-tick the inspector box
+  for day/night-cycle work.
+- **Verified (2026-07-05):** with the pin on, lighting is identical midday ~2.5 min into Play Mode (the
+  unpinned 240 s cycle was full night by then); clouds still animate. Clean console. Done.
 
 ---
 
@@ -264,12 +328,6 @@ to all surfaces.
 > dolly/pullback** terms (`TargetDistance`, `BallisticDistanceAdd`) are third-person concepts. In first-person
 > the camera is head-locked, so reinterpret those as no-ops; the **FOV punch/narrow, shake, dip, camera-local
 > drop, speed lines, and dust burst** all carry over to FPS as-is and are where the feel actually comes from.
-
-| ID  | Status | Subject |
-|-----|--------|---------|
-| C1  | [ ] | Camera charge pullback and FOV narrow during slingshot charge |
-| C2  | [ ] | Camera FOV punch and speed lines on launch |
-| C3  | [ ] | Landing camera dip and dust burst |
 
 #### C1 — Camera charge pullback and FOV narrow
 Per `MOVEMENT_PLANNING.md` Step 3:
@@ -312,20 +370,7 @@ Per `MOVEMENT_PLANNING.md` Step 7:
 
 #### Deferred — follows the vista _(was live; deferred by Vista re-anchor 2026-06-29)_
 
-| ID  | Status | Subject | Blocks | Blocked By |
-|-----|--------|---------|--------|------------|
-| A9  | [ ] | First-person arms viewmodel (the real fix for FPS-only MVP) | — | — |
-
 #### Dev-toggle / deferred (third-person body) _(not MVP-gating — body hidden in first-person play)_
-
-| ID  | Status | Subject | Blocks | Blocked By |
-|-----|--------|---------|--------|------------|
-| A1  | [x] | Wire slingshot clips into animator controller (done) | A2, A3 | — |
-| A2  | [ ] | Fix animator controller transition blend times | A4 | A1 |
-| A3  | [ ] | Stabilize landing animations _(verify hidden-animator state first — may still fire into dead states)_ | A4 | A1 |
-| A4  | [-] | Import Kevin Iglesias pack and wire basic movement animations | A5 | A2, A3 |
-| A5  | [-] | Wire glide animation state | — | A4 |
-| A8  | [ ] | Simplify airborne animation: single fall clip while in air | — | — |
 
 #### A9 — First-person arms viewmodel (the real fix for FPS-only MVP) _(deferred — follows the vista)_
 With MVP reversed to first-person only (2026-06-20), the full third-person body is hidden in play
@@ -394,161 +439,3 @@ The animator graph has grown complex. MVP/POC decision (2026-06-10): every in-ai
 - Spec: `PLAYER_CHARACTER_VISUAL_SWAP_SPEC.md` airborne mapping table + `SLINGSHOT_ANIMATION_CONTROLLER_SPEC.md` MVP note (both updated 2026-06-10).
 
 _(Former A6 → folded into the vista fog ticket **V2**. Former A7 → backlog **R1**. Both were rendering/environment work, not animation. A9 added 2026-06-20 for the FPS-only reversal.)_
-
----
-
-## Backlog
-
-_Tickets for later sprints — not yet scheduled._
-
-| ID  | Subject | Group |  
-|-----|---------|-------|
-| M1  | Glide mechanic (Space hold → GlideCharging → Gliding) | Movement |
-| M2  | Chain slingshot (chain window + additive velocity) | Movement |
-| M3  | Thermal columns (vertical lift volumes) | Movement |
-| M4  | BUG: Ballistic-takeoff false-grounding past jump apex — suppress by contact/separation, not velocity sign | Movement |
-| M5  | Harden sky-drop landing against high-speed tunneling (thin/absent collider under landing XZ; no CCD) | Movement |
-| P1  | Basic HUD (charge indicator + chain window indicator) | Phase 1 |
-| P2  | Magic Hand System (raycast, charge, binary terrain edit) | Phase 1 |
-| E1  | Blocked-edit visual feedback — red-X reticle pulse (+ optional tooltip) when a terrain edit is rejected by the player-safety volume. Post-MVP: terrain editing itself needs substantial work first (owner 2026-07-03; salvaged from archived Cursor plan) | Editing UX |
-| W1  | Magic power grid (placeholder — see `Structures/MAGIC_GRID_SPEC.md`) | Phase 2 / World Power |
-| R1  | Low-poly tree/rock LODs + enable relic LOD | Rendering |
-| R2  | Speed-biased scatter LOD (drop detail during fast airborne movement) | Rendering |
-| R3  | Camera-specific scatter LOD bucketing (multi-camera correctness) | Rendering |
-| R4  | Pebble chunk-cull cleanup parity (`TerrainChunkLodApplySystem`) | Rendering |
-| T1  | Scatter LOD test coverage (Pebble render contract, GeneratePlacements, OnUpdate routing) | Testing |
-| B1  | Boulder group models (1–6m, weathered, partially buried) | Biome Art |
-| B2  | Pebble cluster models (10–50cm fields) | Biome Art |
-| B3  | Stone outcrop models (5–30m navigation markers) | Biome Art |
-| B4  | Steppe shrub models (0.5–1m heath bushes) | Biome Art |
-| B5  | Prairie grass tuft models (20–80cm, wind-ready) | Biome Art |
-| B6  | Tall grass patch models (1–1.5m) | Biome Art |
-| B7  | Wildflower cluster models (10–40cm, 3 colorways) | Biome Art |
-
----
-
-### M4 — BUG: Ballistic-takeoff false-grounding past jump apex _(Codex review 2026-07-02)_
-`PlayerGroundingSystem.ShouldSuppressGroundingDuringBallisticTakeoff` suppresses a ground-probe hit only while
-the player is *rising* (`mode == Ballistic && verticalSpeed > 0.05`). With the default jump (`JumpImpulse = 5`
-→ apex ≈ 1.27m) and `GroundProbeDistance = 1.3`, the downward ray still reaches the floor for the **entire**
-hop. Past apex, `verticalSpeed` drops below the threshold, suppression releases, and the still-hitting ray
-marks `IsGrounded = true` mid-air — firing landing logic before real touchdown and (after the
-`ModeDemotionMinGroundedTime` hysteresis window) potentially demoting Mode while airborne.
-- **Fix direction:** gate suppression on **actual contact/separation**, not velocity sign — e.g. only treat a
-  hit as grounded when the hit fraction/feet-to-surface distance is within a small contact epsilon, so the
-  probe reaching ground from mid-air (apex < probe length) doesn't register as grounded. Keep it robust to both
-  small jumps and high slingshot arcs.
-- **Notes:** pre-existing on `main` (not introduced by the vista PR). Related to the grounding/landing cluster
-  (**V7** fall-through, `LandingDetectionSystem`, Mode hysteresis). Needs playtesting — behavior change, not a
-  cosmetic fix. Enable `DebugSettings.EnableFallThroughDebug` to observe the ungrounded/grounded transitions.
-
-### M5 — Harden sky-drop landing against high-speed tunneling _(open — spun off from V7, 2026-07-03)_
-The sky-drop (V7) lands stably today only because the landing chunk carries a *thick* Surface Nets mesh
-collider — Unity.Physics penetration recovery catches the ~−87 m/s body without CCD. A thin or absent collider
-under the landing XZ could still tunnel. Direction: guarantee a built collider under the spawn XZ before the
-readiness gate releases (and/or thicken the landing-zone collider), so the sky-drop does not depend on
-penetration-recovery luck. Related to the grounding/landing cluster — **V7**, **V10**, **M4**.
-
-### R1 — Low-poly tree/rock LODs + enable relic LOD
-**Intent:** Reduce environment-object render cost via LOD. **Priority: trees and rocks first** — they cost more FPS than the giant relics. Relics second.
-
-- **Trees / rocks (do first):** authored via `TreeChunkRenderSystem` / `RockChunkRenderSystem`. Add a far LOD so dense scatter holds frame budget. Keep within poly/draw budgets — reference `ArtAndDOTS_Pipeline.md` and `Terrain/DOTS_Terrain_LOD_SPEC.md`.
-- **Spike (decide before building meshes):** for the low-poly far representation, do we author **new low-poly scattered meshes** (Blender) or generate them at runtime via **decimation/impostor** from the existing meshes? Timebox the spike, pick one, note the decision here.
-- **Relics (second):** `RelicLodSelectionSystem` already implements distance-based full↔impostor swap (`RelicLodParams` + `RelicRenderConfig.LodSwapDistance`/`LodHysteresis`) but is `[DisableAutoCreation]`, so it only runs if explicitly created. "Large relics not using LOD" is most likely just that it is never enabled — confirm whether the bootstrap creates it; if not, enable and verify each realized relic has valid `RelicLodParams` and a 2-entry `RenderMeshArray`.
-
-**Open questions (resolve in-ticket):**
-1. New authored low-poly art vs. runtime decimation/impostor? → resolved by the spike above.
-2. Target swap distances / poly budgets — do these exist, or does R1 establish them?
-3. Should enabling/verifying `RelicLodSelectionSystem` be a separate quick ticket, or stay folded into R1?
-
-**Acceptance:** Trees/rocks have a far LOD that holds frame budget at a populated viewpoint. Large relics visibly swap to impostor past `LodSwapDistance` (confirm via `DebugSettings.LogRendering` transition log). Add/extend an EditMode test alongside `StructureLodTests` for any new swap logic.
-
-### R2 — Speed-biased scatter LOD (drop detail during fast airborne movement)
-**Spec:** `Terrain/Scatter/SCATTER_LOD_SPEED_BIAS_SPEC.md` (extends `SURFACE_SCATTER_LOD_SPEC.md`).
-
-**Intent:** Shrink the tree/rock LOD swap distance as player speed rises, pushing more scatter to the far (low-poly) mesh during fast flight. The scene is vertex-bound (~92% verts from scatter), so a smaller near band directly cuts the bottleneck — and at high airborne speed the player can't resolve near detail anyway, so it's perceptually cheap.
-
-**Why it's near-free (the original question — "would changing LOD cost more than it's worth?"):** No. The scatter render path already rebuilds instance buckets every frame and selects near/far per instance with a stateless distance compare. Biasing the swap distance by speed is one velocity read + arithmetic per frame on a code path that already runs — no re-uploads, no thrash. Gain is capped by the near↔far vert gap, so it's only worth wiring once R1's far meshes are real.
-
-- **Depends on R1** — inert until far LOD meshes exist for trees/rocks.
-- Read `PlayerMovementState.Velocity` (horizontal `xz` speed) in each render system's `OnUpdate`; feed a speed-scaled swap distance into the existing `SelectLodLevel` calls.
-- Use a smooth `smoothstep`/lerp ramp over a speed window (defaults 15→40 m/s, scale 1.0→0.4), **not** a hard threshold — a binary snap pops the whole scene and oscillates near the threshold.
-- Add `EnableSpeedLodBias` + window/scale fields to `TreeRenderConfig`/`RockRenderConfig` + bootstraps; off by default = zero regression.
-- Pure bias logic in `SurfaceScatterLodUtility`, EditMode-tested.
-
-**Open questions (resolve in-ticket):** horizontal vs. full velocity magnitude on ballistic arcs; shared vs. per-config (tree/rock) tuning. See spec §7.
-
-**Acceptance:** Per spec §8 — bias-off output identical to current; with bias on + far meshes, profiler shows a further scatter vert drop during sustained high-speed flight with no measurable bias cost; no whole-scene pop/oscillation near the min-speed threshold.
-
----
-
-### R3 / R4 / T1 — Surface scatter LOD follow-ups _(deferred from Codex review 2026-06-27)_
-
-Non-blocking gaps surfaced reviewing the surface-scatter-LOD commit. None cause a crash; all degrade safely (draw-near / draw-nothing). Deferred by decision — captured here so they aren't lost.
-
-**R3 — Camera-specific LOD bucketing.** `TreeChunkRenderSystem` / `RockChunkRenderSystem` / `PebbleChunkRenderSystem` pick near/far buckets once per frame from `Camera.main` in `OnUpdate`, but submission is per-camera via `beginCameraRendering`. Secondary cameras (scene view, split-screen) therefore get LOD chosen for the main camera's viewpoint. Correct and cheaper for the single-camera MVP (see the explanatory comment at each `Camera.main` read). Only schedule if multi-camera ships; fix = bucket per submitted camera, or filter submission to the intended camera.
-
-**R4 — Pebble chunk-cull cleanup parity.** `TerrainChunkLodApplySystem` strips `TreePlacementRecord`/`RockPlacementRecord` buffers + tags when a chunk culls to LOD3, but has no `PebblePlacementRecord`/`ChunkPebblePlacementTag` equivalent. No visual bug — the render system already skips culled chunks — but pebble buffers accumulate on culled chunks and they stay in the pebble render query just to be skipped. Fix = add the matching pebble removal block alongside the tree/rock one.
-
-**T1 — Scatter LOD test coverage.** Current tests cover pure LOD selection (`SurfaceScatterLodUtilityTests`) and mesh registration (`SurfaceScatterRenderSystemContractTestsBase`) but not the runtime paths most likely to break: no `PebbleChunkRenderSystem` contract test, `PebblePlacementAlgorithmTests` never calls `GeneratePlacements`, and no `OnUpdate` near/far bucket-routing test. Fill the highest-risk gaps first (Pebble contract + `GeneratePlacements`).
-
----
-
-### W1 — Magic power grid _(placeholder — design-stage, not yet broken into tickets)_
-**Spec:** `Structures/MAGIC_GRID_SPEC.md` (DESIGN). Analytic world-space XZ lattice: power-source nodes, WFC-build-on-node affordance, sparse claimed-node alignment state, per-template `NodeAffinity`, universal influence query. Decisions captured in the spec; §13 lists the open questions to resolve before build.
-
-**Not scheduled — sequences behind its foundation.** Don't break into tickets until Structure Placement is on the board:
-- Depends on the **Structure Placement** anchor pipeline (`STRUCTURE_PLACEMENT_PLAN.md` §8 Steps 1–3) — the grid is a candidate-source variant reusing its `StructureAnchorRecord` / footprint / persistence machinery.
-- That in turn depends on the known **WFC bootstrap gaps** (`HybridWFCSystem` not created by `DotsSystemBootstrap`; deterministic seed) — see `STRUCTURE_PLACEMENT_SPEC.md` §12.5.1.
-- Orthogonal to **P2 Magic Hand System** (shares the "magic" fiction only; no dependency either way).
-
-**Earliest natural entry:** after the free anchor planner exists, add the grid as a `NodeBound` candidate source + the on-node WFC build affordance.
-
----
-
-### Biome Art — Windswept Colossus Plains scatter models (B1–B7)
-
-**Source spec:** `Assets/Docs/mvp/Windswept_Colossus_Plains_Biome_Spec.md`. These are **model authoring tickets** — runtime placement/render systems are separate work where noted.
-
-**Shared conventions (apply to all B tickets):**
-- Author in Blender (`BlenderSource/`), export FBX to `Assets/Models/<Family>/` following the `Assets/Models/Trees/` layout. Keep `.blend` sources in `BlenderSource/`.
-- One material per family; bake color variation into mesh variants via vertex colors — scatter renders through `Graphics.RenderMeshInstanced` (URP), so per-instance material variation is unavailable.
-- The scene is vertex-bound with ~92% of frame verts from scatter (`RENDER_PERF_PROFILE_REPORT.md`); vert budgets below are **hard caps**. Budgets are proposed here — reconcile with `ArtAndDOTS_Pipeline.md` and feed the answer back into R1 open question 2.
-- Every near mesh ships with a far-LOD mesh per `SURFACE_SCATTER_LOD_SPEC.md` (system is inert until far meshes are assigned). Far-mesh bounds must approximately match the near mesh (grounding offset is computed from the mesh actually drawn — §4.5).
-- Pivot at mesh base; design rock-family meshes to read correctly when partially buried (no visible flat underside at ~20–30% sink).
-- **Dependency note (corrected 2026-06-11):** tree and rock scatter families exist (`TreeChunkRenderSystem` / `RockChunkRenderSystem`), and short grass already renders via the GPU-instanced blade system (`GrassChunkGenerationSystem`, `GrassType 0`) — baseline grass needs **no mesh authoring**. B1–B3 slot into the rock family. B5–B7 target the reserved sparse-clump variant (`GrassType 1` in `TerrainChunkGrassSurface`, not yet implemented). B4 (shrubs) needs a new family or a second tree-family config. Per-step status lives in `mvp/Windswept_Colossus_Plains_Biome_Spec.md` § Procedural Generation Rules.
-
-#### B1 — Boulder group models
-- 3–4 variants, 1–6 m. Rounded, weathered, glacial-erratic silhouettes per spec.
-- Colors: Granite Gray RGB(110,110,110), Dark Basalt RGB(70,70,75), Lichen Green accents — vertex color.
-- Budget: ≤500 verts near, ≤80 verts far LOD.
-- Wire into `RockRenderConfig.MeshVariants` + `LodMeshVariants` via `RockVisualBootstrap`.
-
-#### B2 — Pebble cluster models
-- Author as **pre-clustered patches** (≈5–12 pebbles per mesh, elements 10–50 cm) — spec wants "clustered, not uniform", and per-pebble instances would explode instance counts.
-- 2–3 cluster variants, rock-family palette. Budget: ≤150 verts near.
-- Far LOD likely unnecessary at this size — decide whether to cull-at-distance instead of swapping; note the decision here.
-
-#### B3 — Stone outcrop models
-- 2–3 variants, 5–30 m, rare. Purpose is horizon-breaking and navigation — **silhouette readability from 500 m matters more than close-up detail**.
-- Budget: ≤1,500 verts near, ≤200 far.
-- **Open question (resolve before wiring):** render via the rock scatter family or via the structure/relic placement path? At 30 m these behave like small landmarks — `RelicLodSelectionSystem` + structure placement may fit better than per-frame scatter instancing.
-
-#### B4 — Steppe shrub models
-- 2–3 variants, 0.5–1 m: hardy steppe bushes / low heath per spec. Coverage <2%, so instance counts stay low.
-- Budget: ≤300 verts near, ≤60 far.
-- No shrub render family exists. Smallest-change option: a second tree-family config (shrubs behave like mini-trees — bounds-grounded, yaw-varied). Decide in the system ticket.
-
-#### B5 — Prairie grass tuft models
-- Crossed-card tufts, 20–80 cm; 3 variants across the spec palette (Dry Grass RGB(166,153,102), Muted Olive RGB(114,125,76), Pale Green RGB(140,155,110)).
-- Author for vertex-shader wind: encode bend weight (e.g. vertex color alpha, 0 at root → 1 at tip) — **record the chosen convention here**, the wind shader ticket consumes it.
-- Budget: ≤30 verts per tuft. This family will dominate instance counts ("Density: High") — cheapness is the entire game.
-- Runtime is the biggest open dependency in the group: high-density grass may need its own batched path rather than the existing scatter loop. Models are forward-compatible either way.
-
-#### B6 — Tall grass patch models
-- 1–1.5 m, authored as patch clumps (not single blades). Coverage <5%, spawns near streams / valley bottoms / sheltered slopes.
-- Same wind-encoding convention as B5. Budget: ≤60 verts per patch.
-
-#### B7 — Wildflower cluster models
-- Clusters 10–40 cm; three colorways: white, pale purple, yellow. Spec: "small clusters, never fields" — author as cluster meshes for sparse placement.
-- Budget: ≤60 verts per cluster. Shares the grass-family render path and wind convention from B5.

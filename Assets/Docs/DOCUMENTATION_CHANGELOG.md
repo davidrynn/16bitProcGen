@@ -2,6 +2,57 @@
 
 ---
 
+## 2026-07-05 — Ticket Tracker Split into `Tickets/` (owner-directed restructure)
+
+**Purpose:** `Assets/Docs/TICKETS.md` had grown to 555 lines — a single-file tracker mixing a scannable
+status board with long per-ticket history/detail blocks for both the active work-set and the backlog.
+Split it into a slim board plus detail docs so the board stays skimmable while ticket history/detail
+remains fully preserved and discoverable, per the owner-decided target structure.
+
+### New folder: `Assets/Docs/Tickets/`
+
+- **`Tickets/TICKETS.md`** (moved via `git mv` from `Assets/Docs/TICKETS.md`, preserving the Unity GUID) —
+  slimmed to the status board: legend, canonical ticket ID scheme (hedge removed — confirmed canonical
+  by the owner), the Vista/Camera Feel/Animation status tables (content unchanged) under a renamed
+  `## Current Focus: Vista Moment` section (was `## Sprint: MVP Vista Moment` — this tracker runs as
+  Kanban, not sprints; "Sprint" wording is removed from the board and only survives inside historical
+  quotes in the moved detail docs), the Backlog table (content unchanged, ticket IDs linked into
+  `backlog.md` where a detail block exists), and a "How this works" note.
+- **`Tickets/vista-moment.md`** (new) — the current work-set's ticket detail, moved verbatim from the old
+  `TICKETS.md`: the three re-anchor/scope blockquotes plus every V1–V10, C1–C3, and A1–A9 detail block
+  (including the Animation re-scope note and the trailing "Former A6/A7" note).
+- **`Tickets/backlog.md`** (new) — backlog ticket detail, moved verbatim: M4, M5, R1, R2, the combined
+  R3/R4/T1 section, W1, and the whole Biome Art B1–B7 section (with its shared-conventions preamble).
+- **`Tickets/done/`** (new, with a one-line `README.md`) — empty; completed work-sets will move their
+  detail doc here untouched.
+
+**Fidelity check:** diffed the pre-split working-tree content (via the staged `git mv` blob) line-by-line
+against the concatenation of the three new files with `difflib`. Result: every backlog-detail line (124/124)
+and every vista-detail line carried over unchanged and in order; the only removals from the per-file diffs
+were the old section header (replaced by each doc's new title block) and the status tables (which now live
+solely in the board, as designed). No ticket content was dropped or reworded beyond the specific changes
+listed above.
+
+### References updated
+
+- `CLAUDE.md` — WFC Dungeon Flow pointer now `Assets/Docs/Tickets/TICKETS.md`.
+- `Assets/Docs/DOCUMENT_INDEX.md` — old flat `TICKETS.md` row replaced with a new `## Tickets` section
+  indexing all three docs + `done/`.
+- `Assets/Docs/DOCUMENTATION_SYSTEM_SPEC.md` §6.4 rule 2 — dropped `TICKETS.md` from the root-reserved
+  file list with a note explaining the move (topic outgrew a single file, per §5).
+- `Assets/Docs/MASTER_PLAN.md` — 4 links repointed to `Tickets/TICKETS.md`.
+- `Assets/Docs/Biomes/Windswept_Colossus_Plains_Biome_Spec.md`, `Assets/Docs/Player/Movement/SLINGSHOT_ANIMATION_CONTROLLER_SPEC.md`,
+  `Assets/Docs/Rendering/ATMOSPHERE_COLOR_AUTHORITY_SPEC.md`, `Assets/Docs/Rendering/VISTA_GROUND_PLANE_FOG_INVESTIGATION.md` (2 mentions),
+  `Assets/Docs/PROJECT_STRUCTURE_DOTS.md`, `Assets/Docs/Process/CODEBASE_SIMPLIFICATION_PLAN.md` (2 mentions,
+  the WFC-bootstrap-gap citations previously pinned to a stale `TICKETS.md:472` line number) — repointed to
+  the specific new doc (`Tickets/TICKETS.md`, `Tickets/vista-moment.md`, or `Tickets/backlog.md`) that now
+  holds the referenced ticket's detail.
+- Left untouched: historical batch-log prose in `Process/CODEBASE_SIMPLIFICATION_PLAN.md` (rows/lines that
+  record what a past cleanup batch did, quoting the old filename as history) and the archived
+  `Archives/RootLegacy_2026/GameProductionPlan_Cursor_2026-04.md` mention (archived docs aren't edited).
+
+---
+
 ## 2026-07-03 — Folder Taxonomy Adoption (Batch 22, `Process/CODEBASE_SIMPLIFICATION_PLAN.md` §6.3 rows D14–D16)
 
 **Purpose:** Adopt the feature/area folder taxonomy formalized in `DOCUMENTATION_SYSTEM_SPEC.md` §6.4 — dissolve the author-named `AI/` folder, retire the initiative-named `MVP_Movement/` folder, and absorb the orphaned repo-root `Docs/` tree into `Assets/Docs/`.

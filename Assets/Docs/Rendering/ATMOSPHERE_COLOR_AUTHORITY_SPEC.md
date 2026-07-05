@@ -1,10 +1,21 @@
 # Atmosphere Color Authority Spec
 
 **Status:** PROPOSED
-**Last Updated:** 2026-07-02
+**Last Updated:** 2026-07-05
 **Owner:** Rendering / Vista
-**Phase:** Vista MVP (ties ticket V9; consumed by V3, V8)
-**Keywords:** atmosphere, palette, aerial perspective, hue unification, global shader uniforms, impostor, fog, time-of-day, biome
+**Phase:** Vista MVP (ties ticket V9; folds V8 Route B; consumed by V3)
+**Keywords:** atmosphere, palette, aerial perspective, height fog, hue unification, global shader uniforms, impostor, fog, time-of-day, biome
+
+---
+
+> **Amendment (2026-07-05) — height-aware from day one; V8 Route B folds in.** After Route A
+> (Linear fog retune) was judged and rejected (see ticket V8), the owner decided the shared
+> `ApplyAerialPerspective` must be **height-aware from its first version**: haze density falls off
+> exponentially with world altitude, so a downward ray from the 400u sky-drop passes through thin
+> high air and reads the ground clearly, while a horizontal ground-level ray stays veiled. Since V8
+> Route B and this spec touch the same shader set, they ship as **one build** — every consumer's fog
+> call is visited once, not twice. See §5.3a, and the added consumers in §5.4 (hero relic, skybox
+> haze band). Sections marked *(2026-07-05)* below are part of this amendment.
 
 ---
 
@@ -74,9 +85,16 @@ Consequences:
    distance), differing only in falloff strength.
 6. Resolving the ground-color source-of-truth decision (see §6).
 
+7. *(2026-07-05)* **Height-aware haze** inside `ApplyAerialPerspective` — the V8 Route B height-fog
+   behavior ships as part of this spec's shared function, not as a separate pass (§5.3a).
+8. *(2026-07-05)* Two additional consumers: the **hero relic** (reduced strength — the anti-white-out
+   exemption) and the **skybox haze band** (mountain silhouette + horizon zone in
+   `ProceduralGradientSky.shader` pull toward the horizon/haze color).
+
 **Out of scope (see §9):** unifying the disc and mountain *C#/DOTS bootstraps* into one system; a
-biome-transition blend animation; per-material artistic overrides beyond the palette; volumetric or
-height-based fog (that is V8 / a separate concern, though it consumes the same `_AtmoHorizon`).
+biome-transition blend animation; per-material artistic overrides beyond the palette; volumetric
+(ray-marched) fog — the analytic height term in §5.3a is the adopted approach. _(Amended 2026-07-05:
+height-based fog was originally out of scope here as "V8's concern"; V8 Route B now folds in.)_
 
 ---
 
@@ -171,6 +189,39 @@ float3 ApplyAerialPerspective(float3 color, float viewDist, float strength)
 Same function, different `strength`. That is the concrete "disc and mountains share logic" — DRY at the
 shader level, which is the right layer since both are fragment-colored.
 
+### 5.3a Height-aware haze term *(2026-07-05 amendment — folds V8 Route B)*
+
+Distance-only haze is altitude-blind: from the 400u sky-drop *everything* is ≥400u away, so the ground
+below veils exactly as hard as the horizon and the drop reads as falling into featureless murk (verified
+empirically under both Linear and Exp² built-in fog — see ticket V8). The fix is the real-world model the
+owner asked for: haze density decays exponentially with altitude.
+
+```hlsl
+// Analytic exponential-height fog along the view ray (closed form, no marching).
+// _AtmoHazeDensity: ground-level density. _AtmoHazeFalloff: 1/scale-height (e.g. 1/60u).
+// rayOriginY = camera world Y, rayDir/rayLen from camera to fragment.
+float HeightHazeAmount(float rayOriginY, float3 rayDir, float rayLen)
+{
+    // integral of d0 * exp(-falloff * y) along the ray; standard closed form
+    float f = _AtmoHazeFalloff;
+    float d0 = _AtmoHazeDensity;
+    float dy = rayDir.y * rayLen;
+    float od = d0 * exp(-f * rayOriginY) *
+               ((abs(dy) > 1e-4) ? (1.0 - exp(-f * dy)) / (f * rayDir.y) : rayLen);
+    return 1.0 - exp(-od);   // optical depth → opacity
+}
+```
+
+`ApplyAerialPerspective` composes this with the hue/desaturation pull of §5.3: the height term decides
+*how much* haze, the palette decides *what color* it converges to, `strength` stays the per-surface dial.
+Two new uniforms join the contract: `_AtmoHazeDensity`, `_AtmoHazeFalloff` (broadcast by the authority
+alongside the palette; both art-directed, per-preset).
+
+**Behavioral acceptance:** looking down from the sky-drop (~400u) the ground below reads clearly; looking
+horizontally at ground level the horizon stays veiled; the transition during the drop is continuous. The
+built-in `RenderSettings` fog then serves only surfaces not yet converted (and can be retired per-surface
+as each consumer adopts the shared term — end state disables built-in fog entirely).
+
 ### 5.4 Consumers
 
 - **Sky shader:** read `_AtmoHorizon`/`_AtmoZenith` (or keep its dedicated uniforms; the authority sets
@@ -181,6 +232,17 @@ shader level, which is the right layer since both are fragment-colored.
 - **Mountain impostor:** `#include Atmosphere.hlsl`; base color from `_AtmoGround`/`_AtmoRock`, then
   `ApplyAerialPerspective(..., mountainStrength)`. Replaces the flat `_MountainColor`.
 - **Terrain:** apply `_AtmoGround` as a **tint multiply** so it breathes with the cycle (see §6 Option B).
+- *(2026-07-05)* **Hero relic:** the fifth distance-facing surface (confirmed white-out symptom, ticket
+  V9 2026-07-02). Its material moves off stock URP/Lit (whose pipeline fog cannot be tuned per-material)
+  onto a variant that calls `ApplyAerialPerspective` with a **reduced** `strength` (start ≈ 0.3) — the
+  hero exemption: it hazes enough to sit in the scene but stays a legible silhouette instead of
+  saturating to fog-white like background terrain.
+- *(2026-07-05)* **Skybox haze band:** the mountain silhouette currently lives *inside*
+  `ProceduralGradientSky.shader` (V3 MVP shortcut), and skyboxes never receive scene fog — so the band
+  gets its haze in-shader: lerp the band (strongest at its base) and the horizon zone toward the
+  haze/horizon color. Because `SkyController` already pushes sky uniforms per frame from the evaluated
+  time-of-day preset — the same source that drives `RenderSettings.fogColor` — the band stays in sync
+  across the full day/night cycle **by construction**. No need to freeze or defer the cycle for MVP.
 
 ---
 
@@ -219,18 +281,24 @@ slot). Full version routes `_AtmoGround` through the Synty shadergraph as an alb
 
 ## 8. Rollout Phases
 
-1. **P1 — Authority + contract.** Add `Atmosphere.hlsl` (uniform declarations + `ApplyAerialPerspective`),
-   extend `TimeOfDayController` to broadcast `_Atmo*` and keep driving fog. No visual change yet.
+1. **P1 — Authority + contract.** Add `Atmosphere.hlsl` (uniform declarations + `ApplyAerialPerspective`
+   **including the §5.3a height term** — build it height-aware from the first version), extend
+   `TimeOfDayController` to broadcast `_Atmo*` (+ haze density/falloff) and keep driving fog. No visual
+   change yet.
 2. **P2 — Disc consumes.** Swap disc literals for `_AtmoGround`/`_AtmoRock` + aerial call. Re-enable the
    sync intent via the authority (delete the doomed `SyncTerrainColor` `_BaseColor` read).
 3. **P3 — Terrain tint (Option B).** Push `_AtmoGround` into terrain (`_BaseColor` cheap path first,
    shadergraph multiply for the full version). Verify disc↔terrain seam matches at ground level.
-4. **P4 — Mountains consume (folds V3).** Mountain horizon impostor uses the shared include with high
-   aerial `strength`; base hue from `_AtmoGround`/`_AtmoRock`. Verify disc-edge = mountain-base = horizon.
-5. **P5 — Saturation / overcast pass.** Tune `_AtmoSaturation` per preset (Cloudbreak = lower) once all
+4. **P4 — Mountains + skybox haze band (folds V3).** The band in `ProceduralGradientSky.shader` pulls
+   toward the haze color per §5.4; base hue from `_AtmoGround`/`_AtmoRock` with high aerial `strength`.
+   Verify disc-edge = mountain-base = horizon, at several times of day.
+5. **P4b — Hero relic exemption** *(2026-07-05)*. Relic material variant calls the shared term with
+   reduced `strength`; verify the hand reads as a legible silhouette at 250–400u instead of fog-white.
+6. **P5 — Saturation / overcast pass.** Tune `_AtmoSaturation` per preset (Cloudbreak = lower) once all
    surfaces read it.
 
-V8 (distance-graded fog) is independent but consumes `_AtmoHorizon`; it can proceed in parallel.
+_(Amended 2026-07-05: V8 is no longer independent/parallel — Route B ships inside P1's shared function
+and each consumer adopts it as it converts. The MVP slice that fixes the current frame = P1 + P4 + P4b.)_
 
 ---
 
@@ -258,8 +326,8 @@ differs. Let them stay two thin bootstraps that happen to consume the same globa
   evidence for the color-desync diagnosis.
 - [../Biomes/Windswept_Colossus_Plains_Biome_Spec.md](../Biomes/Windswept_Colossus_Plains_Biome_Spec.md) —
   biome palette source for the Plains (Cloudbreak).
-- Tickets: `Assets/Docs/TICKETS.md` — **V9** (this authority), **V3** (mountain panel, folds into P4),
-  **V8** (distance-graded fog, consumes `_AtmoHorizon`).
+- Tickets: `Assets/Docs/Tickets/vista-moment.md` — **V9** (this authority), **V3** (mountain panel, folds into P4),
+  **V8** (distance-graded fog — merged into this spec 2026-07-05; Route B ships as the §5.3a height term).
 
 ---
 
@@ -278,6 +346,13 @@ differs. Let them stay two thin bootstraps that happen to consume the same globa
 6. Added ALU/CPU cost is within the compute-light budget (no new passes/textures; a few ops per fragment).
 7. Switching the active biome preset (e.g. Plains Cloudbreak) recolors all consumers consistently through
    the same palette.
+8. *(2026-07-05)* **Altitude reads correctly:** looking down from the sky-drop (~400u) the ground below is
+   clearly readable; looking horizontally at ground level the far horizon stays veiled; no hard far-clip
+   edge. (The former V8 acceptance, absorbed with Route B.)
+9. *(2026-07-05)* The **hero relic** reads as a legible silhouette at vista distance (250–400u) rather
+   than washing to fog-white, while background relics/mountains haze normally.
+10. *(2026-07-05)* The **skybox mountain band** carries a haze gradient that matches the fog/horizon color
+    at any time of day (no dark unfogged wall behind the hazed plain).
 
 ---
 

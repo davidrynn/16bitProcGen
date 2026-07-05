@@ -311,7 +311,7 @@ Every discovery should be visible from a great distance and naturally pull the p
 
 ## Related Docs
 
-- `Assets/Docs/TICKETS.md` — B1–B7 (scatter models), V2 (fog), V3 (mountain skybox), R1 (LODs)
+- `Assets/Docs/Tickets/TICKETS.md` — B1–B7 (scatter models), V2 (fog), V3 (mountain skybox), R1 (LODs)
 - `Rendering/RENDER_PERF_PROFILE_REPORT.md` — vertex-bound finding driving all density/budget caps
 - `Terrain/Scatter/SURFACE_SCATTER_LOD_SPEC.md` — far-LOD contract every scatter family must satisfy
 - `Terrain/Scatter/TERRAIN_SURFACE_SCATTER_SPEC.md` — scatter runtime contract

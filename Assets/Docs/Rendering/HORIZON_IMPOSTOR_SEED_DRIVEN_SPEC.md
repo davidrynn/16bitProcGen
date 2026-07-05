@@ -2,7 +2,7 @@
 
 **Status:** DESIGN (Phase 2 — deferred from MVP; see `MVP_VISTA_MOMENT_SPEC.md` for MVP path)  
 **Phase Fit:** Phase 2 (world streaming + LOD)  
-**Last Updated:** 2026-04-26  
+**Last Updated:** 2026-07-05  
 **See also:** [`GROUND_PLANE_IMPOSTOR_SPEC.md`](GROUND_PLANE_IMPOSTOR_SPEC.md) — horizontal ground-plane impostor (MVP priority, builds before this system)
 
 ---
@@ -34,6 +34,7 @@ Rendering real terrain at extreme distance is expensive and unnecessary for game
 - Sea classification in the far view.
 - Infrequent horizon texture rebuilds based on movement and state triggers.
 - Crossfade between previous and new horizon texture to avoid visible pops.
+- Hero relic silhouette cards from authored anchors (§19, added 2026-07-05 — ticket R5).
 
 ### Out of Scope
 - Exact visual parity with every distant terrain chunk.
@@ -277,3 +278,24 @@ Whether the MVP painted panel (ticket **V3**) or this seed-driven system, the mo
 (ticket **V9**), the mountain base hue comes from `_AtmoGround`/`_AtmoRock` and applies the shared
 `ApplyAerialPerspective` with **high `strength`** — so the distant range reads correctly desaturated and
 horizon-tinted, and its base meets the ground disc's outer edge and the sky horizon in one hue band.
+
+## 19. Hero feature cards (authored anchors) _(addendum 2026-07-05 — ticket R5)_
+
+Immense relics (the giant hand and its kin) are fictionally visible from kilometers away, but as real
+geometry they pop out at the camera far clip (~600u). This system is their far-field carrier — **not**
+the ground disc, which is a horizontal plane and should never grow vertical features.
+
+- **Input:** in addition to seed-driven terrain sampling, the horizon profile generator consumes
+  **authored structure anchors** (ticket **V12** — the authored-anchor candidate source): known world
+  position + template + silhouette per hero relic. Hash-jittered procedural relics are *not* included —
+  only authored heroes are far-visible by design.
+- **Rendering:** each hero anchor contributes a silhouette **card** at its true world bearing (and
+  approximate angular height) in the horizon texture / ring, colored through the same §18 palette path
+  (high aerial `strength`, hazed like the mountains behind it).
+- **Handoff:** the near↔far transition hides inside atmosphere saturation — haze reaches ~full at the
+  far clip, so the real mesh is already a faint ghost when it clips out and the card fades in behind the
+  same haze. A scaled-proxy pass (render the relic at 1/k distance and 1/k scale to keep it crisp at any
+  range) is the documented alternative if a design ever demands an *unhazed* distant silhouette; not
+  planned — crispness at extreme range contradicts the vista's dissolve-into-haze language.
+- **Determinism:** authored anchors are fixed world data, so cards are deterministic per seed+authoring;
+  rebuild triggers are the same as §8 (movement cells), since bearing shifts only with large player moves.
