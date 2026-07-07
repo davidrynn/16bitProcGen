@@ -280,6 +280,83 @@ to all surfaces.
   works with the live day/night cycle by construction, so the cycle stays in MVP). **MVP slice = P1 + P4 +
   P4b** — fixes the white-relic-vs-dark-mountains clash *and* the obscured sky-drop in one pass. This is the
   designated next build.
+- **MVP slice built (2026-07-05) — P1 + P4 + P4b landed, validated in Play Mode via MCP screenshots.**
+  - **P1:** `Assets/Shaders/Atmosphere.hlsl` (global `_Atmo*` contract + height-aware
+    `ApplyAerialPerspective` per §5.3/§5.3a, plus `AtmoFarClipHaze` — a distance-only concealer that veils
+    the last quarter before the far clip at any altitude, so converted surfaces never show the 600u cut).
+    New `AtmosphereSettings` per-preset block on `SkyPreset` (ground/rock hues, saturation, haze
+    density/falloff); `TimeOfDayController` broadcasts via new static `AtmosphereBroadcast` each frame
+    (transition-blended, so biome preset changes never snap the palette). Defaults seeded at editor/player
+    init so consumer shaders never sample zeroed globals in scenes without the controller. EditMode
+    contract tests in `AtmosphereAuthorityTests` (full suite 215/215 green).
+  - **P4:** `ProceduralGradientSky.shader` mountain band — `_MountainColor` literal removed as a source;
+    base hue from `_AtmoRock→_AtmoGround` across the ridge **× `_MountainShade` (0.55)** — the palette hues
+    are lit-surface colors, so unshaded they whited the ridge out (owner screenshot, round 2) — hazed by
+    the height term at a fictive 900u distance with per-material dials (`_MountainHazeStrength 0.7`,
+    `_MountainHazeFloor 0.28`; 0.85/0.45 dissolved the band entirely at ground level, 0.4 floor still
+    washed it from altitude). Kills the dark unfogged wall.
+  - **P4b:** new `Relic/RelicLit` shader (DOTS-instancing/Entities Graphics-compatible, Lambert+SH+shadows,
+    **no pipeline fog**) + `Assets/Materials/RelicHero.mat` (`_AerialStrength 0.3`) assigned to the
+    `relic_hand` template in `Basic Terrain Scene`; `relic_head`/`stone_outcrop` keep `Unlit gray.mat`
+    (normal fog) per the "background relics haze normally" acceptance.
+  - **Disc fog call converted** (small slice extension, spec §5.3a retirement model): `GroundPlaneImpostor`
+    dropped altitude-blind `MixFog` for `ApplyAerialPerspective` — required for the un-obscured sky-drop
+    since the below-view at 400u is mostly the disc (V8 finding). Disc palette literals untouched (that's
+    P2). Haze density default `0.0012` anchors the converted disc to the still-Exp²-fogged terrain at the
+    ~180u seam (both ≈15–20% veiled there).
+  - **Validated:** mid-drop the ground below reads clearly and hazes continuously toward the horizon ring
+    (was a featureless fog void); at ground both relics read as legible silhouettes at ~250–300u against a
+    pale unified horizon; no dark green band; zero console errors. Screenshots:
+    `Assets/Screenshots/v9_skydrop_altitude_v2.png`, `v9_ground_vista_v2.png`.
+  - **Round-2 tuning (2026-07-05, owner screenshots from the drop):** three artifacts diagnosed and
+    addressed. (1) Mountain band whited out from altitude → `_MountainShade 0.55` + floor `0.28` (above).
+    (2) "Clear ring around the player looks strange" from altitude → this is three fog regimes meeting in
+    concentric circles: unconverted Exp²-fogged terrain (pale center), the converted height-aware disc
+    (clear dark ring), and the far-clip concealer (white wall at 450–600u slant). Added a small
+    altitude-independent **distance-haze floor** to the shared term (`_AtmoDistanceHaze`, per-preset
+    `distanceHaze 0.15`) so the clear zone grades into the concealer, and lowered the terrain's Exp²
+    `FogDensity 0.0022 → 0.0015` (`ProjectFeatureConfig.asset`) so unconverted terrain stops washing pale
+    from altitude — terrain only renders ≤180u from the player, where Exp² barely registers at ground
+    level (~7% at the seam vs the disc's ~18%; judged acceptable until P3 converts terrain properly).
+    Structural note: from 400u with a 600u far clip the visible world is inherently a ~450u circle — the
+    full fix for the ring remains a larger far clip + the Phase-2 horizon ring, not fog tuning.
+  - **Round-3 — far-field ground skirt (2026-07-05, owner idea: "mountains extend lower so the disc
+    doesn't have to look so thick").** The skybox mountain band no longer cuts off below the horizon — it
+    continues to the bottom of the sky as a **ground skirt** (distant land beyond the far clip), hazed
+    along a ray clamped at the y=0 plane so it reads as land from altitude and as heavily-hazed horizon
+    from the ground. The **disc now hides the far clip by alpha-fading out** (new
+    `AtmoAerialHazeAmount` = shared term minus concealer) revealing the skirt behind it, instead of
+    color-fogging to a white wall — the handoff matches what the sky draws at any camera altitude.
+    Opaque consumers (hero relic) keep the concealer inside `ApplyAerialPerspective`. Validated via
+    positioned altitude captures: the blank grey below-horizon expanse is gone, replaced by rolling land
+    the ridge crests over; ground vista unchanged-or-better. Follow-up noted: **background relics**
+    (Unlit gray + Exp² fog) now read as white blobs against the land-toned backdrop — consider a
+    higher-strength `RelicLit` variant for them when P2/P3 visit the remaining consumers.
+  - **Round-4 — zero-haze pin gates the skirt floor (2026-07-06, owner report: "toggles do nothing, still
+    uniform haze").** Diagnosed via positioned altitude captures with the pin on and fog off: the full-screen
+    pale wash from altitude was **the skirt's material-side `_MountainHazeFloor` (0.28)** lerping toward the
+    near-white noon horizon color — from altitude the skirt fills the entire below-horizon view, so the
+    "small" floor reads as uniform fog that no toggle governed. Fix: the sky shader gates the floor on the
+    broadcast density (`saturate(_AtmoHazeDensity * 1e6)`), so `disableAtmosphereHaze` now zeroes the skirt
+    floor too; normal look (pin off) is mathematically unchanged. A/B validated from 300u: pin on = clean
+    olive land, pin off = hazed skirt. Two traps documented while diagnosing: `SkyController.EnsureMaterial`
+    instantiates a **runtime copy** of the sky material at play start, so material-asset edits during play
+    render nowhere; and `EnableDistanceFog` is applied once at bootstrap, so toggling it mid-play does
+    nothing until play restarts. Also observed with haze fully off: `RelicHero`-material hands render
+    near-white from altitude (overbright, not fog) — fold into the background-relic follow-up above.
+  - **Round-5 — haze tuned down substantially (2026-07-06, owner call after seeing the pin-clean world;
+    the skirt retired the fog's far-clip-concealer job, so the haze is now purely depth-cue/blend).**
+    Final values after a second owner pass ("vertically thinner, gradient too gradual"): the layer went
+    **thin-but-dense** — `hazeFalloff 1/60 → 0.1` (scale height 60u → **10u**: fog is a ground blanket,
+    ~gone by 25u up), `hazeDensity` kept at `0.0012` (thin layers need density to stay visible at
+    grazing angles), `distanceHaze 0.15 → 0.08`; sky material `_MountainHazeFloor 0.28 → 0.08`.
+    Validated at ground (green holds deep, veil only at the horizon line, crisp relics) and from 40u
+    (ground below fully clear, mist reads as a distinct thin band hugging the distant ground). Note the
+    old 0.0012↔Exp²-seam anchoring is moot while the owner keeps `EnableDistanceFog: 0` (unconverted
+    terrain ≤180u renders unfogged; no visible seam at these light densities).
+  - **Remaining (ticket stays open):** P2 disc palette literals + `SyncTerrainColor` deletion, P3 terrain
+    tint (Option B), P5 saturation/overcast pass; steep-look-down during the drop and full day/night sweep
+    still owner-eyeball items.
 
 #### V11 — Hero hand mesh authoring _(opened 2026-07-05 — spun off V4)_
 `testAlienHand.fbx` renders fine but reads as a boulder: short, fused finger-lobes with no silhouette

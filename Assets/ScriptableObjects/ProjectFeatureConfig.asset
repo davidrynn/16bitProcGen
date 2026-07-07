@@ -21,15 +21,11 @@ MonoBehaviour:
   EnableTestSystems: 0
   EnablePlayerBootstrapFixedRateInstaller: 1
   EnablePlayerEntityBootstrap: 1
-  EnablePlayerEntityBootstrapPureEcs: 0
   EnablePlayerInputSystem: 1
   EnablePlayerLookSystem: 1
   EnablePlayerMovementSystem: 1
   EnablePlayerGroundingSystem: 1
   EnablePlayerTerrainSafetySystem: 1
-  EnablePlayerCameraSystem: 0
-  EnablePlayerCinemachineCameraSystem: 0
-  EnableCameraFollowSystem: 0
   EnableSlingshotChargeSystem: 1
   EnableSlingshotLaunchSystem: 1
   EnableChainWindowSystem: 1
@@ -42,11 +38,8 @@ MonoBehaviour:
   EnableCameraGlideFeedbackSystem: 1
   EnableGlideSystem: 1
   EnableScreenEffectResolverSystem: 1
-  EnableSimplePlayerMovementSystem: 0
-  EnableHybridTerrainGenerationSystem: 1
+  EnableLegacyHeightmapTerrainGenerationSystem: 1
   EnableTerrainCleanupSystem: 1
-  EnableChunkProcessor: 1
-  EnableTerrainModificationSystem: 1
   EnableTerrainGlobPhysicsSystem: 1
   EnableTerrainChunkDensitySamplingSystem: 1
   EnableTerrainEditInputSystem: 0
@@ -72,7 +65,7 @@ MonoBehaviour:
   EnableRockRenderSystem: 1
   EnablePebblePlacementSystem: 1
   EnablePebbleRenderSystem: 1
-  EnableTerrainSeamValidatorSystem: 0
+  EnableTerrainDensitySeamValidatorSystem: 0
   EnableTerrainMeshSeamValidatorSystem: 0
   EnableTerrainMeshBorderDebugSystem: 0
   EnablePlayerFallThroughDiagnosticSystem: 0
@@ -84,12 +77,12 @@ MonoBehaviour:
   EnableStructurePlacementSystem: 1
   EnableRelicRealizationSystem: 1
   EnableRelicLodSelectionSystem: 1
-  EnableDungeonRenderingSystem: 0
-  EnableHybridWeatherSystem: 0
+  EnableDungeonEntitySpawningSystem: 0
+  EnableWeatherGpuEffectsSystem: 0
   VistaCameraFarClip: 600
   EnableDistanceFog: 1
   FogMode: 3
   FogColor: {r: 0.62, g: 0.74, b: 0.85, a: 1}
-  FogDensity: 0.0022
+  FogDensity: 0.0015
   FogStartRatio: 0.14
   FogEndRatio: 0.308

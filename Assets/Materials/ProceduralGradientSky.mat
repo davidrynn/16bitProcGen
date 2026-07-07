@@ -30,6 +30,11 @@ Material:
     - _GradientExponent: 10
     - _HorizonHeight: 0.5
     - _MountainBaseHeight: 0.023
+    - _MountainDistance: 900
+    - _MountainHazeFloor: 0.08
+    - _MountainHazeStrength: 0.7
+    - _MountainOpacity: 1
+    - _MountainShade: 0.55
     - _MountainSoftness: 0.0067
     - _MountainVariation: 0.1442
     - _NoiseScale: 3

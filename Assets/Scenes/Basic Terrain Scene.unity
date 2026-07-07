@@ -159,7 +159,7 @@ MonoBehaviour:
     impostorScale: 30
   - templateId: relic_hand
     mesh: {fileID: -8919760781528365239, guid: 24e8782cd9e311a44a8705909a96b35d, type: 3}
-    material: {fileID: 2100000, guid: 253b677f6571a984189bdc09e54ce177, type: 2}
+    material: {fileID: 2100000, guid: 6db16a9bb0a24b418ee9e9a7bbbaa396, type: 2}
     scale: 500
     yOffset: -5
     impostorMesh: {fileID: 0}
@@ -716,6 +716,7 @@ MonoBehaviour:
   cycleDurationSeconds: 240
   pinTimeOfDay: 1
   pinnedNormalizedTime: 0.08
+  disableAtmosphereHaze: 0
   _timeRemapCurve:
     serializedVersion: 2
     m_Curve: []

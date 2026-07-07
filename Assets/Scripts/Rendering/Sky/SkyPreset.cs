@@ -42,6 +42,12 @@ namespace DOTS.Rendering.Sky
             horizonHeight = 0.0f
         };
 
+        [Header("Atmosphere Palette")]
+        [Tooltip("Per-preset atmosphere block broadcast as the _Atmo* globals (ground/rock hues, " +
+                 "saturation, height-haze physics). Not keyframed — the dynamic horizon color " +
+                 "carries the time-of-day shift.")]
+        public AtmosphereSettings atmosphere = AtmosphereSettings.Default;
+
         /// <summary>
         /// Evaluate SkySettings at a normalized time-of-day value.
         /// 0.0 = dawn, 0.25 = noon, 0.5 = dusk, 0.75 = night, 1.0 = dawn (wraps).

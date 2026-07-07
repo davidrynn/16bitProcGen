@@ -22,6 +22,15 @@ namespace DOTS.Rendering.Sky
         [Range(0f, 1f)]
         [SerializeField] private float pinnedNormalizedTime = 0.08f;
 
+        [Tooltip("Dev pin: broadcast zero atmosphere haze (_AtmoHazeDensity/_AtmoDistanceHaze) so the " +
+                 "V9-converted surfaces (ground disc, skybox skirt, hero relic) render clean for visual " +
+                 "debugging — the skirt's material-side _MountainHazeFloor is gated on the broadcast " +
+                 "density, so it drops with the pin too. Live — takes effect next frame in Play Mode. " +
+                 "Note: ProjectFeatureConfig's EnableDistanceFog only governs the built-in RenderSettings " +
+                 "fog on unconverted terrain/scatter and is applied once at bootstrap — toggling it " +
+                 "requires restarting Play Mode.")]
+        [SerializeField] private bool disableAtmosphereHaze;
+
         [Tooltip("Maps raw cycle time (X 0-1) to apparent sky time (Y 0-1). " +
                  "Steep slope = fast transition (dawn/dusk). Shallow slope = long phase (day/night). " +
                  "Leave empty to use the built-in default (dawn/dusk ~8%, day/night ~42% of cycle).")]
@@ -82,6 +91,16 @@ namespace DOTS.Rendering.Sky
         {
             get => pinnedNormalizedTime;
             set => pinnedNormalizedTime = Mathf.Repeat(value, 1f);
+        }
+
+        /// <summary>
+        /// Dev pin: while true, the authority broadcasts zero haze so all V9-converted surfaces
+        /// render clean. Exposed for runtime toggling from debug tooling.
+        /// </summary>
+        public bool DisableAtmosphereHaze
+        {
+            get => disableAtmosphereHaze;
+            set => disableAtmosphereHaze = value;
         }
 
         private void Start()
@@ -232,6 +251,11 @@ namespace DOTS.Rendering.Sky
             skyController.ApplySettings(evaluated);
             skyController.ApplyCloudSettings(evaluatedClouds);
 
+            // Atmosphere authority broadcast (ATMOSPHERE_COLOR_AUTHORITY_SPEC.md §5.1): this
+            // controller already evaluates the palette per frame, so it owns pushing the _Atmo*
+            // globals — no rival singleton.
+            PushAtmosphere(evaluated);
+
             if (rotateSun && directionalLight != null)
             {
                 UpdateSunRotation();
@@ -250,6 +274,43 @@ namespace DOTS.Rendering.Sky
 
             float intensity = Mathf.Clamp01(Mathf.Sin(t * Mathf.PI * 2f) + 0.1f);
             directionalLight.intensity = Mathf.Max(intensity, 0.05f);
+        }
+
+        /// <summary>
+        /// Resolves the per-preset atmosphere block (transition-blended with the same progress as
+        /// the sky settings so consumers never see a palette snap) and broadcasts the _Atmo* globals.
+        /// </summary>
+        private void PushAtmosphere(SkySettings evaluated)
+        {
+            var atmosphere = (_transitionProgress < 1f && _transitionFrom != null && _transitionTo != null)
+                ? AtmosphereSettings.Lerp(_transitionFrom.atmosphere, _transitionTo.atmosphere, _transitionProgress)
+                : activePreset.atmosphere;
+
+            // Dev pin: zero the haze terms on the local copy (struct) — the preset asset is untouched.
+            if (disableAtmosphereHaze)
+            {
+                atmosphere.hazeDensity = 0f;
+                atmosphere.distanceHaze = 0f;
+            }
+
+            var mainCamera = Camera.main;
+            AtmosphereBroadcast.Push(
+                evaluated,
+                atmosphere,
+                mainCamera != null ? mainCamera.farClipPlane : 600f);
+        }
+
+        // The controller only updates in Play Mode, so without this an inspector toggle of the
+        // haze pin (or a preset swap) would not change the Scene/Game view until play — the
+        // globals would keep whatever was last broadcast. Re-broadcast on inspector edits so
+        // dev pins are judgeable in edit mode. Broadcast only — sun rotation and sky-material
+        // writes stay Play Mode concerns.
+        private void OnValidate()
+        {
+            if (activePreset == null)
+                return;
+
+            PushAtmosphere(activePreset.Evaluate(RemapTime(normalizedTime)));
         }
 
         private float RemapTime(float t) =>

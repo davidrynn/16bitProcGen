@@ -32,3 +32,10 @@ MonoBehaviour:
     zenithColor: {r: 0.03, g: 0.04, b: 0.09, a: 1}
     gradientExponent: 0.4
     horizonHeight: 0
+  atmosphere:
+    groundColor: {r: 0.4, g: 0.46, b: 0.26, a: 1}
+    rockColor: {r: 0.28, g: 0.32, b: 0.23, a: 1}
+    saturation: 1
+    hazeDensity: 0.0012
+    hazeFalloff: 0.1
+    distanceHaze: 0.08

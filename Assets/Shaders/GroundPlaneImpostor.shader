@@ -23,6 +23,7 @@ Shader "Ground/GroundPlaneImpostor"
         _OuterFadeEnd   ("Outer Fade End",   Float)      = 1400.0
         _HazeColor  ("Haze Color",   Color)      = (0.72, 0.80, 0.87, 1)
         _PlayerXZ       ("Player XZ",        Vector)     = (0, 0, 0, 0)
+        _AerialStrength ("Aerial Strength",  Range(0,1)) = 1.0
     }
 
     SubShader
@@ -48,13 +49,13 @@ Shader "Ground/GroundPlaneImpostor"
             #pragma fragment Frag
             #pragma target   3.5
             #pragma multi_compile_instancing
-            // Aerial perspective: let the disc fade into RenderSettings fog like the
-            // real terrain does, so the green plain blends into the horizon haze instead
-            // of staying vivid to its edge (the two atmospheres were previously uncoordinated).
-            #pragma multi_compile_fog
 
             // Lighting.hlsl includes Core.hlsl and exposes SampleSH + GetMainLight.
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
+            // V9: the disc's haze now comes from the shared height-aware aerial term instead of
+            // built-in RenderSettings fog (which is altitude-blind and greyed out the whole plain
+            // from the 400u sky-drop — see ATMOSPHERE_COLOR_AUTHORITY_SPEC.md §5.3a).
+            #include "Assets/Shaders/Atmosphere.hlsl"
 
             // All Properties must appear in UnityPerMaterial for SRP Batcher.
             CBUFFER_START(UnityPerMaterial)
@@ -62,6 +63,7 @@ Shader "Ground/GroundPlaneImpostor"
                 float4 _RockColor;
                 float4 _HazeColor;
                 float4 _PlayerXZ;
+                float  _AerialStrength;
                 float  _NoiseScale;
                 float  _RockThreshold;
                 float  _InnerFadeStart;
@@ -80,7 +82,6 @@ Shader "Ground/GroundPlaneImpostor"
             {
                 float4 positionCS : SV_POSITION;
                 float4 worldPos   : TEXCOORD0;
-                float  fogCoord   : TEXCOORD1;
                 UNITY_VERTEX_INPUT_INSTANCE_ID
             };
 
@@ -122,7 +123,6 @@ Shader "Ground/GroundPlaneImpostor"
                 VertexPositionInputs posInputs = GetVertexPositionInputs(IN.positionOS.xyz);
                 OUT.positionCS = posInputs.positionCS;
                 OUT.worldPos   = float4(posInputs.positionWS, 1.0);
-                OUT.fogCoord   = ComputeFogFactor(OUT.positionCS.z);
                 return OUT;
             }
 
@@ -159,12 +159,20 @@ Shader "Ground/GroundPlaneImpostor"
                 half3 sunContrib = half3(mainLight.color) * saturate(mainLight.direction.y) * 0.5h;
                 color           *= saturate(ambient + sunContrib);
 
-                // Aerial perspective: blend toward RenderSettings fog colour with distance
-                // so the disc melts into the horizon haze (matches fogged terrain/scatter).
-                color = MixFog(color, IN.fogCoord);
+                // Aerial perspective (V9, height-aware): haze thins with camera altitude so the
+                // sky-drop reads the plain below, while ground-level horizontal rays still veil.
+                // Replaces the old MixFog call — the disc no longer reads RenderSettings fog.
+                color = (half3)ApplyAerialHaze(color, AtmoAerialHazeAmount(IN.worldPos.xyz, _AerialStrength));
 
-                // Combined alpha: 0 at inner boundary, 1 in mid zone, 0 at outer edge.
-                half alpha = (half)(innerAlpha * outerBlend);
+                // Far clip is hidden by ALPHA, not by fogging to white: the disc fades out over
+                // the concealer band so the skybox far-field skirt (hazed distant land in the
+                // sky shader) shows through — the handoff matches whatever the sky draws there,
+                // at any camera altitude, instead of a thick white haze wall.
+                float viewDist = length(IN.worldPos.xyz - _WorldSpaceCameraPos);
+                float farClipFade = 1.0 - AtmoFarClipHaze(viewDist);
+
+                // Combined alpha: 0 at inner boundary, 1 in mid zone, 0 at outer/far-clip edge.
+                half alpha = (half)(innerAlpha * outerBlend * farClipFade);
 
                 return half4(color, alpha);
             }

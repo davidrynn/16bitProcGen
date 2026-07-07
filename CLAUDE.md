@@ -184,7 +184,10 @@ Debug flags controlled via `DebugSettings` static class (all default to `false`)
 Dynamic/randomized systems each expose a **pin** in their existing config so debugging and visual
 validation run against stable data — added case-by-case when a system first causes pain, not as a
 central framework. Existing pins: `TimeOfDayController.pinTimeOfDay` (+ `pinnedNormalizedTime`) holds
-the day/night cycle; `DebugSettings.UseFixedWFCSeed` fixes WFC seeding. Relic/structure placement is
+the day/night cycle; `TimeOfDayController.disableAtmosphereHaze` broadcasts zero V9 atmosphere haze so
+converted surfaces render clean (`ProjectFeatureConfig.EnableDistanceFog` no longer governs the visible
+haze — it only drives built-in fog on unconverted terrain/scatter); `DebugSettings.UseFixedWFCSeed`
+fixes WFC seeding. Relic/structure placement is
 already seed-deterministic (hash-jittered stable anchor IDs) and needs no pin; *authored* placement
 (quests, hero relics) is a product feature, not a pin — see ticket V12.
 
