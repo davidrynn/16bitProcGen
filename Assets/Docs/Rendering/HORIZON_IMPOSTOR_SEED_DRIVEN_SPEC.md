@@ -297,5 +297,10 @@ the ground disc, which is a horizontal plane and should never grow vertical feat
   same haze. A scaled-proxy pass (render the relic at 1/k distance and 1/k scale to keep it crisp at any
   range) is the documented alternative if a design ever demands an *unhazed* distant silhouette; not
   planned — crispness at extreme range contradicts the vista's dissolve-into-haze language.
+  > **Superseded in part by R6 (2026-07-06):** the V9 round-5 haze re-tune made the fog layer thin —
+  > haze no longer reaches ~full at the far clip, so this concealment no longer holds. Ticket **R6**
+  > (`LANDMARK_DRAW_DISTANCE_SPEC.md`) moves the real-mesh boundary to ~2000u with a dithered edge fade
+  > as the handoff mechanism; cards then only cover **>2000u**, where the remaining haze + tiny angular
+  > size make the swap invisible.
 - **Determinism:** authored anchors are fixed world data, so cards are deterministic per seed+authoring;
   rebuild triggers are the same as §8 (movement cells), since bearing shifts only with large player moves.
