@@ -12,4 +12,4 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4c70f3f2d4d94f87a63fe4815ca3380b, type: 3}
   m_Name: TerrainChunkRenderSettings
   m_EditorClassIdentifier: 
-  chunkMaterial: {fileID: 2100000, guid: 77d067287fb28b7409b920737e9eb9ff, type: 2}
+  chunkMaterial: {fileID: 2100000, guid: ddc2bb3d074b4832aa70e60ea66368bb, type: 2}

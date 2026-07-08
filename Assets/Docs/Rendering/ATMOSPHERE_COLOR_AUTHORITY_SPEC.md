@@ -2,8 +2,9 @@
 
 **Status:** ACTIVE — MVP slice (P1 + P4 + P4b, plus the disc's fog-call conversion) built & validated
 2026-07-05; P2 (disc palette + `SyncTerrainColor` deletion) built 2026-07-07, pending owner validation;
-P3/P5 pending. See ticket V9 in `../Tickets/vista-moment.md` for the build record.
-**Last Updated:** 2026-07-07
+P3 built 2026-07-08 (re-scoped to direct palette consumption — see §6a), pending owner validation;
+P5 pending. See ticket V9 in `../Tickets/vista-moment.md` for the build record.
+**Last Updated:** 2026-07-08
 **Owner:** Rendering / Vista
 **Phase:** Vista MVP (ties ticket V9; folds V8 Route B; consumed by V3)
 **Keywords:** atmosphere, palette, aerial perspective, height fog, hue unification, global shader uniforms, impostor, fog, time-of-day, biome
@@ -233,7 +234,10 @@ as each consumer adopts the shared term — end state disables built-in fog enti
   existing `MixFog`.
 - **Mountain impostor:** `#include Atmosphere.hlsl`; base color from `_AtmoGround`/`_AtmoRock`, then
   `ApplyAerialPerspective(..., mountainStrength)`. Replaces the flat `_MountainColor`.
-- **Terrain:** apply `_AtmoGround` as a **tint multiply** so it breathes with the cycle (see §6 Option B).
+- **Terrain:** direct palette consumer via the project-owned `Terrain/TerrainLit` shader — same
+  `_AtmoGround`/`_AtmoRock` FBM mix as the disc, real lighting, `ApplyAerialPerspective` at full
+  opaque-world strength. _(Amended 2026-07-08 from "tint multiply" — see §6a: the Synty albedo was a
+  dead single-texel sample, so there was no texture to tint.)_
 - *(2026-07-05)* **Hero relic:** the fifth distance-facing surface (confirmed white-out symptom, ticket
   V9 2026-07-02). Its material moves off stock URP/Lit (whose pipeline fog cannot be tuned per-material)
   onto a variant that calls `ApplyAerialPerspective` with a **reduced** `strength` (start ≈ 0.3) — the
@@ -267,15 +271,80 @@ surgery: have the authority write the **same** `_AtmoGround` value into both the
 old broken sync (one authority pushes one tint into both, instead of the disc reading terrain's white
 slot). Full version routes `_AtmoGround` through the Synty shadergraph as an albedo multiply.
 
+### 6a. P3 finding (2026-07-08) — the Synty albedo was never rendering; Option B resolves to direct palette consumption
+
+Traced at P3 build time: `TerrainChunkMeshUploadSystem.UploadMesh` uploads **position-only** vertex
+buffers — Surface Nets meshes have **no UV channel and no tangents** (the same fact the BruteForce
+grass shader works around with its `USE_WC` world-coordinate mode). The Synty `Generic_Basic`
+shadergraph therefore samples `_Albedo_Map` at UV (0,0) for every fragment: the terrain has rendered
+as **one flat texel of green all along**, and the normal map is equally inert. There is no texture
+detail to preserve or tint.
+
+Consequently Option B's premise ("texture is the noon look") is void, and the option **degenerates
+into direct palette consumption** — the same model the disc uses. The terrain takes
+`_AtmoGround`/`_AtmoRock` mixed by the same world-XZ FBM noise as the disc, lit by real
+Lambert + SH + shadows, hazed by `ApplyAerialPerspective` (full opaque-world contract, concealer
+included). The disc↔terrain seam then matches **by construction** — same palette, same noise
+(world-space and continuous across the seam, so grass/rock patches flow from real terrain onto the
+disc), same haze term — rather than by tint calibration.
+
+Rejected at the same time:
+
+- **The cheap `_BaseColor` write** (§6 above, first step of the original Option B): multiplies the
+  palette into a meaningless texel, fixes neither the hue source nor the haze axis of the seam, and
+  play-mode writes to a shared material asset persist to disk (the `SkyController.EnsureMaterial`
+  runtime-copy trap, but worse — the terrain material cannot be swapped for a copy after
+  Entities Graphics captures it in a `RenderMeshArray`).
+- **Editing/copying the vendor shadergraph** to add a custom-function haze node: we would own a
+  vendor-derived graph (hard to review/diff) to preserve a texture sample that does nothing.
+
+Ship instead: project-owned **`Terrain/TerrainLit`** hand-written shader (`RelicLit` pattern —
+DOTS-instanced for Entities Graphics, ForwardLit + ShadowCaster + DepthOnly), with the FBM noise
+factored into a shared include (`GroundNoise.hlsl`) so the disc and terrain mixes cannot drift.
+Compute is net-**cheaper** than the Synty graph (zero texture fetches, opaque, no alpha-test/A2M,
+Lambert instead of full PBR), which matters less than it sounds — the scene is vertex-bound
+(`RENDER_PERF_PROFILE_REPORT.md`) — but respects the compute-light budget in §7.
+
+This is also the biome spec's documented MVP ground model: a **single terrain material** with color
+variation, no splat/painting system until post-MVP
+(`../Biomes/Windswept_Colossus_Plains_Biome_Spec.md` § Ground Materials — its surface-distribution
+table with exact RGBs is the tuning target for `AtmosphereSettings.groundColor/rockColor` and the
+rock threshold; the post-MVP painter's masks plug into `TerrainLit`, which we own).
+
+### 6b. Slant-based far-clip concealer retired (2026-07-08) — the world edge is a circle around the player
+
+Owner screenshot from the sky-drop showed the streamed terrain window as a **square hole punched in
+fog**: two stacked artifacts, both from measuring the world's visual edge as 3D *slant* distance
+against `_AtmoFarFade` (600). From ~400u altitude everything below sits at 400–520u slant, so (1) the
+disc's alpha handoff to the skybox skirt began at only ~206u *horizontal* — paling almost everything
+around the ±180u terrain square — and (2) the terrain window's corners (~474u slant) entered the old
+`AtmoFarClipHaze` 450–600u band and whitened toward the horizon color. Root cause: R6 moved the real
+far plane to `_AtmoLandmarkFade` (2000), so a slant concealer at 600 no longer concealed any actual
+clip — it just drew a fog shell around the camera. (Second occurrence of this failure shape after the
+round-4 relic white-out; hence the do-not-reintroduce note in `Atmosphere.hlsl`.)
+
+Fix (zero added cost — same smoothstep count): `AtmoFarClipHaze` and `ApplyAerialPerspective`
+**deleted** from `Atmosphere.hlsl`; new `AtmoWorldEdgeHaze` measures the disc→skirt handoff
+**horizontally** from the camera. This keeps R6 P2's intent — the handoff stays pinned at the 600u
+world edge — but makes that edge a fixed circle in the world instead of a shell around the camera; at
+eye height horizontal ≈ slant, so the ground vista is unchanged by construction. The real clip edge is
+covered by `AtmoLandmarkEdgeFade` on the disc's alpha (dormant in normal play — the 900–1400u outer
+fade ends inside it). Terrain composes `ApplyAerialHaze` + `AtmoAerialHazeAmount` with **no** edge
+term: it tops out ~520u slant from the drop, under both possible far planes. Validated via positioned
+top-down capture at 400u (no square, no white band; the world-edge fade reads as a soft circle at
+~450u+ horizontal) and a ground-vista capture matching the pre-fix shot. Residual, accepted: the
+scatter/pebble **detail** cutoff at the window edge against same-hue disc — subtle; the next lever if
+it ever bothers is a radial detail fade, not fog.
+
 ---
 
 ## 7. Compute & Art Budget
 
 - **Authority:** one managed pass per frame — a handful of `SetGlobalColor`/`SetGlobalFloat` calls plus
   the existing fog-color write. Negligible CPU, zero allocation.
-- **Shaders:** `ApplyAerialPerspective` is a couple of `lerp`s + a luminance dot — a few ALU ops per
-  fragment. Well inside the low-poly / low-res / compute-light intent. No new textures, no branches, no
-  extra passes.
+- **Shaders:** the shared aerial term (`AtmoAerialHazeAmount` + `ApplyAerialHaze`) is a couple of
+  `lerp`s + a luminance dot — a few ALU ops per fragment. Well inside the low-poly / low-res /
+  compute-light intent. No new textures, no branches, no extra passes.
 - **Art intent preserved:** stylized, hue-unified, aerial-perspective look (per `Temp_OpeningInspiration.png`
   and the JC3 reference); the palette stays art-directed keyframes, not simulation.
 
@@ -289,8 +358,11 @@ slot). Full version routes `_AtmoGround` through the Synty shadergraph as an alb
    change yet.
 2. **P2 — Disc consumes.** Swap disc literals for `_AtmoGround`/`_AtmoRock` + aerial call. Re-enable the
    sync intent via the authority (delete the doomed `SyncTerrainColor` `_BaseColor` read).
-3. **P3 — Terrain tint (Option B).** Push `_AtmoGround` into terrain (`_BaseColor` cheap path first,
-   shadergraph multiply for the full version). Verify disc↔terrain seam matches at ground level.
+3. **P3 — Terrain consumes the palette directly** _(re-scoped 2026-07-08, see §6a — was "terrain
+   tint (Option B)")_. New `Terrain/TerrainLit` shader (RelicLit pattern) replaces the Synty graph on
+   the chunk material: `_AtmoGround`/`_AtmoRock` via the disc's FBM (shared `GroundNoise.hlsl`),
+   Lambert + SH + shadows, the shared aerial haze (no edge term — see §6b). Verify disc↔terrain
+   seam matches at ground level and from altitude.
 4. **P4 — Mountains + skybox haze band (folds V3).** The band in `ProceduralGradientSky.shader` pulls
    toward the haze color per §5.4; base hue from `_AtmoGround`/`_AtmoRock` with high aerial `strength`.
    Verify disc-edge = mountain-base = horizon, at several times of day.
@@ -361,8 +433,13 @@ differs. Let them stay two thin bootstraps that happen to consume the same globa
 ## 12. Open Questions
 
 - **Disc vs. mountain `strength` values** — tune empirically at altitude; start disc ≈ 0.25, mountains ≈ 0.85.
-- **Terrain tint path** — ship the cheap `_BaseColor` write first, or go straight to the shadergraph
-  albedo multiply? (Lean: `_BaseColor` first to validate, then shadergraph.)
+- ~~**Terrain tint path** — ship the cheap `_BaseColor` write first, or go straight to the shadergraph
+  albedo multiply? (Lean: `_BaseColor` first to validate, then shadergraph.)~~ **Resolved 2026-07-08
+  (§6a):** neither — the albedo sample was dead (no mesh UVs), so terrain consumes the palette
+  directly via `Terrain/TerrainLit`.
+- **16-bit color quantization** — `TerrainLit` (project-owned) can trivially quantize the noise mix
+  into discrete color steps for a harder retro read; aesthetic dial, decide after seeing the smooth
+  version.
 - **Saturation authoring** — per-preset `_AtmoSaturation` keyframe, or derived from cloud coverage?
 - **Scatter (trees/rocks/pebbles)** — they already `MixFog`; do they also need `_AtmoGround`/saturation,
   or is fog coupling enough for MVP? (Lean: fog-only for now; revisit if they pop against the tinted ground.)

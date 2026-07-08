@@ -22,7 +22,7 @@ float _AtmoSaturation;   // global saturation scalar (1 = full)
 float _AtmoFarFade;      // reference distance where aerial perspective reaches full (typically camera far clip)
 float _AtmoHazeDensity;  // ground-level (y=0) haze density d0 for the height term
 float _AtmoHazeFalloff;  // 1/scale-height of the haze layer (e.g. 1/60u)
-float _AtmoDistanceHaze; // small altitude-independent aerial floor at _AtmoFarFade (see ApplyAerialPerspective)
+float _AtmoDistanceHaze; // small altitude-independent aerial floor at _AtmoFarFade (see AtmoAerialHazeAmount)
 float _AtmoLandmarkFade; // landmark dissolve distance = max(_AtmoFarFade, LandmarkDrawDistance) — R6 P3
 
 // Analytic exponential-height fog along a finite view ray (closed form, no
@@ -51,13 +51,20 @@ float AtmoHeightHazeToSky(float rayOriginY, float rayDirY)
     return 1.0 - exp(-min(od, 60.0));
 }
 
-// Far-clip concealer: ramps to full haze over the last quarter before _AtmoFarFade
-// so converted world-space surfaces never show a hard clip edge against the skybox.
-// Deliberately distance-only — at altitude the height term goes thin, but the far
-// plane still cuts geometry, so the edge must always be veiled regardless of camera Y.
-float AtmoFarClipHaze(float viewDist)
+// World-edge haze for the disc→skirt handoff, measured HORIZONTALLY from the camera
+// so the world edge is a fixed circle in the world (600u around the player), not a
+// shell around the camera. This replaced the slant-based far-clip concealer
+// (2026-07-08): R6 moved the real far plane to _AtmoLandmarkFade, and the old
+// 450-600u slant band — twice shown wrong from altitude (relic white-out round 4,
+// then the sky-drop "square hole in fog": from 400u it shrank the visible world to a
+// ~450u circle the ±180u terrain window nearly filled) — no longer concealed any
+// actual clip. At eye height horizontal ≈ slant, so ground-level reads are
+// unchanged by construction. The REAL clip edge is covered separately by
+// AtmoLandmarkEdgeFade below.
+float AtmoWorldEdgeHaze(float3 positionWS)
 {
-    return smoothstep(_AtmoFarFade * 0.75, _AtmoFarFade, viewDist);
+    float horizDist = length(positionWS.xz - _WorldSpaceCameraPos.xz);
+    return smoothstep(_AtmoFarFade * 0.75, _AtmoFarFade, horizDist);
 }
 
 // Hue/desaturation pull of spec §5.3 for a precomputed haze amount t:
@@ -87,21 +94,13 @@ float AtmoAerialHazeAmount(float3 positionWS, float strength)
                     + smoothstep(0.0, _AtmoFarFade, rayLen) * _AtmoDistanceHaze);
 }
 
-// The shared aerial-perspective entry point (spec §5.3 composed with §5.3a):
-// the height term decides HOW MUCH haze, the palette decides WHAT COLOR it
-// converges to, strength is the per-surface dial (disc low, mountains high).
-// Includes the far-clip concealer at FULL strength — correct for opaque WORLD
-// surfaces, which must always be veiled at the clip edge regardless of their
-// haze dial (the concealer hides geometry cut-off, not atmosphere). Not for
-// landmarks: hero relics draw past _AtmoFarFade by design (R6) and use
-// AtmoAerialHazeAmount + AtmoLandmarkEdgeFade instead, like the disc's
-// alpha-fade path. No consumers today; V9 P3 terrain tint is the intended one.
-float3 ApplyAerialPerspective(float3 color, float3 positionWS, float strength)
-{
-    float rayLen = length(positionWS - _WorldSpaceCameraPos);
-    float t = saturate(AtmoAerialHazeAmount(positionWS, strength) + AtmoFarClipHaze(rayLen));
-    return ApplyAerialHaze(color, t);
-}
+// NOTE (2026-07-08): the former ApplyAerialPerspective entry point (haze +
+// slant-based far-clip concealer) was deleted along with the concealer — every
+// consumer (disc, heroes, terrain) now composes ApplyAerialHaze with
+// AtmoAerialHazeAmount and handles its own edge treatment (disc: AtmoWorldEdgeHaze
+// alpha handoff; heroes: AtmoLandmarkEdgeFade dither). Do not reintroduce a
+// slant-distance concealer for world surfaces — it reads as a fog shell around the
+// camera and breaks from altitude (see AtmoWorldEdgeHaze note above).
 
 // Interleaved gradient noise (Jimenez, "Next Generation Post Processing in
 // Call of Duty: Advanced Warfare", 2014) over pixel coordinates — the standard

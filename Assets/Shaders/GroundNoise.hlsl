@@ -1,0 +1,54 @@
+#ifndef GROUND_NOISE_INCLUDED
+#define GROUND_NOISE_INCLUDED
+
+// ---------------------------------------------------------------------------
+// Shared ground patch noise + palette mix (V9 P3).
+// Spec: Assets/Docs/Rendering/ATMOSPHERE_COLOR_AUTHORITY_SPEC.md (§6a)
+//
+// Factored out of GroundPlaneImpostor.shader so the SDF terrain (TerrainLit)
+// and the ground disc compute their grass/rock color from ONE definition.
+// The disc↔terrain seam disappears by construction only if both surfaces mix
+// the same palette by the same world-space noise — the noise is continuous in
+// world XZ, so grass/rock patches flow uninterrupted from real terrain onto
+// the disc. Do not fork these functions per consumer.
+//
+// Requires Atmosphere.hlsl for _AtmoGround/_AtmoRock (included here; guarded).
+// ---------------------------------------------------------------------------
+
+#include "Assets/Shaders/Atmosphere.hlsl"
+
+float GroundHash21(float2 p)
+{
+    p = frac(p * float2(234.34, 435.345));
+    float d = dot(p, p + float2(34.23, 34.23));
+    p += float2(d, d);
+    return frac(p.x * p.y);
+}
+
+float GroundValueNoise(float2 p)
+{
+    float2 i = floor(p);
+    float2 f = frac(p);
+    float2 u = f * f * (3.0 - 2.0 * f);
+    return lerp(
+        lerp(GroundHash21(i),                    GroundHash21(i + float2(1.0, 0.0)), u.x),
+        lerp(GroundHash21(i + float2(0.0, 1.0)), GroundHash21(i + float2(1.0, 1.0)), u.x),
+        u.y);
+}
+
+float GroundPatchFBM(float2 p)
+{
+    float v = GroundValueNoise(p) * 0.5 + GroundValueNoise(p * 2.0) * 0.25;
+    return v * 1.3333;
+}
+
+// Grass/rock hue for a world-XZ position, from the authoritative palette.
+// noiseScale/rockThreshold stay per-material dials, but consumers should keep
+// them equal across surfaces (disc + terrain) or the patches stop lining up.
+float3 GroundPaletteMix(float2 worldXZ, float noiseScale, float rockThreshold)
+{
+    float n = GroundPatchFBM(worldXZ * noiseScale);
+    return lerp(_AtmoGround.rgb, _AtmoRock.rgb, step(rockThreshold, n));
+}
+
+#endif // GROUND_NOISE_INCLUDED

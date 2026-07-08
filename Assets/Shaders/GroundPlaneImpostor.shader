@@ -52,7 +52,9 @@ Shader "Ground/GroundPlaneImpostor"
             // V9: the disc's haze now comes from the shared height-aware aerial term instead of
             // built-in RenderSettings fog (which is altitude-blind and greyed out the whole plain
             // from the 400u sky-drop — see ATMOSPHERE_COLOR_AUTHORITY_SPEC.md §5.3a).
-            #include "Assets/Shaders/Atmosphere.hlsl"
+            // GroundNoise.hlsl pulls in Atmosphere.hlsl and the grass/rock mix shared with the
+            // SDF terrain (V9 P3) — one noise definition so seam patches line up by construction.
+            #include "Assets/Shaders/GroundNoise.hlsl"
 
             // All Properties must appear in UnityPerMaterial for SRP Batcher.
             CBUFFER_START(UnityPerMaterial)
@@ -78,33 +80,6 @@ Shader "Ground/GroundPlaneImpostor"
                 float4 worldPos   : TEXCOORD0;
                 UNITY_VERTEX_INPUT_INSTANCE_ID
             };
-
-            // ── Noise ────────────────────────────────────────────────────────────────
-
-            float Hash21(float2 p)
-            {
-                p = frac(p * float2(234.34, 435.345));
-                float d = dot(p, p + float2(34.23, 34.23));
-                p += float2(d, d);
-                return frac(p.x * p.y);
-            }
-
-            float ValueNoise(float2 p)
-            {
-                float2 i = floor(p);
-                float2 f = frac(p);
-                float2 u = f * f * (3.0 - 2.0 * f);
-                return lerp(
-                    lerp(Hash21(i),                 Hash21(i + float2(1.0, 0.0)), u.x),
-                    lerp(Hash21(i + float2(0.0, 1.0)), Hash21(i + float2(1.0, 1.0)), u.x),
-                    u.y);
-            }
-
-            float FBM2(float2 p)
-            {
-                float v = ValueNoise(p) * 0.5 + ValueNoise(p * 2.0) * 0.25;
-                return v * 1.3333;
-            }
 
             // ── Vertex ───────────────────────────────────────────────────────────────
 
@@ -143,8 +118,7 @@ Shader "Ground/GroundPlaneImpostor"
                 // Biome colour from world-space noise; hues come from the authoritative
                 // palette globals (V9 P2). No shade factor needed unlike the sky mountain
                 // band — the lighting multiply below already provides the shaded look.
-                float  n     = FBM2(worldXZ * _NoiseScale);
-                half3  color = lerp((half3)_AtmoGround.rgb, (half3)_AtmoRock.rgb, step(_RockThreshold, n));
+                half3 color = (half3)GroundPaletteMix(worldXZ, _NoiseScale, _RockThreshold);
 
                 // Day/night lighting: ambient SH probes + attenuated sun.
                 // The disc is a flat +Y plane; SDF terrain has varied normals whose average
@@ -160,15 +134,20 @@ Shader "Ground/GroundPlaneImpostor"
                 // Replaces the old MixFog call — the disc no longer reads RenderSettings fog.
                 color = (half3)ApplyAerialHaze(color, AtmoAerialHazeAmount(IN.worldPos.xyz, _AerialStrength));
 
-                // Far clip is hidden by ALPHA, not by fogging to white: the disc fades out over
-                // the concealer band so the skybox far-field skirt (hazed distant land in the
-                // sky shader) shows through — the handoff matches whatever the sky draws there,
-                // at any camera altitude, instead of a thick white haze wall.
+                // The disc→skirt handoff is hidden by ALPHA, not by fogging to white: the disc
+                // fades out approaching the world edge so the skybox far-field skirt (hazed
+                // distant land in the sky shader) shows through. Measured HORIZONTALLY
+                // (AtmoWorldEdgeHaze, 2026-07-08): a slant-based fade shrank the visible world
+                // to a ~450u circle from drop altitude, drawing the terrain window as a square
+                // hole in fog. AtmoLandmarkEdgeFade separately covers the REAL camera clip
+                // (landmark plane, or the world edge with the feature off) — dormant in
+                // normal play since the outer fade ends well inside it.
+                float worldEdgeFade = 1.0 - AtmoWorldEdgeHaze(IN.worldPos.xyz);
                 float viewDist = length(IN.worldPos.xyz - _WorldSpaceCameraPos);
-                float farClipFade = 1.0 - AtmoFarClipHaze(viewDist);
+                float clipEdgeFade = AtmoLandmarkEdgeFade(viewDist);
 
-                // Combined alpha: 0 at inner boundary, 1 in mid zone, 0 at outer/far-clip edge.
-                half alpha = (half)(innerAlpha * outerBlend * farClipFade);
+                // Combined alpha: 0 at inner boundary, 1 in mid zone, 0 at world/clip edge.
+                half alpha = (half)(innerAlpha * outerBlend * worldEdgeFade * clipEdgeFade);
 
                 return half4(color, alpha);
             }

@@ -383,9 +383,45 @@ to all surfaces.
     because the scene camera renders hands **beyond the 600u game far clip** where the haze terms
     saturate — those hands never render in game. Game-view judgment at the design distance (250–400u)
     still an owner-eyeball item; if too white there, drop `_AerialStrength` (no code change).
-  - **Remaining (ticket stays open — sequenced *after* R6 per the TICKETS.md Build order, 2026-07-07):**
-    P3 terrain tint (Option B), P5 saturation/overcast pass; steep-look-down during the drop and full
-    day/night sweep still owner-eyeball items; P2 noon-vista visual validation.
+  - **P3 built (2026-07-08, pending EditMode run + owner validation) — re-scoped from "terrain tint
+    (Option B)" on a build-time finding (spec §6a).** The terrain↔disc seam had become the most
+    visible artifact (terrain: Synty albedo, no haze; disc: `_AtmoGround` palette + aerial haze).
+    Traced before coding: Surface Nets meshes upload **position-only** vertex buffers — no UVs, no
+    tangents — so the Synty `Generic_Basic` graph sampled its albedo at one texel and the terrain
+    has rendered as a single flat color all along (normal map equally inert). There was no texture
+    to tint; Option B degenerated to direct palette consumption. Built: new `Terrain/TerrainLit`
+    shader (RelicLit pattern — DOTS-instanced for Entities Graphics, ForwardLit + ShadowCaster +
+    DepthOnly, Lambert+SH+shadows with the clamped-sun convention) coloring by the **same world-XZ
+    FBM grass/rock mix as the disc**, factored into shared `GroundNoise.hlsl` so seam patches align
+    by construction (world-space noise is continuous across the seam — patches flow from terrain
+    onto the disc); haze via `ApplyAerialPerspective` (its first consumer, full opaque-world
+    contract). `TerrainLit.mat` swapped into `TerrainChunkRenderSettings.asset`; `Generic_Grass.mat`
+    orphaned. Net compute *drop* (zero texture fetches, opaque, no alpha-test/A2M) and closer to the
+    documented art direction (flat palette cells per the biome spec's ground-materials MVP
+    approximation — its RGB table is the palette tuning target). New
+    `TerrainChunkMaterialContractTests` guard the material wiring + noise-dial parity. Owner note:
+    grass-blade color iteration deferred (owner, 2026-07-08); optional 16-bit color quantization
+    noted in spec §12 as an aesthetic dial.
+  - **P3 round-2 — "square hole in fog" from the drop fixed (2026-07-08, owner screenshot; spec
+    §6b).** Looking down from the drop, the streamed terrain window read as a crisp square inside a
+    pale wash with a white rim. Two stacked causes, both slant-distance vs `_AtmoFarFade`: the disc's
+    skirt handoff began at ~206u horizontal from 400u altitude, and the window's corners (~474u
+    slant) whitened inside the old 450–600u `AtmoFarClipHaze` band — a concealer that, post-R6
+    (far plane 2000), concealed no actual clip. Fix: `AtmoFarClipHaze` + `ApplyAerialPerspective`
+    deleted; new `AtmoWorldEdgeHaze` measures the disc→skirt handoff **horizontally** (world edge =
+    600u circle around the player, not a shell around the camera; ground level unchanged by
+    construction since horizontal ≈ slant at eye height); disc's real clip edge covered by
+    `AtmoLandmarkEdgeFade` (dormant behind the 900–1400u outer fade); terrain uses the plain shared
+    haze with no edge term. Zero cost delta. Validated same session: positioned top-down capture at
+    400u shows no square / no white band / soft circular world-edge fade
+    (`Assets/Screenshots/v9p3_fix_topdown_400u.png`), ground vista matches the pre-fix capture
+    (`v9p3_fix_ground_vista.png`); note positioned MCP captures DO render BRG geometry on Unity
+    6000.4 (old constraint memory outdated). Residual, accepted: scatter/pebble detail cutoff at the
+    window edge against same-hue disc.
+  - **Remaining (ticket stays open):** P3 owner visual pass (seam at ground level + drop, noon pin;
+    scatter/grass tufts are now the only unconverted surfaces — watch for them popping against the
+    palette-hazed terrain), P5 saturation/overcast pass; full day/night sweep still an owner-eyeball
+    item; P2 noon-vista visual validation.
 
 #### V11 — Hero hand mesh authoring _(opened 2026-07-05 — spun off V4)_
 `testAlienHand.fbx` renders fine but reads as a boulder: short, fused finger-lobes with no silhouette
