@@ -53,7 +53,7 @@ Animation framing — lives in [`vista-moment.md`](vista-moment.md).
 
 | ID  | Status | Subject |
 |-----|--------|---------|
-| R6  | [ ] | Landmark draw distance — hero relics never cull: raise camera far plane to `LandmarkDrawDistance` (~2000u), world stays short; P2 decouples `_AtmoFarFade` from the camera plane first; hero material drops the far-clip concealer for a dither edge fade. Spec: `Rendering/LANDMARK_DRAW_DISTANCE_SPEC.md` |
+| R6  | [ ] | Landmark draw distance — hero relics never cull: **P2+P1+P3 built 2026-07-07** (`LandmarkDrawDistance` 2000u raises the camera plane, `_AtmoFarFade` decoupled, `RelicLit` dither edge fade replaces the concealer). Remaining: P4 spawn fade + owner visual validation. Spec: `Rendering/LANDMARK_DRAW_DISTANCE_SPEC.md` (ACTIVE) |
 
 Details: [vista-moment.md](vista-moment.md)
 

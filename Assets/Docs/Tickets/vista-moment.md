@@ -409,7 +409,7 @@ Phase 2 horizon ring (**R5**, `HORIZON_IMPOSTOR_SEED_DRIVEN_SPEC.md` §19) — o
 far-visible by design.
 
 #### R6 — Landmark draw distance — relics never cull _(opened 2026-07-06, spec written; pulled from backlog 2026-07-07 as Build-order step 1)_
-**Spec:** `Rendering/LANDMARK_DRAW_DISTANCE_SPEC.md` (PROPOSED — full design, slices P1–P4, acceptance).
+**Spec:** `Rendering/LANDMARK_DRAW_DISTANCE_SPEC.md` (ACTIVE — full design, slices P1–P4, acceptance).
 The V9 round-5 thin haze removed the fog wall that used to hide hero relics popping at the 600u far clip.
 Fix = the industry "landmarks never cull" pattern: raise the camera far plane to a new
 `ProjectFeatureConfig.LandmarkDrawDistance` (~2000u) while the *world* stays short — terrain/scatter only
@@ -426,6 +426,17 @@ world distance.
   taking the concealer entirely.
 - **Feeds:** R5 (narrows its card contract to >2000u). **Touches:** V9 HLSL contract, camera bootstraps,
   `TimeOfDayController.PushAtmosphere`, `RelicLit.shader`.
+- **P2 → P1 → P3 built (2026-07-07, three commits in rollout order; spec flipped ACTIVE — see its §9
+  build record for implementation notes).** `_AtmoFarFade` now sources
+  `AtmosphereBroadcast.WorldReferenceDistance` (config-seeded, 600) instead of the camera plane;
+  `LandmarkDrawDistance` (default 2000, 0 = off) raises the camera far plane via
+  `DerivedLandmarkFarClip` through the config singleton; `RelicLit` drops the concealer for
+  `AtmoAerialHazeAmount` + an IGN dither dissolve at the new `_AtmoLandmarkFade` global (ForwardLit +
+  DepthOnly clipped in sync) — the interim strength-scaled-concealer patch is reverted/superseded.
+  EditMode 221/221 green. **Open:** P4 spawn fade; owner-eyeball validation — landmark permanence
+  (walk toward/away from a 1500u hero), P2 ground vista unchanged, background-relic exposure at
+  600–1024u (accepted-for-eyeball side effect), plus the V9 carry-overs (noon vista after the disc
+  palette swap, hero hands legibility at 250–400u in game view).
 
 ---
 

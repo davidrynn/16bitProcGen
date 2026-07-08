@@ -1,7 +1,7 @@
 # Landmark Draw Distance Spec
 
-**Status:** PROPOSED
-**Last Updated:** 2026-07-06
+**Status:** ACTIVE — P2/P1/P3 built 2026-07-07 (P4 spawn fade open; visual validation pending)
+**Last Updated:** 2026-07-07
 **Owner:** Rendering / Vista
 **Phase:** Post-V9-tuning follow-up (ticket R6; bridges to R5)
 **Keywords:** pop-in, far clip, draw distance, landmark, hero relic, layer cull distances, dither fade,
@@ -137,6 +137,31 @@ dressing, not landmarks, and multiplying long-range meshes erodes the "few cheap
 
 P2 (decouple, zero visual change) → P1 (raise plane, landmarks appear) → P3 (edge dither) →
 P4 (spawn fade). P2 must land with or before P1; P3/P4 are independently shippable.
+
+## 9. Build record (2026-07-07)
+
+P2 → P1 → P3 landed as three commits in rollout order; P4 remains open. Implementation notes
+where the build refined the design:
+
+- **P2:** the reference distance is a static `AtmosphereBroadcast.WorldReferenceDistance`
+  (default 600) seeded from `ProjectFeatureConfig.DerivedCameraFarClip` by `DotsSystemBootstrap` —
+  pushed in because `Core.asmdef` (Rendering.Sky) cannot reference `DOTS.Core.Authoring`
+  (reverse dependency). EditMode contract test drives the controller's `OnValidate` re-broadcast
+  path against a `Camera.main` with a different far plane.
+- **P1:** the max() resolves once in `ProjectFeatureConfig.DerivedLandmarkFarClip` and flows to
+  both camera bootstraps through the existing `ProjectFeatureConfigSingleton.CameraFarClipPlane`
+  (that field now means "what the camera uses"; the un-raised world reference reaches shaders via
+  the P2 broadcast). New `_AtmoLandmarkFade` global = max(world reference, landmark distance),
+  so a disabled feature (0) collapses the P3 dissolve to the world edge — it then doubles as the
+  hero's far-clip concealment with no special-case branch.
+- **P3:** dither = interleaved gradient noise `clip()` in `RelicLit`'s ForwardLit **and DepthOnly**
+  passes (the depth prepass must dissolve in sync or depth-reading effects ghost the hero).
+  `ApplyAerialPerspective`'s concealer reverted to full strength (the 2026-07-07 interim
+  strength-scaled patch is superseded); the function keeps zero consumers until V9 P3 terrain tint.
+- **Known accepted side effect (owner call, 2026-07-07):** background relics (Unlit gray) realized
+  at 600–1024u become visible under the raised plane with no cull in this slice — judged on
+  screenshots; the containment options (per-template cull in the relic LOD system, or
+  `layerCullDistances`) remain follow-ups if the eyeball disagrees.
 
 ## Related Docs
 
