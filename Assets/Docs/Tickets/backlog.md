@@ -74,7 +74,31 @@ Non-blocking gaps surfaced reviewing the surface-scatter-LOD commit. None cause 
 
 ---
 
-### R5 — Hero relics in the far-field impostor stack _(opened 2026-07-05 — from the far-field discussion)_
+### T3 — Triage six pre-existing PlayMode test failures _(opened 2026-07-08 — surfaced during V9 P3 verification)_
+
+The PlayMode suite (96 tests) has 7 standing failures. All were **proven pre-existing** during the V9 P3
+session via a clean-baseline A/B (stash all changes → identical failures, same messages → restore). One is
+already tracked (`CODEBASE_SIMPLIFICATION_PLAN.md` **S14**: `TreePlacementEditModeTests.
+GeneratePlacements_VariantAndYaw_AssignedWithinExpectedRange` — no placement ever selects a non-zero tree
+variant). The remaining six were untracked until this ticket:
+
+**Group 1 — player visual GameObject never created (5 tests, same root symptom):**
+`BasicSceneSetupTests.PlayerVisual_GameObjectExists`, `PlayerEntityBootstrapTests.PlayerVisual_Created`,
+`.PlayerVisualSync_HandlesDestroyedEntity`, `.PlayerVisualSync_SyncsPositionWithEntity`,
+`.PlayerVisualSync_SyncsRotationWithEntity` — all `Expected: not null, But was: null` on the visual
+GameObject. Historically these tests failed on *sync lag/rotation* (`Player/PLAYER_BOOTSTRAP_FIX_SPEC.md`
+Phases 2–3); "not created at all" is a different, later breakage — suspects include the FPS-only reversal
+(`PlayerFirstPersonVisibility` body-hide, 2026-06-20) and the BoxPlayer visual swap. Triage = find when
+creation stopped in the test environment, then decide fix vs. retire-the-tests-against-current-design.
+
+**Group 2 — takeoff mode transition:**
+`PlayerWallContactCommandPlayModeTests.GroundedJump_DoesNotImmediatelyRegroundWhileStillAscending` —
+expected `Ballistic` on the takeoff frame, got `Grounded`. Likely the same grounding-suppression territory
+as **M4** (ballistic-takeoff false-grounding past jump apex — suppress by contact/separation, not velocity
+sign); triage together with M4 before fixing either independently.
+
+**Evidence:** MCP test-run jobs 2026-07-08, with-changes vs clean-baseline failure lists identical.
+**Not in scope:** the S14 tree-variant failure (already tracked); EditMode (223/223 green).
 **Spec:** `Rendering/HORIZON_IMPOSTOR_SEED_DRIVEN_SPEC.md` §19 (addendum).
 Immense relics fictionally visible from kilometers pop out at the ~600u far clip today. Fix lives in the
 **Phase 2 seed-driven horizon ring**, not the ground disc (horizontal plane; never grows vertical features):
