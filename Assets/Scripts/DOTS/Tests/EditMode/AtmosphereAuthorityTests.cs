@@ -60,6 +60,28 @@ namespace DOTS.Tests.EditMode
         }
 
         [Test]
+        public void Push_BroadcastsLandmarkFade_AsMaxOfWorldReferenceAndLandmarkDistance()
+        {
+            float saved = AtmosphereBroadcast.LandmarkDistance;
+            try
+            {
+                AtmosphereBroadcast.LandmarkDistance = 2000f;
+                AtmosphereBroadcast.Push(SkySettings.Default, AtmosphereSettings.Default, 600f);
+                Assert.AreEqual(2000f, Shader.GetGlobalFloat(ShaderIDs.AtmoLandmarkFade), Tolerance);
+
+                // Disabled (0) collapses to the world edge so the hero dither fade doubles as
+                // the far-clip concealment.
+                AtmosphereBroadcast.LandmarkDistance = 0f;
+                AtmosphereBroadcast.Push(SkySettings.Default, AtmosphereSettings.Default, 600f);
+                Assert.AreEqual(600f, Shader.GetGlobalFloat(ShaderIDs.AtmoLandmarkFade), Tolerance);
+            }
+            finally
+            {
+                AtmosphereBroadcast.LandmarkDistance = saved;
+            }
+        }
+
+        [Test]
         public void WorldReferenceDistance_ClampsToMinimum()
         {
             float saved = AtmosphereBroadcast.WorldReferenceDistance;

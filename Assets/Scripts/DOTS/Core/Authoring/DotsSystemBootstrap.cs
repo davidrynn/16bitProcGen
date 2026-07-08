@@ -47,9 +47,11 @@ namespace DOTS.Core.Authoring
                 return;
             }
 
-            // Seed the atmosphere's world reference distance from config (LANDMARK_DRAW_DISTANCE_SPEC.md
-            // P2). Pushed from here because Core (Rendering.Sky) cannot reference this assembly.
+            // Seed the atmosphere's world reference + landmark distances from config
+            // (LANDMARK_DRAW_DISTANCE_SPEC.md P2/P1). Pushed from here because Core
+            // (Rendering.Sky) cannot reference this assembly.
             AtmosphereBroadcast.WorldReferenceDistance = config.DerivedCameraFarClip;
+            AtmosphereBroadcast.LandmarkDistance = config.LandmarkDrawDistance;
     
             // Diagnostic systems rely on fall-through/pipeline debug channels.
             // Wire them from config so hypothesis testing does not require code changes.
@@ -501,7 +503,10 @@ namespace DOTS.Core.Authoring
                 entityManager.SetComponentData(entity, new ProjectFeatureConfigSingleton
                 {
                     TerrainStreamingRadiusInChunks = config != null ? config.DerivedStreamingRadiusInChunks : 0,
-                    CameraFarClipPlane = config != null ? config.DerivedCameraFarClip : 300f,
+                    // The landmark-raised far plane (R6) — camera bootstraps consume this field
+                    // directly. The un-raised world reference distance reaches shaders via
+                    // AtmosphereBroadcast.WorldReferenceDistance instead.
+                    CameraFarClipPlane = config != null ? config.DerivedLandmarkFarClip : 300f,
                     TerrainStreamingEnabled = config != null && config.EnableTerrainChunkStreamingSystem,
                     SkyDropEnabled = config != null && config.EnableSkyDropSpawn,
                     SkyDropSpawnHeight = config != null ? config.SkyDropSpawnHeight : 400f,

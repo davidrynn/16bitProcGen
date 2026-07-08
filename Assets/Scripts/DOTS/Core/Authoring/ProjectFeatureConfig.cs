@@ -176,10 +176,19 @@ namespace DOTS.Core.Authoring
         // ── Vista / Camera ──
     
         [Header("Vista / Camera")]
-        [Tooltip("Camera far clip override for vista rendering. When > 0, overrides the terrain-derived far clip. " +
-                 "600 lets the player see relics at 200–400 world units without increasing terrain streaming cost.")]
+        [Tooltip("The WORLD REFERENCE DISTANCE — where the ordinary world visually ends. Drives the aerial " +
+                 "haze/fog ramps (_AtmoFarFade) and the disc→skirt handoff. When > 0, overrides the " +
+                 "terrain-derived value. Since R6 this is no longer necessarily the camera far plane — " +
+                 "see LandmarkDrawDistance.")]
         [Min(0f)]
         public float VistaCameraFarClip = 600f;
+
+        [Tooltip("Landmark draw distance (R6, LANDMARK_DRAW_DISTANCE_SPEC.md): the camera far plane is " +
+                 "raised to max(world reference, this) so hero relics never cull, while the world's visual " +
+                 "edge stays at VistaCameraFarClip. Cheap: terrain/scatter only exist ≤180u, so the far " +
+                 "plane wasn't protecting perf. 0 = disabled (camera far plane = world reference, as before R6).")]
+        [Min(0f)]
+        public float LandmarkDrawDistance = 2000f;
     
         // ── Distance Fog ──
     
@@ -217,6 +226,15 @@ namespace DOTS.Core.Authoring
             VistaCameraFarClip > 0f
                 ? VistaCameraFarClip
                 : Mathf.Max(100f, TerrainRenderDistance * 1.5f);
+
+        /// <summary>
+        /// The far clip plane cameras should actually use (R6): the world reference distance,
+        /// raised to <see cref="LandmarkDrawDistance"/> when that is larger so hero relics never
+        /// cull. With <see cref="LandmarkDrawDistance"/> = 0 this collapses to
+        /// <see cref="DerivedCameraFarClip"/> — pre-R6 behavior.
+        /// </summary>
+        public float DerivedLandmarkFarClip =>
+            Mathf.Max(DerivedCameraFarClip, LandmarkDrawDistance);
     
         /// <summary>Absolute fog start distance (Linear mode). Derived from <see cref="DerivedCameraFarClip"/> × <see cref="FogStartRatio"/>.</summary>
         public float DerivedFogStartDistance => DerivedCameraFarClip * FogStartRatio;

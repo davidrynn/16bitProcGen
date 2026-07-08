@@ -3,6 +3,7 @@
     "rootNamespace": "DOTS.Tests.EditMode",
     "references": [
         "Core",
+        "DOTS.Core.Authoring",
         "UnityEngine.TestRunner",
         "UnityEditor.TestRunner",
         "DOTS.Terrain",

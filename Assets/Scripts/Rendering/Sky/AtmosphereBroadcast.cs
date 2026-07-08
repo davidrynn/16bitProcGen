@@ -32,6 +32,21 @@ namespace DOTS.Rendering.Sky
             set => _worldReferenceDistance = Mathf.Max(value, 1f);
         }
 
+        private static float _landmarkDistance = 2000f;
+
+        /// <summary>
+        /// Landmark draw distance (LANDMARK_DRAW_DISTANCE_SPEC.md P1/P3): where hero landmarks
+        /// dither-dissolve. Broadcast as _AtmoLandmarkFade = max(world reference, this), so with
+        /// the feature disabled (0) the dissolve sits at the world edge and doubles as the hero's
+        /// far-clip concealment. Seeded from ProjectFeatureConfig.LandmarkDrawDistance by
+        /// DotsSystemBootstrap; default matches the config default.
+        /// </summary>
+        public static float LandmarkDistance
+        {
+            get => _landmarkDistance;
+            set => _landmarkDistance = Mathf.Max(value, 0f);
+        }
+
         /// <summary>
         /// Broadcasts the palette. <paramref name="farFade"/> is the reference distance at which
         /// aerial perspective reaches full — <see cref="WorldReferenceDistance"/>, not the camera
@@ -48,6 +63,8 @@ namespace DOTS.Rendering.Sky
             Shader.SetGlobalColor(ShaderIDs.AtmoRock, atmo.rockColor);
             Shader.SetGlobalFloat(ShaderIDs.AtmoSaturation, atmo.saturation);
             Shader.SetGlobalFloat(ShaderIDs.AtmoFarFade, Mathf.Max(farFade, 1f));
+            Shader.SetGlobalFloat(ShaderIDs.AtmoLandmarkFade,
+                Mathf.Max(Mathf.Max(farFade, 1f), LandmarkDistance));
             Shader.SetGlobalFloat(ShaderIDs.AtmoHazeDensity, atmo.hazeDensity);
             Shader.SetGlobalFloat(ShaderIDs.AtmoHazeFalloff, atmo.hazeFalloff);
             Shader.SetGlobalFloat(ShaderIDs.AtmoDistanceHaze, atmo.distanceHaze);
