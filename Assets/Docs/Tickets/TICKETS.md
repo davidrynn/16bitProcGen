@@ -1,7 +1,7 @@
 # Tickets
 
 **Status:** ACTIVE
-**Last Updated:** 2026-07-07
+**Last Updated:** 2026-07-08
 
 Lightweight task tracker. Status: `[ ]` pending · `[x]` done · `[-]` blocked
 
@@ -48,6 +48,8 @@ Animation framing — lives in [`vista-moment.md`](vista-moment.md).
 | V10 | [x] | BUG: player falls through terrain during traversal — colliders built player-nearest-first, 3×3 ring budget-exempt (1883659, 2026-07-03) |
 | V11 | [ ] | Hero hand mesh authoring — silhouette-first re-pose/new mesh so four fingers read at 200–400u (spun off V4, 2026-07-05) |
 | V12 | [ ] | Authored anchor candidate source — guaranteed hero hand in view of spawn; quests + debug layouts reuse it (spun off V4, 2026-07-05) |
+| V13 | [ ] | Burning-descent VFX (meteor entry) — FP screen-edge flames/embers, ignites on V14 break-open, burns off before C3 dust handoff; arrival-sequence trigger, never altitude/speed (opened 2026-07-08; `Rendering/METEOR_ARRIVAL_SEQUENCE_SPEC.md`) |
+| V14 | [ ] | Meteor-interior loading shell — diegetic initial load: full-screen meteor interior over the V7 readiness gate, breaks open on real gate release (binary + min-hold, no fake progress); first UI element + DOTS→managed gate bridge (opened 2026-07-08; `Rendering/METEOR_ARRIVAL_SEQUENCE_SPEC.md`) |
 
 ### Rendering — vista support _(R6 pulled from backlog 2026-07-07; step 1 of the Build order)_
 

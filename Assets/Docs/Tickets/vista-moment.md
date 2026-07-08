@@ -444,6 +444,33 @@ Also feeds the far-field: authored anchors are the data source for hero relic si
 Phase 2 horizon ring (**R5**, `HORIZON_IMPOSTOR_SEED_DRIVEN_SPEC.md` §19) — only authored heroes are
 far-visible by design.
 
+#### V13 — Burning-descent VFX (meteor entry) _(opened 2026-07-08 — owner idea, discussed + specced same day)_
+**Spec:** `Rendering/METEOR_ARRIVAL_SEQUENCE_SPEC.md` (Phases 3–4; shared break-open contract with V14).
+First-person flame/ember layer for the sky-drop descent: screen-edge flame tongues streaming opposite
+velocity, embers past the camera, optional heat wobble/warm vignette + roar audio. **Ignites on V14's
+break-open signal, burns off before landing** (lean: altitude band), handing off to C3's dust burst.
+Key decision (owner, 2026-07-08): the meteor is a property of the **arrival sequence, never of
+altitude/fall speed** — future high-altitude mechanics fall with C2's wind/speed-line vocabulary, no
+flames; promote to an "atmospheric entry" state only if a mechanic ever warrants it. Rides the same
+camera-rig mount C2 plans (build emitters shareable; don't block on C2). Stretch: dev-toggle smoke
+trail. Perf: camera-parented particles at modest counts — near-camera fill on a vertex-bound scene.
+Bonus (not the purpose): masks the residual streamed-window detail cutoff from the drop
+(`ATMOSPHERE_COLOR_AUTHORITY_SPEC.md` §6b).
+
+#### V14 — Meteor-interior loading shell (diegetic initial load) _(opened 2026-07-08 — owner idea, discussed + specced same day)_
+**Spec:** `Rendering/METEOR_ARRIVAL_SEQUENCE_SPEC.md` (Phases 1–2; the higher-value slice).
+The game has **no loading UI**, but the substance of one already exists: the V7 sky-drop readiness
+gate holds the player at ~400u while near-spawn colliders build (8s timeout fallback) — currently in
+full view of the worst pop-in the game has. V14 gives that gate a diegetic face: the player starts
+**inside the meteor** (full-screen rocky interior + glowing cracks + rumble; one Canvas/quad + one
+controller MonoBehaviour — the project's first UI element), and the shell **breaks open when the gate
+actually releases** (no fake progress bar — binary for MVP, min-hold ~1.5–2s so a fast load doesn't
+flash-open; progress-driven crack glow deferred as polish). Needs a small DOTS→managed **gate-state
+bridge** (singleton component the overlay polls — established pattern). Gravity release follows the
+shell opening (§5.1 of the spec; one coupled frame acceptable for MVP if decoupling is invasive).
+Scope: **initial spawn only** (respawn/fast-travel reuse deferred). Acceptance: player never sees the
+world assembling; shell timing tracks real readiness; break-open + V13 ignition read as one beat.
+
 #### R6 — Landmark draw distance — relics never cull _(opened 2026-07-06, spec written; pulled from backlog 2026-07-07 as Build-order step 1)_
 **Spec:** `Rendering/LANDMARK_DRAW_DISTANCE_SPEC.md` (ACTIVE — full design, slices P1–P4, acceptance).
 The V9 round-5 thin haze removed the fog wall that used to hide hero relics popping at the 600u far clip.

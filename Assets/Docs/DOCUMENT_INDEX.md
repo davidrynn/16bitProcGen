@@ -1,6 +1,6 @@
 # Document Index
 
-**Last Updated:** 2026-07-03
+**Last Updated:** 2026-07-08
 
 > **New here?** Start with [MASTER_PLAN.md](MASTER_PLAN.md) — it has the project vision, current status, phase roadmap, and a curated document map.
 
@@ -59,6 +59,7 @@ Quick-reference index of all project documentation. Docs are organized by featur
 | [Rendering/HORIZON_IMPOSTOR_SEED_DRIVEN_SPEC.md](Rendering/HORIZON_IMPOSTOR_SEED_DRIVEN_SPEC.md) | DESIGN (DEFERRED) | Seed-driven far-horizon impostor plan for mountain/hill/sea silhouette rendering (Phase 2; builds after ground plane) |
 | [Rendering/ATMOSPHERE_COLOR_AUTHORITY_SPEC.md](Rendering/ATMOSPHERE_COLOR_AUTHORITY_SPEC.md) | ACTIVE (MVP slice built) | Single atmosphere/palette authority + global `_Atmo*` uniforms + shared aerial-perspective HLSL; unifies sky, ground disc, mountain impostor, terrain & fog color under one time-of-day/biome source (ticket V9; consumed by V3, V8) |
 | [Rendering/LANDMARK_DRAW_DISTANCE_SPEC.md](Rendering/LANDMARK_DRAW_DISTANCE_SPEC.md) | PROPOSED | Hero-relic pop-in fix: raise camera far plane while the world stays short ("landmarks never cull"), decouple `_AtmoFarFade` from the far plane, dithered edge/spawn fades; covers 600→2000u, hands off to R5 cards beyond (ticket R6) |
+| [Rendering/METEOR_ARRIVAL_SEQUENCE_SPEC.md](Rendering/METEOR_ARRIVAL_SEQUENCE_SPEC.md) | PROPOSED | Diegetic opening beat: meteor-interior loading shell over the sky-drop readiness gate (V14) + burning-descent VFX (V13); break-open on real readiness, C3 dust handoff, arrival-sequence trigger only |
 | [Rendering/RENDER_PERF_PROFILE_REPORT.md](Rendering/RENDER_PERF_PROFILE_REPORT.md) | REPORT | Basic Terrain Scene profiling: scene is vertex-bound (trees/rocks = 92% of verts), NOT fill-rate bound — low-res rendering gives no FPS win; LODs are the lever |
 
 ## Player
