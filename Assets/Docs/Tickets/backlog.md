@@ -92,19 +92,9 @@ ever demanded (not planned — contradicts the dissolve-into-haze vista language
 
 ---
 
-### R6 — Landmark draw distance — relics never cull _(opened 2026-07-06 — spec written)_
-**Spec:** `Rendering/LANDMARK_DRAW_DISTANCE_SPEC.md` (PROPOSED — full design, slices P1–P4, acceptance).
-The V9 round-5 thin haze removed the fog wall that used to hide hero relics popping at the 600u far clip.
-Fix = the industry "landmarks never cull" pattern: raise the camera far plane to a new
-`ProjectFeatureConfig.LandmarkDrawDistance` (~2000u) while the *world* stays short — terrain/scatter only
-exist ≤180u anyway, so the far plane wasn't protecting perf. Prerequisite (P2, must land with/before P1):
-decouple `_AtmoFarFade` from `Camera.main.farClipPlane` (broadcast the config world distance instead) or
-raising the plane silently stretches the disc→skirt handoff to 1500u+. Hero material drops the far-clip
-concealer (`AtmoAerialHazeAmount`, like the disc) and gains a dithered edge fade at the landmark distance;
-realization gains a ~0.5s spawn dither fade (all relics). Hero templates only — background relics keep the
-world distance.
-- **Feeds:** R5 (narrows its card contract to >2000u). **Touches:** V9 HLSL contract, camera bootstraps,
-  `TimeOfDayController.PushAtmosphere`, `RelicLit.shader`.
+### R6 — Landmark draw distance — relics never cull _(pulled into the Vista Moment work-set 2026-07-07)_
+Detail moved to [`vista-moment.md`](vista-moment.md) per the kanban convention (Build-order step 1 there).
+Spec: `Rendering/LANDMARK_DRAW_DISTANCE_SPEC.md`.
 
 ---
 

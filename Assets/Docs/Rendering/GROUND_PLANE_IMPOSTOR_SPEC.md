@@ -337,12 +337,14 @@ No `.mat` file — material is created at runtime by the bootstrap.
 - **Biome-aware coloring** — pass biome weights to shader to match per-biome palettes.
 - **Compositing with horizon ring** — when `HORIZON_IMPOSTOR_SEED_DRIVEN_SPEC.md` is implemented (Phase 2), the ring sits above this plane and handles the vertical silhouette.
 
-## 11. Color authority (supersedes disabled `SyncTerrainColor`)
+## 11. Color authority (supersedes deleted `SyncTerrainColor`)
 
-The disc's base `_GrassColor`/`_RockColor` are currently **frozen shader defaults** and do not track the
-day/night cycle; the `SyncTerrainColor` attempt is disabled because it reads the terrain tint from the
-Synty material's `_BaseColor`, which is white (the real color is in the albedo texture). Both are
-superseded by the **[ATMOSPHERE_COLOR_AUTHORITY_SPEC.md](ATMOSPHERE_COLOR_AUTHORITY_SPEC.md)** (ticket
-**V9**): the disc consumes `_AtmoGround`/`_AtmoRock` globals and calls the shared `ApplyAerialPerspective`
-(low `strength`) so its base color and far-edge haze both come from the one palette source. The existing
-`MixFog` coupling stays.
+**Built (2026-07-07, V9 P2).** The disc no longer owns its palette: `_GrassColor`/`_RockColor` material
+properties were removed and the fragment samples the global `_AtmoGround`/`_AtmoRock` uniforms broadcast
+per frame by the atmosphere authority (**[ATMOSPHERE_COLOR_AUTHORITY_SPEC.md](ATMOSPHERE_COLOR_AUTHORITY_SPEC.md)**,
+ticket **V9**). `SyncTerrainColor` is deleted — it was architecturally doomed, reading the terrain tint
+from the Synty material's `_BaseColor`, which is white (the real color is in the albedo texture); the
+authority pushes one tint to all ground surfaces instead. The dead `_HazeColor` property went with it
+(unused since the disc's `MixFog` → height-aware `ApplyAerialHaze` conversion in the V9 MVP slice).
+`AtmosphereSettings.Default.groundColor/rockColor` equal the disc's former literals, so the noon look is
+unchanged by construction; the disc now follows biome-preset palette blends automatically.

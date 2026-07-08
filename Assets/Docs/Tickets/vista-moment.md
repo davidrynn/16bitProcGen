@@ -354,9 +354,38 @@ to all surfaces.
     (ground below fully clear, mist reads as a distinct thin band hugging the distant ground). Note the
     old 0.0012↔Exp²-seam anchoring is moot while the owner keeps `EnableDistanceFog: 0` (unconverted
     terrain ≤180u renders unfogged; no visible seam at these light densities).
-  - **Remaining (ticket stays open):** P2 disc palette literals + `SyncTerrainColor` deletion, P3 terrain
-    tint (Option B), P5 saturation/overcast pass; steep-look-down during the drop and full day/night sweep
-    still owner-eyeball items.
+  - **P2 built (2026-07-07, pending owner validation).** Disc `_GrassColor`/`_RockColor` material
+    properties removed; the fragment samples the global `_AtmoGround`/`_AtmoRock` palette (no shade
+    factor needed, unlike the sky band's `_MountainShade` — the disc's own in-frag lighting multiply
+    already provides the shaded look). Noon output is identical by construction:
+    `AtmosphereSettings.Default.groundColor/rockColor` were seeded equal to the old literals in P1.
+    `SyncTerrainColor` + `_terrainColorSource` field deleted from `GroundPlaneImpostorBootstrap`
+    (the scene's serialized reference becomes a benign orphan, dropped on next scene save); the dead
+    `_HazeColor` property (unused since the MixFog→aerial conversion) removed too. Disc now follows
+    biome-preset palette blends via the broadcast lerp. Spec §11.1/§11.5 disc acceptance met.
+  - **Relic white-out root-caused (2026-07-07, two passes — the round-4 "hands near-white from
+    altitude with haze off" observation).** First pass misdiagnosed it as unclamped additive lighting
+    in `RelicLit.shader` (`ambient + full sun` > 1 on upward faces); a clamp + `_SunAttenuation` dial
+    (default 0.5, disc convention) was applied — kept, it's correct — but owner screenshots showed
+    hands still white. **Actual root cause: the far-clip concealer.** `ApplyAerialPerspective` added
+    `AtmoFarClipHaze` at full strength, ignoring both the hero's `_AerialStrength 0.3` dial and the
+    zero-haze pin (the pin zeroes `hazeDensity`/`distanceHaze`; the concealer is pure distance vs
+    `_AtmoFarFade 600`). From altitude the whole visible world sits at 450–600u slant distance —
+    inside the concealer band — so hero hands saturated to horizon-white regardless of any dial.
+    (Scene-view corroboration: hands beyond 600u render at t=1 solid horizon color since the scene
+    camera's far clip exceeds `_AtmoFarFade`; nearby `Unlit gray` relics stayed dark because built-in
+    fog is off.) Fix: the concealer is now scaled by the surface's `strength` — hero caps at ~30%
+    veil at the far plane. Trade-off accepted: reduced-strength surfaces pop in less veiled at the
+    far clip; the real fix remains a larger far clip + Phase-2 horizon ring. `RelicLit` is the only
+    `ApplyAerialPerspective` consumer (disc uses the alpha-fade path), so no other surface changes.
+  - **Relic fix validated mechanically via MCP A/B (2026-07-07):** `_AerialStrength 0` → hands render
+    proper warm-gray (shader live, lighting clamp works); `0.3` → near-white *in the scene view only*,
+    because the scene camera renders hands **beyond the 600u game far clip** where the haze terms
+    saturate — those hands never render in game. Game-view judgment at the design distance (250–400u)
+    still an owner-eyeball item; if too white there, drop `_AerialStrength` (no code change).
+  - **Remaining (ticket stays open — sequenced *after* R6 per the TICKETS.md Build order, 2026-07-07):**
+    P3 terrain tint (Option B), P5 saturation/overcast pass; steep-look-down during the drop and full
+    day/night sweep still owner-eyeball items; P2 noon-vista visual validation.
 
 #### V11 — Hero hand mesh authoring _(opened 2026-07-05 — spun off V4)_
 `testAlienHand.fbx` renders fine but reads as a boulder: short, fused finger-lobes with no silhouette
@@ -378,6 +407,25 @@ dev-pins discussion): design it so quests inherit it for free; this is a product
 Also feeds the far-field: authored anchors are the data source for hero relic silhouette cards in the
 Phase 2 horizon ring (**R5**, `HORIZON_IMPOSTOR_SEED_DRIVEN_SPEC.md` §19) — only authored heroes are
 far-visible by design.
+
+#### R6 — Landmark draw distance — relics never cull _(opened 2026-07-06, spec written; pulled from backlog 2026-07-07 as Build-order step 1)_
+**Spec:** `Rendering/LANDMARK_DRAW_DISTANCE_SPEC.md` (PROPOSED — full design, slices P1–P4, acceptance).
+The V9 round-5 thin haze removed the fog wall that used to hide hero relics popping at the 600u far clip.
+Fix = the industry "landmarks never cull" pattern: raise the camera far plane to a new
+`ProjectFeatureConfig.LandmarkDrawDistance` (~2000u) while the *world* stays short — terrain/scatter only
+exist ≤180u anyway, so the far plane wasn't protecting perf. Prerequisite (P2, must land with/before P1):
+decouple `_AtmoFarFade` from `Camera.main.farClipPlane` (broadcast the config world distance instead) or
+raising the plane silently stretches the disc→skirt handoff to 1500u+. Hero material drops the far-clip
+concealer (`AtmoAerialHazeAmount`, like the disc) and gains a dithered edge fade at the landmark distance;
+realization gains a ~0.5s spawn dither fade (all relics). Hero templates only — background relics keep the
+world distance.
+- **Why it leads the Build order (2026-07-07):** the vista's premise — hand much larger, much further
+  away, always visible — is impossible under the 600u clip (geometry past it doesn't render at all,
+  a fact re-confirmed during the P2/relic validation session). R6 P3 also **supersedes the 2026-07-07
+  interim patch** that scales the far-clip concealer by `strength` in `Atmosphere.hlsl` — heroes stop
+  taking the concealer entirely.
+- **Feeds:** R5 (narrows its card contract to >2000u). **Touches:** V9 HLSL contract, camera bootstraps,
+  `TimeOfDayController.PushAtmosphere`, `RelicLit.shader`.
 
 ---
 

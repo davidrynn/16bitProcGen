@@ -1,7 +1,6 @@
 using Unity.Entities;
 using UnityEngine;
 using DOTS.Core;
-using DOTS.Terrain.Rendering;
 
 namespace DOTS.Impostors
 {
@@ -32,11 +31,6 @@ namespace DOTS.Impostors
 
         [Tooltip("Disable to suppress entity creation without removing the component.")]
         [SerializeField] private bool _enabled = true;
-
-        [Header("Color Sync")]
-        [Tooltip("Material to read _BaseColor from for the impostor grass color. " +
-                 "If null, auto-loads from TerrainChunkRenderSettings.")]
-        [SerializeField] private Material _terrainColorSource;
 
         [Header("Overrides (0 = use defaults)")]
         [SerializeField] private float _outerRadius;
@@ -81,9 +75,11 @@ namespace DOTS.Impostors
             material.SetFloat("_InnerFadeEnd",   innerFadeEnd);
             material.SetVector("_PlayerXZ", Vector4.zero);
 
-            // Color sync disabled: shader defaults (linear-space) are tuned to visually match
-            // the terrain. Re-enable once the correct linear↔gamma handling is confirmed.
-            // SyncTerrainColor(material);
+            // Grass/rock hues are not set here: the shader consumes the global
+            // _AtmoGround/_AtmoRock palette broadcast by the atmosphere authority (V9 P2).
+            // This replaces the deleted SyncTerrainColor, which tried to read the terrain
+            // tint from _BaseColor — a slot that holds white, not the color (see
+            // ATMOSPHERE_COLOR_AUTHORITY_SPEC.md §2).
 
             var mesh = GenerateDiscMesh(outerRadius, GridSubdivisions);
 
@@ -92,66 +88,6 @@ namespace DOTS.Impostors
             DebugSettings.LogRendering(
                 $"GroundPlaneImpostorBootstrap: entity spawned — outerRadius={outerRadius:0.0}, " +
                 $"innerFade=[{innerFadeStart:0.0}, {innerFadeEnd:0.0}], worldY={worldY:0.0}",
-                forceLog: true);
-        }
-
-        /// <summary>
-        /// Reads _BaseColor from the terrain chunk material and applies it as the impostor's
-        /// _GrassColor so the two stay visually matched as the terrain material evolves.
-        /// If the terrain material has no _BaseColor (or can't be found), the impostor
-        /// keeps its shader default.
-        /// </summary>
-        private void SyncTerrainColor(Material impostorMat)
-        {
-            var source = _terrainColorSource;
-
-            if (source == null)
-            {
-                var renderSettings = TerrainChunkRenderSettingsProvider.GetOrLoad();
-                source = renderSettings?.ChunkMaterial;
-            }
-
-            if (source == null || !source.HasProperty("_BaseColor"))
-            {
-                DebugSettings.LogWarning("GroundPlaneImpostorBootstrap: no terrain material found for color sync; " +
-                    "assign TerrainMat.mat to the 'Terrain Color Source' field on this component.");
-                return;
-            }
-
-            Color baseColor = source.GetColor("_BaseColor");
-
-            // TerrainChunkRenderSettings falls back to a runtime white material when the
-            // asset isn't assigned. Don't propagate white — keep shader defaults instead.
-            float luminance = baseColor.r * 0.299f + baseColor.g * 0.587f + baseColor.b * 0.114f;
-            if (luminance > 0.85f)
-            {
-                DebugSettings.LogWarning("GroundPlaneImpostorBootstrap: terrain material appears to be a " +
-                    "white fallback (luminance > 0.85). Keeping shader default colors. " +
-                    "Fix: assign TerrainMat.mat to the 'Terrain Color Source' field on this component.");
-                return;
-            }
-
-            // _GrassColor and _RockColor are tagged [Gamma] in the shader, so Unity converts
-            // gamma → linear automatically — pass the gamma-space value directly.
-            //
-            // _BaseColor is the pre-PBR albedo. The SDF terrain appears significantly darker
-            // because URP Lit applies normal-based Lambert shading across rough geometry;
-            // average apparent brightness is roughly 45% of the raw albedo. The 0.45 factor
-            // here aligns the impostor's colour with the actual shaded terrain appearance.
-            const float shadingScale = 0.55f;
-            Color grassColor = new Color(baseColor.r * shadingScale, baseColor.g * shadingScale, baseColor.b * shadingScale, 1f);
-            impostorMat.SetColor("_GrassColor", grassColor);
-
-            // Derive rock color: darken and desaturate toward a neutral grey-brown.
-            float grey = baseColor.r * 0.299f + baseColor.g * 0.587f + baseColor.b * 0.114f;
-            var rockBase = new Color(grey * 1.05f, grey * 0.98f, grey * 0.88f, 1f);
-            Color rockColor = Color.Lerp(baseColor * 0.65f, rockBase, 0.45f);
-            rockColor = new Color(rockColor.r * shadingScale, rockColor.g * shadingScale, rockColor.b * shadingScale, 1f);
-            impostorMat.SetColor("_RockColor", rockColor);
-
-            DebugSettings.LogRendering(
-                $"GroundPlaneImpostorBootstrap: synced colors from '{source.name}' — " +
-                $"grass={grassColor} rock={rockColor}",
                 forceLog: true);
         }
 

@@ -20,13 +20,14 @@ Material:
   stringTagMap:
     RenderType: Opaque
   disabledShaderPasses: []
-  m_LockedProperties:
+  m_LockedProperties: 
   m_SavedProperties:
     serializedVersion: 3
     m_TexEnvs: []
     m_Ints: []
     m_Floats:
     - _AerialStrength: 0.3
+    - _SunAttenuation: 0.5
     m_Colors:
     - _BaseColor: {r: 0.55, g: 0.52, b: 0.48, a: 1}
   m_BuildTextureStacks: []

@@ -92,10 +92,18 @@ float AtmoAerialHazeAmount(float3 positionWS, float strength)
 // hero relic reduced ~0.3). Includes the far-clip concealer — correct for
 // opaque consumers; alpha-blended consumers use AtmoAerialHazeAmount + an
 // alpha fade instead.
+//
+// The concealer is scaled by strength: a full-strength concealer overrode the
+// hero exemption — from altitude the whole visible world sits at 450-600u slant
+// distance, so hero relics saturated to horizon-white regardless of their dial
+// (and regardless of the zero-haze pin, since the concealer is distance-only).
+// A reduced-strength surface therefore pops in less veiled at the far plane;
+// accepted for heroes — the real far-plane fix is a larger far clip + the
+// Phase-2 horizon ring, not fog.
 float3 ApplyAerialPerspective(float3 color, float3 positionWS, float strength)
 {
     float rayLen = length(positionWS - _WorldSpaceCameraPos);
-    float t = saturate(AtmoAerialHazeAmount(positionWS, strength) + AtmoFarClipHaze(rayLen));
+    float t = saturate(AtmoAerialHazeAmount(positionWS, strength) + AtmoFarClipHaze(rayLen) * strength);
     return ApplyAerialHaze(color, t);
 }
 

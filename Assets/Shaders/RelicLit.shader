@@ -16,6 +16,7 @@ Shader "Relic/RelicLit"
     {
         _BaseColor      ("Base Color", Color) = (0.55, 0.52, 0.48, 1)
         _AerialStrength ("Aerial Strength (hero exemption, reduced)", Range(0, 1)) = 0.3
+        _SunAttenuation ("Sun Attenuation", Range(0, 1)) = 0.5
     }
 
     SubShader
@@ -47,6 +48,7 @@ Shader "Relic/RelicLit"
             CBUFFER_START(UnityPerMaterial)
                 half4 _BaseColor;
                 half  _AerialStrength;
+                half  _SunAttenuation;
             CBUFFER_END
 
             struct Attributes
@@ -87,7 +89,12 @@ Shader "Relic/RelicLit"
 
                 half3 ambient  = max(SampleSH(half3(normalWS)), half3(0.05, 0.05, 0.05));
                 half  ndotl    = saturate(dot(normalWS, mainLight.direction));
-                half3 lighting = ambient + half3(mainLight.color) * mainLight.shadowAttenuation * ndotl;
+                // Attenuate the sun and clamp the sum, matching the ground disc's lighting
+                // convention: unclamped ambient + full sun exceeds 1 on upward-facing
+                // surfaces at midday, which rendered the hands near-white from altitude
+                // even with haze disabled (V9 round-4 observation).
+                half3 sun      = half3(mainLight.color) * mainLight.shadowAttenuation * ndotl * (half)_SunAttenuation;
+                half3 lighting = saturate(ambient + sun);
 
                 half3 color = _BaseColor.rgb * lighting;
 

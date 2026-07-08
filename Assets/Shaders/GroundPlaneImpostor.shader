@@ -10,18 +10,15 @@ Shader "Ground/GroundPlaneImpostor"
 
     Properties
     {
+        // Grass/rock hues are NOT material properties: the disc consumes the global
+        // _AtmoGround/_AtmoRock palette broadcast by the atmosphere authority (V9 P2,
+        // ATMOSPHERE_COLOR_AUTHORITY_SPEC.md §5.4) so it tracks biome/palette changes.
         _NoiseScale     ("Noise Scale",      Float)      = 0.004
-        // Linear-space colours — SetColor/GetColor always operate in linear space in URP.
-        // These defaults are tuned to visually match the dark-olive-green SDF terrain
-        // after the 0.5-attenuated sun + ambient SH lighting in the fragment shader.
-        _GrassColor ("Grass Color",  Color)      = (0.40, 0.46, 0.26, 1)
-        _RockColor  ("Rock Color",   Color)      = (0.28, 0.32, 0.23, 1)
         _RockThreshold  ("Rock Threshold",   Range(0,1)) = 0.60
         _InnerFadeStart ("Inner Fade Start", Float)      = 0.0
         _InnerFadeEnd   ("Inner Fade End",   Float)      = 0.0
         _OuterFadeStart ("Outer Fade Start", Float)      = 900.0
         _OuterFadeEnd   ("Outer Fade End",   Float)      = 1400.0
-        _HazeColor  ("Haze Color",   Color)      = (0.72, 0.80, 0.87, 1)
         _PlayerXZ       ("Player XZ",        Vector)     = (0, 0, 0, 0)
         _AerialStrength ("Aerial Strength",  Range(0,1)) = 1.0
     }
@@ -59,9 +56,6 @@ Shader "Ground/GroundPlaneImpostor"
 
             // All Properties must appear in UnityPerMaterial for SRP Batcher.
             CBUFFER_START(UnityPerMaterial)
-                float4 _GrassColor;
-                float4 _RockColor;
-                float4 _HazeColor;
                 float4 _PlayerXZ;
                 float  _AerialStrength;
                 float  _NoiseScale;
@@ -146,9 +140,11 @@ Shader "Ground/GroundPlaneImpostor"
                 // shows through naturally — no hard disc edge, no haze-colour mismatch.
                 float outerBlend = 1.0 - smoothstep(_OuterFadeStart, _OuterFadeEnd, dist);
 
-                // Biome colour from world-space noise.
+                // Biome colour from world-space noise; hues come from the authoritative
+                // palette globals (V9 P2). No shade factor needed unlike the sky mountain
+                // band — the lighting multiply below already provides the shaded look.
                 float  n     = FBM2(worldXZ * _NoiseScale);
-                half3  color = lerp(_GrassColor.rgb, _RockColor.rgb, step(_RockThreshold, n));
+                half3  color = lerp((half3)_AtmoGround.rgb, (half3)_AtmoRock.rgb, step(_RockThreshold, n));
 
                 // Day/night lighting: ambient SH probes + attenuated sun.
                 // The disc is a flat +Y plane; SDF terrain has varied normals whose average

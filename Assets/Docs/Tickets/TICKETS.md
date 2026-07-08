@@ -1,7 +1,7 @@
 # Tickets
 
 **Status:** ACTIVE
-**Last Updated:** 2026-07-05
+**Last Updated:** 2026-07-07
 
 Lightweight task tracker. Status: `[ ]` pending · `[x]` done · `[-]` blocked
 
@@ -19,6 +19,19 @@ not timeboxed — a work-set stays "current focus" until it's actually done, how
 Full detail for every ticket in this section — history, re-scope notes, and the Camera Feel /
 Animation framing — lives in [`vista-moment.md`](vista-moment.md).
 
+### Build order _(decided 2026-07-07 — ticket IDs are track labels, not sequence; this is the sequence)_
+
+1. **R6** (P2 → P1 → P3; P4 separable) — landmark draw distance. This is what makes the vista's
+   "huge hand, far away, always visible" possible at all: today anything past the 600u far clip
+   simply doesn't render. R6 P3 also supersedes the 2026-07-07 hero-concealer patch in
+   `Atmosphere.hlsl`.
+2. **V11** (hero hand mesh) + **V12** (authored anchors) — the authored giant hand itself. Art +
+   systems tracks; no dependency on R6, can run in parallel with it, but the vista needs all three.
+3. **V9 P3 → P5** (terrain tint, then saturation last — saturation tunes once every surface reads
+   the palette). Polish; doesn't block the vista trick.
+4. **R5** (backlog) — silhouette cards for >2000u. Blocked by R6 (narrows its contract), V12 (its
+   data source), and the Phase-2 horizon ring. Post-MVP.
+
 ### Vista Moment _(the MVP wow moment)_
 
 | ID  | Status | Subject |
@@ -31,10 +44,16 @@ Animation framing — lives in [`vista-moment.md`](vista-moment.md).
 | V6  | [x] | Time-of-day + biome-dependent sky & tracking fog — Plains "Cloudbreak" preset; haze color follows the horizon (2026-07-01) |
 | V7  | [x] | BUG: player falls through ground on sky-drop landing — readiness-gate probe now reaches terrain (65adabb, 2026-07-03) |
 | V8  | [x] | Distance-graded fog density — Route A judged & rejected, reverted to Exp² baseline; Route B (height fog) folded into V9's height-aware `ApplyAerialPerspective` (merged 2026-07-05) |
-| V9  | [ ] | Atmosphere color authority — one palette source + global `_Atmo*` uniforms + shared **height-aware** aerial-perspective HLSL (folds V8 Route B); **MVP slice P1+P4+P4b built & validated 2026-07-05** (+ disc fog call converted) — sky-drop reads the ground, hero relic legible, dark mountain wall gone. Remaining: P2 disc palette, P3 terrain tint, P5 saturation |
+| V9  | [ ] | Atmosphere color authority — one palette source + global `_Atmo*` uniforms + shared **height-aware** aerial-perspective HLSL (folds V8 Route B); **MVP slice P1+P4+P4b built & validated 2026-07-05**; **P2 disc palette + `SyncTerrainColor` deletion built 2026-07-07** (pending validation). Remaining: P3 terrain tint, P5 saturation — sequenced **after R6** per Build order |
 | V10 | [x] | BUG: player falls through terrain during traversal — colliders built player-nearest-first, 3×3 ring budget-exempt (1883659, 2026-07-03) |
 | V11 | [ ] | Hero hand mesh authoring — silhouette-first re-pose/new mesh so four fingers read at 200–400u (spun off V4, 2026-07-05) |
 | V12 | [ ] | Authored anchor candidate source — guaranteed hero hand in view of spawn; quests + debug layouts reuse it (spun off V4, 2026-07-05) |
+
+### Rendering — vista support _(R6 pulled from backlog 2026-07-07; step 1 of the Build order)_
+
+| ID  | Status | Subject |
+|-----|--------|---------|
+| R6  | [ ] | Landmark draw distance — hero relics never cull: raise camera far plane to `LandmarkDrawDistance` (~2000u), world stays short; P2 decouples `_AtmoFarFade` from the camera plane first; hero material drops the far-clip concealer for a dither edge fade. Spec: `Rendering/LANDMARK_DRAW_DISTANCE_SPEC.md` |
 
 Details: [vista-moment.md](vista-moment.md)
 
@@ -99,8 +118,7 @@ _Tickets not yet pulled into a work-set._
 | [R2](backlog.md#r2--speed-biased-scatter-lod-drop-detail-during-fast-airborne-movement) | Speed-biased scatter LOD (drop detail during fast airborne movement) | Rendering |
 | [R3](backlog.md#r3--r4--t1--surface-scatter-lod-follow-ups-deferred-from-codex-review-2026-06-27) | Camera-specific scatter LOD bucketing (multi-camera correctness) | Rendering |
 | [R4](backlog.md#r3--r4--t1--surface-scatter-lod-follow-ups-deferred-from-codex-review-2026-06-27) | Pebble chunk-cull cleanup parity (`TerrainChunkLodApplySystem`) | Rendering |
-| [R5](backlog.md#r5--hero-relics-in-the-far-field-impostor-stack-opened-2026-07-05--from-the-far-field-discussion) | Hero relics in the far-field impostor stack — silhouette cards in the Phase 2 horizon ring from V12 authored anchors | Rendering |
-| [R6](backlog.md#r6--landmark-draw-distance--relics-never-cull-opened-2026-07-06--spec-written) | Landmark draw distance — hero relics never cull (raise far plane, world stays short; dither edge/spawn fades). Spec: `Rendering/LANDMARK_DRAW_DISTANCE_SPEC.md` | Rendering |
+| [R5](backlog.md#r5--hero-relics-in-the-far-field-impostor-stack-opened-2026-07-05--from-the-far-field-discussion) | Hero relics in the far-field impostor stack — silhouette cards for **>2000u**, blocked by R6 + V12 + Phase-2 horizon ring (see Build order) | Rendering |
 | [T1](backlog.md#r3--r4--t1--surface-scatter-lod-follow-ups-deferred-from-codex-review-2026-06-27) | Scatter LOD test coverage (Pebble render contract, GeneratePlacements, OnUpdate routing) | Testing |
 | [B1](backlog.md#b1--boulder-group-models) | Boulder group models (1–6m, weathered, partially buried) | Biome Art |
 | [B2](backlog.md#b2--pebble-cluster-models) | Pebble cluster models (10–50cm fields) | Biome Art |

@@ -1,8 +1,9 @@
 # Atmosphere Color Authority Spec
 
 **Status:** ACTIVE — MVP slice (P1 + P4 + P4b, plus the disc's fog-call conversion) built & validated
-2026-07-05; P2/P3/P5 pending. See ticket V9 in `../Tickets/vista-moment.md` for the build record.
-**Last Updated:** 2026-07-05
+2026-07-05; P2 (disc palette + `SyncTerrainColor` deletion) built 2026-07-07, pending owner validation;
+P3/P5 pending. See ticket V9 in `../Tickets/vista-moment.md` for the build record.
+**Last Updated:** 2026-07-07
 **Owner:** Rendering / Vista
 **Phase:** Vista MVP (ties ticket V9; folds V8 Route B; consumed by V3)
 **Keywords:** atmosphere, palette, aerial perspective, height fog, hue unification, global shader uniforms, impostor, fog, time-of-day, biome
