@@ -12,9 +12,30 @@ namespace DOTS.Rendering.Sky
     /// </summary>
     public static class AtmosphereBroadcast
     {
+        private const float DefaultWorldReferenceDistance = 600f;
+
+        private static float _worldReferenceDistance = DefaultWorldReferenceDistance;
+
+        /// <summary>
+        /// The world reference distance — where the ordinary world visually ends and aerial
+        /// perspective reaches full (LANDMARK_DRAW_DISTANCE_SPEC.md P2). Deliberately NOT the
+        /// camera far clip plane: R6 raises the far plane for landmark permanence, and tying
+        /// _AtmoFarFade to it would silently stretch the disc→skirt handoff and the distanceHaze
+        /// ramp with it. Seeded from ProjectFeatureConfig.DerivedCameraFarClip by
+        /// DotsSystemBootstrap — pushed in rather than read here because this assembly (Core)
+        /// cannot reference DOTS.Core.Authoring (reverse dependency). Default matches the
+        /// config default so edit-mode broadcasts agree with play mode.
+        /// </summary>
+        public static float WorldReferenceDistance
+        {
+            get => _worldReferenceDistance;
+            set => _worldReferenceDistance = Mathf.Max(value, 1f);
+        }
+
         /// <summary>
         /// Broadcasts the palette. <paramref name="farFade"/> is the reference distance at which
-        /// aerial perspective reaches full — typically the camera far clip plane.
+        /// aerial perspective reaches full — <see cref="WorldReferenceDistance"/>, not the camera
+        /// far clip plane.
         /// </summary>
         public static void Push(SkySettings sky, AtmosphereSettings atmosphere, float farFade)
         {
@@ -37,12 +58,12 @@ namespace DOTS.Rendering.Sky
         // editor scene view before play). Seed sane defaults early in both contexts.
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
         private static void PushRuntimeDefaults() =>
-            Push(SkySettings.Default, AtmosphereSettings.Default, 600f);
+            Push(SkySettings.Default, AtmosphereSettings.Default, WorldReferenceDistance);
 
 #if UNITY_EDITOR
         [UnityEditor.InitializeOnLoadMethod]
         private static void PushEditorDefaults() =>
-            Push(SkySettings.Default, AtmosphereSettings.Default, 600f);
+            Push(SkySettings.Default, AtmosphereSettings.Default, WorldReferenceDistance);
 #endif
     }
 }

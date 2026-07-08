@@ -12,6 +12,7 @@ using DOTS.Terrain.Streaming;
 using DOTS.Terrain.Trees;
 using DOTS.Terrain.WFC;
 using DOTS.Terrain.Weather;
+using DOTS.Rendering.Sky;
 using Unity.Entities;
 using Unity.Physics.Systems;
 using UnityEngine;
@@ -45,6 +46,10 @@ namespace DOTS.Core.Authoring
                 DebugSettings.LogWarning("Bootstrap: ProjectFeatureConfig not assigned. No systems will be enabled.");
                 return;
             }
+
+            // Seed the atmosphere's world reference distance from config (LANDMARK_DRAW_DISTANCE_SPEC.md
+            // P2). Pushed from here because Core (Rendering.Sky) cannot reference this assembly.
+            AtmosphereBroadcast.WorldReferenceDistance = config.DerivedCameraFarClip;
     
             // Diagnostic systems rely on fall-through/pipeline debug channels.
             // Wire them from config so hypothesis testing does not require code changes.

@@ -293,11 +293,13 @@ namespace DOTS.Rendering.Sky
                 atmosphere.distanceHaze = 0f;
             }
 
-            var mainCamera = Camera.main;
+            // farFade = world reference distance, NOT Camera.main.farClipPlane — R6 raises the
+            // far plane past the world's visual edge (landmark permanence), and the disc→skirt
+            // handoff / distanceHaze ramp must stay pinned at the world edge regardless.
             AtmosphereBroadcast.Push(
                 evaluated,
                 atmosphere,
-                mainCamera != null ? mainCamera.farClipPlane : 600f);
+                AtmosphereBroadcast.WorldReferenceDistance);
         }
 
         // The controller only updates in Play Mode, so without this an inspector toggle of the

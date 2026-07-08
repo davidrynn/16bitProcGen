@@ -60,6 +60,62 @@ namespace DOTS.Tests.EditMode
         }
 
         [Test]
+        public void WorldReferenceDistance_ClampsToMinimum()
+        {
+            float saved = AtmosphereBroadcast.WorldReferenceDistance;
+            try
+            {
+                AtmosphereBroadcast.WorldReferenceDistance = -50f;
+                // Negative/zero would divide-by-zero the shader's distance normalization.
+                Assert.GreaterOrEqual(AtmosphereBroadcast.WorldReferenceDistance, 1f);
+            }
+            finally
+            {
+                AtmosphereBroadcast.WorldReferenceDistance = saved;
+            }
+        }
+
+        /// <summary>
+        /// R6 P2 contract (LANDMARK_DRAW_DISTANCE_SPEC.md): the broadcast farFade sources from the
+        /// config-seeded world reference distance, NOT Camera.main.farClipPlane — raising the far
+        /// plane for landmark permanence must not stretch the disc→skirt handoff.
+        /// </summary>
+        [Test]
+        public void PushAtmosphere_UsesWorldReferenceDistance_NotCameraFarPlane()
+        {
+            float saved = AtmosphereBroadcast.WorldReferenceDistance;
+            var cameraGO = new GameObject("Test Main Camera") { tag = "MainCamera" };
+            var controllerGO = new GameObject("Test TimeOfDayController");
+            var preset = ScriptableObject.CreateInstance<SkyPreset>();
+            try
+            {
+                cameraGO.AddComponent<Camera>().farClipPlane = 2000f;
+
+                var controller = controllerGO.AddComponent<TimeOfDayController>();
+                controller.ActivePreset = preset;
+
+                AtmosphereBroadcast.WorldReferenceDistance = 555f;
+                // OnValidate is the controller's edit-mode re-broadcast path — same PushAtmosphere
+                // code the Play Mode update drives. Invoked via reflection: SendMessage on a
+                // non-ExecuteAlways behaviour asserts ShouldRunBehaviour() in EditMode.
+                typeof(TimeOfDayController)
+                    .GetMethod("OnValidate",
+                        System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)
+                    .Invoke(controller, null);
+
+                Assert.AreEqual(555f, Shader.GetGlobalFloat(ShaderIDs.AtmoFarFade), Tolerance,
+                    "_AtmoFarFade must follow the world reference distance, not the camera far plane.");
+            }
+            finally
+            {
+                AtmosphereBroadcast.WorldReferenceDistance = saved;
+                Object.DestroyImmediate(preset);
+                Object.DestroyImmediate(controllerGO);
+                Object.DestroyImmediate(cameraGO);
+            }
+        }
+
+        [Test]
         public void AtmosphereSettings_Default_HasExpectedValues()
         {
             var a = AtmosphereSettings.Default;
