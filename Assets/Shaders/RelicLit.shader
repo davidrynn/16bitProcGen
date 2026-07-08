@@ -83,6 +83,12 @@ Shader "Relic/RelicLit"
             {
                 UNITY_SETUP_INSTANCE_ID(IN);
 
+                // Landmark edge dissolve (R6 P3) — heroes never pop at a clip plane; they
+                // dither out over the last 10% before _AtmoLandmarkFade. Clipped before
+                // lighting so dissolved fragments cost nothing.
+                float viewDist = length(IN.positionWS - _WorldSpaceCameraPos);
+                clip(AtmoLandmarkEdgeFade(viewDist) - AtmoInterleavedGradientNoise(IN.positionCS.xy));
+
                 float3 normalWS    = normalize(IN.normalWS);
                 float4 shadowCoord = TransformWorldToShadowCoord(IN.positionWS);
                 Light  mainLight   = GetMainLight(shadowCoord);
@@ -98,8 +104,12 @@ Shader "Relic/RelicLit"
 
                 half3 color = _BaseColor.rgb * lighting;
 
-                // Hero exemption: reduced-strength shared aerial term instead of pipeline fog.
-                color = (half3)ApplyAerialPerspective(color, IN.positionWS, _AerialStrength);
+                // Hero exemption: reduced-strength shared aerial term instead of pipeline fog,
+                // WITHOUT the far-clip concealer (R6 P3) — the concealer hides the world's clip
+                // edge, but a landmark drawn beyond it must not be erased by it. Same
+                // no-concealer contract as the ground disc; the dither above replaces the
+                // concealer as the edge treatment.
+                color = (half3)ApplyAerialHaze(color, AtmoAerialHazeAmount(IN.positionWS, _AerialStrength));
 
                 return half4(color, 1.0h);
             }
@@ -194,6 +204,7 @@ Shader "Relic/RelicLit"
             #pragma multi_compile _ DOTS_INSTANCING_ON
 
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
+            #include "Assets/Shaders/Atmosphere.hlsl"
 
             struct Attributes
             {
@@ -204,18 +215,25 @@ Shader "Relic/RelicLit"
             struct Varyings
             {
                 float4 positionCS : SV_POSITION;
+                float3 positionWS : TEXCOORD0;
             };
 
             Varyings DepthVert(Attributes IN)
             {
                 UNITY_SETUP_INSTANCE_ID(IN);
                 Varyings OUT;
-                OUT.positionCS = TransformObjectToHClip(IN.positionOS.xyz);
+                OUT.positionWS = TransformObjectToWorld(IN.positionOS.xyz);
+                OUT.positionCS = TransformWorldToHClip(OUT.positionWS);
                 return OUT;
             }
 
             half4 DepthFrag(Varyings IN) : SV_Target
             {
+                // Mirror the ForwardLit landmark dissolve (same pixel coords -> same noise),
+                // or the depth prepass would write solid depth where the color pass has
+                // dithered holes and depth-reading effects would ghost the dissolved hero.
+                float viewDist = length(IN.positionWS - _WorldSpaceCameraPos);
+                clip(AtmoLandmarkEdgeFade(viewDist) - AtmoInterleavedGradientNoise(IN.positionCS.xy));
                 return 0;
             }
             ENDHLSL

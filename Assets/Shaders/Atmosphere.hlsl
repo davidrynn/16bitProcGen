@@ -23,6 +23,7 @@ float _AtmoFarFade;      // reference distance where aerial perspective reaches 
 float _AtmoHazeDensity;  // ground-level (y=0) haze density d0 for the height term
 float _AtmoHazeFalloff;  // 1/scale-height of the haze layer (e.g. 1/60u)
 float _AtmoDistanceHaze; // small altitude-independent aerial floor at _AtmoFarFade (see ApplyAerialPerspective)
+float _AtmoLandmarkFade; // landmark dissolve distance = max(_AtmoFarFade, LandmarkDrawDistance) — R6 P3
 
 // Analytic exponential-height fog along a finite view ray (closed form, no
 // marching) — the V8 Route B height term (spec §5.3a). A downward ray from
@@ -88,23 +89,37 @@ float AtmoAerialHazeAmount(float3 positionWS, float strength)
 
 // The shared aerial-perspective entry point (spec §5.3 composed with §5.3a):
 // the height term decides HOW MUCH haze, the palette decides WHAT COLOR it
-// converges to, strength is the per-surface dial (disc low, mountains high,
-// hero relic reduced ~0.3). Includes the far-clip concealer — correct for
-// opaque consumers; alpha-blended consumers use AtmoAerialHazeAmount + an
-// alpha fade instead.
-//
-// The concealer is scaled by strength: a full-strength concealer overrode the
-// hero exemption — from altitude the whole visible world sits at 450-600u slant
-// distance, so hero relics saturated to horizon-white regardless of their dial
-// (and regardless of the zero-haze pin, since the concealer is distance-only).
-// A reduced-strength surface therefore pops in less veiled at the far plane;
-// accepted for heroes — the real far-plane fix is a larger far clip + the
-// Phase-2 horizon ring, not fog.
+// converges to, strength is the per-surface dial (disc low, mountains high).
+// Includes the far-clip concealer at FULL strength — correct for opaque WORLD
+// surfaces, which must always be veiled at the clip edge regardless of their
+// haze dial (the concealer hides geometry cut-off, not atmosphere). Not for
+// landmarks: hero relics draw past _AtmoFarFade by design (R6) and use
+// AtmoAerialHazeAmount + AtmoLandmarkEdgeFade instead, like the disc's
+// alpha-fade path. No consumers today; V9 P3 terrain tint is the intended one.
 float3 ApplyAerialPerspective(float3 color, float3 positionWS, float strength)
 {
     float rayLen = length(positionWS - _WorldSpaceCameraPos);
-    float t = saturate(AtmoAerialHazeAmount(positionWS, strength) + AtmoFarClipHaze(rayLen) * strength);
+    float t = saturate(AtmoAerialHazeAmount(positionWS, strength) + AtmoFarClipHaze(rayLen));
     return ApplyAerialHaze(color, t);
+}
+
+// Interleaved gradient noise (Jimenez, "Next Generation Post Processing in
+// Call of Duty: Advanced Warfare", 2014) over pixel coordinates — the standard
+// screen-door dither pattern for opaque dissolves.
+float AtmoInterleavedGradientNoise(float2 pixelCoord)
+{
+    return frac(52.9829189 * frac(dot(pixelCoord, float2(0.06711056, 0.00583715))));
+}
+
+// Landmark edge fade (R6 P3): visibility factor for hero landmarks, 1 = solid,
+// 0 = fully dissolved over the last 10% before _AtmoLandmarkFade. Consumers
+// clip() against AtmoInterleavedGradientNoise so crossing the landmark draw
+// distance is a dissolve, not a pop — RelicLit is opaque + ZWrite, so alpha
+// blending is not an option. Returns 1 well inside the fade band, so it never
+// clips ordinary-distance fragments.
+float AtmoLandmarkEdgeFade(float viewDist)
+{
+    return 1.0 - smoothstep(_AtmoLandmarkFade * 0.9, _AtmoLandmarkFade, viewDist);
 }
 
 #endif // ATMOSPHERE_INCLUDED
