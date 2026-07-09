@@ -10,5 +10,12 @@ namespace DOTS.Structures
         SeededAnchor = 0,
         WFC = 1,
         PlayerBuilt = 2,
+
+        /// <summary>
+        /// Explicit developer-authored placement (STRUCTURE_PLACEMENT_SPEC.md §9.5).
+        /// Regenerates from authoring data like SeededAnchor; identity is
+        /// seed-independent (hash of the authored string id).
+        /// </summary>
+        Authored = 3,
     }
 }

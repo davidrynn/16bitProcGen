@@ -32,6 +32,13 @@ namespace DOTS.Core
         // WFC Random Seed Control
         public static bool UseFixedWFCSeed = true;
         public static int FixedWFCSeed = 12345;
+
+        /// <summary>
+        /// Activates the AuthoredAnchorBootstrap debug-layout list ("spawn a known
+        /// layout" debugging). The authored-anchor mechanism itself is a product
+        /// feature and always active — only the dev layout is gated.
+        /// </summary>
+        public static bool EnableAuthoredDebugAnchors = false;
         
         /// <summary>
         /// Logs a debug message only if debug logging is enabled

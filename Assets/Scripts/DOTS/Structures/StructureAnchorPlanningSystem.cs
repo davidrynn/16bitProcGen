@@ -102,6 +102,16 @@ namespace DOTS.Structures
                 em.AddBuffer<StructureFootprintReservation>(singletonEntity);
             }
 
+            // Authored anchor inputs (STRUCTURE_PLACEMENT_SPEC.md §9.5) — the
+            // AuthoredAnchorBootstrap creates this buffer in Start, which runs
+            // before the first SimulationSystemGroup update of the same frame,
+            // so planning never races ahead of authoring.
+            NativeArray<AuthoredAnchorInput> authored;
+            if (SystemAPI.TryGetSingletonBuffer<AuthoredAnchorInput>(out var authoredBuffer, true))
+                authored = authoredBuffer.ToNativeArray(Allocator.Temp);
+            else
+                authored = new NativeArray<AuthoredAnchorInput>(0, Allocator.Temp);
+
             // MVP: plan a fixed region around world origin.
             // Planning cell grid covers -PlanRadius to +PlanRadius in each axis.
             const int planRadiusCells = 4;
@@ -116,8 +126,11 @@ namespace DOTS.Structures
                 cellMin, cellMax,
                 families,
                 existingAnchors,
+                authored,
                 in terrainSampler,
                 ref accepted);
+
+            WarnOnAuthoredConstraintViolations(accepted, families, in terrainSampler);
 
             // Assign per-anchor TemplateId from the family's available templates.
             // Uses StableAnchorId for deterministic selection so the same world
@@ -127,6 +140,9 @@ namespace DOTS.Structures
                 var anchor = accepted[i];
                 // Skip locked/modified anchors — their TemplateId is already set
                 if ((anchor.PersistenceFlags & (StructurePersistenceFlags.Locked | StructurePersistenceFlags.Modified)) != 0)
+                    continue;
+                // Skip authored anchors — their TemplateId is explicit authoring data
+                if (anchor.Source == StructurePlacementSource.Authored)
                     continue;
 
                 for (int ri = 0; ri < rulesets.Length; ri++)
@@ -196,6 +212,64 @@ namespace DOTS.Structures
             accepted.Dispose();
             existingAnchors.Dispose();
             families.Dispose();
+            authored.Dispose();
+        }
+
+        /// <summary>
+        /// Authored anchors bypass hard constraints by design (guaranteed placement),
+        /// so authoring mistakes surface as warnings, not rejections: terrain-fit
+        /// violations against the family ruleset, and same-family spacing conflicts.
+        /// Cheap — runs once per plan over a handful of authored anchors.
+        /// </summary>
+        private static void WarnOnAuthoredConstraintViolations(
+            NativeList<StructureAnchorRecord> accepted,
+            NativeArray<FamilyRuleData> families,
+            in TerrainSampleData terrainSampler)
+        {
+            for (int i = 0; i < accepted.Length; i++)
+            {
+                var a = accepted[i];
+                if (a.Source != StructurePlacementSource.Authored)
+                    continue;
+
+                // Radius 0 means no family ruleset matched and no explicit radius
+                // was authored — the footprint reservation is zero-extent, so
+                // scatter exclusion (§8.3) silently won't apply.
+                if (a.Radius <= 0f)
+                    DebugSettings.LogWarning(
+                        $"Authored anchor {a.TemplateId} ({a.StableAnchorId:X8}) has zero footprint radius " +
+                        "(no family ruleset matched, no explicit radius) — scatter exclusion will not apply.");
+
+                for (int fi = 0; fi < families.Length; fi++)
+                {
+                    if (families[fi].Family != a.Family) continue;
+                    var family = families[fi];
+
+                    var xz = new float2(a.WorldPosition.x, a.WorldPosition.z);
+                    float height = StructureAnchorPlanningAlgorithm.SampleTerrainHeight(xz, in terrainSampler);
+                    float slopeY = StructureAnchorPlanningAlgorithm.SampleSlopeNormalY(xz, in terrainSampler);
+
+                    if (height < family.MinElevation || height > family.MaxElevation)
+                        DebugSettings.LogWarning(
+                            $"Authored anchor {a.TemplateId} ({a.StableAnchorId:X8}) elevation {height:F1} " +
+                            $"outside family range [{family.MinElevation}, {family.MaxElevation}] — placed anyway.");
+                    if (slopeY < family.MinSlopeNormalY)
+                        DebugSettings.LogWarning(
+                            $"Authored anchor {a.TemplateId} ({a.StableAnchorId:X8}) slope normalY {slopeY:F2} " +
+                            $"below family minimum {family.MinSlopeNormalY:F2} — placed anyway.");
+
+                    for (int j = 0; j < accepted.Length; j++)
+                    {
+                        if (j == i || accepted[j].Family != a.Family) continue;
+                        float dist = math.distance(a.WorldPosition, accepted[j].WorldPosition);
+                        if (dist < family.MinSpacing)
+                            DebugSettings.LogWarning(
+                                $"Authored anchor {a.TemplateId} ({a.StableAnchorId:X8}) is {dist:F0}u from " +
+                                $"anchor {accepted[j].StableAnchorId:X8}, under family MinSpacing {family.MinSpacing:F0} — placed anyway.");
+                    }
+                    break;
+                }
+            }
         }
     }
 }

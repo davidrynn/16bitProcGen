@@ -1,6 +1,6 @@
 # Structure Placement Spec
 _Status: DESIGN (MVP SCOPED) - runtime contract for deterministic semantic structure placement_
-_Last updated: 2026-04-16_
+_Last updated: 2026-07-08_
 _Owner: Terrain / World Generation / WFC_
 
 ---
@@ -166,6 +166,80 @@ Spacing should support:
 - optional cross-family exclusion spacing
 - exclusion from authored protected zones and critical gameplay corridors
 
+### 9.5 Authored Anchor Candidate Source _(built 2026-07-08 — ticket V12)_
+
+The planner merges a second candidate source ahead of procedural cell evaluation: **authored
+anchors** — explicit position + template entries written by a developer. This is product data
+(owner decision 2026-07-05: not a dev pin) with three consumers sharing one mechanism: the
+guaranteed vista hero hand, quest placement later, and known debug layouts. It is the first
+realization of the two-sources-one-pipeline shape specced for the magic grid
+([MAGIC_GRID_SPEC.md](MAGIC_GRID_SPEC.md) §9.2): once accepted, an authored anchor is an
+ordinary `StructureAnchorRecord` and the downstream machinery (reservations, realization,
+persistence) does not care where it came from.
+
+**Evaluation order (extends the §9.2.1 tie-break):**
+
+1. Locked/modified anchors preserved from prior passes — persistence still outranks authoring,
+   so a player-modified authored structure is not re-stamped.
+2. **Authored anchors**, deduped by `StableAnchorId` against pass 1.
+3. Procedural planning cells in row-major order — procedural candidates spacing-reject against
+   already-accepted authored anchors via the existing tie-break, so authored placement overrides
+   the procedural planner with no separate conflict resolver.
+
+**Semantics:**
+
+- Authored anchors **bypass hard constraints** — guaranteed placement is the feature. Violations
+  of the family's terrain-fit or spacing rules log warnings instead of rejecting, since terrain
+  fit is the author's eyeball responsibility.
+- Y is sampled from the terrain SDF at the authored XZ by default (`SnapToTerrain`), so authored
+  content stays grounded if terrain tuning shifts heights; an explicit Y field covers special cases.
+- `StableAnchorId` hashes the authored string id (`AuthorId`) on its own hash lane —
+  **seed-independent** (the same authored layout exists in every world) and
+  **position-independent** (nudging an anchor does not orphan persistence or quest references).
+- `TemplateId` is explicit per entry; the planner's deterministic per-anchor template assignment
+  skips authored anchors.
+- `Source = StructurePlacementSource.Authored`; persistence treats authored anchors like seeded
+  ones (regenerate from authoring, only divergence persists).
+- `FootprintRadius` of 0 inherits the family ruleset's footprint.
+
+**Data home:** a scene-side bootstrap (`AuthoredAnchorBootstrap`) carries serialized inspector
+entries and converts them at startup into a singleton `AuthoredAnchorInput` buffer the planner
+consumes — the same inspector-authoring pattern as `RelicVisualBootstrap` → `RelicRenderConfig`.
+EditMode tests construct entries programmatically, preserving the no-scene-dependency rule. A
+second debug-layout entry list on the same bootstrap is gated by
+`DebugSettings.EnableAuthoredDebugAnchors` (the *mechanism* is product; only the dev-layout
+toggle is a debug flag).
+
+**Far-field consumer:** the horizon-ring hero cards (ticket R5,
+[HORIZON_IMPOSTOR_SEED_DRIVEN_SPEC.md](../Rendering/HORIZON_IMPOSTOR_SEED_DRIVEN_SPEC.md) §19)
+read authored anchors from the **planned anchor buffer** (`Source == Authored`), not from the
+authoring component — only authored heroes are far-visible by design.
+
+### 9.6 Density & Encounter Cadence _(owner decisions 2026-07-08)_
+
+Relics are **wonder-objects** (Shadow-of-the-Colossus register): sighting one should be an event,
+and it should be **the only relic in frame** — two colossi in one view cheapen both. Density is
+therefore tuned by *encounter cadence*, not per-area count: a background relic renders within
+~600u, so a traveling player sweeps a ~1200u-wide sighting corridor, and `MinSpacing` above that
+render distance (currently 900) guarantees the corridor almost never holds two at once.
+
+- **Current Relic tuning** (`Resources/Relic.asset`): `MinSpacing 900`, `CandidatesPerCell 1` →
+  ~5 procedural relics + the authored hero across the ±1024u MVP region (one procedural relic per
+  ~0.84M u²; ~2–3 sightings crossing the full region). Rarity also does compositional work for the
+  vista: procedural candidates spacing-reject against the authored hero, so the hero keeps a 900u
+  exclusion bubble by construction.
+- **MVP caveat — the planning region is fixed at ±1024u around the origin** (§12.1), so today this
+  tunes "how 6 objects are arranged on the 2km starting stage," not a durable world property; the
+  world beyond the region is silently relic-free. **Reopen cadence tuning when anchor planning
+  becomes player-following** (the §12.1 streaming extension) — at that point express rarity as a
+  target sighting cadence per family and derive spacing from it.
+- **When relics gain function** (V5 interiors, quests), findability wants *authored* anchors (§9.5)
+  layered over an even-rarer procedural background — do not raise procedural density to make
+  functional content findable.
+- **`MaxSpacing` is currently unenforced** — the algorithm only checks `MinSpacing`, so the field
+  is decorative. If "sparse but guaranteed within X units" is ever needed, implementing
+  `MaxSpacing` as a minimum-density guarantee is the natural mechanism.
+
 ---
 
 ## 10. Family Rule Model
@@ -204,6 +278,7 @@ public enum StructurePlacementSource : byte
     SeededAnchor = 0,
     WFC = 1,
     PlayerBuilt = 2,
+    Authored = 3,     // explicit developer-authored placement (§9.5)
 }
 
 [System.Flags]

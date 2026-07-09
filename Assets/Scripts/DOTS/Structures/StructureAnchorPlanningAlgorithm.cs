@@ -46,7 +46,36 @@ namespace DOTS.Structures
             in TerrainSampleData terrainSampler,
             ref NativeList<StructureAnchorRecord> accepted)
         {
-            // Preserve locked/modified anchors from previous passes
+            var noAuthored = new NativeArray<AuthoredAnchorInput>(0, Allocator.Temp);
+            GenerateAnchors(
+                worldSeed, generationVersion, cellMin, cellMax,
+                families, existingAnchors, noAuthored,
+                in terrainSampler, ref accepted);
+            noAuthored.Dispose();
+        }
+
+        /// <summary>
+        /// Full candidate-source pipeline (STRUCTURE_PLACEMENT_SPEC.md §9.5).
+        /// Evaluation order is the override mechanism: locked/modified preserved
+        /// anchors, then authored anchors, then procedural cells — later
+        /// candidates spacing-reject against everything already accepted, so
+        /// authored placement overrides the procedural planner with no separate
+        /// conflict resolver.
+        /// </summary>
+        public static void GenerateAnchors(
+            uint worldSeed,
+            uint generationVersion,
+            int2 cellMin,
+            int2 cellMax,
+            NativeArray<FamilyRuleData> families,
+            NativeList<StructureAnchorRecord> existingAnchors,
+            NativeArray<AuthoredAnchorInput> authoredAnchors,
+            in TerrainSampleData terrainSampler,
+            ref NativeList<StructureAnchorRecord> accepted)
+        {
+            // Pass 1: preserve locked/modified anchors from previous passes
+            // (persistence outranks authoring — a player-modified authored
+            // structure must not be re-stamped from authoring data).
             for (int i = 0; i < existingAnchors.Length; i++)
             {
                 var a = existingAnchors[i];
@@ -56,7 +85,17 @@ namespace DOTS.Structures
                 }
             }
 
-            // Row-major evaluation for deterministic tie-break
+            // Pass 2: authored anchors. No hard-constraint checks — guaranteed
+            // placement is the feature; the planning system logs warnings for
+            // terrain-fit/spacing violations instead (managed side).
+            for (int i = 0; i < authoredAnchors.Length; i++)
+            {
+                InjectAuthoredAnchor(
+                    authoredAnchors[i], generationVersion,
+                    families, in terrainSampler, ref accepted);
+            }
+
+            // Pass 3: procedural cells. Row-major evaluation for deterministic tie-break
             for (int cz = cellMin.y; cz <= cellMax.y; cz++)
             {
                 for (int cx = cellMin.x; cx <= cellMax.x; cx++)
@@ -73,6 +112,54 @@ namespace DOTS.Structures
                     }
                 }
             }
+        }
+
+        /// <summary>
+        /// Converts one authored entry into an accepted anchor record. Skips only
+        /// if the id already exists (a locked/modified copy from pass 1 wins).
+        /// </summary>
+        private static void InjectAuthoredAnchor(
+            in AuthoredAnchorInput authored,
+            uint generationVersion,
+            NativeArray<FamilyRuleData> families,
+            in TerrainSampleData terrain,
+            ref NativeList<StructureAnchorRecord> accepted)
+        {
+            uint stableId = AuthoredAnchorId(authored.AuthorId);
+            if (AnchorIdExists(stableId, ref accepted))
+                return;
+
+            float y = authored.SnapToTerrain
+                ? SampleTerrainHeight(authored.PositionXZ, in terrain)
+                : authored.ExplicitY;
+
+            float radius = authored.FootprintRadius;
+            if (radius <= 0f)
+            {
+                for (int i = 0; i < families.Length; i++)
+                {
+                    if (families[i].Family != authored.Family) continue;
+                    radius = families[i].FootprintRadius;
+                    break;
+                }
+            }
+
+            var pos = new float3(authored.PositionXZ.x, y, authored.PositionXZ.y);
+            accepted.Add(new StructureAnchorRecord
+            {
+                Family = authored.Family,
+                // Containing cell, for debug-gizmo coherence only — authored
+                // anchors are not bounded by the planning region.
+                PlanningCell = (int2)floor(authored.PositionXZ / DefaultPlanningCellSize),
+                WorldPosition = pos,
+                Rotation = Unity.Mathematics.quaternion.RotateY(radians(authored.YawDegrees)),
+                Radius = radius,
+                StableAnchorId = stableId,
+                GenerationVersion = generationVersion,
+                TemplateId = authored.TemplateId,
+                Source = StructurePlacementSource.Authored,
+                PersistenceFlags = StructurePersistenceFlags.None,
+            });
         }
 
         private static void EvaluateCandidatesForCell(
@@ -203,6 +290,27 @@ namespace DOTS.Structures
             hash ^= (uint)candidateIndex * 668265263u;
             hash *= 0x9e3779b9u;
             // Extra mixing round for better distribution at region scale
+            hash ^= hash >> 16;
+            hash *= 0x85ebca6bu;
+            hash ^= hash >> 13;
+            return hash;
+        }
+
+        /// <summary>
+        /// StableAnchorId for an authored anchor: FNV-1a over the AuthorId bytes on
+        /// its own lane, plus an avalanche round. Deliberately independent of world
+        /// seed (the same authored layout exists in every world) and of position
+        /// (nudging an anchor must not orphan persistence/quest references).
+        /// Not string.GetHashCode — that is not stable across runtimes.
+        /// </summary>
+        public static uint AuthoredAnchorId(in FixedString64Bytes authorId)
+        {
+            uint hash = 2166136261u ^ 0xA0C407EDu; // FNV offset basis, authored lane
+            for (int i = 0; i < authorId.Length; i++)
+            {
+                hash ^= authorId[i];
+                hash *= 16777619u;
+            }
             hash ^= hash >> 16;
             hash *= 0x85ebca6bu;
             hash ^= hash >> 13;

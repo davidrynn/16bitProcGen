@@ -25,8 +25,9 @@ Animation framing — lives in [`vista-moment.md`](vista-moment.md).
    "huge hand, far away, always visible" possible at all: today anything past the 600u far clip
    simply doesn't render. R6 P3 also supersedes the 2026-07-07 hero-concealer patch in
    `Atmosphere.hlsl`.
-2. **V11** (hero hand mesh) + **V12** (authored anchors) — the authored giant hand itself. Art +
-   systems tracks; no dependency on R6, can run in parallel with it, but the vista needs all three.
+2. **V11** (hero hand mesh) + **V12** (authored anchors — ✅ done 2026-07-08) — the authored giant
+   hand itself. V12's systems half is built & validated (guaranteed hand at (0, 900), procedural
+   relics made rare); the remaining piece of this step is **V11's silhouette**.
 3. **V9 P3 → P5** (terrain tint, then saturation last — saturation tunes once every surface reads
    the palette). Polish; doesn't block the vista trick.
 4. **R5** (backlog) — silhouette cards for >2000u. Blocked by R6 (narrows its contract), V12 (its
@@ -47,7 +48,7 @@ Animation framing — lives in [`vista-moment.md`](vista-moment.md).
 | V9  | [ ] | Atmosphere color authority — one palette source + global `_Atmo*` uniforms + shared **height-aware** aerial-perspective HLSL (folds V8 Route B); **MVP slice P1+P4+P4b built & validated 2026-07-05**; **P2 disc palette + `SyncTerrainColor` deletion built 2026-07-07** (pending validation). Remaining: P3 terrain tint, P5 saturation — sequenced **after R6** per Build order |
 | V10 | [x] | BUG: player falls through terrain during traversal — colliders built player-nearest-first, 3×3 ring budget-exempt (1883659, 2026-07-03) |
 | V11 | [ ] | Hero hand mesh authoring — silhouette-first re-pose/new mesh so four fingers read at 200–400u (spun off V4, 2026-07-05) |
-| V12 | [ ] | Authored anchor candidate source — guaranteed hero hand in view of spawn; quests + debug layouts reuse it (spun off V4, 2026-07-05) |
+| V12 | [x] | Authored anchor candidate source — built & Play-Mode-validated 2026-07-08 (spec §9.5): authored pre-pass overrides the planner via existing tie-break; scene-bootstrap authoring; hero hand guaranteed at (0, 900) as `relic_hand_hero`. Includes relic-rarity retune (96 → 6, spec §9.6). Remaining eyeball: distance/yaw/scale knobs (no recompile); silhouette itself is V11 |
 | V13 | [ ] | Burning-descent VFX (meteor entry) — FP screen-edge flames/embers, ignites on V14 break-open, burns off before C3 dust handoff; arrival-sequence trigger, never altitude/speed (opened 2026-07-08; `Rendering/METEOR_ARRIVAL_SEQUENCE_SPEC.md`) |
 | V14 | [ ] | Meteor-interior loading shell — diegetic initial load: full-screen meteor interior over the V7 readiness gate, breaks open on real gate release (binary + min-hold, no fake progress); first UI element + DOTS→managed gate bridge (opened 2026-07-08; `Rendering/METEOR_ARRIVAL_SEQUENCE_SPEC.md`) |
 
@@ -120,7 +121,7 @@ _Tickets not yet pulled into a work-set._
 | [R2](backlog.md#r2--speed-biased-scatter-lod-drop-detail-during-fast-airborne-movement) | Speed-biased scatter LOD (drop detail during fast airborne movement) | Rendering |
 | [R3](backlog.md#r3--r4--t1--surface-scatter-lod-follow-ups-deferred-from-codex-review-2026-06-27) | Camera-specific scatter LOD bucketing (multi-camera correctness) | Rendering |
 | [R4](backlog.md#r3--r4--t1--surface-scatter-lod-follow-ups-deferred-from-codex-review-2026-06-27) | Pebble chunk-cull cleanup parity (`TerrainChunkLodApplySystem`) | Rendering |
-| [R5](backlog.md#r5--hero-relics-in-the-far-field-impostor-stack-opened-2026-07-05--from-the-far-field-discussion) | Hero relics in the far-field impostor stack — silhouette cards for **>2000u**, blocked by R6 + V12 + Phase-2 horizon ring (see Build order) | Rendering |
+| [R5](backlog.md#r5--hero-relics-in-the-far-field-impostor-stack-opened-2026-07-05--from-the-far-field-discussion) | Hero relics in the far-field impostor stack — silhouette cards for **>2000u**. V12 done (data source = anchor buffer `Source == Authored`); still blocked by R6 P4/validation + Phase-2 horizon ring (see Build order) | Rendering |
 | [T1](backlog.md#r3--r4--t1--surface-scatter-lod-follow-ups-deferred-from-codex-review-2026-06-27) | Scatter LOD test coverage (Pebble render contract, GeneratePlacements, OnUpdate routing) | Testing |
 | [T3](backlog.md#t3--triage-six-pre-existing-playmode-test-failures-opened-2026-07-08--surfaced-during-v9-p3-verification) | Triage 6 pre-existing PlayMode failures — player visual never created (×5, suspects: FPS-only reversal / BoxPlayer swap), grounded-jump takeoff mode (triage with M4); proven pre-existing via clean-baseline A/B 2026-07-08 | Testing |
 | [B1](backlog.md#b1--boulder-group-models) | Boulder group models (1–6m, weathered, partially buried) | Biome Art |

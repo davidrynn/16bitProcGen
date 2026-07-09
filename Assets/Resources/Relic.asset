@@ -13,9 +13,9 @@ MonoBehaviour:
   m_Name: Relic
   m_EditorClassIdentifier: DOTS.Terrain::DOTS.Structures.StructureFamilyRuleset
   Family: 1
-  MinSpacing: 80
-  MaxSpacing: 300
-  CandidatesPerCell: 2
+  MinSpacing: 900
+  MaxSpacing: 1800
+  CandidatesPerCell: 1
   MinSlopeNormalY: 0.7
   MinElevation: 1
   MaxElevation: 200

@@ -443,6 +443,50 @@ dev-pins discussion): design it so quests inherit it for free; this is a product
 Also feeds the far-field: authored anchors are the data source for hero relic silhouette cards in the
 Phase 2 horizon ring (**R5**, `HORIZON_IMPOSTOR_SEED_DRIVEN_SPEC.md` §19) — only authored heroes are
 far-visible by design.
+- **Design settled (2026-07-08, owner discussion) — specced as `STRUCTURE_PLACEMENT_SPEC.md` §9.5.**
+  Key decisions: (1) **merge = evaluation order** — locked/modified → authored → procedural; procedural
+  candidates spacing-reject against authored anchors via the *existing* tie-break, no new conflict
+  resolver. (2) **Data home = scene bootstrap** (`AuthoredAnchorBootstrap`, serialized inspector entries →
+  singleton `AuthoredAnchorInput` buffer), after an SO-vs-code-vs-bootstrap discussion: owner dislikes
+  ScriptableObject editing ergonomics; bootstrap gives no-recompile inspector tweaking in the hierarchy
+  and matches the `RelicVisualBootstrap` → `RelicRenderConfig` pattern. (3) **Identity is seed- and
+  position-independent** — `StableAnchorId` = FNV-1a of the `AuthorId` string on its own lane; the same
+  authored layout exists in every world, and nudging a position never orphans persistence/quest refs.
+  (4) Authored anchors **bypass hard constraints** (guaranteed placement is the feature) — violations log
+  warnings; Y snaps to the terrain SDF by default. (5) `StructurePlacementSource.Authored = 3`; template
+  is explicit per entry (planner's template assignment skips authored). (6) Debug layouts = second entry
+  list on the bootstrap behind new `DebugSettings.EnableAuthoredDebugAnchors`. (7) R5 reads authored
+  anchors from the planned buffer (`Source == Authored`), not the authoring component. (8) Hero gets a
+  **distinct `relic_hand_hero` template** so scale/material tune independently of background hands.
+- **Built (2026-07-08, code complete — compiles clean; EditMode run + scene wiring pending MCP session).**
+  New: `AuthoredAnchorInput` (buffer element), `AuthoredAnchorBootstrap` (validating conversion incl.
+  duplicate/oversize AuthorId guards; default world entry = `vista_hero_hand` @ (0, 900) +Z, yaw 180),
+  `AuthoredAnchorId` hash + authored injection pass in `StructureAnchorPlanningAlgorithm` (old
+  `GenerateAnchors` signature kept as delegating overload), authored-source consumption + constraint
+  warning pass in `StructureAnchorPlanningSystem`, 7 EditMode tests (`AuthoredAnchorPlanningTests`).
+  ~~Remaining: run EditMode suite; scene wiring.~~ **Done + validated (2026-07-08, same session):**
+  EditMode suite green (owner-run). Scene wired: `AuthoredAnchorBootstrap` GameObject (world entry =
+  `vista_hero_hand` @ (0, 900), yaw 180) + `relic_hand_hero` template on `RelicVisualBootstrap`
+  (testAlienHand mesh, `RelicHero.mat`, scale 1200, yOffset −12); scene saved. Play Mode verified via
+  Editor.log + positioned MCP captures: hero plans as `Anchor[0] pos=(0, 4, 900)` (authored injected
+  first, terrain-snapped Y), all 96 relic anchors realize (template resolved), zero exceptions/warnings.
+  Screenshots: `Assets/Screenshots/v12_hero_hand_from_spawn.png`, `v12_hero_hand_close.png`.
+  Hardened during validation: a duplicated bootstrap component (MCP tooling stray) created two singleton
+  buffers and made the planner's singleton query throw per-frame — bootstrap now reuses an existing
+  buffer with a warning instead of creating a second entity. **Open:** owner eyeball from spawn
+  (distance/yaw are bootstrap inspector knobs; scale/yOffset on the `relic_hand_hero` template — no
+  recompile for any of them). Known caveat: at hero scale the testAlienHand mesh reads as a flat-topped
+  boulder — that's **V11** (mesh authoring), not a placement issue.
+- **Procedural relics made rare (2026-07-08, owner call after seeing the guaranteed hero):** with the
+  hero authored, background relics no longer carry the vista. `Relic.asset` retuned `MinSpacing 80 → 900`
+  (> the 600u background-relic fade, so the view disc rarely holds two), `CandidatesPerCell 2 → 1`,
+  `MaxSpacing 300 → 1800`. Result: 96 → **6** relics in the ±1024u region (hero + 5 procedural, verified
+  in Play Mode; all realize). The hero's own 900u spacing exclusion also clears the spawn vista of
+  competitors by construction. Not needed for testing: EditMode tests construct rule data in code, and
+  known-layout debugging now uses the authored debug list. Screenshot:
+  `Assets/Screenshots/v12_rare_relics_vista.png` — one lone colossus on the horizon, the spec's
+  composition. Rarity rationale + deferred cadence decisions (fixed-region caveat, revisit trigger,
+  MaxSpacing note) documented in `STRUCTURE_PLACEMENT_SPEC.md` §9.6.
 
 #### V13 — Burning-descent VFX (meteor entry) _(opened 2026-07-08 — owner idea, discussed + specced same day)_
 **Spec:** `Rendering/METEOR_ARRIVAL_SEQUENCE_SPEC.md` (Phases 3–4; shared break-open contract with V14).

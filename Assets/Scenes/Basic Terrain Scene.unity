@@ -173,6 +173,14 @@ MonoBehaviour:
     impostorMesh: {fileID: 0}
     impostorMaterial: {fileID: 0}
     impostorScale: 30
+  - templateId: relic_hand_hero
+    mesh: {fileID: -8919760781528365239, guid: 24e8782cd9e311a44a8705909a96b35d, type: 3}
+    material: {fileID: 2100000, guid: 6db16a9bb0a24b418ee9e9a7bbbaa396, type: 2}
+    scale: 1200
+    yOffset: -12
+    impostorMesh: {fileID: 0}
+    impostorMaterial: {fileID: 0}
+    impostorScale: 30
   lodSwapDistance: 1000
   lodHysteresis: 0
 --- !u!4 &116130347
@@ -347,7 +355,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: DOTS.Terrain::DOTS.Impostors.GroundPlaneImpostorBootstrap
   _enabled: 1
-  _terrainColorSource: {fileID: 2100000, guid: b86d0fc69f6679347b7745bc911e8e0f, type: 2}
   _outerRadius: 0
   _innerFadeStart: 0
   _innerFadeEnd: 0
@@ -430,6 +437,60 @@ MonoBehaviour:
   characterRotationOffset: {x: 0, y: 0, z: 0}
   animatorController: {fileID: 9100000, guid: 2ce74787eaa3020488ce9b3e6c8768b6, type: 2}
   enableAnimatorDebugLogging: 1
+--- !u!1 &687215611
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 687215613}
+  - component: {fileID: 687215612}
+  m_Layer: 0
+  m_Name: AuthoredAnchorBootstrap
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &687215612
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 687215611}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e7bb63e4472590f46b6e1685d8efd217, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: DOTS.Terrain::DOTS.Structures.AuthoredAnchorBootstrap
+  worldAnchors:
+  - authorId: vista_hero_hand
+    family: 1
+    templateId: relic_hand_hero
+    positionXZ: {x: 0, y: 900}
+    snapToTerrain: 1
+    explicitY: 0
+    yawDegrees: 180
+    footprintRadius: 0
+  debugAnchors: []
+--- !u!4 &687215613
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 687215611}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &769482723
 GameObject:
   m_ObjectHideFlags: 0
@@ -840,3 +901,4 @@ SceneRoots:
   - {fileID: 1976500102}
   - {fileID: 116130347}
   - {fileID: 352567277}
+  - {fileID: 687215613}
