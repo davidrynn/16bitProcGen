@@ -182,22 +182,9 @@ namespace DOTS.Structures
                 scale));
 
 #if UNITY_ENTITIES_GRAPHICS
-            // Resolve impostor mesh/material with fallback to full mesh
-            var impostorMaterial = template.ImpostorMaterial != null ? template.ImpostorMaterial : template.Material;
-            var impostorMesh = template.ImpostorMesh != null ? template.ImpostorMesh : template.Mesh;
-
-            var renderMeshArray = new RenderMeshArray(
-                new[] { template.Material, impostorMaterial },
-                new[] { template.Mesh, impostorMesh });
-
-            var materialMeshInfo = MaterialMeshInfo.FromRenderMeshArrayIndices(0, 0);
-
             var renderMeshDescription = new RenderMeshDescription(
                 shadowCastingMode: ShadowCastingMode.On,
                 receiveShadows: true);
-
-            RenderMeshUtility.AddComponents(
-                entity, em, renderMeshDescription, renderMeshArray, materialMeshInfo);
 
             // Per-entity RenderBounds from mesh local AABB
             var fullBounds = new AABB
@@ -205,6 +192,42 @@ namespace DOTS.Structures
                 Center = template.Mesh.bounds.center,
                 Extents = template.Mesh.bounds.extents,
             };
+
+            if (!TemplateParticipatesInLod(template))
+            {
+                // DISTANCE LOD IS CURRENTLY SKIPPED FOR THIS RELIC — deliberately, not
+                // as an oversight (owner decision 2026-07-09, ticket V16). No billboard
+                // impostor art has ever been authored, and the old fallback used the
+                // SAME full mesh as "LOD 1", rescaled to a fixed target size — saving
+                // zero vertices while visibly popping the relic's world size at the
+                // swap distance. With relics rare (~6 in range after the V12 retune)
+                // and low-poly in a scene that is vertex-bound by trees/rocks, per-
+                // entity LOD buys nothing today. So: single render entry, full mesh at
+                // all distances, and no RelicLodParams/RelicLodState — which means
+                // RelicLodSelectionSystem's query never matches this entity and the
+                // LOD machinery lies dormant. To re-enable LOD for a template, author
+                // its ImpostorMesh — the full swap path below returns for its relics
+                // with no other change.
+                RenderMeshUtility.AddComponents(
+                    entity, em, renderMeshDescription,
+                    new RenderMeshArray(new[] { template.Material }, new[] { template.Mesh }),
+                    MaterialMeshInfo.FromRenderMeshArrayIndices(0, 0));
+                em.SetComponentData(entity, new RenderBounds { Value = fullBounds });
+                return;
+            }
+
+            // Authored impostor present → this relic participates in distance LOD.
+            var impostorMaterial = template.ImpostorMaterial != null ? template.ImpostorMaterial : template.Material;
+            var impostorMesh = template.ImpostorMesh;
+
+            var renderMeshArray = new RenderMeshArray(
+                new[] { template.Material, impostorMaterial },
+                new[] { template.Mesh, impostorMesh });
+
+            RenderMeshUtility.AddComponents(
+                entity, em, renderMeshDescription, renderMeshArray,
+                MaterialMeshInfo.FromRenderMeshArrayIndices(0, 0));
+
             em.SetComponentData(entity, new RenderBounds { Value = fullBounds });
 
             // Compute impostor LOD scale (same derivation as the old singleton path)
@@ -236,5 +259,20 @@ namespace DOTS.Structures
             em.AddComponentData(entity, new RelicLodState { CurrentLod = 0 });
 #endif
         }
+
+#if UNITY_ENTITIES_GRAPHICS
+        /// <summary>
+        /// A relic participates in distance LOD only when its template has an
+        /// AUTHORED impostor mesh. While none exists (ticket V16), relics render
+        /// the full mesh at every distance and the LOD system idles — see the
+        /// dormancy comment in <see cref="SpawnRelicEntity"/> for the rationale.
+        /// Pure-static so the decision is unit-testable without a live World
+        /// (same pattern as <see cref="RelicLodSelectionSystem.ResolveTargetLod"/>).
+        /// </summary>
+        public static bool TemplateParticipatesInLod(RelicTemplateEntry template)
+        {
+            return template != null && template.ImpostorMesh != null;
+        }
+#endif
     }
 }

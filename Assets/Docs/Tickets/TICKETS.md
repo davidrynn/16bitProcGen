@@ -39,18 +39,20 @@ Animation framing — lives in [`vista-moment.md`](vista-moment.md).
 |-----|--------|---------|
 | V1  | [x] | Ground plane impostor — built & enabled; now receives fog so the plain hazes into the horizon (2026-07-01) |
 | V2  | [x] | Atmospheric fog — enabled + impostor fog wired; "square from height" diagnosed as skybox horizon, not a fog plane (2026-07-01). Dynamic sky-tracking color → V6 |
-| V3  | [ ] | Mountain skybox panel — painted silhouette framing the horizon _(color path folds into V9 P4)_ |
+| V3  | [-] | _(Superseded 2026-07-09)_ Mountain skybox panel — the procedural sky band fills this role (V9 P4 colors + V15 silhouette/composition); reopen only if a painted panel is ever preferred |
 | V4  | [x] | Hand mesh validation — renders end-to-end, scale 500 ≈ 40–50u tall; reads as a boulder, not a hand → follow-ups V11/V12 (2026-07-05) |
 | V5  | [-] | _(Deferred — out of MVP "look at" scope)_ Relic → WFC maze interior — connect relic anchor to dungeon interior generation |
 | V6  | [x] | Time-of-day + biome-dependent sky & tracking fog — Plains "Cloudbreak" preset; haze color follows the horizon (2026-07-01) |
 | V7  | [x] | BUG: player falls through ground on sky-drop landing — readiness-gate probe now reaches terrain (65adabb, 2026-07-03) |
 | V8  | [x] | Distance-graded fog density — Route A judged & rejected, reverted to Exp² baseline; Route B (height fog) folded into V9's height-aware `ApplyAerialPerspective` (merged 2026-07-05) |
-| V9  | [ ] | Atmosphere color authority — one palette source + global `_Atmo*` uniforms + shared **height-aware** aerial-perspective HLSL (folds V8 Route B); **MVP slice P1+P4+P4b built & validated 2026-07-05**; **P2 disc palette + `SyncTerrainColor` deletion built 2026-07-07** (pending validation). Remaining: P3 terrain tint, P5 saturation — sequenced **after R6** per Build order |
+| V9  | [ ] | Atmosphere color authority — one palette source + global `_Atmo*` uniforms + shared **height-aware** aerial-perspective HLSL (folds V8 Route B); **MVP slice P1+P4+P4b built & validated 2026-07-05**; **P2 disc palette + `SyncTerrainColor` deletion built 2026-07-07**; **P3 terrain palette consumption built 2026-07-08** (569a — terrain is a direct palette consumer; pending owner validation). Remaining: P5 saturation (last, after owner eyeball of P2/P3) |
 | V10 | [x] | BUG: player falls through terrain during traversal — colliders built player-nearest-first, 3×3 ring budget-exempt (1883659, 2026-07-03) |
 | V11 | [ ] | Hero hand mesh authoring — silhouette-first re-pose/new mesh so four fingers read at 200–400u (spun off V4, 2026-07-05) |
 | V12 | [x] | Authored anchor candidate source — built & Play-Mode-validated 2026-07-08 (spec §9.5): authored pre-pass overrides the planner via existing tie-break; scene-bootstrap authoring; hero hand guaranteed at (0, 900) as `relic_hand_hero`. Includes relic-rarity retune (96 → 6, spec §9.6). Remaining eyeball: distance/yaw/scale knobs (no recompile); silhouette itself is V11 |
 | V13 | [ ] | Burning-descent VFX (meteor entry) — FP screen-edge flames/embers, ignites on V14 break-open, burns off before C3 dust handoff; arrival-sequence trigger, never altitude/speed (opened 2026-07-08; `Rendering/METEOR_ARRIVAL_SEQUENCE_SPEC.md`) |
 | V14 | [ ] | Meteor-interior loading shell — diegetic initial load: full-screen meteor interior over the V7 readiness gate, breaks open on real gate release (binary + min-hold, no fake progress); first UI element + DOTS→managed gate bridge (opened 2026-07-08; `Rendering/METEOR_ARRIVAL_SEQUENCE_SPEC.md`) |
+| V15 | [ ] | Sky mountain band — ridged FBM silhouette (was 3 sine harmonics), second back ridge (finer, round-2 retune), horizon demarcation line (darker `_AtmoHorizon`-shifted range above, ground skirt untouched below); snow caps built, off-by-default toggle (round 3). Ground look owner-approved 2026-07-09; remaining: drop-altitude skirt check (`Rendering/SKY_MOUNTAIN_BAND_SPEC.md`) |
+| V16 | [ ] | Relic size pop-in fix — LOD made dormant-by-design: no authored impostor art means the swap rendered the same mesh at a smaller fixed size (zero verts saved, visible pop). Relics without an authored `ImpostorMesh` now skip the LOD components entirely; machinery kept for real billboard art (built 2026-07-09, pending owner walk-toward-relic check; dormancy note in `Structures/RELIC_LOD_IMPOSTOR_SPEC.md`) |
 
 ### Rendering — vista support _(R6 pulled from backlog 2026-07-07; step 1 of the Build order)_
 
@@ -84,7 +86,7 @@ Details: [vista-moment.md](vista-moment.md)
 
 | ID  | Status | Subject | Blocks | Blocked By |
 |-----|--------|---------|--------|------------|
-| A9  | [ ] | First-person arms viewmodel (the real fix for FPS-only MVP) | — | — |
+| A9  | [ ] | First-person arms viewmodel (the real fix for FPS-only MVP) — arms source = V11 hand master rig + generator, re-posed at player scale (decided 2026-07-09; detail in vista-moment.md) | — | — |
 
 #### Dev-toggle / deferred (third-person body) _(not MVP-gating — body hidden in first-person play)_
 
@@ -117,6 +119,7 @@ _Tickets not yet pulled into a work-set._
 | P2  | Magic Hand System (raycast, charge, binary terrain edit) | Phase 1 |
 | E1  | Blocked-edit visual feedback — red-X reticle pulse (+ optional tooltip) when a terrain edit is rejected by the player-safety volume. Post-MVP: terrain editing itself needs substantial work first (owner 2026-07-03; salvaged from archived Cursor plan) | Editing UX |
 | [W1](backlog.md#w1--magic-power-grid-placeholder--design-stage-not-yet-broken-into-tickets) | Magic power grid (placeholder — see `Structures/MAGIC_GRID_SPEC.md`) | Phase 2 / World Power |
+| [W2](backlog.md#w2--destructible-hero-relics-mesh-at-distance-sdf-stamp-up-close-idea--not-fleshed-out-owner-2026-07-09-from-the-v11-blender-session) | Destructible hero relics — mesh at distance, SDF stamp up close (idea, not fleshed out; V11 master rig doubles as the SDF description) | Terrain |
 | [R1](backlog.md#r1--low-poly-treerock-lods--enable-relic-lod) | Low-poly tree/rock LODs + enable relic LOD | Rendering |
 | [R2](backlog.md#r2--speed-biased-scatter-lod-drop-detail-during-fast-airborne-movement) | Speed-biased scatter LOD (drop detail during fast airborne movement) | Rendering |
 | [R3](backlog.md#r3--r4--t1--surface-scatter-lod-follow-ups-deferred-from-codex-review-2026-06-27) | Camera-specific scatter LOD bucketing (multi-camera correctness) | Rendering |

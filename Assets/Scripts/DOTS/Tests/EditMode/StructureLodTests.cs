@@ -102,6 +102,39 @@ namespace DOTS.Tests.EditMode
             Assert.AreEqual(0.5f, read.ImpostorScale);
         }
 
+        /// <summary>
+        /// Guards the V16 LOD-dormancy decision: without an authored impostor mesh a
+        /// relic must NOT participate in distance LOD (the old same-mesh fallback
+        /// saved zero vertices and popped the relic's world size at the swap
+        /// distance). If this fails after adding impostor art, that's the feature
+        /// waking up as intended — not a regression.
+        /// </summary>
+        [Test]
+        public void TemplateParticipatesInLod_RequiresAuthoredImpostorMesh()
+        {
+            Assert.IsFalse(
+                RelicRealizationSystem.TemplateParticipatesInLod(null),
+                "Null template must not participate in LOD.");
+
+            var noImpostor = new RelicTemplateEntry { TemplateId = "hand", ImpostorMesh = null };
+            Assert.IsFalse(
+                RelicRealizationSystem.TemplateParticipatesInLod(noImpostor),
+                "Template without authored impostor mesh must skip LOD (V16 dormancy).");
+
+            var mesh = new UnityEngine.Mesh();
+            try
+            {
+                var authored = new RelicTemplateEntry { TemplateId = "hand", ImpostorMesh = mesh };
+                Assert.IsTrue(
+                    RelicRealizationSystem.TemplateParticipatesInLod(authored),
+                    "Authoring an impostor mesh must re-enable the LOD path.");
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(mesh);
+            }
+        }
+
         [Test]
         public void LodThreshold_Hysteresis_DoesNotFlipWithinBand()
         {

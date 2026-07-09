@@ -13,6 +13,15 @@ namespace DOTS.Structures
     /// index 1 (impostor) in the two-entry <see cref="RenderMeshArray"/> written
     /// by <see cref="RelicRealizationSystem"/>.
     ///
+    /// CURRENTLY DORMANT BY DESIGN (owner decision 2026-07-09, ticket V16): no
+    /// template has an authored impostor mesh, so RelicRealizationSystem skips
+    /// adding <see cref="RelicLodParams"/>/<see cref="RelicLodState"/> and this
+    /// system's query matches nothing. Distance LOD isn't useful for relics today
+    /// (~6 low-poly instances in range; the same-mesh fallback saved zero vertices
+    /// and caused a visible size pop) — the machinery is kept for the day real
+    /// billboard art exists. See the dormancy comment in
+    /// RelicRealizationSystem.SpawnRelicEntity.
+    ///
     /// Reads per-entity <see cref="RelicLodParams"/> for scale and bounds so each
     /// relic template can have different mesh sizes without the system needing to
     /// know which template an entity uses.

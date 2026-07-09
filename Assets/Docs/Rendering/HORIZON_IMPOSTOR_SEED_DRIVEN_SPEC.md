@@ -268,6 +268,13 @@ This feature is Phase 2. It is the *correct* long-term solution for the horizon 
 
 **MVP path:** `MVP_VISTA_MOMENT_SPEC.md` §2.3 — a painted skybox mountain silhouette panel achieves the same visual goal in hours vs. days. Ship that first.
 
+> **Interim system shipped instead of a painted panel (2026-07-09, ticket V15):** the procedural sky
+> band — ridged-FBM silhouette, back ridge, horizon demarcation line — is specced in
+> [`SKY_MOUNTAIN_BAND_SPEC.md`](SKY_MOUNTAIN_BAND_SPEC.md). When this seed-driven system builds, it
+> replaces that spec's silhouette *source* (§2.1/§2.2 there); the band's horizon-line/skirt
+> composition and palette rules carry forward. A reachable mountain **biome** (owner intent, post-MVP)
+> plugs in here as the deterministic world-height function.
+
 Implement this system only after MVP vista moment is complete and Phase 2 streaming/optimization work is actively scheduled.
 
 ## 18. Color authority

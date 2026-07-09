@@ -1,8 +1,22 @@
 # Relic LOD Impostor Spec
-_Status: IMPLEMENTED_
-_Last updated: 2026-04-16_
+_Status: IMPLEMENTED — **DORMANT since 2026-07-09 (ticket V16)**: no template has an authored impostor mesh, so relics skip the LOD components at realization and `RelicLodSelectionSystem` idles. See dormancy note below._
+_Last updated: 2026-07-09_
 _Owner: Structures / Rendering_
 _Supersedes: RELIC_RENDER_REFACTOR_SPEC.md §8 (Future: LOD / Impostor Hook)_
+
+> **Dormancy note (2026-07-09, ticket V16 — owner decision):** distance LOD is currently *not
+> useful* for relics, so it is skipped, not disguised. Billboard impostor art was never authored;
+> the same-mesh fallback rendered the full mesh as "LOD 1" rescaled to a fixed target size —
+> saving **zero** vertices while visibly popping the relic's world size at the swap distance
+> (owner screenshots 2026-07-09). Meanwhile the system's original conditions evaporated: the V12
+> rarity retune cut relics in range from ~96 to ~6, the scene is vertex-bound by trees/rocks
+> (relics are noise), and the far-distance job moved to R6 (landmark permanence ≤2000u) + R5
+> (silhouette cards >2000u). **Mechanism:** `RelicRealizationSystem.TemplateParticipatesInLod` —
+> templates without an authored `ImpostorMesh` get a single render entry and no
+> `RelicLodParams`/`RelicLodState`, so the LOD query matches nothing. **To re-enable:** author an
+> impostor mesh on a template; the swap path returns for its relics with no other change. Revisit
+> if V11 delivers a heavy hero mesh or relic counts rise. Everything below documents the (kept,
+> tested) machinery as built.
 
 ---
 

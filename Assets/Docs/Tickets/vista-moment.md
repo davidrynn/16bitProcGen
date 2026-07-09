@@ -430,6 +430,9 @@ silhouette-first: long separated fingers, a readable gesture (reference `Docs/Te
 `MVP_VISTA_MOMENT_SPEC.md` §2.1). Keep the current asset as placeholder until swap. Source in
 `BlenderSource/`, export to `Assets/Models/` per the B-ticket conventions. Retune `scale`/`yOffset` on the
 new mesh (current 500/−5 ≈ 40–50u tall; colossus presence likely wants 80–150u) — judge via screenshots.
+- **Constraint from W2 (backlog, 2026-07-09):** the Blender master rig (segmented boxes + transforms) is
+  the source of truth for a possible future SDF-destructible version — keep the rig's segment transforms
+  exportable; bakes (smooth/variant meshes) are derived artifacts, never the master.
 
 #### V12 — Authored anchor candidate source (guaranteed hero hand) _(opened 2026-07-05 — spun off V4)_
 Relic placement is seed-deterministic but not *authorable*: anchors hash-jitter across ±1024u around origin,
@@ -514,6 +517,45 @@ bridge** (singleton component the overlay polls — established pattern). Gravit
 shell opening (§5.1 of the spec; one coupled frame acceptable for MVP if decoupling is invasive).
 Scope: **initial spawn only** (respawn/fast-travel reuse deferred). Acceptance: player never sees the
 world assembling; shell timing tracks real readiness; break-open + V13 ignition read as one beat.
+
+#### V15 — Sky mountain band: rugged silhouette + horizon line + snow _(opened 2026-07-09 — owner observation, discussed + built same day)_
+**Spec:** `Rendering/SKY_MOUNTAIN_BAND_SPEC.md` (ACTIVE — full design + dial table).
+Owner called out two reads: the mountains "just look like a sine curve" (they literally were — three
+sine harmonics) and "blend a little too seamlessly with the terrain" (same ground palette as the
+plain). Fix, all inside `ProceduralGradientSky.shader`'s mountain block: **(1)** ridged periodic FBM
+silhouette (sharp crests/V-valleys, wraps seamlessly at ±π via integer-lattice `fmod` hashing);
+**(2)** second back ridge — taller base, farther fictive haze distance, lighter + horizon-shifted hue
+(nearest-darkest depth stacking); **(3)** horizon demarcation line at `viewDir.y = 0` — above it the
+range goes darker + toward `_AtmoHorizon` (`_MountainRangeShade`/`_MountainHueShift`), below it the
+far-field ground **skirt keeps the ground palette** (load-bearing: the disc alpha-fades into it —
+recolor it and the far-clip edge returns); **(4)** snow caps — built, **off by default**
+(`_SnowOpacity 0`; round 3 owner call: keep as a toggle, may come in useful, not a priority). All
+palette-derived per V9
+authority; ~4 octaves of 1D noise per sky pixel — no new assets/draws. Owner's serialized .mat tuning
+(variation 0.1442 etc.) carries over; new dials take shader defaults. Future: silhouette *source*
+superseded by the Phase-2 seed-driven horizon ring (spec §7) — a reachable mountain biome plugs in
+there, post-MVP. **Round 2 (owner feedback on first screenshot, 2026-07-09):** back ridge inverted —
+v1 was broader + much taller than the front (backwards from perspective); now finer (1.6× frequency,
+smaller variation, base only slightly above front) with the color separation softened (0.35/0.25) so
+the ranges read as siblings one atmospheric step apart. Ground-level look owner-approved round 2
+("that's great"); snow toggled off round 3. **Remaining eyeball: drop-altitude skirt check**
+(below-line ground palette unchanged from ~400u).
+
+#### V16 — Relic size pop-in — LOD made dormant-by-design _(opened 2026-07-09 — owner screenshots during the V15 walk; discussed + built same day)_
+**Spec note:** dormancy note at the top of `Structures/RELIC_LOD_IMPOSTOR_SPEC.md`.
+Owner saw the hand render small on the horizon, then pop much larger a few seconds into the approach.
+Diagnosis: the LOD swap (`RelicLodSelectionSystem`) changes the entity's *world scale* between
+`FullScale` and a fixed-target-size `ImpostorScale` — and since billboard impostor art was never
+authored, "LOD 1" was the **same mesh** rescaled smaller: zero vertices saved, pure size pop. The
+system's original conditions are gone anyway (V12 cut relics ~96 → ~6; scene is vertex-bound by
+trees/rocks; far-distance handled by R6 ≤2000u + R5 cards >2000u). Owner question "what's the point
+of the LOD system if we don't use it?" → answer: none today, but keep the tested machinery dormant
+(per the keep-as-toggle principle) for real billboard art / a heavy V11 hero mesh. Fix:
+`RelicRealizationSystem.TemplateParticipatesInLod` — no authored `ImpostorMesh` → single render
+entry, no `RelicLodParams`/`RelicLodState`, LOD query matches nothing; loud dormancy comments at the
+skip site + system doc; EditMode test `TemplateParticipatesInLod_RequiresAuthoredImpostorMesh` guards
+the decision (its failure after authoring impostor art = the feature waking up, not a regression).
+**Pending: owner walk-toward-relic check** (no size change at any distance).
 
 #### R6 — Landmark draw distance — relics never cull _(opened 2026-07-06, spec written; pulled from backlog 2026-07-07 as Build-order step 1)_
 **Spec:** `Rendering/LANDMARK_DRAW_DISTANCE_SPEC.md` (ACTIVE — full design, slices P1–P4, acceptance).
@@ -625,7 +667,15 @@ The groundwork is already done and forward-compatible — `PlayerFirstPersonVisi
 first-person, so this ticket only adds the arms rig and shows it in the same place (no rework of the body-hide
 or camera-mode plumbing).
 
-- Author/acquire a first-person arms rig + clips: slingshot charge pull, launch/release, glide arms-spread, idle/move bob.
+- **Arms source (decided 2026-07-09, owner):** the V11 colossal-hand master rig + mesh generator
+  (`BlenderSource/` hand work-set) is the intended source for the FP hands — same DNA as the vista
+  colossus (fiction hook; dovetails with P2 Magic Hand). Duplicate the master, re-pose from the agony
+  claw to a relaxed FP pose, re-run the generator at player scale (own FBX, ~0.19m hand — never the
+  hero export). Still A9-scope on top of that: convert the segment parent-chain to an armature, add a
+  forearm stub (master ends at the wrist), and retune the surface (kill/reduce the 0.35 SegNoise
+  displace — megalith noise reads as gravel skin at viewmodel distance; stone-vs-skin material is a
+  fiction call).
+- Author/acquire the remaining clips on that rig: slingshot charge pull, launch/release, glide arms-spread, idle/move bob.
 - Show the arms rig only when `IsThirdPerson == false`; hide it (and show the full body) in the third-person dev toggle. Extend `PlayerFirstPersonVisibility` — it already owns the first/third-person visibility swap.
 - Drive arms clips from the same `PlayerAnimatorBridge` parameters where they map; add FPS-specific params only where the body params don't translate.
 - Scope check before building: decide whether arms are a separate `Animator` (own controller) or share the existing controller. Capture the decision here.
