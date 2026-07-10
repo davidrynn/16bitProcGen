@@ -1,7 +1,7 @@
 # Work-set: MVP Vista Moment
 
 **Status:** ACTIVE
-**Last Updated:** 2026-07-05
+**Last Updated:** 2026-07-09
 
 Board: [`TICKETS.md`](TICKETS.md)
 
@@ -556,6 +556,31 @@ entry, no `RelicLodParams`/`RelicLodState`, LOD query matches nothing; loud dorm
 skip site + system doc; EditMode test `TemplateParticipatesInLod_RequiresAuthoredImpostorMesh` guards
 the decision (its failure after authoring impostor art = the feature waking up, not a regression).
 **Pending: owner walk-toward-relic check** (no size change at any distance).
+
+#### V17 — Mid-field disc variation (kill the uniform band) _(opened 2026-07-09 — owner screenshot, discussed same day)_
+**Spec:** `Rendering/GROUND_PLANE_IMPOSTOR_SPEC.md` §12 (full root-cause analysis, dials, acceptance).
+Owner: the impostor band between the streamed terrain window (~180u) and the sky mountain band reads
+too uniform. Diagnosed from the shader: (1) the 250u binary grass/rock patches foreshorten to nothing
+at grazing angles, (2) the flat +Y plane has one normal → one constant lighting value across the whole
+band, (3) scatter density drops to zero at the chunk radius. The meteor arrival (V13/V14) only masks
+the descent — the vista beat is steady-state viewing, so this needs a real fix.
+- **P1 — macro luminance variation** in shared `GroundNoise.hlsl` (~1000–2000u FBM octave, ±~10%
+  multiply): applies to terrain + disc identically, so the seam stays aligned by construction. New
+  dials join the `TerrainChunkMaterialContractTests` parity guard.
+- **P2 — fake relief shading** (disc shader only): pseudo-normal from finite-differenced low-freq
+  height FBM replaces the flat +Y in the Lambert term — rolling ground without geometry.
+- **P3 — vertex undulation** (optional, judge after P1+P2): real rolling silhouette against the sky
+  band; **must** damp to zero inside ~250u of the player so streamed-chunk replacement stays hidden
+  (traversal-era liability documented in the spec).
+- **Dynamic-proof by design:** P1 multiplies the already-dynamic `_AtmoGround`/`_AtmoRock` palette;
+  P2 lights against the live `GetMainLight()` sun, so relief pops at low sun angles automatically
+  once the time-of-day pin comes off. This is the permanent implementation, not an MVP hack.
+- **Out of scope** (spec §12.4): distant-scatter speckling (superseded by R1/R5), cloud shadows +
+  weather tints (weather track — must cover real terrain too, not just the disc).
+- **Sequenced (owner decision 2026-07-09) — Build-order step 3:** after the V9 P3 owner eyeball
+  (V17 modifies both sides of the terrain↔disc seam that check judges), before V9 P5 (saturation
+  is a one-shot global grade; P1 changes the luminance it grades). P3 undulation judged after
+  V15's drop-altitude skirt check (same disc→sky-band handoff). Independent of steps 1–2 (R6/V11).
 
 #### R6 — Landmark draw distance — relics never cull _(opened 2026-07-06, spec written; pulled from backlog 2026-07-07 as Build-order step 1)_
 **Spec:** `Rendering/LANDMARK_DRAW_DISTANCE_SPEC.md` (ACTIVE — full design, slices P1–P4, acceptance).

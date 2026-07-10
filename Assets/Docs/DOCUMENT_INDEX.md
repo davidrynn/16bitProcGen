@@ -1,6 +1,6 @@
 # Document Index
 
-**Last Updated:** 2026-07-08
+**Last Updated:** 2026-07-09
 
 > **New here?** Start with [MASTER_PLAN.md](MASTER_PLAN.md) — it has the project vision, current status, phase roadmap, and a curated document map.
 
@@ -55,7 +55,7 @@ Quick-reference index of all project documentation. Docs are organized by featur
 | [Rendering/MVP_VISTA_MOMENT_SPEC.md](Rendering/MVP_VISTA_MOMENT_SPEC.md) | **ACTIVE — MVP PRIORITY** | Vista discovery experience: atmospheric haze + mountain horizon + relic hand; gap analysis + ordered implementation |
 | [Rendering/VISTA_GROUND_PLANE_FOG_INVESTIGATION.md](Rendering/VISTA_GROUND_PLANE_FOG_INVESTIGATION.md) | INVESTIGATING | Working doc: what the ground-plane impostor + fog actually do today vs. spec, re-scoping tickets V1/V2 from screenshot evidence |
 | [Rendering/SKYBOXPLAN.md](Rendering/SKYBOXPLAN.md) | PHASE 2 COMPLETE · PHASE 3 PLANNED | Procedural gradient sky plan; Phase 3 = vista atmosphere (ticket V6). Companion SPEC/TESTS archived in `Archives/Skybox_2026/` |
-| [Rendering/GROUND_PLANE_IMPOSTOR_SPEC.md](Rendering/GROUND_PLANE_IMPOSTOR_SPEC.md) | **ACTIVE — MVP PRIORITY** | Horizontal ground-plane impostor for sky-drop sequence; terrain-colored flat disc beyond chunk radius |
+| [Rendering/GROUND_PLANE_IMPOSTOR_SPEC.md](Rendering/GROUND_PLANE_IMPOSTOR_SPEC.md) | **ACTIVE — MVP PRIORITY** | Horizontal ground-plane impostor for sky-drop sequence; terrain-colored flat disc beyond chunk radius; §12 = mid-field variation plan (macro luminance + fake relief + optional undulation, ticket V17) |
 | [Rendering/HORIZON_IMPOSTOR_SEED_DRIVEN_SPEC.md](Rendering/HORIZON_IMPOSTOR_SEED_DRIVEN_SPEC.md) | DESIGN (DEFERRED) | Seed-driven far-horizon impostor plan for mountain/hill/sea silhouette rendering (Phase 2; builds after ground plane) |
 | [Rendering/ATMOSPHERE_COLOR_AUTHORITY_SPEC.md](Rendering/ATMOSPHERE_COLOR_AUTHORITY_SPEC.md) | ACTIVE (MVP slice built) | Single atmosphere/palette authority + global `_Atmo*` uniforms + shared aerial-perspective HLSL; unifies sky, ground disc, mountain impostor, terrain & fog color under one time-of-day/biome source (ticket V9; consumed by V3, V8) |
 | [Rendering/LANDMARK_DRAW_DISTANCE_SPEC.md](Rendering/LANDMARK_DRAW_DISTANCE_SPEC.md) | PROPOSED | Hero-relic pop-in fix: raise camera far plane while the world stays short ("landmarks never cull"), decouple `_AtmoFarFade` from the far plane, dithered edge/spawn fades; covers 600→2000u, hands off to R5 cards beyond (ticket R6) |

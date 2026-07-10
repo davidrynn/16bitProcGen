@@ -1,7 +1,7 @@
 # Tickets
 
 **Status:** ACTIVE
-**Last Updated:** 2026-07-08
+**Last Updated:** 2026-07-09
 
 Lightweight task tracker. Status: `[ ]` pending · `[x]` done · `[-]` blocked
 
@@ -28,8 +28,12 @@ Animation framing — lives in [`vista-moment.md`](vista-moment.md).
 2. **V11** (hero hand mesh) + **V12** (authored anchors — ✅ done 2026-07-08) — the authored giant
    hand itself. V12's systems half is built & validated (guaranteed hand at (0, 900), procedural
    relics made rare); the remaining piece of this step is **V11's silhouette**.
-3. **V9 P3 → P5** (terrain tint, then saturation last — saturation tunes once every surface reads
-   the palette). Polish; doesn't block the vista trick.
+3. **V9 P3 eyeball → V17 P1+P2 → V9 P5** _(V17 slotted 2026-07-09)_ — validate the P3 terrain↔disc
+   seam baseline first (V17 modifies both sides of it, so it would confound that check), then land
+   V17's mid-field variation, then P5 saturation stays last — it's a one-shot global grade and V17 P1
+   changes the luminance distribution it grades. Polish; doesn't block the vista trick. V17 P3
+   (vertex undulation) is judged separately after V15's drop-altitude skirt check — both shape the
+   same disc→sky-band handoff.
 4. **R5** (backlog) — silhouette cards for >2000u. Blocked by R6 (narrows its contract), V12 (its
    data source), and the Phase-2 horizon ring. Post-MVP.
 
@@ -53,6 +57,7 @@ Animation framing — lives in [`vista-moment.md`](vista-moment.md).
 | V14 | [ ] | Meteor-interior loading shell — diegetic initial load: full-screen meteor interior over the V7 readiness gate, breaks open on real gate release (binary + min-hold, no fake progress); first UI element + DOTS→managed gate bridge (opened 2026-07-08; `Rendering/METEOR_ARRIVAL_SEQUENCE_SPEC.md`) |
 | V15 | [ ] | Sky mountain band — ridged FBM silhouette (was 3 sine harmonics), second back ridge (finer, round-2 retune), horizon demarcation line (darker `_AtmoHorizon`-shifted range above, ground skirt untouched below); snow caps built, off-by-default toggle (round 3). Ground look owner-approved 2026-07-09; remaining: drop-altitude skirt check (`Rendering/SKY_MOUNTAIN_BAND_SPEC.md`) |
 | V16 | [ ] | Relic size pop-in fix — LOD made dormant-by-design: no authored impostor art means the swap rendered the same mesh at a smaller fixed size (zero verts saved, visible pop). Relics without an authored `ImpostorMesh` now skip the LOD components entirely; machinery kept for real billboard art (built 2026-07-09, pending owner walk-toward-relic check; dormancy note in `Structures/RELIC_LOD_IMPOSTOR_SPEC.md`) |
+| V17 | [ ] | Mid-field disc variation — the impostor band between terrain window and sky band reads uniform (flat lighting + foreshortened patches + scatter cliff). P1 macro luminance octave in shared `GroundNoise.hlsl` + P2 fake relief shading (disc only), both dynamic-proof by design; P3 optional damped vertex undulation. Speckling/cloud-shadows out of scope → R1/R5 + weather track (opened 2026-07-09; `Rendering/GROUND_PLANE_IMPOSTOR_SPEC.md` §12) |
 
 ### Rendering — vista support _(R6 pulled from backlog 2026-07-07; step 1 of the Build order)_
 

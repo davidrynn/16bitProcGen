@@ -1,8 +1,8 @@
 # Ground Plane Impostor Spec
 
-**Status:** IMPLEMENTED — Haze Phase Pending
+**Status:** IMPLEMENTED — Mid-field variation planned (§12, ticket V17)
 **Phase Fit:** Phase 1 (required for sky-drop intro sequence)
-**Last Updated:** 2026-04-27
+**Last Updated:** 2026-07-09
 **Complements:** [`HORIZON_IMPOSTOR_SEED_DRIVEN_SPEC.md`](HORIZON_IMPOSTOR_SEED_DRIVEN_SPEC.md) (vertical ring, Phase 2)
 
 ---
@@ -348,3 +348,93 @@ authority pushes one tint to all ground surfaces instead. The dead `_HazeColor` 
 (unused since the disc's `MixFog` → height-aware `ApplyAerialHaze` conversion in the V9 MVP slice).
 `AtmosphereSettings.Default.groundColor/rockColor` equal the disc's former literals, so the noon look is
 unchanged by construction; the disc now follows biome-preset palette blends automatically.
+
+---
+
+## 12. Mid-field variation (ticket V17) — kill the uniform band
+
+**Status:** PLANNED (opened 2026-07-09 from an owner screenshot).
+**Problem:** at ground level the disc reads as a featureless flat-green band between the streamed
+terrain window (~180u) and the sky mountain band. The meteor arrival sequence (V13/V14) only masks
+the descent — the vista beat itself is steady-state standing-on-the-plain viewing, so the band is in
+frame the entire time. This section is the fix.
+
+### 12.1 Root causes (why the existing noise doesn't read)
+
+1. **Grazing-angle foreshortening.** The grass/rock mix is a binary `step()` over 2-octave value
+   noise at `_NoiseScale 0.004` (~250u patch wavelength). From eye height, hundreds of units of disc
+   compress into a few dozen pixels of screen — the patches flatten into invisible slivers.
+2. **Constant lighting.** The disc is a flat +Y plane: one normal everywhere, so the
+   `ambient + sun` multiply is a single constant across the whole band. Real terrain gets most of
+   its texture from slope-varying Lambert shading; the disc has none.
+3. **Scatter density cliff.** Grass/trees/rocks stop at the chunk radius, so detail density drops
+   to zero at ~180u even when hues match perfectly.
+
+The aerial haze is smooth and monotonic — it tints, it cannot texture.
+
+**Sequencing (owner decision 2026-07-09, TICKETS.md Build order step 3):** land P1+P2 *after* the
+V9 P3 owner eyeball (they modify both sides of the terrain↔disc seam that check judges) and
+*before* V9 P5 (saturation is a one-shot global grade; P1 changes the luminance distribution it
+grades). P3 undulation is judged after V15's drop-altitude skirt check — both shape the same
+disc→sky-band handoff.
+
+### 12.2 Design — three parts, in build order
+
+**P1 — Macro luminance variation** _(shared `GroundNoise.hlsl` — applies to terrain AND disc)_
+One additional FBM octave at a much larger wavelength (~1000–2000u) multiplying the post-mix color
+by roughly ±8–10% — the "soil moisture / dappled plain" trick. Lives inside the shared mix so the
+terrain window picks it up identically and the ~180u seam stays aligned **by construction** (same
+rule as the existing patch noise: world-XZ-continuous, never forked per consumer). New dials
+(`_MacroNoiseScale`, `_MacroStrength`) follow the existing parity rule — keep them equal across
+disc + terrain materials; extend `TerrainChunkMaterialContractTests`' dial-parity guard to cover
+them.
+
+**P2 — Fake relief shading** _(disc shader only — terrain has real normals)_
+Derive a pseudo-normal by finite-differencing a low-frequency height FBM and Lambert-light the disc
+with it instead of the flat +Y normal. Reads as rolling ground without geometry (~3 extra noise
+samples). Helper lives in `GroundNoise.hlsl` for reuse; **applied only in
+`GroundPlaneImpostor.shader`** — feeding it to `TerrainLit` would fight the mesh's actual normals.
+Dials: `_ReliefScale`, `_ReliefStrength`.
+
+**P3 — Vertex undulation** _(optional; judge after P1+P2)_
+Displace disc vertex Y in the vertex shader with a low-frequency world-space FBM. The 64×64 grid
+over 3000u (~47u vertex spacing) supports wavelengths ≥300u; amplitude ~10–20u. This is the only
+part that breaks the razor-straight silhouette where the disc meets the sky band. **Guard (required):
+damp displacement to zero inside ~250u of the player** so the real-terrain depth occlusion at the
+seam still works, and keep amplitude small relative to haze beyond — when traversal becomes core
+(glide M1 / chain slingshot M2), streamed chunks replace fake undulation at the window edge, and
+the swap must land where aerial perspective already blurs it.
+
+### 12.3 Why this survives the dynamic world (design constraint, not luck)
+
+- **Palette:** the disc consumes global `_AtmoGround`/`_AtmoRock` (§11). P1 is a scalar multiply on
+  top of the already-dynamic color — biome/time-of-day palette shifts flow through untouched.
+- **Lighting:** the fragment already calls `GetMainLight()`/`SampleSH()` live. P2's relief responds
+  to sun direction automatically — low sun rakes the fake undulation and the relief pops; noon
+  flattens it. Both correct, zero rework when the time-of-day pin comes off.
+- Perf: the scene is vertex-bound (`RENDER_PERF_PROFILE_REPORT.md`); a few extra fragment noise
+  samples on the disc are effectively free, and P3 adds nothing meaningful (~4k verts).
+
+### 12.4 Non-goals (explicitly out of scope)
+
+- **Distant-scatter speckling** (noise-driven dark specks faking far shrubs): superseded by real
+  far-scatter representation — R1 LODs and the R5 / Phase-2 horizon-ring impostor stack. Don't
+  build a throwaway.
+- **Scrolling cloud shadows:** a weather-track feature, not an impostor patch. Done here it would
+  be fake (no clouds casting it), fight the determinism-pin validation workflow, and — done right —
+  must cover **real terrain too** or cloud shadows would exist only past 180u. Revisit when
+  `DOTS.Terrain.Weather` drives visuals.
+- **Weather states on the disc** (snow/wet tint): tracked with the weather work, same reasoning.
+
+### 12.5 Acceptance
+
+- From eye height at the noon pin, the mid-field band shows visible large-scale tonal variation —
+  no flat single-green wall between the terrain window and the sky band.
+- The ~180u terrain↔disc seam stays invisible: macro variation is world-continuous across it
+  (verify by walking the seam and via a positioned top-down capture).
+- From drop altitude (~400u), variation reads as ground texture, not banding or tiling.
+- P2 relief visibly responds to sun elevation once time-of-day is unpinned (spot-check by moving
+  the pin) — no re-tune required.
+- All new dials default to a subtle look and live as material properties (no recompile to tune).
+- P3 only: no visible pop where streamed chunks replace the undulated disc during normal-speed
+  traversal at ground level.
