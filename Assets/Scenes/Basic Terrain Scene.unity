@@ -174,10 +174,10 @@ MonoBehaviour:
     impostorMaterial: {fileID: 0}
     impostorScale: 30
   - templateId: relic_hand_hero
-    mesh: {fileID: -8919760781528365239, guid: 24e8782cd9e311a44a8705909a96b35d, type: 3}
+    mesh: {fileID: -7757738251068451756, guid: 9d64fc193bd9f344a9a0a388b5e4a9d4, type: 3}
     material: {fileID: 2100000, guid: 6db16a9bb0a24b418ee9e9a7bbbaa396, type: 2}
-    scale: 1200
-    yOffset: -12
+    scale: 10
+    yOffset: 2
     impostorMesh: {fileID: 0}
     impostorMaterial: {fileID: 0}
     impostorScale: 30
@@ -473,7 +473,7 @@ MonoBehaviour:
     positionXZ: {x: 0, y: 900}
     snapToTerrain: 1
     explicitY: 0
-    yawDegrees: 180
+    yawDegrees: 90
     footprintRadius: 0
   debugAnchors: []
 --- !u!4 &687215613
@@ -775,7 +775,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Core::DOTS.Rendering.Sky.TimeOfDayController
   normalizedTime: 0.08
   cycleDurationSeconds: 240
-  pinTimeOfDay: 1
+  pinTimeOfDay: 0
   pinnedNormalizedTime: 0.08
   disableAtmosphereHaze: 0
   _timeRemapCurve:
