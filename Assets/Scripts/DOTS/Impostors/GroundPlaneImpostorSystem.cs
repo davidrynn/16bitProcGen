@@ -35,7 +35,7 @@ namespace DOTS.Impostors
 
         protected override void OnCreate()
         {
-            _playerQuery   = GetEntityQuery(ComponentType.ReadOnly<PlayerTag>(), ComponentType.ReadOnly<LocalToWorld>());
+            _playerQuery   = GetEntityQuery(ComponentType.ReadOnly<PlayerTag>(), ComponentType.ReadOnly<LocalTransform>());
             _impostorQuery = GetEntityQuery(ComponentType.ReadOnly<GroundPlaneImpostorTag>());
 
             RequireForUpdate<GroundPlaneImpostorTag>();
@@ -47,9 +47,14 @@ namespace DOTS.Impostors
             if (_playerQuery.IsEmpty || _impostorQuery.IsEmpty)
                 return;
 
-            var playerLtw = _playerQuery.GetSingleton<LocalToWorld>();
-            float playerX = playerLtw.Position.x;
-            float playerZ = playerLtw.Position.z;
+            // Reads LocalTransform, not LocalToWorld: the player is a root entity so its
+            // LocalTransform is its world transform, and reading LocalToWorld from
+            // PresentationSystemGroup collides with LocalToWorldSystem's in-flight
+            // ComputeWorldSpaceLocalToWorldJob (GetSingleton fails to complete it in
+            // Entities 1.4, throwing every frame).
+            var playerTransform = _playerQuery.GetSingleton<LocalTransform>();
+            float playerX = playerTransform.Position.x;
+            float playerZ = playerTransform.Position.z;
 
             var impostorEntity = _impostorQuery.GetSingletonEntity();
             var config = EntityManager.GetComponentObject<GroundPlaneImpostorConfig>(impostorEntity);
