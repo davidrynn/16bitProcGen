@@ -614,6 +614,14 @@ the descent — the vista beat is steady-state viewing, so this needs a real fix
   (V17 modifies both sides of the terrain↔disc seam that check judges), before V9 P5 (saturation
   is a one-shot global grade; P1 changes the luminance it grades). P3 undulation judged after
   V15's drop-altitude skirt check (same disc→sky-band handoff). Independent of steps 1–2 (R6/V11).
+- **P1+P2 BUILT 2026-07-16** (V9 P3 seam eyeball passed 2026-07-15, unblocking this): macro
+  luminance octave inside the shared `GroundPaletteMix` (both surfaces, seam-aligned by
+  construction; defaults 0.0007 scale ≈ 1400u, ±8%), relief pseudo-normal via `GroundReliefNormal`
+  consumed only by the disc shader (defaults 0.002 scale ≈ 500u, strength 0.35; strength 0 =
+  exactly the old flat-plane term). Macro dials added to the `TerrainChunkMaterialContractTests`
+  parity guard. Remaining: in-editor compile/EditMode pass (editor was locked during the build
+  session), owner eyeball per §12.5 (noon vista, seam walk, drop-altitude texture read, sun-angle
+  relief spot-check), then V9 P5. P3 undulation still unjudged.
 
 #### V18 — Hero hand weathered/ruined variants _(opened 2026-07-11 — owner ask during the V11 swap session)_
 Variants of the V11 hand for background/procedural hands and future set-dressing, honoring the fiction

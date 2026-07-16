@@ -47,6 +47,16 @@ namespace DOTS.Tests.EditMode
                 "Terrain _NoiseScale must match the ground disc or seam patches misalign.");
             Assert.AreEqual(0.6f, material.GetFloat("_RockThreshold"), 1e-5f,
                 "Terrain _RockThreshold must match the ground disc or seam patches misalign.");
+
+            // V17 P1 macro luminance dials (GROUND_PLANE_IMPOSTOR_SPEC.md §12.2): same parity
+            // rule — the macro octave multiplies both surfaces' post-mix color, so a scale or
+            // strength drift shows up as a luminance step at the ~180u seam.
+            Assert.AreEqual(0.0007f, material.GetFloat("_MacroNoiseScale"), 1e-6f,
+                "Terrain _MacroNoiseScale must match the ground disc or macro luminance " +
+                "patches step at the seam (V17 P1).");
+            Assert.AreEqual(0.08f, material.GetFloat("_MacroStrength"), 1e-5f,
+                "Terrain _MacroStrength must match the ground disc or macro luminance " +
+                "patches step at the seam (V17 P1).");
         }
     }
 }

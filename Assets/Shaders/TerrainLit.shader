@@ -20,6 +20,11 @@ Shader "Terrain/TerrainLit"
         // are the only way the two mixes can drift).
         _NoiseScale     ("Noise Scale",      Float)      = 0.004
         _RockThreshold  ("Rock Threshold",   Range(0,1)) = 0.60
+        // V17 P1 macro luminance dials — same parity rule as above (guarded by
+        // TerrainChunkMaterialContractTests). No relief dials here: terrain has
+        // real mesh normals, the fake relief is disc-only (§12.2).
+        _MacroNoiseScale ("Macro Noise Scale", Float)      = 0.0007
+        _MacroStrength   ("Macro Strength",    Range(0,1)) = 0.08
         _SunAttenuation ("Sun Attenuation",  Range(0,1)) = 0.5
         _AerialStrength ("Aerial Strength",  Range(0,1)) = 1.0
     }
@@ -53,6 +58,8 @@ Shader "Terrain/TerrainLit"
             CBUFFER_START(UnityPerMaterial)
                 float _NoiseScale;
                 float _RockThreshold;
+                float _MacroNoiseScale;
+                float _MacroStrength;
                 half  _SunAttenuation;
                 half  _AerialStrength;
             CBUFFER_END
@@ -89,7 +96,8 @@ Shader "Terrain/TerrainLit"
             {
                 UNITY_SETUP_INSTANCE_ID(IN);
 
-                half3 color = (half3)GroundPaletteMix(IN.positionWS.xz, _NoiseScale, _RockThreshold);
+                half3 color = (half3)GroundPaletteMix(IN.positionWS.xz, _NoiseScale, _RockThreshold,
+                                                      _MacroNoiseScale, _MacroStrength);
 
                 float3 normalWS    = normalize(IN.normalWS);
                 float4 shadowCoord = TransformWorldToShadowCoord(IN.positionWS);

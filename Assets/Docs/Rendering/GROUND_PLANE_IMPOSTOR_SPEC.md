@@ -353,7 +353,13 @@ unchanged by construction; the disc now follows biome-preset palette blends auto
 
 ## 12. Mid-field variation (ticket V17) — kill the uniform band
 
-**Status:** PLANNED (opened 2026-07-09 from an owner screenshot).
+**Status:** P1+P2 BUILT 2026-07-16 (pending in-editor compile/test pass + owner eyeball);
+P3 not built — judged after V15's drop-altitude skirt check. Opened 2026-07-09 from an owner
+screenshot. As built: `GroundMacroLuminance` lives inside `GroundPaletteMix` (consumers can't
+fork it, so the seam can't drift), `GroundReliefNormal` in `GroundNoise.hlsl` consumed only by the disc shader.
+Dial defaults: `_MacroNoiseScale 0.0007` (~1400u), `_MacroStrength 0.08` (±8%),
+`_ReliefScale 0.002` (~500u), `_ReliefStrength 0.35`; `_ReliefStrength 0` reduces exactly to
+the old flat-plane lighting. Macro dials parity-guarded in `TerrainChunkMaterialContractTests`.
 **Problem:** at ground level the disc reads as a featureless flat-green band between the streamed
 terrain window (~180u) and the sky mountain band. The meteor arrival sequence (V13/V14) only masks
 the descent — the vista beat itself is steady-state standing-on-the-plain viewing, so the band is in

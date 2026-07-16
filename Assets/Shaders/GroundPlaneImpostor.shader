@@ -15,6 +15,13 @@ Shader "Ground/GroundPlaneImpostor"
         // ATMOSPHERE_COLOR_AUTHORITY_SPEC.md §5.4) so it tracks biome/palette changes.
         _NoiseScale     ("Noise Scale",      Float)      = 0.004
         _RockThreshold  ("Rock Threshold",   Range(0,1)) = 0.60
+        // V17 mid-field variation (GROUND_PLANE_IMPOSTOR_SPEC.md §12). Macro dials must
+        // stay equal to TerrainLit.shader (parity-guarded by TerrainChunkMaterialContractTests);
+        // relief dials are disc-only — terrain has real normals.
+        _MacroNoiseScale ("Macro Noise Scale", Float)      = 0.0007
+        _MacroStrength   ("Macro Strength",    Range(0,1)) = 0.08
+        _ReliefScale     ("Relief Scale",      Float)      = 0.002
+        _ReliefStrength  ("Relief Strength",   Range(0,1)) = 0.35
         _InnerFadeStart ("Inner Fade Start", Float)      = 0.0
         _InnerFadeEnd   ("Inner Fade End",   Float)      = 0.0
         _OuterFadeStart ("Outer Fade Start", Float)      = 900.0
@@ -62,6 +69,10 @@ Shader "Ground/GroundPlaneImpostor"
                 float  _AerialStrength;
                 float  _NoiseScale;
                 float  _RockThreshold;
+                float  _MacroNoiseScale;
+                float  _MacroStrength;
+                float  _ReliefScale;
+                float  _ReliefStrength;
                 float  _InnerFadeStart;
                 float  _InnerFadeEnd;
                 float  _OuterFadeStart;
@@ -118,15 +129,24 @@ Shader "Ground/GroundPlaneImpostor"
                 // Biome colour from world-space noise; hues come from the authoritative
                 // palette globals (V9 P2). No shade factor needed unlike the sky mountain
                 // band — the lighting multiply below already provides the shaded look.
-                half3 color = (half3)GroundPaletteMix(worldXZ, _NoiseScale, _RockThreshold);
+                // V17 P1: the mix includes the macro luminance octave (shared with terrain).
+                half3 color = (half3)GroundPaletteMix(worldXZ, _NoiseScale, _RockThreshold,
+                                                      _MacroNoiseScale, _MacroStrength);
 
                 // Day/night lighting: ambient SH probes + attenuated sun.
-                // The disc is a flat +Y plane; SDF terrain has varied normals whose average
-                // Lambert response is ~0.5 of flat-plane maximum. Factor matches disc brightness
-                // to average shaded terrain appearance.
-                half3 ambient    = max(SampleSH(half3(0, 1, 0)), half3(0.05, 0.05, 0.05));
+                // V17 P2: Lambert against a fake relief normal instead of the flat +Y —
+                // the plane's single normal gave one constant lighting value across the
+                // whole band (§12.1 root cause 2). At _ReliefStrength 0 this reduces
+                // exactly to the old flat-plane term. Lit by the live GetMainLight()
+                // sun, so low sun rakes the relief automatically once time-of-day runs.
+                // SDF terrain has varied normals whose average Lambert response is ~0.5
+                // of flat-plane maximum; the 0.5 factor matches disc brightness to
+                // average shaded terrain appearance at the seam.
+                float3 reliefN   = GroundReliefNormal(worldXZ, _ReliefScale, _ReliefStrength);
+                half3 ambient    = max(SampleSH((half3)reliefN), half3(0.05, 0.05, 0.05));
                 Light mainLight  = GetMainLight();
-                half3 sunContrib = half3(mainLight.color) * saturate(mainLight.direction.y) * 0.5h;
+                half  ndotl      = (half)saturate(dot(reliefN, mainLight.direction));
+                half3 sunContrib = half3(mainLight.color) * ndotl * 0.5h;
                 color           *= saturate(ambient + sunContrib);
 
                 // Aerial perspective (V9, height-aware): haze thins with camera altitude so the
