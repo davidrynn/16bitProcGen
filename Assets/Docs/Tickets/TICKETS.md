@@ -64,7 +64,7 @@ Animation framing — lives in [`vista-moment.md`](vista-moment.md).
 
 | ID  | Status | Subject |
 |-----|--------|---------|
-| R6  | [ ] | Landmark draw distance — hero relics never cull: **P2+P1+P3 built 2026-07-07** (`LandmarkDrawDistance` 2000u raises the camera plane, `_AtmoFarFade` decoupled, `RelicLit` dither edge fade replaces the concealer). Partial validation 2026-07-15: hero at 900u (past old 600u clip) renders + persists in normal play, no cull/pop on walk-toward; ground vista unchanged; hero legible in game view. Remaining: P4 spawn fade (incl. drop-altitude hero hang), permanence at 1500u+. Spec: `Rendering/LANDMARK_DRAW_DISTANCE_SPEC.md` (ACTIVE) |
+| R6  | [ ] | Landmark draw distance — hero relics never cull: **P2+P1+P3 built 2026-07-07; P4 spawn fade built 2026-07-16** (`RelicSpawnFade` BRG property + fade system, ~0.5s dither-in on realization; fade math EditMode-tested, plumbing play-verified). Partial validation 2026-07-15: hero at 900u renders + persists, no cull/pop on walk-toward; ground vista unchanged. Remaining: eyeball the 0.5s dissolve on a relic-streaming session, drop-altitude hero hang, permanence at 1500u+. Spec: `Rendering/LANDMARK_DRAW_DISTANCE_SPEC.md` (ACTIVE) |
 
 Details: [vista-moment.md](vista-moment.md)
 

@@ -236,7 +236,11 @@ namespace DOTS.Core.Authoring
                 {
                     var handle = world.CreateSystem<DOTS.Structures.RelicRealizationSystem>();
                     simGroup.AddSystemToUpdateList(handle);
-                    DebugSettings.Log("Bootstrap: RelicRealizationSystem enabled and added to SimulationSystemGroup.");
+                    // R6 P4 spawn fade rides the same flag: it only advances the
+                    // RelicSpawnFade component that realization spawns — one feature.
+                    var fadeHandle = world.CreateSystem<DOTS.Structures.RelicSpawnFadeSystem>();
+                    simGroup.AddSystemToUpdateList(fadeHandle);
+                    DebugSettings.Log("Bootstrap: RelicRealizationSystem + RelicSpawnFadeSystem enabled and added to SimulationSystemGroup.");
                 }
     
                 // RelicLodSelectionSystem runs in PresentationSystemGroup so LocalToWorldSystem

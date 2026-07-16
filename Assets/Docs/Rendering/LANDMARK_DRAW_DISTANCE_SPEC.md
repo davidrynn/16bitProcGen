@@ -1,6 +1,8 @@
 # Landmark Draw Distance Spec
 
-**Status:** ACTIVE — P2/P1/P3 built 2026-07-07 (P4 spawn fade open; visual validation pending)
+**Status:** ACTIVE — P2/P1/P3 built 2026-07-07; **P4 spawn fade built 2026-07-16** (fade math
+EditMode-tested, BRG plumbing play-verified; the 0.5s dissolve itself is a visual — eyeball on
+next relic-streaming session). Remaining validation: permanence at 1500u+, drop-altitude hero hang.
 **Last Updated:** 2026-07-07
 **Owner:** Rendering / Vista
 **Phase:** Post-V9-tuning follow-up (ticket R6; bridges to R5)
@@ -162,6 +164,15 @@ where the build refined the design:
   at 600–1024u become visible under the raised plane with no cull in this slice — judged on
   screenshots; the containment options (per-template cull in the relic LOD system, or
   `layerCullDistances`) remain follow-ups if the eyeball disagrees.
+- **P4 (2026-07-16):** per-instance `RelicSpawnFade` IComponentData (`[MaterialProperty]` →
+  `_RelicSpawnFade`, material default 1 so non-ECS uses render solid) added at 0 by
+  `RelicRealizationSystem` on every spawn — all realizations fade, not just in-frustum ones
+  (off-screen fades finish unseen; no camera test needed). `RelicSpawnFadeSystem` (Burst ISystem,
+  same `EnableRelicRealizationSystem` bootstrap flag) advances it over 0.5s; `RelicLit` clips
+  against `min(edgeFade, spawnFade)` in ForwardLit **and DepthOnly** (same sync rule as P3), with
+  the matching `UnityPerMaterial` cbuffer added to DepthOnly for SRP-batcher pass parity.
+  ShadowCaster deliberately not dithered, matching P3. Note: RelicLit-only — background relics on
+  Unlit gray still hard-pop on realization; acceptable under the same owner call as above.
 
 ## Related Docs
 

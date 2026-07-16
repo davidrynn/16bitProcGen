@@ -17,6 +17,9 @@ Shader "Relic/RelicLit"
         _BaseColor      ("Base Color", Color) = (0.55, 0.52, 0.48, 1)
         _AerialStrength ("Aerial Strength (hero exemption, reduced)", Range(0, 1)) = 0.3
         _SunAttenuation ("Sun Attenuation", Range(0, 1)) = 0.5
+        // R6 P4: per-instance spawn dissolve, driven by RelicSpawnFadeSystem through the
+        // BRG instanced property. Material default 1 = solid, so non-ECS uses are unaffected.
+        _RelicSpawnFade ("Spawn Fade (per-instance, ECS-driven)", Range(0, 1)) = 1
     }
 
     SubShader
@@ -49,7 +52,19 @@ Shader "Relic/RelicLit"
                 half4 _BaseColor;
                 half  _AerialStrength;
                 half  _SunAttenuation;
+                float _RelicSpawnFade;
             CBUFFER_END
+
+            // BRG per-instance override (R6 P4): RelicSpawnFade IComponentData maps here
+            // via [MaterialProperty]. WITH_DEFAULT falls back to the material value (1)
+            // when an instance carries no override, so anything without the component
+            // renders solid.
+            #ifdef UNITY_DOTS_INSTANCING_ENABLED
+            UNITY_DOTS_INSTANCING_START(MaterialPropertyMetadata)
+                UNITY_DOTS_INSTANCED_PROP(float, _RelicSpawnFade)
+            UNITY_DOTS_INSTANCING_END(MaterialPropertyMetadata)
+            #define _RelicSpawnFade UNITY_ACCESS_DOTS_INSTANCED_PROP_WITH_DEFAULT(float, _RelicSpawnFade)
+            #endif
 
             struct Attributes
             {
@@ -83,11 +98,14 @@ Shader "Relic/RelicLit"
             {
                 UNITY_SETUP_INSTANCE_ID(IN);
 
-                // Landmark edge dissolve (R6 P3) — heroes never pop at a clip plane; they
-                // dither out over the last 10% before _AtmoLandmarkFade. Clipped before
+                // Landmark edge dissolve (R6 P3) + spawn fade-in (R6 P4) — heroes never
+                // pop: not at a clip plane (edge fade) and not on realization (spawn
+                // fade). min() so whichever is more dissolved wins; both share the same
+                // screen-space noise so the patterns can't fight. Clipped before
                 // lighting so dissolved fragments cost nothing.
                 float viewDist = length(IN.positionWS - _WorldSpaceCameraPos);
-                clip(AtmoLandmarkEdgeFade(viewDist) - AtmoInterleavedGradientNoise(IN.positionCS.xy));
+                float visibility = min(AtmoLandmarkEdgeFade(viewDist), _RelicSpawnFade);
+                clip(visibility - AtmoInterleavedGradientNoise(IN.positionCS.xy));
 
                 float3 normalWS    = normalize(IN.normalWS);
                 float4 shadowCoord = TransformWorldToShadowCoord(IN.positionWS);
@@ -206,6 +224,22 @@ Shader "Relic/RelicLit"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
             #include "Assets/Shaders/Atmosphere.hlsl"
 
+            // Same per-instance spawn fade as ForwardLit (R6 P4) — declared per-pass
+            // because each HLSLPROGRAM compiles standalone.
+            CBUFFER_START(UnityPerMaterial)
+                half4 _BaseColor;
+                half  _AerialStrength;
+                half  _SunAttenuation;
+                float _RelicSpawnFade;
+            CBUFFER_END
+
+            #ifdef UNITY_DOTS_INSTANCING_ENABLED
+            UNITY_DOTS_INSTANCING_START(MaterialPropertyMetadata)
+                UNITY_DOTS_INSTANCED_PROP(float, _RelicSpawnFade)
+            UNITY_DOTS_INSTANCING_END(MaterialPropertyMetadata)
+            #define _RelicSpawnFade UNITY_ACCESS_DOTS_INSTANCED_PROP_WITH_DEFAULT(float, _RelicSpawnFade)
+            #endif
+
             struct Attributes
             {
                 float4 positionOS : POSITION;
@@ -216,12 +250,14 @@ Shader "Relic/RelicLit"
             {
                 float4 positionCS : SV_POSITION;
                 float3 positionWS : TEXCOORD0;
+                UNITY_VERTEX_INPUT_INSTANCE_ID
             };
 
             Varyings DepthVert(Attributes IN)
             {
                 UNITY_SETUP_INSTANCE_ID(IN);
                 Varyings OUT;
+                UNITY_TRANSFER_INSTANCE_ID(IN, OUT);
                 OUT.positionWS = TransformObjectToWorld(IN.positionOS.xyz);
                 OUT.positionCS = TransformWorldToHClip(OUT.positionWS);
                 return OUT;
@@ -229,11 +265,14 @@ Shader "Relic/RelicLit"
 
             half4 DepthFrag(Varyings IN) : SV_Target
             {
-                // Mirror the ForwardLit landmark dissolve (same pixel coords -> same noise),
-                // or the depth prepass would write solid depth where the color pass has
-                // dithered holes and depth-reading effects would ghost the dissolved hero.
+                UNITY_SETUP_INSTANCE_ID(IN);
+                // Mirror the ForwardLit dissolve exactly (same pixel coords -> same noise,
+                // same min() of edge fade and spawn fade), or the depth prepass would write
+                // solid depth where the color pass has dithered holes and depth-reading
+                // effects would ghost the dissolving hero.
                 float viewDist = length(IN.positionWS - _WorldSpaceCameraPos);
-                clip(AtmoLandmarkEdgeFade(viewDist) - AtmoInterleavedGradientNoise(IN.positionCS.xy));
+                float visibility = min(AtmoLandmarkEdgeFade(viewDist), _RelicSpawnFade);
+                clip(visibility - AtmoInterleavedGradientNoise(IN.positionCS.xy));
                 return 0;
             }
             ENDHLSL

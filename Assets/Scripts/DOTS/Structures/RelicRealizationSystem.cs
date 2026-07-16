@@ -182,6 +182,11 @@ namespace DOTS.Structures
                 scale));
 
 #if UNITY_ENTITIES_GRAPHICS
+            // R6 P4: every realization starts fully dithered out and fades in over
+            // ~0.5s (RelicSpawnFadeSystem) — streaming pop fix for relics realizing
+            // inside the view. Added unconditionally: off-screen fades finish unseen.
+            em.AddComponentData(entity, new RelicSpawnFade { Value = 0f });
+
             var renderMeshDescription = new RenderMeshDescription(
                 shadowCastingMode: ShadowCastingMode.On,
                 receiveShadows: true);
