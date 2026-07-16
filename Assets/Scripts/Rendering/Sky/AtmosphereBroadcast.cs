@@ -68,6 +68,8 @@ namespace DOTS.Rendering.Sky
             Shader.SetGlobalFloat(ShaderIDs.AtmoHazeDensity, atmo.hazeDensity);
             Shader.SetGlobalFloat(ShaderIDs.AtmoHazeFalloff, atmo.hazeFalloff);
             Shader.SetGlobalFloat(ShaderIDs.AtmoDistanceHaze, atmo.distanceHaze);
+            Shader.SetGlobalFloat(ShaderIDs.AtmoHazeMacroScale, atmo.hazeMacroScale);
+            Shader.SetGlobalFloat(ShaderIDs.AtmoHazeMacroStrength, atmo.hazeMacroStrength);
         }
 
         // Global shader values are zero in a fresh session until someone sets them, which would

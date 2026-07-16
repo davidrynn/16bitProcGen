@@ -14,6 +14,10 @@
 // Requires URP Core.hlsl to be included first (_WorldSpaceCameraPos).
 // ---------------------------------------------------------------------------
 
+// Noise primitives for the patchy-haze term (V17 P4). Lives below this file in
+// the include graph (GroundNoise.hlsl includes THIS file) — see GroundNoiseCore.hlsl.
+#include "Assets/Shaders/GroundNoiseCore.hlsl"
+
 half4 _AtmoHorizon;      // horizon/haze color — the hue everything converges to at distance (same value drives fog)
 half4 _AtmoZenith;       // top-of-sky color
 half4 _AtmoGround;       // base ground/grass tint for disc, mountains, terrain tint
@@ -24,6 +28,8 @@ float _AtmoHazeDensity;  // ground-level (y=0) haze density d0 for the height te
 float _AtmoHazeFalloff;  // 1/scale-height of the haze layer (e.g. 1/60u)
 float _AtmoDistanceHaze; // small altitude-independent aerial floor at _AtmoFarFade (see AtmoAerialHazeAmount)
 float _AtmoLandmarkFade; // landmark dissolve distance = max(_AtmoFarFade, LandmarkDrawDistance) — R6 P3
+float _AtmoHazeMacroScale;    // patchy-haze noise frequency; wavelength ≈ 1/scale (V17 P4, §5.3b)
+float _AtmoHazeMacroStrength; // patchy-haze amplitude: haze amount ×(1 ± strength); 0 = uniform haze
 
 // Analytic exponential-height fog along a finite view ray (closed form, no
 // marching) — the V8 Route B height term (spec §5.3a). A downward ray from
@@ -82,6 +88,18 @@ float3 ApplyAerialHaze(float3 color, float t)
 // concealer. For alpha-blended surfaces (ground disc) that hide the far clip by fading
 // their alpha out to reveal the skybox far-field skirt instead of color-fogging to the
 // horizon — the handoff then matches whatever the sky actually draws behind them.
+// Patchy-atmosphere factor (V17 P4, spec §5.3b): drifts of thicker/thinner air as a
+// world-XZ macro noise multiplier on the haze amount. Variation lives IN the veil,
+// so it survives grazing-angle viewing where surface-color variation is crushed by
+// the haze lerp (the V17 P1 eye-level finding — verified invisible at 5× strength).
+// Anchored at the fragment's world XZ with the shared FBM, so terrain/disc/relics
+// sit under one coherent patchy sky and the ~180u seam stays aligned.
+float AtmoHazeMacroFactor(float2 worldXZ)
+{
+    float n = GroundPatchFBM(worldXZ * _AtmoHazeMacroScale);
+    return 1.0 + (n - 0.5) * 2.0 * _AtmoHazeMacroStrength;
+}
+
 float AtmoAerialHazeAmount(float3 positionWS, float strength)
 {
     float3 ray    = positionWS - _WorldSpaceCameraPos;
@@ -90,8 +108,14 @@ float AtmoAerialHazeAmount(float3 positionWS, float strength)
     // Two haze sources: the height term (altitude-aware bulk of the effect) and a small
     // altitude-independent distance floor (real air scatters over distance even above the
     // ground layer — without it the clear zone at altitude ends in a hard-edged ring).
-    return saturate(AtmoHeightHazeAmount(_WorldSpaceCameraPos.y, rayDir, rayLen) * strength
-                    + smoothstep(0.0, _AtmoFarFade, rayLen) * _AtmoDistanceHaze);
+    // The macro factor modulates the COMBINED amount, then saturate re-clamps: thick
+    // patches still converge to full haze at distance, so nothing the haze was
+    // concealing is revealed. Sky paths (AtmoHeightHazeToSky) are deliberately not
+    // modulated — no world anchor on an infinite ray; the disc's alpha handoff absorbs
+    // the patchy↔smooth transition inside its outer fade.
+    return saturate((AtmoHeightHazeAmount(_WorldSpaceCameraPos.y, rayDir, rayLen) * strength
+                     + smoothstep(0.0, _AtmoFarFade, rayLen) * _AtmoDistanceHaze)
+                    * AtmoHazeMacroFactor(positionWS.xz));
 }
 
 // NOTE (2026-07-08): the former ApplyAerialPerspective entry point (haze +

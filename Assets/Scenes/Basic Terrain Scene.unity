@@ -775,7 +775,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Core::DOTS.Rendering.Sky.TimeOfDayController
   normalizedTime: 0.08
   cycleDurationSeconds: 240
-  pinTimeOfDay: 0
+  pinTimeOfDay: 1
   pinnedNormalizedTime: 0.08
   disableAtmosphereHaze: 0
   _timeRemapCurve:

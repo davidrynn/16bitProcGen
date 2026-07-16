@@ -36,6 +36,21 @@ namespace DOTS.Rendering.Sky
         public float distanceHaze;
 
         /// <summary>
+        /// Patchy-haze macro noise frequency (_AtmoHazeMacroScale, V17 P4 — spec §5.3b).
+        /// Patch wavelength ≈ 1/scale in world units.
+        /// </summary>
+        public float hazeMacroScale;
+
+        /// <summary>
+        /// Patchy-haze modulation amplitude (_AtmoHazeMacroStrength): haze amount varies
+        /// ×(1 ± strength) across world-XZ patches. 0 = uniform haze (pre-P4 behavior).
+        /// Variation in the haze amount survives grazing-angle viewing where surface-color
+        /// variation is crushed by the veil — the V17 eye-level finding.
+        /// </summary>
+        [Range(0f, 1f)]
+        public float hazeMacroStrength;
+
+        /// <summary>
         /// Plains/Cloudbreak-tuned defaults. Ground/rock match the disc's shipped literals so
         /// converting consumers produces no color jump. Haze density is anchored to the terrain's
         /// Exp² 0.0022 baseline at the ~180u disc↔terrain seam (both ≈15-20% veiled there, so the
@@ -51,6 +66,11 @@ namespace DOTS.Rendering.Sky
             hazeDensity = 0.0012f,
             hazeFalloff = 1f / 60f,
             distanceHaze = 0.15f,
+            // Tuned live 2026-07-16 (V17 P4): ~250u patches so several span the frame at the
+            // mid-field band distance — the first cut (~670u) collapsed to one patch per frame
+            // and read as uniform, the same wavelength mistake as V17 P1.
+            hazeMacroScale = 0.004f,
+            hazeMacroStrength = 0.5f,
         };
 
         public AtmosphereSettings Clamped()
@@ -63,6 +83,9 @@ namespace DOTS.Rendering.Sky
                 hazeDensity = Mathf.Max(hazeDensity, 0f),
                 hazeFalloff = Mathf.Max(hazeFalloff, 1e-5f),
                 distanceHaze = Mathf.Clamp01(distanceHaze),
+                hazeMacroScale = Mathf.Max(hazeMacroScale, 0f),
+                // >1 would let a thin patch swing the haze amount negative before saturate.
+                hazeMacroStrength = Mathf.Clamp01(hazeMacroStrength),
             };
         }
 
@@ -77,6 +100,8 @@ namespace DOTS.Rendering.Sky
                 hazeDensity = Mathf.Lerp(a.hazeDensity, b.hazeDensity, t),
                 hazeFalloff = Mathf.Lerp(a.hazeFalloff, b.hazeFalloff, t),
                 distanceHaze = Mathf.Lerp(a.distanceHaze, b.distanceHaze, t),
+                hazeMacroScale = Mathf.Lerp(a.hazeMacroScale, b.hazeMacroScale, t),
+                hazeMacroStrength = Mathf.Lerp(a.hazeMacroStrength, b.hazeMacroStrength, t),
             };
         }
     }

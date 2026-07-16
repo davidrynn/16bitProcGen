@@ -225,6 +225,43 @@ horizontally at ground level the horizon stays veiled; the transition during the
 built-in `RenderSettings` fog then serves only surfaces not yet converted (and can be retired per-surface
 as each consumer adopts the shared term — end state disables built-in fog entirely).
 
+### 5.3b Patchy-haze macro modulation *(2026-07-16 amendment — V17 P4)*
+
+**Why (empirical, V17 P1/P2 tuning session):** at eye level the mid-field band's luminance
+variation is crushed by the haze itself — `lerp(surface, hazeColor, t)` with large `t` converges
+every surface variant to the same veil color, so *no* surface-side tint variation survives
+(verified invisible at 5× strength across 100u/400u/1400u wavelengths, while reading clearly from
+400u altitude where `t` is small). The variation that survives grazing-angle viewing must live
+**in `t` itself**: patches of thicker/thinner air.
+
+**Rule:** `AtmoAerialHazeAmount` multiplies its result by a world-XZ macro noise factor
+`1 ± _AtmoHazeMacroStrength` sampled at the fragment's world XZ
+(wavelength `1/_AtmoHazeMacroScale`, same shared FBM as the ground mix — world-continuous, so
+terrain/disc/relics sit under one coherent patchy atmosphere and the ~180u seam stays aligned).
+Applied to the *combined* amount and re-saturated, so full-haze convergence at the world edge
+still reaches 1 and no concealment is lost. On-screen patch contrast is `Δt·|surface − hazeColor|`
+— it *grows* with distance into the band, exactly where the uniform-band problem lives.
+
+- **Uniforms:** `_AtmoHazeMacroScale`, `_AtmoHazeMacroStrength` join the global contract —
+  per-preset art-directed fields on `AtmosphereSettings`, broadcast by the authority. Strength 0
+  = bit-identical to the unmodulated term.
+- **Sky paths untouched:** `AtmoHeightHazeToSky` has no world anchor (infinite rays); the sky
+  band keeps smooth haze. The disc's alpha handoff (outer fade into the skirt) absorbs the
+  patchy↔smooth transition inside the already-fading zone.
+- **Pin-safe by construction:** the modulation is multiplicative, so
+  `TimeOfDayController.disableAtmosphereHaze` (zeroes density/floor) also zeroes the patches.
+- **Edge treatments unaffected:** `AtmoWorldEdgeHaze` (disc alpha) and `AtmoLandmarkEdgeFade`
+  (R6 hero dither) are deliberately not modulated.
+- **Noise availability:** the FBM primitives move to `GroundNoiseCore.hlsl` (included by
+  `Atmosphere.hlsl`; `GroundNoise.hlsl` keeps the palette mix/relief helpers) — `GroundNoise.hlsl`
+  already includes `Atmosphere.hlsl`, so a lower shared core avoids a circular include. One
+  definition, never forked (§ same rule as the ground mix).
+
+**Behavioral acceptance:** from eye height, the mid-field band shows visible drifting-air tonal
+patches (the V17 §12.5 criterion P1 could not meet); from the 400u drop the ground still reads
+clearly; the hero hand at 900u remains legible through the patches at default strength; strength
+0 reproduces the pre-P4 image exactly.
+
 ### 5.4 Consumers
 
 - **Sky shader:** read `_AtmoHorizon`/`_AtmoZenith` (or keep its dedicated uniforms; the authority sets

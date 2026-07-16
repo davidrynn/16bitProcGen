@@ -28,6 +28,8 @@ namespace DOTS.Tests.EditMode
             atmo.hazeDensity = 0.002f;
             atmo.hazeFalloff = 0.02f;
             atmo.distanceHaze = 0.25f;
+            atmo.hazeMacroScale = 0.003f;
+            atmo.hazeMacroStrength = 0.4f;
 
             AtmosphereBroadcast.Push(sky, atmo, 600f);
 
@@ -40,6 +42,8 @@ namespace DOTS.Tests.EditMode
             Assert.AreEqual(0.002f, Shader.GetGlobalFloat(ShaderIDs.AtmoHazeDensity), Tolerance);
             Assert.AreEqual(0.02f, Shader.GetGlobalFloat(ShaderIDs.AtmoHazeFalloff), Tolerance);
             Assert.AreEqual(0.25f, Shader.GetGlobalFloat(ShaderIDs.AtmoDistanceHaze), Tolerance);
+            Assert.AreEqual(0.003f, Shader.GetGlobalFloat(ShaderIDs.AtmoHazeMacroScale), Tolerance);
+            Assert.AreEqual(0.4f, Shader.GetGlobalFloat(ShaderIDs.AtmoHazeMacroStrength), Tolerance);
         }
 
         [Test]
@@ -49,6 +53,8 @@ namespace DOTS.Tests.EditMode
             atmo.saturation = 2f;
             atmo.hazeDensity = -1f;
             atmo.hazeFalloff = 0f;
+            atmo.hazeMacroScale = -0.5f;
+            atmo.hazeMacroStrength = 3f;
 
             AtmosphereBroadcast.Push(SkySettings.Default, atmo, -50f);
 
@@ -57,6 +63,9 @@ namespace DOTS.Tests.EditMode
             Assert.GreaterOrEqual(Shader.GetGlobalFloat(ShaderIDs.AtmoFarFade), 1f);
             Assert.GreaterOrEqual(Shader.GetGlobalFloat(ShaderIDs.AtmoHazeDensity), 0f);
             Assert.Greater(Shader.GetGlobalFloat(ShaderIDs.AtmoHazeFalloff), 0f);
+            Assert.GreaterOrEqual(Shader.GetGlobalFloat(ShaderIDs.AtmoHazeMacroScale), 0f);
+            // Strength > 1 would let a thin patch invert the haze amount negative before saturate.
+            Assert.LessOrEqual(Shader.GetGlobalFloat(ShaderIDs.AtmoHazeMacroStrength), 1f);
         }
 
         [Test]
@@ -147,6 +156,10 @@ namespace DOTS.Tests.EditMode
             Assert.AreEqual(1f, a.saturation, Tolerance);
             Assert.Greater(a.hazeDensity, 0f);
             Assert.Greater(a.hazeFalloff, 0f);
+            // V17 P4: patchy haze ships enabled — a zero default would silently disable the
+            // one variation mechanism that survives eye-level viewing (spec §5.3b).
+            Assert.Greater(a.hazeMacroStrength, 0f);
+            Assert.Greater(a.hazeMacroScale, 0f);
         }
 
         [Test]
@@ -159,12 +172,15 @@ namespace DOTS.Tests.EditMode
             b.saturation = 1f;
             b.hazeDensity = 0.004f;
             b.groundColor = Color.black;
+            a.hazeMacroStrength = 0f;
+            b.hazeMacroStrength = 0.5f;
 
             var mid = AtmosphereSettings.Lerp(a, b, 0.5f);
 
             Assert.AreEqual(0.5f, mid.saturation, Tolerance);
             Assert.AreEqual(0.002f, mid.hazeDensity, Tolerance);
             Assert.AreEqual((a.groundColor.r + 0f) * 0.5f, mid.groundColor.r, Tolerance);
+            Assert.AreEqual(0.25f, mid.hazeMacroStrength, Tolerance);
         }
 
         [Test]

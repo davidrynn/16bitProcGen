@@ -21,6 +21,8 @@ namespace DOTS.Rendering.Sky
         public static readonly int AtmoHazeFalloff = Shader.PropertyToID("_AtmoHazeFalloff");
         public static readonly int AtmoDistanceHaze = Shader.PropertyToID("_AtmoDistanceHaze");
         public static readonly int AtmoLandmarkFade = Shader.PropertyToID("_AtmoLandmarkFade");
+        public static readonly int AtmoHazeMacroScale = Shader.PropertyToID("_AtmoHazeMacroScale");
+        public static readonly int AtmoHazeMacroStrength = Shader.PropertyToID("_AtmoHazeMacroStrength");
 
         // Clouds
         public static readonly int CloudColor = Shader.PropertyToID("_CloudColor");

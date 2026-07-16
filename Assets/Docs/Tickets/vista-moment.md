@@ -622,6 +622,14 @@ the descent — the vista beat is steady-state viewing, so this needs a real fix
   parity guard. Remaining: in-editor compile/EditMode pass (editor was locked during the build
   session), owner eyeball per §12.5 (noon vista, seam walk, drop-altitude texture read, sun-angle
   relief spot-check), then V9 P5. P3 undulation still unjudged.
+- **P4 patchy haze BUILT + capture-validated 2026-07-16** (same-day owner green-light): the
+  P1/P2 tuning session proved surface-side variation can't survive eye-level grazing haze (5×
+  strength, three wavelengths — invisible; clear from 400u), so P4 modulates the haze amount
+  itself with the shared world-XZ macro FBM (`AtmoAerialHazeAmount` × `1 ± strength`). New
+  per-preset `AtmosphereSettings` dials broadcast as `_AtmoHazeMacroScale/Strength` — live-
+  tunable on the preset asset during play. Tuned on Cloudbreak: 0.004 (~250u) / 0.5. EditMode
+  green (10/10, atmosphere + parity fixtures). Full design + acceptance:
+  `ATMOSPHERE_COLOR_AUTHORITY_SPEC.md` §5.3b. Remaining: owner eyeball in normal play.
 
 #### V18 — Hero hand weathered/ruined variants _(opened 2026-07-11 — owner ask during the V11 swap session)_
 Variants of the V11 hand for background/procedural hands and future set-dressing, honoring the fiction

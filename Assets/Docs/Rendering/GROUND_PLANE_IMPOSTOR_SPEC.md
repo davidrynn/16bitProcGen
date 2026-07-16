@@ -353,13 +353,30 @@ unchanged by construction; the disc now follows biome-preset palette blends auto
 
 ## 12. Mid-field variation (ticket V17) — kill the uniform band
 
-**Status:** P1+P2 BUILT 2026-07-16 (pending in-editor compile/test pass + owner eyeball);
-P3 not built — judged after V15's drop-altitude skirt check. Opened 2026-07-09 from an owner
-screenshot. As built: `GroundMacroLuminance` lives inside `GroundPaletteMix` (consumers can't
-fork it, so the seam can't drift), `GroundReliefNormal` in `GroundNoise.hlsl` consumed only by the disc shader.
+**Status:** P1+P2 BUILT 2026-07-16; **P4 (patchy haze) BUILT + capture-validated 2026-07-16**
+— see the eye-level finding below. P3 not built — judged after V15's drop-altitude skirt check.
+Opened 2026-07-09 from an owner screenshot. As built: `GroundMacroLuminance` lives inside
+`GroundPaletteMix` (consumers can't fork it, so the seam can't drift), `GroundReliefNormal` in
+`GroundNoise.hlsl` consumed only by the disc shader.
 Dial defaults: `_MacroNoiseScale 0.0007` (~1400u), `_MacroStrength 0.08` (±8%),
 `_ReliefScale 0.002` (~500u), `_ReliefStrength 0.35`; `_ReliefStrength 0` reduces exactly to
 the old flat-plane lighting. Macro dials parity-guarded in `TerrainChunkMaterialContractTests`.
+
+**Eye-level finding (2026-07-16, P1/P2 tuning session):** surface-side tint/lighting variation
+cannot meet §12.5's eye-height criterion — grazing-angle haze converges every surface variant to
+the veil color (verified invisible at 5× strength across 100u/400u/1400u wavelengths, while
+reading clearly from 400u altitude). P1/P2 stay as built (they deliver from altitude — the
+sky-drop arrival — and are the substrate for tuning); the variation that survives eye-level
+viewing lives in the haze amount itself → **P4**.
+
+**P4 — Patchy-haze macro modulation** _(green-lit by owner 2026-07-16; full design in
+`ATMOSPHERE_COLOR_AUTHORITY_SPEC.md` §5.3b)_: `AtmoAerialHazeAmount` modulates by a world-XZ
+macro noise factor — drifts of thicker/thinner air. Per-preset dials on `AtmosphereSettings`
+(`hazeMacroScale`/`hazeMacroStrength` → `_AtmoHazeMacro*` globals), live-tunable on the preset
+asset in play mode. Tuned defaults 0.004 (~250u patches) / 0.5 — the first cut (~670u) collapsed
+to one patch per frame and read as uniform, the same wavelength trap as P1. Capture-validated:
+band shows drifting-air texture at eye level, drop view stays clear, hero legible at 900u,
+strength 0 = pre-P4 image.
 **Problem:** at ground level the disc reads as a featureless flat-green band between the streamed
 terrain window (~180u) and the sky mountain band. The meteor arrival sequence (V13/V14) only masks
 the descent — the vista beat itself is steady-state standing-on-the-plain viewing, so the band is in

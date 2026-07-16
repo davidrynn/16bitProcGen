@@ -39,3 +39,5 @@ MonoBehaviour:
     hazeDensity: 0.0012
     hazeFalloff: 0.1
     distanceHaze: 0.08
+    hazeMacroScale: 0.004
+    hazeMacroStrength: 0.5

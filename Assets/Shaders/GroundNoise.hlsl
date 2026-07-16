@@ -15,32 +15,9 @@
 // Requires Atmosphere.hlsl for _AtmoGround/_AtmoRock (included here; guarded).
 // ---------------------------------------------------------------------------
 
+// Atmosphere.hlsl pulls in GroundNoiseCore.hlsl (hash/value-noise/FBM) — the
+// primitives moved there so the patchy-haze term can share them (V17 P4).
 #include "Assets/Shaders/Atmosphere.hlsl"
-
-float GroundHash21(float2 p)
-{
-    p = frac(p * float2(234.34, 435.345));
-    float d = dot(p, p + float2(34.23, 34.23));
-    p += float2(d, d);
-    return frac(p.x * p.y);
-}
-
-float GroundValueNoise(float2 p)
-{
-    float2 i = floor(p);
-    float2 f = frac(p);
-    float2 u = f * f * (3.0 - 2.0 * f);
-    return lerp(
-        lerp(GroundHash21(i),                    GroundHash21(i + float2(1.0, 0.0)), u.x),
-        lerp(GroundHash21(i + float2(0.0, 1.0)), GroundHash21(i + float2(1.0, 1.0)), u.x),
-        u.y);
-}
-
-float GroundPatchFBM(float2 p)
-{
-    float v = GroundValueNoise(p) * 0.5 + GroundValueNoise(p * 2.0) * 0.25;
-    return v * 1.3333;
-}
 
 // V17 P1 — macro luminance octave (GROUND_PLANE_IMPOSTOR_SPEC.md §12.2).
 // One FBM octave at a much larger wavelength (~1400u at the default scale
