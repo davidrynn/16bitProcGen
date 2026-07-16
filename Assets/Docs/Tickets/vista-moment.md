@@ -1,7 +1,7 @@
 # Work-set: MVP Vista Moment
 
 **Status:** ACTIVE
-**Last Updated:** 2026-07-09
+**Last Updated:** 2026-07-15
 
 Board: [`TICKETS.md`](TICKETS.md)
 
@@ -418,10 +418,13 @@ to all surfaces.
     (`v9p3_fix_ground_vista.png`); note positioned MCP captures DO render BRG geometry on Unity
     6000.4 (old constraint memory outdated). Residual, accepted: scatter/pebble detail cutoff at the
     window edge against same-hue disc.
-  - **Remaining (ticket stays open):** P3 owner visual pass (seam at ground level + drop, noon pin;
-    scatter/grass tufts are now the only unconverted surfaces — watch for them popping against the
-    palette-hazed terrain), P5 saturation/overcast pass; full day/night sweep still an owner-eyeball
-    item; P2 noon-vista visual validation.
+  - **P2 + P3 ground-level halves eyeballed OK (2026-07-15, owner in-game vista screenshots):**
+    noon vista reads unified after the disc palette swap (plain, haze, horizon one hue band) and no
+    terrain↔disc seam is visible at ground level. Same session verified the **unpinned day/night
+    cycle live** (raw time advancing + sun/sky tracking it — see the T2 note below).
+  - **Remaining (ticket stays open):** P3 drop-altitude seam check (scatter/grass tufts are the only
+    unconverted surfaces — watch for them popping against the palette-hazed terrain), P5
+    saturation/overcast pass; full day/night sweep still an owner-eyeball item.
 
 #### V11 — Hero hand mesh authoring _(opened 2026-07-05 — spun off V4)_
 `testAlienHand.fbx` renders fine but reads as a boulder: short, fused finger-lobes with no silhouette
@@ -433,6 +436,32 @@ new mesh (current 500/−5 ≈ 40–50u tall; colossus presence likely wants 80�
 - **Constraint from W2 (backlog, 2026-07-09):** the Blender master rig (segmented boxes + transforms) is
   the source of truth for a possible future SDF-destructible version — keep the rig's segment transforms
   exportable; bakes (smooth/variant meshes) are derived artifacts, never the master.
+  _Amended 2026-07-12: the proportion pass edited the bake cage directly — the **mesh is now canon**,
+  the rig approximate (see the W2 rig-desync caveat and the A9 re-fit note)._
+- **Built + swapped in (2026-07-11):** hero mesh authored (hex low-poly cage → Subdivision Surface,
+  sculpted joints/creases, wrist stub — see `ArtSource/ColossalHand.blend`), baked at subdiv level 1
+  (1,376 verts / 2,748 tris) and exported to `Assets/Models/ColossalHand/ColossalHand_Pristine.fbx`.
+  `relic_hand_hero` template now uses it: scale 10, yOffset 2; authored anchor yaw 90. Pose is baked at
+  export time (−20° pitch, wrist descending underground, palm tilted toward spawn per
+  `Temp_OpeningInspiration.png`) — the Blender master stays unpitched (A9 reuse unaffected). Export
+  gotchas recorded: keep the FBX node name `ColossalHand_Pristine` (scene mesh reference is a
+  name-hashed fileID) and export with `bake_space_transform` (relic rendering uses the raw Mesh asset,
+  so the Y-up conversion must live in the vertices). **Open: owner eyeball** (walk-toward, drop view);
+  weathered/ruined variants split to **V18**.
+- **Proportion pass + palm line (2026-07-12):** owner re-proportioned the hand to near-human
+  (middle/palm 0.88 vs human 0.75–0.8; webs/knuckle line moved outward, palm shortened at heel,
+  broad palm kept as style) with measurement support from `ArtSource/hand_proportions.py`; one palm
+  crease added as a beveled groove strip. Re-exported same-name FBX (subdiv 1, −20° pitch, 3,072 tris,
+  watertight). Side effect: master rig now approximate (see amended W2 constraint above).
+- **Owner eyeball PASSED — ticket closed (2026-07-15, in-game screenshots vs
+  `Docs/Temp_OpeningInspiration.png`):** from spawn, four separated fingers + thumb read
+  unmistakably as a hand through the haze (the exact failure that spun this ticket off V4 is gone);
+  up close the hand reads as dark stone against the pale sky — the inspiration's value contrast.
+  Walk-toward also clean (no size pop — that check closed V16 the same day). The drop-view "hero
+  hangs mid-air" item lives with **R6 P4** (already scoped there 2026-07-11), not here. Cage
+  cleanup note: a light-touch gridify pass (2026-07-15) removed a wire edge, a wrist-ring notch,
+  and merged palm triangle fans — zero silhouette change (verified vertex-identical); the wired
+  FBX (`ColossalHand_Pristine.fbx`, exported 2026-07-14) predates it, harmless by construction.
 
 #### V12 — Authored anchor candidate source (guaranteed hero hand) _(opened 2026-07-05 — spun off V4)_
 Relic placement is seed-deterministic but not *authorable*: anchors hash-jitter across ±1024u around origin,
@@ -490,6 +519,9 @@ far-visible by design.
   `Assets/Screenshots/v12_rare_relics_vista.png` — one lone colossus on the horizon, the spec's
   composition. Rarity rationale + deferred cadence decisions (fixed-region caveat, revisit trigger,
   MaxSpacing note) documented in `STRUCTURE_PLACEMENT_SPEC.md` §9.6.
+- **From-spawn eyeball PASSED — ticket fully closed (2026-07-15):** owner in-game screenshot from
+  spawn shows the lone colossus on the horizon at (0, 900) — the spec's composition. Distance/yaw
+  kept as authored; no knob changes needed.
 
 #### V13 — Burning-descent VFX (meteor entry) _(opened 2026-07-08 — owner idea, discussed + specced same day)_
 **Spec:** `Rendering/METEOR_ARRIVAL_SEQUENCE_SPEC.md` (Phases 3–4; shared break-open contract with V14).
@@ -555,7 +587,8 @@ of the LOD system if we don't use it?" → answer: none today, but keep the test
 entry, no `RelicLodParams`/`RelicLodState`, LOD query matches nothing; loud dormancy comments at the
 skip site + system doc; EditMode test `TemplateParticipatesInLod_RequiresAuthoredImpostorMesh` guards
 the decision (its failure after authoring impostor art = the feature waking up, not a regression).
-**Pending: owner walk-toward-relic check** (no size change at any distance).
+**Walk-toward check PASSED — ticket closed (2026-07-15):** owner approached the hero hand from
+spawn (~900u) to close range — no size change at any distance.
 
 #### V17 — Mid-field disc variation (kill the uniform band) _(opened 2026-07-09 — owner screenshot, discussed same day)_
 **Spec:** `Rendering/GROUND_PLANE_IMPOSTOR_SPEC.md` §12 (full root-cause analysis, dials, acceptance).
@@ -581,6 +614,19 @@ the descent — the vista beat is steady-state viewing, so this needs a real fix
   (V17 modifies both sides of the terrain↔disc seam that check judges), before V9 P5 (saturation
   is a one-shot global grade; P1 changes the luminance it grades). P3 undulation judged after
   V15's drop-altitude skirt check (same disc→sky-band handoff). Independent of steps 1–2 (R6/V11).
+
+#### V18 — Hero hand weathered/ruined variants _(opened 2026-07-11 — owner ask during the V11 swap session)_
+Variants of the V11 hand for background/procedural hands and future set-dressing, honoring the fiction
+(relics are **ossified remains of a dead god** — breaks are uneven fractures mid-segment with rubble,
+never clean segment removals). **Built in Blender, not Unity:** fracture cuts on the low-poly cage
+*before* the subdivision bake (cut + jagged poked cap + rubble ring at the break), so caps inherit the
+same subsurf smoothing + displacement noise as intact bone; export each variant as its own FBX
+(`ColossalHand_Weathered/_Ruined.fbx` — current files are stale box-era placeholders to overwrite,
+same node-name/fileID rule as V11). Unity side is data only: template entries per variant so the
+procedural `relic_hand` template can rotate them — per-anchor deterministic variant pick can ride the
+existing anchor hash (positions + yaw already hash-vary; only the authored hero is pinned by design).
+Optional polish: vertex-color AO/weathering bake + one-line `RelicLit` multiply (cheap, agreed earlier).
+Runtime damage is explicitly **not** this ticket — that's W2 (SDF stamp up close).
 
 #### R6 — Landmark draw distance — relics never cull _(opened 2026-07-06, spec written; pulled from backlog 2026-07-07 as Build-order step 1)_
 **Spec:** `Rendering/LANDMARK_DRAW_DISTANCE_SPEC.md` (ACTIVE — full design, slices P1–P4, acceptance).
@@ -611,6 +657,18 @@ world distance.
   (walk toward/away from a 1500u hero), P2 ground vista unchanged, background-relic exposure at
   600–1024u (accepted-for-eyeball side effect), plus the V9 carry-overs (noon vista after the disc
   palette swap, hero hands legibility at 250–400u in game view).
+- **Partial validation (2026-07-15, owner in-game screenshots + walk-toward):** the hero at 900u —
+  past the old 600u clip — renders and persists in normal play with no cull or pop on approach
+  (the same walk closed V16); ground vista unchanged; hero legible in game view (V9 carry-overs
+  covered). Still open: P4 spawn fade (incl. the drop-altitude hero-hang scope from 2026-07-11),
+  permanence at 1500u+ (no authored hero that far yet), background-relic exposure eyeball.
+- **P4 scope addition (owner drop screenshot, 2026-07-11):** during the V7 sky-drop the hero hand
+  renders suspended against the haze — at drop altitude neither the terrain window nor the disc reads
+  as ground under it, so the whole hand hangs mid-air until the player descends. P4's spawn fade
+  should therefore be **readiness/altitude-aware for the authored hero** (hold or fade it in until
+  the drop's readiness gate releases / the camera is below the band where the skirt reads as ground),
+  not just a realization dither. Related viewing geometry: V13's flame layer masks part of the
+  descent; V15's remaining drop-altitude skirt check.
 
 ---
 
@@ -629,6 +687,13 @@ pin (already seed-deterministic); authored placement is product work → **V12**
   for day/night-cycle work.
 - **Verified (2026-07-05):** with the pin on, lighting is identical midday ~2.5 min into Play Mode (the
   unpinned 240 s cycle was full night by then); clouds still animate. Clean console. Done.
+- **Unpin path re-verified live (2026-07-15):** owner report "unchecked the pin but the cycle stays
+  fixed" diagnosed via MCP — the cycle was actually running (raw time sampled advancing 0.96 → wrap →
+  0.52; sun intensity tracking). Two perception traps recorded: **(1) unchecking the pin during Play
+  Mode reverts on exit** — the scene serializes `pinTimeOfDay: 1`, so every fresh play session
+  re-pins unless the box is unchecked in Edit Mode and the scene saved; **(2)** the remap curve gives
+  the overcast Cloudbreak day ~100 s of near-identical grey — "fixed" is easy to misread mid-day
+  (dawn/dusk are the visible ~19 s windows). Unfocused-editor throttling compounds both.
 
 ---
 
@@ -700,6 +765,57 @@ or camera-mode plumbing).
   forearm stub (master ends at the wrist), and retune the surface (kill/reduce the 0.35 SegNoise
   displace — megalith noise reads as gravel skin at viewmodel distance; stone-vs-skin material is a
   fiction call).
+- **Refined (2026-07-10, owner insight during V11 finishing):** the V11 hand was heavily hand-sculpted
+  past what the generator reproduces, so the reuse path is now **rig the baked V11 mesh directly**,
+  not regenerate: build the armature from the master-rig segment transforms (they still track every
+  joint origin/axis), skin rigidly per segment (correct for the faceted style), and get the relaxed
+  FP pose by **rotating bones, never editing verts** — the agony claw stays the rest pose for the
+  vista export, both poses live on one asset. Caveats recorded: inner-joint crease welds open into
+  crease lines when straightened (reads as anatomy; per-joint two-vert fix if ugly), and poses far
+  outside the modeled range (hyperextension) will look worse than near-pose variants. "Apply straight
+  pose as rest" is a one-button decision deferred to A9 start. V11 itself ships un-rigged.
+- **Rig desync (2026-07-12, V11 proportion pass):** the mesh was re-proportioned to near-human directly
+  on the cage (webs/knuckle line moved outward, palm shortened at the heel; middle/palm now 0.88) —
+  master-rig segment transforms no longer match the mesh (digit lengths ~40% off, palm box stale, thumb
+  hand-rebuilt earlier). "Build the armature from the master-rig transforms" therefore needs a
+  **re-fit pass at A9 start**: snap joint heads/tails to the mesh's actual joint creases (the 0.85-crease
+  rings mark every fold) rather than trusting rig positions. The mesh is canon; the rig is approximate.
+  Proportion tool: `ArtSource/hand_proportions.py` (geodesic digit arcs + palm auto-detect).
+- **Rigging phase kickoff (2026-07-12, owner):** A9's asset phase starts now (Unity-side viewmodel
+  integration below stays scoped for later). Agreed sequence: (1) **armature first**, built in the
+  master `ArtSource/ColossalHand.blend` so both poses live on one asset — per the rig-desync note
+  above, fit joint heads/tails to the mesh's actual crease rings, not the stale master-rig transforms;
+  skin rigidly per segment; include the wrist/forearm root bone now (cheap, avoids a re-skin when the
+  forearm stub is modeled). (2) **Relax the grip by rotating bones only** — never edit verts; the
+  agony claw stays the rest pose so the V11 hero export is untouched; expect inner-joint crease welds
+  to open when straightened (per-joint two-vert fix if ugly). (3) **Owner tweak pass** on the relaxed
+  pose (crease lines, surface/material read at viewmodel distance). FP hand exports as its **own FBX
+  at player scale (~0.19m)** — never overwrite `ColossalHand_Pristine.fbx` (name-hashed fileID).
+  Deferred until the pose reads in Unity: apply-relaxed-as-rest (the one-button decision above) and
+  mirroring for the second hand.
+- **Armature built + rigidly skinned (2026-07-12):** `ColossalHand_Armature` in the master blend —
+  17 bones (`Wrist → Palm` + 4×3 finger chains + `Thumb_Thenar → F_Thumb_S1/S2`), joints fitted to the
+  cage's 0.85-crease rings via geodesic digit labeling (thumb has no crease rings — joints placed from
+  its centerline; expect owner nudges there). Every vert weighted 1.0 to exactly one bone; armature
+  modifier first in the `ColossalHand_LowPolyHex` stack (before Subdivision). Pose convention:
+  **local +X extends, −X curls** (verified numerically on fingertip travel). Joint pivots are safe to
+  move in armature edit mode — rest pose deformation is identity, so no re-skin needed.
+- **Relaxed grip posed (2026-07-12):** stored as Action **`FP_RelaxedGrip`** (fake-user on; rest pose
+  untouched = agony claw). Owner refined joint pivots in edit mode first (rolls re-fit afterward — edit-mode
+  bone moves invalidate curl-axis rolls; re-fit before posing numerically). Angles solved per joint against
+  measured rest flexion: knuckles ~15–22° flex (agony knuckles were nearly straight — the claw is all
+  PIP/DIP hook), PIP 25–35°, DIP 12–18°, index→pinky cascade; thumb ~27°/15°. Unlink the action in the
+  Action Editor to see the agony rest; owner tweak pass on this pose is the remaining asset step.
+- **Single master file + eventual rest flip (2026-07-12, owner):** rig lives in the master
+  `ArtSource/ColossalHand.blend` — one mesh, one armature, two poses (Actions), two export selections —
+  so sculpt edits propagate to both the colossus and the FP hand. Hero export becomes mesh-only
+  "export selected" (or armature modifier disabled) so the armature node never enters the
+  name-hashed-fileID hierarchy. Forearm stub, when modeled, is a separate object included only in the
+  FP export selection. **Rest flip EXECUTED (2026-07-12, owner call):** rest pose = owner-tweaked relaxed grip; the claw
+  lives in Action **`AgonyClaw`** (fake-user on; per-bone inverse deltas — verified lossless, fingertip
+  error 0.0000). Pre-flip backup: `ArtSource/ColossalHand_preflip_2026-07-12.blend`. `FP_RelaxedGrip`
+  action now = all-zero neutral snapshot (relaxed is rest). **Consequence: any V11 hero re-export must
+  assign `AgonyClaw` first** — exporting at rest now gives the relaxed FP hand, not the vista claw.
 - Author/acquire the remaining clips on that rig: slingshot charge pull, launch/release, glide arms-spread, idle/move bob.
 - Show the arms rig only when `IsThirdPerson == false`; hide it (and show the full body) in the third-person dev toggle. Extend `PlayerFirstPersonVisibility` — it already owns the first/third-person visibility swap.
 - Drive arms clips from the same `PlayerAnimatorBridge` parameters where they map; add FPS-specific params only where the body params don't translate.

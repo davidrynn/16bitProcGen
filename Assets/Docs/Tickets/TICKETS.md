@@ -1,7 +1,7 @@
 # Tickets
 
 **Status:** ACTIVE
-**Last Updated:** 2026-07-09
+**Last Updated:** 2026-07-15
 
 Lightweight task tracker. Status: `[ ]` pending · `[x]` done · `[-]` blocked
 
@@ -25,9 +25,9 @@ Animation framing — lives in [`vista-moment.md`](vista-moment.md).
    "huge hand, far away, always visible" possible at all: today anything past the 600u far clip
    simply doesn't render. R6 P3 also supersedes the 2026-07-07 hero-concealer patch in
    `Atmosphere.hlsl`.
-2. **V11** (hero hand mesh) + **V12** (authored anchors — ✅ done 2026-07-08) — the authored giant
-   hand itself. V12's systems half is built & validated (guaranteed hand at (0, 900), procedural
-   relics made rare); the remaining piece of this step is **V11's silhouette**.
+2. **V11** (hero hand mesh — ✅ done 2026-07-15) + **V12** (authored anchors — ✅ done 2026-07-08,
+   eyeball 2026-07-15) — the authored giant hand itself. Guaranteed hand at (0, 900), procedural
+   relics rare, silhouette reads from spawn through haze. **This step is complete.**
 3. **V9 P3 eyeball → V17 P1+P2 → V9 P5** _(V17 slotted 2026-07-09)_ — validate the P3 terrain↔disc
    seam baseline first (V17 modifies both sides of it, so it would confound that check), then land
    V17's mid-field variation, then P5 saturation stays last — it's a one-shot global grade and V17 P1
@@ -49,21 +49,22 @@ Animation framing — lives in [`vista-moment.md`](vista-moment.md).
 | V6  | [x] | Time-of-day + biome-dependent sky & tracking fog — Plains "Cloudbreak" preset; haze color follows the horizon (2026-07-01) |
 | V7  | [x] | BUG: player falls through ground on sky-drop landing — readiness-gate probe now reaches terrain (65adabb, 2026-07-03) |
 | V8  | [x] | Distance-graded fog density — Route A judged & rejected, reverted to Exp² baseline; Route B (height fog) folded into V9's height-aware `ApplyAerialPerspective` (merged 2026-07-05) |
-| V9  | [ ] | Atmosphere color authority — one palette source + global `_Atmo*` uniforms + shared **height-aware** aerial-perspective HLSL (folds V8 Route B); **MVP slice P1+P4+P4b built & validated 2026-07-05**; **P2 disc palette + `SyncTerrainColor` deletion built 2026-07-07**; **P3 terrain palette consumption built 2026-07-08** (569a — terrain is a direct palette consumer; pending owner validation). Remaining: P5 saturation (last, after owner eyeball of P2/P3) |
+| V9  | [ ] | Atmosphere color authority — one palette source + global `_Atmo*` uniforms + shared **height-aware** aerial-perspective HLSL (folds V8 Route B); **MVP slice P1+P4+P4b built & validated 2026-07-05**; **P2 disc palette + `SyncTerrainColor` deletion built 2026-07-07**; **P3 terrain palette consumption built 2026-07-08** (569a — terrain is a direct palette consumer). P2 noon vista + P3 ground-level seam eyeballed OK 2026-07-15 (in-game vista screenshots — no visible terrain↔disc seam). Remaining: P3 drop-altitude check, P5 saturation (last), full day/night sweep |
 | V10 | [x] | BUG: player falls through terrain during traversal — colliders built player-nearest-first, 3×3 ring budget-exempt (1883659, 2026-07-03) |
-| V11 | [ ] | Hero hand mesh authoring — silhouette-first re-pose/new mesh so four fingers read at 200–400u (spun off V4, 2026-07-05) |
-| V12 | [x] | Authored anchor candidate source — built & Play-Mode-validated 2026-07-08 (spec §9.5): authored pre-pass overrides the planner via existing tie-break; scene-bootstrap authoring; hero hand guaranteed at (0, 900) as `relic_hand_hero`. Includes relic-rarity retune (96 → 6, spec §9.6). Remaining eyeball: distance/yaw/scale knobs (no recompile); silhouette itself is V11 |
+| V11 | [x] | Hero hand mesh authoring — silhouette-first re-pose/new mesh so four fingers read at 200–400u (spun off V4, 2026-07-05). **Built + swapped in 2026-07-11** (subsurf bake 2.7k tris, −20° buried-body pitch, palm faces spawn); **owner eyeball passed 2026-07-15** (in-game screenshots: four fingers + thumb read from spawn through haze; dark-stone value contrast up close). Drop-view hero hang tracked under R6 P4. Variants → V18 |
+| V12 | [x] | Authored anchor candidate source — built & Play-Mode-validated 2026-07-08 (spec §9.5): authored pre-pass overrides the planner via existing tie-break; scene-bootstrap authoring; hero hand guaranteed at (0, 900) as `relic_hand_hero`. Includes relic-rarity retune (96 → 6, spec §9.6). From-spawn eyeball passed 2026-07-15 (lone-colossus composition reads; distance/yaw kept as-is); silhouette was V11 (done) |
 | V13 | [ ] | Burning-descent VFX (meteor entry) — FP screen-edge flames/embers, ignites on V14 break-open, burns off before C3 dust handoff; arrival-sequence trigger, never altitude/speed (opened 2026-07-08; `Rendering/METEOR_ARRIVAL_SEQUENCE_SPEC.md`) |
 | V14 | [ ] | Meteor-interior loading shell — diegetic initial load: full-screen meteor interior over the V7 readiness gate, breaks open on real gate release (binary + min-hold, no fake progress); first UI element + DOTS→managed gate bridge (opened 2026-07-08; `Rendering/METEOR_ARRIVAL_SEQUENCE_SPEC.md`) |
 | V15 | [ ] | Sky mountain band — ridged FBM silhouette (was 3 sine harmonics), second back ridge (finer, round-2 retune), horizon demarcation line (darker `_AtmoHorizon`-shifted range above, ground skirt untouched below); snow caps built, off-by-default toggle (round 3). Ground look owner-approved 2026-07-09; remaining: drop-altitude skirt check (`Rendering/SKY_MOUNTAIN_BAND_SPEC.md`) |
-| V16 | [ ] | Relic size pop-in fix — LOD made dormant-by-design: no authored impostor art means the swap rendered the same mesh at a smaller fixed size (zero verts saved, visible pop). Relics without an authored `ImpostorMesh` now skip the LOD components entirely; machinery kept for real billboard art (built 2026-07-09, pending owner walk-toward-relic check; dormancy note in `Structures/RELIC_LOD_IMPOSTOR_SPEC.md`) |
+| V16 | [x] | Relic size pop-in fix — LOD made dormant-by-design: no authored impostor art means the swap rendered the same mesh at a smaller fixed size (zero verts saved, visible pop). Relics without an authored `ImpostorMesh` now skip the LOD components entirely; machinery kept for real billboard art (built 2026-07-09; dormancy note in `Structures/RELIC_LOD_IMPOSTOR_SPEC.md`). **Walk-toward check passed 2026-07-15** — no size change on approach to the hero at 900u |
 | V17 | [ ] | Mid-field disc variation — the impostor band between terrain window and sky band reads uniform (flat lighting + foreshortened patches + scatter cliff). P1 macro luminance octave in shared `GroundNoise.hlsl` + P2 fake relief shading (disc only), both dynamic-proof by design; P3 optional damped vertex undulation. Speckling/cloud-shadows out of scope → R1/R5 + weather track (opened 2026-07-09; `Rendering/GROUND_PLANE_IMPOSTOR_SPEC.md` §12) |
+| V18 | [ ] | Hero hand weathered/ruined variants — Blender fracture cuts on the V11 cage before the subsurf bake (uneven mid-segment breaks + rubble per the ossified-god fiction), separate FBX per variant, template entries so procedural hands rotate them via the existing anchor hash. Runtime damage is W2, not this (opened 2026-07-11) |
 
 ### Rendering — vista support _(R6 pulled from backlog 2026-07-07; step 1 of the Build order)_
 
 | ID  | Status | Subject |
 |-----|--------|---------|
-| R6  | [ ] | Landmark draw distance — hero relics never cull: **P2+P1+P3 built 2026-07-07** (`LandmarkDrawDistance` 2000u raises the camera plane, `_AtmoFarFade` decoupled, `RelicLit` dither edge fade replaces the concealer). Remaining: P4 spawn fade + owner visual validation. Spec: `Rendering/LANDMARK_DRAW_DISTANCE_SPEC.md` (ACTIVE) |
+| R6  | [ ] | Landmark draw distance — hero relics never cull: **P2+P1+P3 built 2026-07-07** (`LandmarkDrawDistance` 2000u raises the camera plane, `_AtmoFarFade` decoupled, `RelicLit` dither edge fade replaces the concealer). Partial validation 2026-07-15: hero at 900u (past old 600u clip) renders + persists in normal play, no cull/pop on walk-toward; ground vista unchanged; hero legible in game view. Remaining: P4 spawn fade (incl. drop-altitude hero hang), permanence at 1500u+. Spec: `Rendering/LANDMARK_DRAW_DISTANCE_SPEC.md` (ACTIVE) |
 
 Details: [vista-moment.md](vista-moment.md)
 
@@ -91,7 +92,7 @@ Details: [vista-moment.md](vista-moment.md)
 
 | ID  | Status | Subject | Blocks | Blocked By |
 |-----|--------|---------|--------|------------|
-| A9  | [ ] | First-person arms viewmodel (the real fix for FPS-only MVP) — arms source = V11 hand master rig + generator, re-posed at player scale (decided 2026-07-09; detail in vista-moment.md) | — | — |
+| A9  | [ ] | First-person arms viewmodel (the real fix for FPS-only MVP) — arms source = rig the baked V11 hand mesh directly (armature → relaxed re-pose → owner tweaks; rigging phase started 2026-07-12; detail in vista-moment.md) | — | — |
 
 #### Dev-toggle / deferred (third-person body) _(not MVP-gating — body hidden in first-person play)_
 
