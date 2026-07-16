@@ -134,6 +134,49 @@ Spec: `Rendering/LANDMARK_DRAW_DISTANCE_SPEC.md`.
 
 ---
 
+### W2 — Destructible hero relics: mesh at distance, SDF stamp up close _(idea — not fleshed out; owner 2026-07-09, from the V11 Blender session)_
+
+**Concept.** Hero relics (starting with the colossal hand) become *fully destructible* near the player by
+representing them in the terrain density field instead of only as mesh instances. Up close, the relic is
+**stamped into the SDF** consumed by `TerrainChunkDensitySamplingSystem` — Surface Nets meshes it, colliders
+build from it, and the existing carve/modification tools work on it for free, because it *is* terrain. At
+distance it stays the authored mesh (RelicLit material, R6 landmark fade, R5 silhouette cards) — the SDF
+version only exists inside some handoff radius.
+
+**Key insight (why this is cheap to keep open).** The Blender master rig for the V11 hand is 16 transformed
+boxes with bevel — which is literally an analytic SDF description: a union of rounded-box primitives with a
+smooth-union blend. The mesh bake (voxel remesh + smooth) is the polygonal approximation of that same SDF.
+So the master rig is the **single source of truth for both artifacts**: bake it to FBX for the distant mesh,
+export its segment transforms as data for the SDF brush. Evaluation cost is small (rounded-box is among the
+cheapest SDF primitives; 16 with a bounds early-out, only in chunks intersecting the relic's AABB), and the
+stamp path mirrors the existing glob-modification mechanism in `DOTS.Terrain.Modification`.
+
+**Design constraint active today (the only current obligation):** keep the Blender master rig's segment
+transforms exportable/recoverable — don't collapse the rig into baked meshes only.
+
+**Rig-desync caveat (2026-07-12, V11 proportion pass):** the shipped V11 mesh was re-proportioned
+directly on the bake cage (owner moved the web/knuckle line outward and shortened the palm at the heel;
+thumb was hand-rebuilt earlier) — **the mesh is now canon and the rig is approximate**. Rig digit
+lengths (e.g. middle 16.7 vs mesh ~9.6) and the palm box no longer match; joint origins/axes remain
+roughly valid. Consequence for W2: the SDF brush can no longer reproduce the shipped silhouette from
+rig transforms alone — either re-fit the rig segments to the final mesh at W2 start, or fit SDF
+primitives to the mesh directly. Measurement tool: `ArtSource/hand_proportions.py`.
+
+**Open questions (deliberately unanswered — flesh out before ticketing for real):**
+- Material/fade story: SDF-meshed relic renders with the terrain material — what happens to RelicLit,
+  `_AtmoLandmarkFade` (R6), and the palette tint at the handoff?
+- Mesh ↔ SDF handoff: at what distance, and how is the swap hidden (haze? dither? exact-silhouette match)?
+- Carve-damage persistence (ties into the structure-placement Locked/Modified persistence model).
+- LOD/seam behavior across the relic's chunk boundaries; density-sampling perf budget at colossus scale.
+- Does the vista hero stay *visually* pristine (quest/fiction reasons) while background relics are the
+  destructible ones — or is carving the colossus the point?
+
+**Depends on / relates to:** V11 (master rig is the data source), V12 (authored anchors place it),
+`TERRAIN_ECS_NEXT_STEPS_SPEC.md` (SDF pipeline), `DOTS.Terrain.Modification` (stamp/carve precedent),
+R5/R6 (distance rendering the near-SDF version must hand off to). Not scheduled; no MVP impact.
+
+---
+
 ### Biome Art — Windswept Colossus Plains scatter models (B1–B7)
 
 **Source spec:** `Assets/Docs/Biomes/Windswept_Colossus_Plains_Biome_Spec.md`. These are **model authoring tickets** — runtime placement/render systems are separate work where noted.
