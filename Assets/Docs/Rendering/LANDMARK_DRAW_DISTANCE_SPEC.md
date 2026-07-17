@@ -173,16 +173,19 @@ where the build refined the design:
   the matching `UnityPerMaterial` cbuffer added to DepthOnly for SRP-batcher pass parity.
   ShadowCaster deliberately not dithered, matching P3. Note: RelicLit-only — background relics on
   Unlit gray still hard-pop on realization; acceptable under the same owner call as above.
-- **P3 amendment — haze pre-melt (2026-07-17):** owner reported the edge dissolve's stipple reading
-  clearly on a background hand inside the 1800–2000u band. Root cause: the hero exemption's reduced
-  `_AerialStrength` keeps landmarks legible right into the band, so the dither clipped a
-  still-readable object. Fix: `AtmoLandmarkHazeRamp` forces the haze amount to 1 over
-  0.75–0.9 × `_AtmoLandmarkFade` (identity below 0.75, so vista-distance legibility is untouched);
-  at t = 1 `ApplyAerialHaze` lands exactly on `_AtmoHorizon`, so the dither only removes
-  horizon-colored pixels and the dissolve is invisible by construction. Applied in ForwardLit only —
-  DepthOnly keeps clipping at the same `min(edgeFade, spawnFade)` visibility, unchanged. The
-  "keep it longer" dial remains `ProjectFeatureConfig.LandmarkDrawDistance` (all band ratios scale
-  with it).
+- **P3 amendment — haze pre-melt, two rounds (2026-07-17):** owner reported the edge dissolve's
+  stipple reading clearly on a distant hand inside the dissolve band. Root cause: the hero
+  exemption's reduced `_AerialStrength` keeps landmarks legible right into the band, so the dither
+  clipped a still-readable object. Round 1 forced haze to t = 1 before the band — wrong: at t = 1
+  `ApplyAerialHaze` lands on `_AtmoHorizon` (near-white on overcast presets) while the backdrop
+  behind a landmark is the darker sky mountain band, so the relic flashed white (owner report).
+  Round 2 (final): `AtmoLandmarkHazeRamp` caps at **0.65** over 0.7–0.85 × `_AtmoLandmarkFade`
+  (identity below 0.7 — vista legibility untouched) to cut contrast only, and the edge fade band
+  widened from the last 10% to the last **20%** — the dither's clipped pixels reveal the *true*
+  per-pixel backdrop (band, clouds), making the dither itself the background-blend mechanism until
+  R5 silhouette cards exist. Never full-melt a landmark to a guessed color. ForwardLit-only color
+  change; DepthOnly stays clip-synced via the shared `AtmoLandmarkEdgeFade`. The "keep it longer"
+  dial remains `ProjectFeatureConfig.LandmarkDrawDistance` (all band ratios scale with it).
 
 ## Related Docs
 

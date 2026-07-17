@@ -135,28 +135,32 @@ float AtmoInterleavedGradientNoise(float2 pixelCoord)
 }
 
 // Landmark edge fade (R6 P3): visibility factor for hero landmarks, 1 = solid,
-// 0 = fully dissolved over the last 10% before _AtmoLandmarkFade. Consumers
+// 0 = fully dissolved over the last 20% before _AtmoLandmarkFade. Consumers
 // clip() against AtmoInterleavedGradientNoise so crossing the landmark draw
 // distance is a dissolve, not a pop — RelicLit is opaque + ZWrite, so alpha
 // blending is not an option. Returns 1 well inside the fade band, so it never
-// clips ordinary-distance fragments.
+// clips ordinary-distance fragments. The dither holes reveal the TRUE backdrop
+// per-pixel (mountain band, clouds), so this — not a color melt — is what blends
+// a landmark into the background until R5 silhouette cards exist; the band was
+// widened from 10% to 20% (2026-07-17, round 2) so that blend is gradual.
 float AtmoLandmarkEdgeFade(float viewDist)
 {
-    return 1.0 - smoothstep(_AtmoLandmarkFade * 0.9, _AtmoLandmarkFade, viewDist);
+    return 1.0 - smoothstep(_AtmoLandmarkFade * 0.8, _AtmoLandmarkFade, viewDist);
 }
 
-// Landmark haze pre-melt (R6 P3 amendment, 2026-07-17): force the aerial haze
-// amount to full over the approach to the dissolve band, completing at 0.9 ×
-// _AtmoLandmarkFade — exactly where AtmoLandmarkEdgeFade starts clipping. At
-// t = 1 ApplyAerialHaze lands on _AtmoHorizon, so the dither only ever removes
-// horizon-colored pixels against the horizon: the dissolve becomes invisible.
-// Needed because the hero exemption (reduced _AerialStrength) otherwise keeps
-// landmarks legible right into the band, making the screen-door stipple read
-// (owner report, 2026-07-17). Below 0.75 × fade this is the identity, so the
-// exemption's legibility contract is untouched at vista distances.
+// Landmark haze pre-melt (R6 P3 amendment, 2026-07-17): raise the aerial haze
+// amount ahead of the dissolve band so the dither never clips a fully legible
+// object — the hero exemption (reduced _AerialStrength) otherwise keeps
+// landmarks readable right into the band and the stipple pattern shows (owner
+// report, round 1). Deliberately PARTIAL (caps at 0.65): a full melt to t = 1
+// lands on _AtmoHorizon, which is near-white in overcast presets while the
+// backdrop behind a landmark is the darker mountain band — round 1's full melt
+// made the relic flash white against it (owner report, round 2). Partial haze
+// cuts contrast; the widened edge fade above does the actual background
+// blending. Identity below 0.7 × fade, so vista-distance legibility is untouched.
 float AtmoLandmarkHazeRamp(float t, float viewDist)
 {
-    return max(t, smoothstep(_AtmoLandmarkFade * 0.75, _AtmoLandmarkFade * 0.9, viewDist));
+    return max(t, 0.65 * smoothstep(_AtmoLandmarkFade * 0.7, _AtmoLandmarkFade * 0.85, viewDist));
 }
 
 #endif // ATMOSPHERE_INCLUDED
