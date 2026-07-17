@@ -40,4 +40,4 @@ MonoBehaviour:
     hazeFalloff: 0.1
     distanceHaze: 0.08
     hazeMacroScale: 0.004
-    hazeMacroStrength: 0.5
+    hazeMacroStrength: 0.246
