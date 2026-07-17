@@ -473,7 +473,7 @@ MonoBehaviour:
     positionXZ: {x: 0, y: 900}
     snapToTerrain: 1
     explicitY: 0
-    yawDegrees: 90
+    yawDegrees: 45
     footprintRadius: 0
   debugAnchors: []
 --- !u!4 &687215613
