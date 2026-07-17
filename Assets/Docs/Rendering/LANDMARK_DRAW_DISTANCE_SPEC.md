@@ -173,19 +173,19 @@ where the build refined the design:
   the matching `UnityPerMaterial` cbuffer added to DepthOnly for SRP-batcher pass parity.
   ShadowCaster deliberately not dithered, matching P3. Note: RelicLit-only — background relics on
   Unlit gray still hard-pop on realization; acceptable under the same owner call as above.
-- **P3 amendment — haze pre-melt, two rounds (2026-07-17):** owner reported the edge dissolve's
-  stipple reading clearly on a distant hand inside the dissolve band. Root cause: the hero
-  exemption's reduced `_AerialStrength` keeps landmarks legible right into the band, so the dither
-  clipped a still-readable object. Round 1 forced haze to t = 1 before the band — wrong: at t = 1
-  `ApplyAerialHaze` lands on `_AtmoHorizon` (near-white on overcast presets) while the backdrop
-  behind a landmark is the darker sky mountain band, so the relic flashed white (owner report).
-  Round 2 (final): `AtmoLandmarkHazeRamp` caps at **0.65** over 0.7–0.85 × `_AtmoLandmarkFade`
-  (identity below 0.7 — vista legibility untouched) to cut contrast only, and the edge fade band
-  widened from the last 10% to the last **20%** — the dither's clipped pixels reveal the *true*
-  per-pixel backdrop (band, clouds), making the dither itself the background-blend mechanism until
-  R5 silhouette cards exist. Never full-melt a landmark to a guessed color. ForwardLit-only color
-  change; DepthOnly stays clip-synced via the shared `AtmoLandmarkEdgeFade`. The "keep it longer"
-  dial remains `ProjectFeatureConfig.LandmarkDrawDistance` (all band ratios scale with it).
+- **P3 amendment — dissolve tuning, three rounds (2026-07-17, final = no tint):** owner reported
+  the edge dissolve's stipple reading clearly on a distant hand inside the band. Round 1 forced
+  aerial haze to t = 1 ahead of the band ("pre-melt") — wrong: at t = 1 `ApplyAerialHaze` lands on
+  `_AtmoHorizon` (near-white on overcast presets) while the backdrop behind a landmark is the
+  darker sky mountain band, so the relic flashed white. Round 2 capped the melt at 0.65 — same
+  mismatch, just tinted. **Round 3 (owner call, final): no melt/tint at all.** Landmarks keep the
+  honest hero-exemption haze into the band; the only kept change is the edge fade widened from the
+  last 10% to the last **20%** of `_AtmoLandmarkFade` (1600–2000u at default 2000), since the
+  dither's clipped pixels reveal the *true* per-pixel backdrop and a wider band makes that handoff
+  gradual. Merging a far landmark *into* the background is deferred to **R5 silhouette cards** —
+  do not reintroduce a color-target melt (guard comment at the former ramp site in
+  `Atmosphere.hlsl`). DepthOnly stays clip-synced via the shared `AtmoLandmarkEdgeFade`. The
+  "keep it longer" dial remains `ProjectFeatureConfig.LandmarkDrawDistance`.
 
 ## Related Docs
 

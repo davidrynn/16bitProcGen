@@ -148,19 +148,14 @@ float AtmoLandmarkEdgeFade(float viewDist)
     return 1.0 - smoothstep(_AtmoLandmarkFade * 0.8, _AtmoLandmarkFade, viewDist);
 }
 
-// Landmark haze pre-melt (R6 P3 amendment, 2026-07-17): raise the aerial haze
-// amount ahead of the dissolve band so the dither never clips a fully legible
-// object — the hero exemption (reduced _AerialStrength) otherwise keeps
-// landmarks readable right into the band and the stipple pattern shows (owner
-// report, round 1). Deliberately PARTIAL (caps at 0.65): a full melt to t = 1
-// lands on _AtmoHorizon, which is near-white in overcast presets while the
-// backdrop behind a landmark is the darker mountain band — round 1's full melt
-// made the relic flash white against it (owner report, round 2). Partial haze
-// cuts contrast; the widened edge fade above does the actual background
-// blending. Identity below 0.7 × fade, so vista-distance legibility is untouched.
-float AtmoLandmarkHazeRamp(float t, float viewDist)
-{
-    return max(t, 0.65 * smoothstep(_AtmoLandmarkFade * 0.7, _AtmoLandmarkFade * 0.85, viewDist));
-}
+// NOTE (2026-07-17): a haze "pre-melt" ramp (force aerial haze up ahead of the
+// dissolve band) was tried here twice and removed by owner call. Full melt
+// flashed white — ApplyAerialHaze converges on _AtmoHorizon, near-white on
+// overcast presets, while the backdrop behind a landmark is the darker sky
+// mountain band; partial melt just tinted the same mismatch. Landmarks keep
+// their honest hero-exemption haze into the band and the dither alone hands
+// pixels to the true backdrop; merging a far landmark INTO the background is
+// R5's job (silhouette cards, HORIZON_IMPOSTOR_SEED_DRIVEN_SPEC.md §19). Do
+// not reintroduce a color-target melt for landmarks.
 
 #endif // ATMOSPHERE_INCLUDED

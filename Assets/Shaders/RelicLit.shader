@@ -126,12 +126,10 @@ Shader "Relic/RelicLit"
                 // WITHOUT the far-clip concealer (R6 P3) — the concealer hides the world's clip
                 // edge, but a landmark drawn beyond it must not be erased by it. Same
                 // no-concealer contract as the ground disc; the dither above replaces the
-                // concealer as the edge treatment. The haze ramp partially ghosts the
-                // landmark before that dither starts, so the dissolve never clips a fully
-                // legible object; the dither itself blends toward the true backdrop.
-                float haze = AtmoLandmarkHazeRamp(
-                    AtmoAerialHazeAmount(IN.positionWS, _AerialStrength), viewDist);
-                color = (half3)ApplyAerialHaze(color, haze);
+                // concealer as the edge treatment. No extra haze near the dissolve band
+                // (owner call 2026-07-17 — see the pre-melt note in Atmosphere.hlsl): the
+                // dither alone blends toward the true backdrop until R5 cards exist.
+                color = (half3)ApplyAerialHaze(color, AtmoAerialHazeAmount(IN.positionWS, _AerialStrength));
 
                 return half4(color, 1.0h);
             }
