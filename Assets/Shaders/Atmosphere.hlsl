@@ -145,4 +145,18 @@ float AtmoLandmarkEdgeFade(float viewDist)
     return 1.0 - smoothstep(_AtmoLandmarkFade * 0.9, _AtmoLandmarkFade, viewDist);
 }
 
+// Landmark haze pre-melt (R6 P3 amendment, 2026-07-17): force the aerial haze
+// amount to full over the approach to the dissolve band, completing at 0.9 ×
+// _AtmoLandmarkFade — exactly where AtmoLandmarkEdgeFade starts clipping. At
+// t = 1 ApplyAerialHaze lands on _AtmoHorizon, so the dither only ever removes
+// horizon-colored pixels against the horizon: the dissolve becomes invisible.
+// Needed because the hero exemption (reduced _AerialStrength) otherwise keeps
+// landmarks legible right into the band, making the screen-door stipple read
+// (owner report, 2026-07-17). Below 0.75 × fade this is the identity, so the
+// exemption's legibility contract is untouched at vista distances.
+float AtmoLandmarkHazeRamp(float t, float viewDist)
+{
+    return max(t, smoothstep(_AtmoLandmarkFade * 0.75, _AtmoLandmarkFade * 0.9, viewDist));
+}
+
 #endif // ATMOSPHERE_INCLUDED
