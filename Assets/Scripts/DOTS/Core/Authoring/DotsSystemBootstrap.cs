@@ -60,6 +60,13 @@ namespace DOTS.Core.Authoring
             {
                 MeteorShellOverlay.Install();
             }
+
+            // V13 burning-descent VFX: separable from the shell — it keys off the same gate
+            // release signal, so it works even with the shell disabled.
+            if (config.EnableSkyDropSpawn && config.EnableMeteorDescentVfx)
+            {
+                MeteorDescentVfx.Install();
+            }
     
             // Diagnostic systems rely on fall-through/pipeline debug channels.
             // Wire them from config so hypothesis testing does not require code changes.

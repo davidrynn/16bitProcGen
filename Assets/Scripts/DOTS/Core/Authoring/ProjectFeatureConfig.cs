@@ -169,6 +169,11 @@ namespace DOTS.Core.Authoring
                  "shell break-open stay one beat. Ignored when the shell is disabled.")]
         [Range(0f, 5f)]
         public float MeteorShellMinHoldSeconds = 1.75f;
+        [Tooltip("V13 burning-descent VFX (METEOR_ARRIVAL_SEQUENCE_SPEC.md): first-person screen-edge " +
+                 "flames + embers that ignite when the readiness gate releases and burn off by altitude " +
+                 "before landing. Arrival-sequence only — ordinary falls never show meteor effects. " +
+                 "Only active when EnableSkyDropSpawn is true.")]
+        public bool EnableMeteorDescentVfx = true;
 
         [Header("Structure Placement")]
         public bool EnableStructurePlacementSystem = true;
