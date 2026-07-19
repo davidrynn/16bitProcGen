@@ -27,6 +27,9 @@ namespace DOTS.Player.Bootstrap
         public bool SkyDropEnabled;
         public float SkyDropSpawnHeight;
         public float SkyDropGravityHoldSeconds;
+        // V14 meteor shell min-hold — 0 when the shell (or sky-drop) is disabled, so the gate
+        // behaves exactly as before the arrival sequence existed.
+        public float MeteorShellMinHoldSeconds;
 
         public void OnCreate(ref SystemState state)
         {
@@ -219,7 +222,10 @@ namespace DOTS.Player.Bootstrap
                     // (V7 fall-through). Ground sits near Y=0; the +64 buffer clears SDF amplitude.
                     // Floored at 96 to preserve the non-sky-drop (Y=PlayerStartHeight) behaviour.
                     ProbeDistance = math.max(96f, spawnY + 64f),
-                    ReleasedGravityFactor = 1f
+                    ReleasedGravityFactor = 1f,
+                    // Min-hold only applies to the sky-drop arrival — a ground-level spawn has no
+                    // meteor shell to keep closed.
+                    MinHoldSeconds = SkyDropEnabled ? MeteorShellMinHoldSeconds : 0f
                 });
 
                 entityManager.SetComponentData(entity, new PhysicsGravityFactor

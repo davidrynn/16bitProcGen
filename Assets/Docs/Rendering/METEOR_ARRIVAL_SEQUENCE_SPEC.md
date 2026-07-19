@@ -1,7 +1,7 @@
 # Meteor Arrival Sequence Spec
 
-**Status:** PROPOSED
-**Last Updated:** 2026-07-08
+**Status:** ACTIVE — V14 shell built 2026-07-18 (see §12 build record); V13 not started
+**Last Updated:** 2026-07-18
 **Owner:** Rendering / Vista
 **Phase:** Vista MVP follow-on (tickets V13 + V14)
 **Keywords:** meteor, sky-drop, loading, diegetic loading screen, readiness gate, spawn sequence, VFX, first-person, UI overlay
@@ -196,8 +196,40 @@ purpose; the sequence must stand as spectacle alone.
 
 ## 11. Open Questions
 
-- Break-open technique: UI shatter animation vs. burn-away shader wipe — decide by cheapness during
-  the V14 build.
-- Burn-off driver: altitude band vs. elapsed time (lean altitude — it tracks what the player sees).
-- Whether decoupling gravity release from gate release is trivial or invasive (§5.1) — answer
-  during the V14 gate-bridge work.
+- ~~Break-open technique~~ **Resolved (2026-07-18, V14 build):** burn-away shader wipe — a
+  procedural dissolve (cracks + screen center open first, edges last, burning rim at the front)
+  on the overlay's own packed texture. No shatter animation assets needed; see §12.
+- Burn-off driver: altitude band vs. elapsed time (lean altitude — it tracks what the player
+  sees). Still open — V13.
+- ~~Gravity release vs. gate release~~ **Resolved (2026-07-18, V14 build):** decoupling was
+  unnecessary — the min-hold moved *into the gate* (`PlayerStartupReadinessGate.MinHoldSeconds`),
+  so the gate itself never releases before the hold and gravity release + shell break-open stay
+  one beat by construction (the accepted §5.1 coupling, now with no silent-fall window at all).
+
+## 12. Build record — V14 (2026-07-18)
+
+- **Gate-state bridge = the gate component itself.** No new singleton: the overlay polls
+  "player entity exists **and** no longer has `PlayerStartupReadinessGate`" — the same contract
+  the PlayMode smoke test already polls. Removal of the component *is* the release signal.
+- **Min-hold lives ECS-side** (see §11 resolution): new `MinHoldSeconds` on the gate, clamping
+  **both** release paths (terrain-ready and timeout) so the shell can never flash-open (§9.2).
+  Release predicate factored to `PlayerStartupReadinessGate.ShouldRelease` (pure static);
+  EditMode contract tests in `MeteorArrivalGateTests`. Non-sky-drop spawns get `MinHoldSeconds
+  = 0` — gate timing byte-identical to pre-V14.
+- **Config:** `ProjectFeatureConfig.EnableMeteorArrivalShell` (default on) +
+  `MeteorShellMinHoldSeconds` (default 1.75). Shell only installs when `EnableSkyDropSpawn` is
+  also on; disabling the shell zeroes the min-hold.
+- **Overlay:** `MeteorShellOverlay` (static install + one controller MonoBehaviour, the
+  `ReticleBootstrap` pattern — runtime-built canvas, no scene wiring), installed from
+  `DotsSystemBootstrap.Awake` so the screen is covered before the first rendered frame. Visuals
+  are fully procedural: one packed 512² texture (R rock FBM, G Voronoi-edge crack mask,
+  B radial) generated at install, one canvas shader
+  (`Resources/Shaders/MeteorShellOverlay.shader`) doing rock vignette + pulsing crack glow +
+  the dissolve. Rumble is unscaled-time Perlin jitter on the overlay rect (with overscan so
+  edges never show); no camera-rig changes. 20 s fail-safe force-open so the shell can never
+  trap the player if no release is ever observed.
+- **Deferred from this slice:** rumble *audio* (no audio pipeline exists yet — first
+  AudioSource is its own decision), progress-driven crack glow (§8 polish), respawn reuse.
+- **Remaining:** owner eyeball of the full beat in play (interior read, flare→dissolve timing,
+  min-hold feel); V13 ignition hook (V13 can key off the same gate-removal poll or a callback
+  added to the overlay then).

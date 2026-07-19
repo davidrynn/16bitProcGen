@@ -52,6 +52,14 @@ namespace DOTS.Core.Authoring
             // (Rendering.Sky) cannot reference this assembly.
             AtmosphereBroadcast.WorldReferenceDistance = config.DerivedCameraFarClip;
             AtmosphereBroadcast.LandmarkDistance = config.LandmarkDrawDistance;
+
+            // V14 meteor-interior loading shell (METEOR_ARRIVAL_SEQUENCE_SPEC.md): install the
+            // full-screen overlay in the same Awake that boots the world, so the shell is opaque
+            // before the first rendered frame — the player never watches the world assemble.
+            if (config.EnableSkyDropSpawn && config.EnableMeteorArrivalShell)
+            {
+                MeteorShellOverlay.Install();
+            }
     
             // Diagnostic systems rely on fall-through/pipeline debug channels.
             // Wire them from config so hypothesis testing does not require code changes.
@@ -319,6 +327,9 @@ namespace DOTS.Core.Authoring
                     bootstrap.SkyDropEnabled = config.EnableSkyDropSpawn;
                     bootstrap.SkyDropSpawnHeight = config.SkyDropSpawnHeight;
                     bootstrap.SkyDropGravityHoldSeconds = config.SkyDropGravityHoldSeconds;
+                    // Shell disabled → no min-hold, so the gate timing is byte-identical to pre-V14.
+                    bootstrap.MeteorShellMinHoldSeconds =
+                        config.EnableMeteorArrivalShell ? config.MeteorShellMinHoldSeconds : 0f;
                     initGroup.AddSystemToUpdateList(handle);
                     DebugSettings.Log("Bootstrap: PlayerEntityBootstrap enabled and added to InitializationSystemGroup.");
                 }

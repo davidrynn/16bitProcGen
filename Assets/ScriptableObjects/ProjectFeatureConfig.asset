@@ -74,6 +74,8 @@ MonoBehaviour:
   EnableSkyDropSpawn: 1
   SkyDropSpawnHeight: 400
   SkyDropGravityHoldSeconds: 8
+  EnableMeteorArrivalShell: 1
+  MeteorShellMinHoldSeconds: 1.75
   EnableStructurePlacementSystem: 1
   EnableRelicRealizationSystem: 1
   EnableRelicLodSelectionSystem: 1

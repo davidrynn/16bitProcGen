@@ -48,10 +48,12 @@ namespace DOTS.Player.Systems
                     gate.ValueRW = gateData;
                 }
 
-                var timedOut = (elapsedTime - gateData.StartTime) >= gateData.TimeoutSeconds;
+                var elapsedSinceStart = elapsedTime - gateData.StartTime;
+                var timedOut = elapsedSinceStart >= gateData.TimeoutSeconds;
                 var terrainReady = false;
 
-                if (!timedOut)
+                // Skip the probe while the min-hold (V14 meteor shell) makes release impossible.
+                if (!timedOut && elapsedSinceStart >= gateData.MinHoldSeconds)
                 {
                     var ray = new RaycastInput
                     {
@@ -68,7 +70,7 @@ namespace DOTS.Player.Systems
                     terrainReady = TryCastRaySafe(in physicsWorld, in ray, ref _hasLoggedInvalidColliderRaycast, out _);
                 }
 
-                if (terrainReady || timedOut)
+                if (PlayerStartupReadinessGate.ShouldRelease(elapsedSinceStart, gateData.TimeoutSeconds, gateData.MinHoldSeconds, terrainReady))
                 {
                     gravity.ValueRW.Value = gateData.ReleasedGravityFactor;
                     movementState.ValueRW.PreviousPosition = transform.ValueRO.Position;

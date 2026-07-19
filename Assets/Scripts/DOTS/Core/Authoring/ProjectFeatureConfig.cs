@@ -159,7 +159,17 @@ namespace DOTS.Core.Authoring
                  "build colliders at ground level before the player arrives. Ignored when EnableSkyDropSpawn is false.")]
         [Range(1f, 20f)]
         public float SkyDropGravityHoldSeconds = 8f;
-    
+        [Tooltip("V14 meteor-interior loading shell (METEOR_ARRIVAL_SEQUENCE_SPEC.md): full-screen meteor " +
+                 "interior overlay covering the sky-drop readiness hold; breaks open when the gate actually " +
+                 "releases. Diegetic loading screen — the player never watches the world assemble. " +
+                 "Only active when EnableSkyDropSpawn is true.")]
+        public bool EnableMeteorArrivalShell = true;
+        [Tooltip("Minimum seconds the meteor shell stays closed even if the readiness gate is ready sooner, " +
+                 "so a fast load doesn't flash-open. Enforced inside the gate itself so gravity release and " +
+                 "shell break-open stay one beat. Ignored when the shell is disabled.")]
+        [Range(0f, 5f)]
+        public float MeteorShellMinHoldSeconds = 1.75f;
+
         [Header("Structure Placement")]
         public bool EnableStructurePlacementSystem = true;
         public bool EnableRelicRealizationSystem = true;

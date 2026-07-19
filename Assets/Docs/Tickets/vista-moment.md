@@ -549,6 +549,18 @@ bridge** (singleton component the overlay polls — established pattern). Gravit
 shell opening (§5.1 of the spec; one coupled frame acceptable for MVP if decoupling is invasive).
 Scope: **initial spawn only** (respawn/fast-travel reuse deferred). Acceptance: player never sees the
 world assembling; shell timing tracks real readiness; break-open + V13 ignition read as one beat.
+- **Built (2026-07-18) — pending owner eyeball.** Spec flipped ACTIVE; §12 build record has the
+  implementation detail. Key calls made during the build: (1) **no new bridge component** — the
+  overlay polls "player exists && gate component gone" (the smoke test's own contract; removal *is*
+  the release signal); (2) **min-hold lives in the gate** (`PlayerStartupReadinessGate.MinHoldSeconds`,
+  clamps both release paths), so gravity release and break-open are one beat by construction and the
+  §5.1 decoupling question dissolved; (3) visuals fully procedural (packed 512² rock/crack/radial
+  texture + one canvas shader; burn-away dissolve won the §11 cheapness call; rumble = unscaled
+  Perlin rect jitter, no camera-rig changes; rumble *audio* deferred — no audio pipeline exists).
+  Config: `EnableMeteorArrivalShell` (default on, requires `EnableSkyDropSpawn`) +
+  `MeteorShellMinHoldSeconds` (1.75 s); shell off → min-hold 0 → gate timing byte-identical to
+  pre-V14. 20 s fail-safe force-open. EditMode timing-contract tests in `MeteorArrivalGateTests`.
+  Remaining: owner eyeball of the full arrival beat in play; V13 rides the same release signal.
 
 #### V15 — Sky mountain band: rugged silhouette + horizon line + snow _(opened 2026-07-09 — owner observation, discussed + built same day)_
 **Spec:** `Rendering/SKY_MOUNTAIN_BAND_SPEC.md` (ACTIVE — full design + dial table).
