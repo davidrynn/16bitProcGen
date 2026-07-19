@@ -347,7 +347,19 @@ the board (ticket IDs are owner-discussed per the workflow convention — not as
    exists in `PlayerMovementSystem`** — it is config-only, never implemented. Phase D scopes
    *building* the swim mode (mode enum entry, buoyancy/drag branch, water-volume detection),
    not just a trigger volume. Budget Phase D accordingly.
-3. Pocket cell coordinates — verify against streaming/impostor/physics math (§5.8).
+3. ~~Pocket cell coordinates~~ **Answered (code-verified 2026-07-18): the pocket goes *below*
+   the slab, not far away in XZ.** `TerrainChunkStreamingSystem` maps player XZ → chunk coords
+   with a hardcoded Y=0 layer (`ChunkCoord = (x, 0, z)`), so terrain exists *only* in the ~16u
+   slab regardless of player depth — any Y well below it (suggest ≈ −300) is guaranteed void:
+   no SDF ground, no colliders, no scatter, ever. A far-XZ pocket would be *wrong*: streaming
+   follows player XZ and would happily generate terrain around any XZ you teleport to. At
+   Y≈−300 the streamed slab and the player-following disc sit ~300u overhead — irrelevant
+   inside an enclosed interior (and the interior atmosphere preset from §10.4 suppresses the
+   sky). Physics broadphase is comfortable at these coordinates. Fiction bonus: entering the
+   hand *descends into the god's remains* — the portal goes down, which is better than a
+   teleport to nowhere. Executing sprint still validates: readiness-gate/terrain-safety
+   systems must not fight a player standing on interior prefabs below the slab (the V7 probe
+   only runs at startup, but check `PlayerTerrainSafetySystem`'s assumptions).
 4. Whether `WorldStructureSettings` is a new asset or a `TerrainGenerationSettings` section —
    executor decides; the hash rule (§4.2) holds either way.
 
