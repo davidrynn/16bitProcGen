@@ -86,6 +86,26 @@ namespace DOTS.Terrain
         public WorldStructureConstants ToConstants() => ToConstants(defaultWorldSeed);
 
         /// <summary>
+        /// The code-default constants (used when no <c>WorldStructureSettings.asset</c> is present) —
+        /// <see cref="WorldStructureBroadcast"/>'s fallback seed so shaders never read zeroed
+        /// <c>_WorldMacro*</c> globals. The literals here mirror the field initializers above; the two
+        /// are kept in lockstep by <c>WorldStructureBroadcastTests.DefaultConstants_MatchFieldDefaults</c>
+        /// (that test fails if either drifts).
+        /// </summary>
+        public static WorldStructureConstants DefaultConstants => new WorldStructureConstants
+        {
+            MacroFreq = 0.0004f,
+            SeedOffset = WorldStructure.SeedOffset(12345u),
+            Octaves = 4,
+            Lacunarity = 2.0f,
+            Gain = 0.5f,
+            ANear = 3.0f,
+            AFar = 200.0f,
+            RampStart = 600.0f,
+            RampEnd = 2500.0f,
+        };
+
+        /// <summary>
         /// Deterministic hash of this asset's field values folded with a world seed — the
         /// <c>WorldStructureSettings</c> contribution to the persistence save-config hash (spec §5.1).
         /// Phase E combines this with the <c>TerrainGenerationSettings</c> hash and <c>worldSeed</c>;

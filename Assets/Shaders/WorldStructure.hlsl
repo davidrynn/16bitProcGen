@@ -87,4 +87,29 @@ float SampleWorldMacroHeight(float2 worldXZ, float macroFreq, float2 seedOffset,
     return a * ridged;
 }
 
+// ---------------------------------------------------------------------------
+// _WorldMacro* globals — seeded ONCE at bootstrap by WorldStructureBroadcast (H2,
+// C# side). H is static per world, so there is no per-frame broadcast (§4.2/§6.6).
+// Declared here so the uniform set lives in one place; Phase-B consumers (sky band,
+// disc undulation) call SampleWorldMacroHeightGlobal(worldXZ) instead of threading
+// the ten parameters. A shader that includes this but never calls the wrapper just
+// carries the (harmless) unused uniforms.
+// ---------------------------------------------------------------------------
+float  _WorldMacroFreq;
+float4 _WorldMacroSeedOffset;   // xy = noise-space offset; zw unused
+int    _WorldMacroOctaves;
+float  _WorldMacroLacunarity;
+float  _WorldMacroGain;
+float  _WorldMacroANear;
+float  _WorldMacroAFar;
+float  _WorldMacroRampStart;
+float  _WorldMacroRampEnd;
+
+float SampleWorldMacroHeightGlobal(float2 worldXZ)
+{
+    return SampleWorldMacroHeight(worldXZ, _WorldMacroFreq, _WorldMacroSeedOffset.xy,
+        _WorldMacroOctaves, _WorldMacroLacunarity, _WorldMacroGain,
+        _WorldMacroANear, _WorldMacroAFar, _WorldMacroRampStart, _WorldMacroRampEnd);
+}
+
 #endif // WORLD_STRUCTURE_INCLUDED
