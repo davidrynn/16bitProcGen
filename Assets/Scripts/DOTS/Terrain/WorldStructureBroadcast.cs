@@ -28,6 +28,15 @@ namespace DOTS.Terrain
         private static readonly int RampStartId  = Shader.PropertyToID("_WorldMacroRampStart");
         private static readonly int RampEndId    = Shader.PropertyToID("_WorldMacroRampEnd");
 
+        private static readonly int MaskSegId    = Shader.PropertyToID("_WorldMacroMaskSeg");
+        private static readonly int MaskRadId    = Shader.PropertyToID("_WorldMacroMaskRad");
+        private static readonly int MaskCountId  = Shader.PropertyToID("_WorldMacroMaskCount");
+
+        // Reused so the per-init push allocates nothing; sized to the shader array (== MaxRegions).
+        private static readonly Vector4[] _maskSegScratch = new Vector4[WorldStructureMask.MaxRegions];
+        private static readonly Vector4[] _maskRadScratch = new Vector4[WorldStructureMask.MaxRegions];
+        private static readonly WorldStructureMaskRegion[] DefaultMask = { WorldStructureMask.DefaultVistaCorridor };
+
         /// <summary>Push a constants snapshot to the <c>_WorldMacro*</c> globals.</summary>
         public static void Push(in WorldStructureConstants c)
         {
@@ -53,6 +62,37 @@ namespace DOTS.Terrain
         {
             var settings = Resources.Load<WorldStructureSettings>(SettingsResourcePath);
             Push(settings != null ? settings.ToConstants() : WorldStructureSettings.DefaultConstants);
+            // Seed the MVP vista corridor by default (spec §4.1 hard requirement) so the sightline is
+            // protected even before a scene WorldStructureMaskBootstrap runs — that bootstrap may then
+            // override with authored regions.
+            PushMask(DefaultMask);
+        }
+
+        /// <summary>
+        /// Upload authored flatten regions to the <c>_WorldMacroMask*</c> globals (H3). At most
+        /// <see cref="WorldStructureMask.MaxRegions"/> are used; the unused tail is zeroed so a stale
+        /// longer set is never read past <c>_WorldMacroMaskCount</c>.
+        /// </summary>
+        public static void PushMask(System.Collections.Generic.IReadOnlyList<WorldStructureMaskRegion> regions)
+        {
+            int n = regions == null ? 0 : Mathf.Min(regions.Count, WorldStructureMask.MaxRegions);
+            for (int i = 0; i < WorldStructureMask.MaxRegions; i++)
+            {
+                if (i < n)
+                {
+                    var r = regions[i];
+                    _maskSegScratch[i] = new Vector4(r.A.x, r.A.y, r.B.x, r.B.y);
+                    _maskRadScratch[i] = new Vector4(r.Radius, r.Feather, 0f, 0f);
+                }
+                else
+                {
+                    _maskSegScratch[i] = Vector4.zero;
+                    _maskRadScratch[i] = Vector4.zero;
+                }
+            }
+            Shader.SetGlobalVectorArray(MaskSegId, _maskSegScratch);
+            Shader.SetGlobalVectorArray(MaskRadId, _maskRadScratch);
+            Shader.SetGlobalInteger(MaskCountId, n);
         }
 
         // Globals are zero in a fresh session until someone sets them; seed sane defaults early in

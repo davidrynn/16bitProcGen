@@ -105,11 +105,47 @@ float  _WorldMacroAFar;
 float  _WorldMacroRampStart;
 float  _WorldMacroRampEnd;
 
+// --- Authored flatten mask M(x,z) (H3) — capsule falloff regions, mirrors WorldStructureMask.cs.
+// Seeded by WorldStructureBroadcast.PushMask; count 0 → M = 1 (full relief). Keep
+// WORLD_MACRO_MAX_MASKS in sync with WorldStructureMask.MaxRegions and the broadcast array size.
+#define WORLD_MACRO_MAX_MASKS 4
+float4 _WorldMacroMaskSeg[WORLD_MACRO_MAX_MASKS];   // xy = A, zw = B
+float4 _WorldMacroMaskRad[WORLD_MACRO_MAX_MASKS];   // x = radius, y = feather
+int    _WorldMacroMaskCount;
+
+float WorldMacroDistToSeg(float2 p, float2 a, float2 b)
+{
+    float2 ab = b - a;
+    float2 ap = p - a;
+    float t = saturate(dot(ap, ab) / max(dot(ab, ab), 1e-6));
+    return distance(p, a + t * ab);
+}
+
+// M ∈ [0,1]: 0 = fully flat, 1 = full relief. Product of per-region smoothstep falloffs — any
+// region flattens, overlaps stay flat.
+float WorldMacroMask(float2 worldXZ)
+{
+    float m = 1.0;
+    [loop] for (int i = 0; i < _WorldMacroMaskCount; i++)
+    {
+        float2 a = _WorldMacroMaskSeg[i].xy;
+        float2 b = _WorldMacroMaskSeg[i].zw;
+        float rad     = _WorldMacroMaskRad[i].x;
+        float feather = max(_WorldMacroMaskRad[i].y, 1e-3);
+        float d = WorldMacroDistToSeg(worldXZ, a, b);
+        m *= smoothstep(rad, rad + feather, d);
+    }
+    return m;
+}
+
+// The full H = A(r)·ridgedFBM·M — Phase-B/C consumers call THIS one. The mask is folded in here so
+// the vista-corridor protection is automatic and no consumer can forget it.
 float SampleWorldMacroHeightGlobal(float2 worldXZ)
 {
-    return SampleWorldMacroHeight(worldXZ, _WorldMacroFreq, _WorldMacroSeedOffset.xy,
+    float h = SampleWorldMacroHeight(worldXZ, _WorldMacroFreq, _WorldMacroSeedOffset.xy,
         _WorldMacroOctaves, _WorldMacroLacunarity, _WorldMacroGain,
         _WorldMacroANear, _WorldMacroAFar, _WorldMacroRampStart, _WorldMacroRampEnd);
+    return h * WorldMacroMask(worldXZ);
 }
 
 #endif // WORLD_STRUCTURE_INCLUDED

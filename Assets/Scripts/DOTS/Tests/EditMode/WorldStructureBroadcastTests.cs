@@ -75,6 +75,23 @@ namespace DOTS.Tests.EditMode
         }
 
         [Test]
+        public void PushMask_SetsMaskGlobals_UnderExpectedNames()
+        {
+            WorldStructureBroadcast.PushMask(new[] { WorldStructureMask.DefaultVistaCorridor });
+
+            Assert.AreEqual(1, Shader.GetGlobalInteger("_WorldMacroMaskCount"));
+            var seg = Shader.GetGlobalVectorArray("_WorldMacroMaskSeg");
+            var rad = Shader.GetGlobalVectorArray("_WorldMacroMaskRad");
+            Assert.GreaterOrEqual(seg.Length, 1, "_WorldMacroMaskSeg");
+            Assert.AreEqual(0f, seg[0].x, 1e-4f);
+            Assert.AreEqual(0f, seg[0].y, 1e-4f);
+            Assert.AreEqual(0f, seg[0].z, 1e-4f);
+            Assert.AreEqual(1000f, seg[0].w, 1e-3f, "segment end Z");
+            Assert.AreEqual(110f, rad[0].x, 1e-4f, "radius");
+            Assert.AreEqual(220f, rad[0].y, 1e-4f, "feather");
+        }
+
+        [Test]
         public void PushFromSettings_DoesNotThrow_AndLeavesGlobalsNonDegenerate()
         {
             // Whether or not the asset exists, this must seed a usable field (non-zero octaves and a
