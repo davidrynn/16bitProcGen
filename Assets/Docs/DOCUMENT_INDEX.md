@@ -13,6 +13,7 @@ Quick-reference index of all project documentation. Docs are organized by featur
 | Document | Status | Description |
 |----------|--------|-------------|
 | [Terrain/TERRAIN_ECS_NEXT_STEPS_SPEC.md](Terrain/TERRAIN_ECS_NEXT_STEPS_SPEC.md) | ACTIVE | SDF + Surface Nets terrain implementation roadmap |
+| [Terrain/WORLD_STRUCTURE_SPEC.md](Terrain/WORLD_STRUCTURE_SPEC.md) | DESIGN | World macro-structure authority (`H`): one seeded heightfield sampled by terrain, disc, sky band/ring — spine for mountains, lakes, persistence, and the WFC/pocket-interior resume; owner-ratified decisions 2026-07-18 |
 | [Terrain/UNDERGROUND_VERTICAL_STREAMING_SPEC.md](Terrain/UNDERGROUND_VERTICAL_STREAMING_SPEC.md) | DESIGN | Vertical chunk streaming for underground caves, tunnels, and dungeons — tiered Level 1–3 roadmap |
 | [Terrain/TERRAIN_VOXEL_CHUNK_EDIT_SPEC.md](Terrain/TERRAIN_VOXEL_CHUNK_EDIT_SPEC.md) | PROPOSED | Minecraft-style cube edits snapped to a voxel/chunk-aligned grid, deterministic across chunk boundaries |
 | [Terrain/TERRAIN_STRATEGY_PLAN.md](Terrain/TERRAIN_STRATEGY_PLAN.md) | DESIGN | Sequencing plan: from prototype height signal to biome-aware world generation on the SDF pipeline |

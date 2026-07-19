@@ -525,6 +525,19 @@ far-visible by design.
 
 #### V13 — Burning-descent VFX (meteor entry) _(opened 2026-07-08 — owner idea, discussed + specced same day)_
 **Spec:** `Rendering/METEOR_ARRIVAL_SEQUENCE_SPEC.md` (Phases 3–4; shared break-open contract with V14).
+- **Built (2026-07-18, 863bc0f) — pending owner eyeball.** Same architecture as the V14 shell
+  (one canvas + controller + procedural shader, no particle assets): screen-edge flame tongues,
+  hashed ember sparks, warm vignette, all scaled by one `_Intensity` driven from a pure envelope
+  (`MeteorDescentVfx.EvaluateIntensity`, EditMode-tested). Ignites on the same gate-release
+  signal as the shell (canvas sorts *under* it, so the plates dissolve onto an already-burning
+  view — §9.4's one beat); burns off by **altitude band 230→120u** (spec's altitude lean), fully
+  out ~1.5s before landing (play-verified: ignite t=12.01 / extinguish t=19.55 on a 12s test
+  hold). One-shot by construction — installed only by the arrival bootstrap, self-destroys after
+  burn-off, so ordinary falls never show flames (§9.6). Config: `EnableMeteorDescentVfx`
+  (default on, requires sky-drop; separable from the shell flag). Audio still deferred with
+  V14's rumble (no audio pipeline). Verification note: flames confirmed rendering via a
+  forced-intensity debug capture; normal-run visibility windows are hard to screen-capture
+  (post-compile Burst play-entry latency) — timings proven via the stamped lifecycle logs.
 First-person flame/ember layer for the sky-drop descent: screen-edge flame tongues streaming opposite
 velocity, embers past the camera, optional heat wobble/warm vignette + roar audio. **Ignites on V14's
 break-open signal, burns off before landing** (lean: altitude band), handing off to C3's dust burst.
