@@ -22,27 +22,37 @@ namespace DOTS.Player.Bootstrap
         private const string RootName = "MeteorDescentVfxRoot";
 
         // Intensity envelope (public for the EditMode timing tests).
-        // Fall math from the 400u spawn: the fade band 230→120u burns flames for ~6s of the
-        // descent and extinguishes ~1.5s before impact — "fully out below ~150u" per spec §5.2.
+        // Fall math from the 400u spawn: with the default 340→240 band the flames burn through the
+        // upper descent and extinguish well before landing (band raised 2026-07-19 to fade sooner /
+        // higher; the live band comes from ProjectFeatureConfig, spec §5.2 leans altitude).
         public const float IgniteRampSeconds = 0.35f;
-        public const float FadeStartY = 230f;
-        public const float FadeEndY = 120f;
+        // Default burn-off band (world Y), raised from the original 230→120 so the flames
+        // extinguish sooner / higher in the descent (owner call 2026-07-19). The live values come
+        // from ProjectFeatureConfig via Install(); these consts are the fallback + test baseline.
+        public const float FadeStartY = 340f;
+        public const float FadeEndY = 240f;
 
         /// <summary>
-        /// Pure intensity envelope: fast ramp-in at ignition × altitude-band fade-out.
-        /// Altitude-driven (not elapsed-time) per the spec's lean — it tracks what the player
-        /// actually sees during the fall regardless of load hitches.
+        /// Pure intensity envelope: fast ramp-in at ignition × altitude-band fade-out, evaluated
+        /// against an explicit burn-off band. Altitude-driven (not elapsed-time) per the spec's lean —
+        /// it tracks what the player actually sees during the fall regardless of load hitches.
         /// </summary>
-        public static float EvaluateIntensity(float playerY, float secondsSinceIgnite)
+        public static float EvaluateIntensity(float playerY, float secondsSinceIgnite, float fadeStartY, float fadeEndY)
         {
             float ramp = Mathf.Clamp01(secondsSinceIgnite / IgniteRampSeconds);
-            float altitude = Mathf.Clamp01((playerY - FadeEndY) / (FadeStartY - FadeEndY));
+            // Guard a degenerate band (start <= end) so a mis-set config can't divide by zero.
+            float span = Mathf.Max(fadeStartY - fadeEndY, 1e-3f);
+            float altitude = Mathf.Clamp01((playerY - fadeEndY) / span);
             // smoothstep the altitude band so the burn-off eases rather than snapping linearly
             altitude = altitude * altitude * (3f - 2f * altitude);
             return ramp * altitude;
         }
 
-        public static void Install()
+        /// <summary>Convenience overload using the default band — the envelope tests call this.</summary>
+        public static float EvaluateIntensity(float playerY, float secondsSinceIgnite)
+            => EvaluateIntensity(playerY, secondsSinceIgnite, FadeStartY, FadeEndY);
+
+        public static void Install(float fadeStartY, float fadeEndY)
         {
             if (GameObject.Find(RootName) != null)
             {
@@ -51,7 +61,10 @@ namespace DOTS.Player.Bootstrap
 
             var root = new GameObject(RootName);
             Object.DontDestroyOnLoad(root);
-            root.AddComponent<MeteorDescentVfxController>();
+            var controller = root.AddComponent<MeteorDescentVfxController>();
+            // Seed the burn-off band before the first Update (Awake only builds the UI, not the
+            // envelope).
+            controller.Configure(fadeStartY, fadeEndY);
             DebugSettings.LogPlayer("MeteorDescentVfx: installed (waiting for break-open to ignite).", forceLog: true);
         }
 
@@ -69,6 +82,16 @@ namespace DOTS.Player.Bootstrap
             private Phase _phase = Phase.WaitingForIgnition;
             private float _installedTime;
             private float _igniteTime;
+            // Burn-off band, seeded by Install() from ProjectFeatureConfig; defaults kept so a
+            // controller added without Install() still behaves.
+            private float _fadeStartY = FadeStartY;
+            private float _fadeEndY = FadeEndY;
+
+            internal void Configure(float fadeStartY, float fadeEndY)
+            {
+                _fadeStartY = fadeStartY;
+                _fadeEndY = fadeEndY;
+            }
             private RawImage _image;
             private Material _material;
             private World _queryWorld;
@@ -118,7 +141,7 @@ namespace DOTS.Player.Bootstrap
 
                 if (TryGetPlayer(out float playerY, out _))
                 {
-                    intensity = EvaluateIntensity(playerY, sinceIgnite);
+                    intensity = EvaluateIntensity(playerY, sinceIgnite, _fadeStartY, _fadeEndY);
 
                     // Grounded = burn is over regardless of terrain height (a timeout release
                     // on a ground-level spawn must not leave the player standing in flames).
@@ -219,10 +242,23 @@ namespace DOTS.Player.Bootstrap
                 rect.offsetMin = Vector2.zero;
                 rect.offsetMax = Vector2.zero;
 
-                var shader = Resources.Load<Shader>("Shaders/MeteorDescentFlames");
-                if (shader != null)
+                // Load the tunable material asset (the owner tweaks _EmberDensity/_EmberSize/
+                // _EmberSpeed/_EmberJitter/flame colors on it in the inspector) and instantiate a
+                // COPY so our per-frame _Intensity writes never dirty the shared asset. Fall back to
+                // the bare shader if the asset is missing so the effect still renders.
+                var mat = Resources.Load<Material>("Materials/MeteorDescentFlames");
+                if (mat != null)
                 {
-                    _material = new Material(shader);
+                    _material = new Material(mat);
+                }
+                else
+                {
+                    var shader = Resources.Load<Shader>("Shaders/MeteorDescentFlames");
+                    if (shader != null) _material = new Material(shader);
+                }
+
+                if (_material != null)
+                {
                     _material.SetFloat(IntensityId, 0f);
                     _image.material = _material;
                 }
@@ -230,7 +266,7 @@ namespace DOTS.Player.Bootstrap
                 {
                     // No fallback visual — flames are pure garnish; fail invisible, not ugly.
                     DebugSettings.LogPlayerWarning(
-                        "MeteorDescentVfx: Shaders/MeteorDescentFlames not found in Resources — descent VFX disabled.",
+                        "MeteorDescentVfx: material/shader not found in Resources — descent VFX disabled.",
                         forceLog: true);
                     _image.color = Color.clear;
                 }

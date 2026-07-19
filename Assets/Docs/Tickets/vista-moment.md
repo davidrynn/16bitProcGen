@@ -538,6 +538,18 @@ far-visible by design.
   V14's rumble (no audio pipeline). Verification note: flames confirmed rendering via a
   forced-intensity debug capture; normal-run visibility windows are hard to screen-capture
   (post-compile Burst play-entry latency) — timings proven via the stamped lifecycle logs.
+- **Iteration 2026-07-19 (owner feedback loop):** (1) sparks were rising up the frame → rewrote
+  the ember layer to stream **radially outward from screen center** as small round *screen-space*
+  dots (aspect-corrected, log-radius so velocity ∝ radius → crawls at center, whips at the edge);
+  measuring the dot in lattice space was smearing them into warp-streaks. (2) Ember visuals moved
+  to a **tunable material asset** `Assets/Resources/Materials/MeteorDescentFlames.mat`
+  (`_EmberDensity/_EmberSize/_EmberSpeed/_EmberJitter` + flame colors — inspector knobs); the
+  controller loads it and instantiates a copy, driving only `_Intensity` (asset never dirtied).
+  (3) Burn-off band is now **config-driven** — `ProjectFeatureConfig.MeteorDescentFadeStartY/EndY`
+  (default **340→240**, raised from 230→120 so the flames extinguish sooner/higher), threaded
+  through `Install()` → the controller; `EvaluateIntensity` gained a 4-arg band overload (2-arg
+  default kept for the envelope tests, **5/5 green**). Two tuning surfaces by design: ember *look*
+  on the material, burn-off *timing* on the config.
 First-person flame/ember layer for the sky-drop descent: screen-edge flame tongues streaming opposite
 velocity, embers past the camera, optional heat wobble/warm vignette + roar audio. **Ignites on V14's
 break-open signal, burns off before landing** (lean: altitude band), handing off to C3's dust burst.

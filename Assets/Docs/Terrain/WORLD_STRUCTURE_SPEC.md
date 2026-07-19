@@ -235,6 +235,11 @@ determinism test (same seed → same lakes).
 
 ## 9. Track brief — persistence (Phase E, parallelizable)
 
+> **This brief is the MVP persistence authority.** The full multi-layer vision (entity/NPC deltas, offline
+> simulation, inventory/progression, multi-slot) lives in
+> [`../Persistence/PERSISTENCE_SPEC.md`](../Persistence/PERSISTENCE_SPEC.md) — **post-MVP**. Where the two
+> overlap (terrain edits, structure identity), this section wins.
+
 **Goal:** save = `(header, deltas)`; world regenerates from seed, deltas replay.
 
 - **Header:** save version, `worldSeed`, terrain-config hash (§5.1), timestamp.
@@ -383,4 +388,5 @@ the board (ticket IDs are owner-discussed per the workflow convention — not as
 - `Terrain/UNDERGROUND_VERTICAL_STREAMING_SPEC.md` — reachable-mountains landing pad
 - `Terrain/TERRAIN_BIOME_NOISE_SPEC.md` — biome noise; `H` is the macro layer above it
 - `Structures/STRUCTURE_PLACEMENT_SPEC.md` §9.5/§12.5.1 — `StableAnchorId`, WFC bootstrap gap
-- `../Tickets/TICKETS.md` — board; Phase A ticketing pending owner discussion
+- `../Persistence/PERSISTENCE_SPEC.md` — the post-MVP persistence vision (layers 3–5, offline sim); §9 here is the MVP authority it defers to
+- `../Tickets/TICKETS.md` — board; Phase A ticketed as track `H` (H1 done); persistence = future `S`-track

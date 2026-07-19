@@ -174,6 +174,11 @@ namespace DOTS.Core.Authoring
                  "before landing. Arrival-sequence only — ordinary falls never show meteor effects. " +
                  "Only active when EnableSkyDropSpawn is true.")]
         public bool EnableMeteorDescentVfx = true;
+        [Tooltip("V13 descent VFX burn-off band (world Y): the flames fade from full at FadeStartY " +
+                 "down to fully out at FadeEndY as the player descends. Raise both to extinguish " +
+                 "sooner / higher up. Must keep FadeStartY > FadeEndY.")]
+        public float MeteorDescentFadeStartY = 340f;
+        public float MeteorDescentFadeEndY = 240f;
 
         [Header("Structure Placement")]
         public bool EnableStructurePlacementSystem = true;

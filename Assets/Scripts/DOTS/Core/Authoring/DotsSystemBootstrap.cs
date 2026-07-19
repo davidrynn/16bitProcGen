@@ -65,7 +65,7 @@ namespace DOTS.Core.Authoring
             // release signal, so it works even with the shell disabled.
             if (config.EnableSkyDropSpawn && config.EnableMeteorDescentVfx)
             {
-                MeteorDescentVfx.Install();
+                MeteorDescentVfx.Install(config.MeteorDescentFadeStartY, config.MeteorDescentFadeEndY);
             }
     
             // Diagnostic systems rely on fall-through/pipeline debug channels.

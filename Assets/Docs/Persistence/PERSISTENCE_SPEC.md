@@ -1,6 +1,38 @@
 # World Persistence Spec
-_Status: DESIGN — staged rollout (Layer 2 baseline required before structure realizers)_  
-_Last updated: 2026-04-15_
+
+**Status:** DESIGN — POST-MVP VISION (broader multi-layer roadmap)
+**Last Updated:** 2026-07-19
+**Owner:** Persistence / World
+**MVP Authority:** [`Terrain/WORLD_STRUCTURE_SPEC.md` §9](../Terrain/WORLD_STRUCTURE_SPEC.md) — the current, owner-ratified MVP persistence scope. Build to §9 first; this doc is the vision beyond it.
+**Superseded (for MVP scope + timeline):** this doc's original "staged rollout / Phase 4" sequencing is replaced by the Phase E / `S`-track plan on the board.
+
+---
+
+## 0. Authority & Scope (read first — added 2026-07-19)
+
+This document predates the `H`-authority work (2026-07) and describes the **full, long-horizon**
+persistence vision: five layers plus offline simulation. It is **not** the MVP build target.
+
+**The MVP persistence scope is authoritatively defined by [`WORLD_STRUCTURE_SPEC.md` §9](../Terrain/WORLD_STRUCTURE_SPEC.md) (Phase E)** and its §5.1:
+- Save = `(header, sparse SDF edit deltas, player transform + movement mode)`, single slot, save on quit + interval.
+- Header carries a **terrain-config hash** (`hash(worldSeed, WorldStructureSettings, TerrainGenerationSettings)`);
+  mismatch → invalidate edits (regenerate-without-edits; no migration). Already implemented as
+  `WorldStructureSettings.ComputeConfigHash` (ticket H1).
+- Everything regenerable (anchors, scatter, WFC, lakes) is **deliberately not saved** — its absence is the determinism test.
+
+Where this doc and §9 overlap (terrain edits = Layer 1; structure identity = Layer 2), **§9's decisions win for
+MVP.** The value this doc still carries is everything §9 does *not* cover — the post-MVP roadmap:
+
+| Layer | In MVP (§9)? | Where it's canonical |
+|-------|--------------|----------------------|
+| 1 — Terrain edit journal | ✅ Yes (as `SDFEdit` deltas) | §9 for the format; see ⚠️ note in [Layer 1](#layer-1--terrain-shape-edit-journal) |
+| 2 — Structure placements | Partial (identity via `StableAnchorId`) | Flags shipped; see ⚠️ note in [Layer 2](#layer-2--structure-placements) |
+| 3 — Entity state deltas + offline sim | ❌ Post-MVP | **Here** (canonical) |
+| 4 — NPC history | ❌ Post-MVP | **Here** (canonical) |
+| 5 — Player data (inventory/progression) | ❌ Post-MVP (MVP saves transform only) | **Here** (canonical) |
+
+> **Correction policy:** the ⚠️ callouts below (dated 2026-07-19) fix places where this April draft diverged
+> from the code that later shipped. Where a callout contradicts the surrounding original text, the callout wins.
 
 ---
 
@@ -78,6 +110,19 @@ public enum EditOpType : byte
     SetMaterial = 2,   // change surface material only
 }
 ```
+
+> **⚠️ Correction (2026-07-19): the `EditOp`/`ChunkEditJournal` types above are aspirational, not the wire
+> format.** The real, shipped terrain-edit record is `SDFEdit`
+> (`Assets/Scripts/DOTS/Terrain/SDF/SDFEdit.cs`): `Center / Radius / HalfExtents / Shape (Sphere|Box) /
+> Operation (Add|Subtract)`. There is **no material channel** — `SetMaterial` / `MaterialId` / `SetSnapshot`
+> describe systems that do not exist. Per [`WORLD_STRUCTURE_SPEC.md` §9](../Terrain/WORLD_STRUCTURE_SPEC.md),
+> MVP persistence **serializes the existing `SDFEdit` buffer** (confirm round-trips against `SDFEditTests`),
+> rather than introducing `EditOp`. Two more deltas from this original text:
+> - **Versioning guard:** MVP stamps the save with the §5.1 terrain-config hash (`WorldStructureSettings.ComputeConfigHash`,
+>   already built) — this layer originally had no guard against a noise-dial change relocating the base under saved edits.
+> - **The one real code gap:** edits today live in a **single flat global `DynamicBuffer<SDFEdit>`** on a bare
+>   entity, **not** keyed by chunk coord and with no `WorldTick`/ordering stamp. Chunk-keying + application-order
+>   replay (what this section assumes) is the concrete refactor Phase E must do. `WorldTickSingleton` does not exist.
 
 ### On Save
 Serialize `EditOp[]` as a flat binary array to `chunk.edits`. No compression needed until op count exceeds ~10k per chunk — compact then.
@@ -167,6 +212,15 @@ public enum StructurePersistenceFlags : byte
 Structure persistence identity and apply/record hooks are a prerequisite for structure family realizers.
 
 Family realization systems should not ship before this Layer 2 baseline is active.
+
+> **⚠️ Correction (2026-07-19): overtaken by events.** Structure family realizers (`RelicRealizationSystem`,
+> etc.) **did** ship before any Layer-2 persistence baseline, and correctly so: deterministic identity is
+> carried by `StableAnchorId` (designed seed/position-independent for exactly this — see
+> `STRUCTURE_PLACEMENT_SPEC.md` §9.5), not by an active record/apply system. **This "must not ship before" gate
+> no longer holds.** What survives is the identity + flag contract, which *did* land in code:
+> `StructurePersistenceFlags` (`Locked/Modified/Destroyed/Discovered`) and the `StructureAnchorRecord` /
+> `StructurePlacementSource` types. Keep those as the post-MVP hook; MVP (§9) does not persist structures at all
+> (anchors regenerate from seed — their absence is the determinism test).
 
 ---
 
@@ -318,6 +372,13 @@ public struct WorldTickSingleton : IComponentData
 ---
 
 ## Phase 1 Hooks (Add Now, Implement Phase 4)
+
+> **⚠️ Note (2026-07-19): these "add now" hooks were largely NOT adopted** — `ChunkEditJournal`,
+> `ChunkEditJournalDirty`, and `WorldTickSingleton` do not exist in the codebase. Do not treat them as present.
+> The scaffolding that *did* land is different: `Tree/RockStateDelta` (+ persistent-identity/placement records),
+> `StructurePersistenceFlags`, `StableAnchorId` records, and `WorldStructureSettings.ComputeConfigHash`. When
+> Phase E starts, re-derive the actual MVP hook list from [`WORLD_STRUCTURE_SPEC.md` §9](../Terrain/WORLD_STRUCTURE_SPEC.md),
+> not from the list below (which targets the post-MVP layers 3–5).
 
 These stubs keep Phase 4 from requiring invasive refactors:
 

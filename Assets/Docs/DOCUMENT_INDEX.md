@@ -108,11 +108,17 @@ Quick-reference index of all project documentation. Docs are organized by featur
 |----------|--------|-------------|
 | [Multiplayer/MULTIPLAYER_SPEC.md](Multiplayer/MULTIPLAYER_SPEC.md) | DESIGN | Multiplayer readiness: Pre-MVP hygiene, MVP command architecture, Post-MVP arena PvP path. Supersedes multiplayer_evaluation_spec.md |
 
+## Audio
+
+| Document | Status | Description |
+|----------|--------|-------------|
+| [Audio/AUDIO_SPEC.md](Audio/AUDIO_SPEC.md) | DESIGN (proposed) | MVP sound — event-driven managed audio layer (`GameAudio` façade + pooled sources), reuses VFX/gameplay signals. MVP sound list (comet roar, landing, wind) + trigger hooks; open decisions in §8 |
+
 ## Persistence
 
 | Document | Status | Description |
 |----------|--------|-------------|
-| [Persistence/PERSISTENCE_SPEC.md](Persistence/PERSISTENCE_SPEC.md) | DESIGN | World persistence — edit journals, entity/NPC/player state (Phase 4) |
+| [Persistence/PERSISTENCE_SPEC.md](Persistence/PERSISTENCE_SPEC.md) | DESIGN (post-MVP vision) | Full 5-layer persistence vision + offline sim (entity/NPC/player deltas). **MVP scope is authoritative in [Terrain/WORLD_STRUCTURE_SPEC.md](Terrain/WORLD_STRUCTURE_SPEC.md) §9** — SDF-delta saves + config-hash header; this doc is the roadmap beyond it |
 
 ## Process
 

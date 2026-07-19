@@ -13,7 +13,10 @@ Shader "UI/MeteorDescentFlames"
         _FlameOuter ("Flame Outer Color", Color) = (0.9, 0.25, 0.05, 1)
         _FlameReach ("Flame Reach", Range(0, 0.5)) = 0.22
         _FlameSpeed ("Flame Speed", Float) = 1.6
-        _EmberDensity ("Ember Density", Range(0, 1)) = 0.55
+        _EmberDensity ("Ember Density", Range(0, 1)) = 0.45
+        _EmberSize ("Ember Size", Range(0.001, 0.03)) = 0.006
+        _EmberSpeed ("Ember Speed", Range(0, 80)) = 34
+        _EmberJitter ("Ember Jitter", Range(0, 2)) = 1.3
         _VignetteStrength ("Warm Vignette", Range(0, 1)) = 0.3
     }
 
@@ -60,6 +63,9 @@ Shader "UI/MeteorDescentFlames"
             float _FlameReach;
             float _FlameSpeed;
             float _EmberDensity;
+            float _EmberSize;
+            float _EmberSpeed;
+            float _EmberJitter;
             float _VignetteStrength;
 
             v2f vert(appdata v)
@@ -125,23 +131,53 @@ Shader "UI/MeteorDescentFlames"
                 float3 flameCol = lerp(_FlameOuter.rgb, _FlameInner.rgb, flame);
                 float flameAlpha = flame * (0.55 + 0.45 * n) * _Intensity;
 
-                // Embers: hashed grid sparks rising up the screen near the flame band, brighter
-                // and denser at full burn. Two layers for parallax.
+                // Embers: small ROUND sparks born near the screen center and streaming outward
+                // (owner: round + small + less dense; the outward direction is right). Placement and
+                // motion live in a polar angle×log-radius lattice that scrolls outward over time, but
+                // each spark's SHAPE is measured in SCREEN space so every dot stays round and the
+                // same size at any radius. Measuring the shape in lattice space is what smeared them
+                // into radial warp-streaks (the bug); a cell is tiny-tangential near the center and
+                // huge far out, so a "round" lattice dot is anything but round on screen.
+                float aspect = _ScreenParams.x / max(_ScreenParams.y, 1.0);
+                float2 pc = float2(p.x * aspect, p.y);
+                float rad = length(pc);
+                float ang01 = atan2(pc.y, pc.x) * (1.0 / 6.2831853) + 0.5; // 0..1, wraps at ±PI
+                float logR = log(rad + 0.03);
+
                 float ember = 0.0;
                 for (int l = 0; l < 2; l++)
                 {
-                    float speed = 0.55 + 0.35 * l;
-                    float2 g = i.uv * float2(38.0 + 14.0 * l, 22.0 + 8.0 * l) + float2(0.0, -t * speed * 22.0);
+                    // _EmberSpeed scales BOTH layers (the small +l term is only parallax between
+                    // them). The earlier `0.7 * l` form left layer 0 at the base speed, so multiplying
+                    // that term sped up only the second layer — the "only some embers moved" you saw.
+                    float speed   = _EmberSpeed * (1.0 + 0.25 * l);
+                    float angBins = 26.0 + 10.0 * l;
+                    float radBins = 5.0 + 2.0 * l;
+                    // Log-radius coordinate scrolls so a fixed spark travels outward with velocity
+                    // proportional to its radius — it crawls near center and WHIPS toward the edge
+                    // (radius grows exponentially in time). Minus sign = outward (cf. the flame's
+                    // inward lick above); raise `_EmberSpeed` for a faster field, lower `radBins` for
+                    // a steeper whip.
+                    float2 g = float2(ang01 * angBins, logR * radBins - t * speed);
                     float2 cell = floor(g);
                     float h = hash21(cell + l * 61.7);
-                    float2 jitter = float2(hash21(cell + 7.3), hash21(cell + 3.1));
-                    float d = length(frac(g) - 0.5 - (jitter - 0.5) * 0.6);
-                    float spark = saturate(1.0 - d * 6.0);
-                    // Only a fraction of cells hold a spark, mostly near the edges.
-                    float edgeBias = smoothstep(0.45, 0.05, edgeDist);
-                    ember += spark * step(1.0 - _EmberDensity * 0.35, h) * edgeBias;
+                    // Jitter the spark's home inside its cell so the lattice never reads as rings/rays.
+                    float2 jitter = float2(hash21(cell + 7.3), hash21(cell + 3.1)) - 0.5;
+                    float2 f = (frac(g) - 0.5) - jitter * _EmberJitter;
+                    // Lattice offset -> screen-space offset (arc lengths) so the dot is round on screen:
+                    //   radial  ~ (f/radBins)*rad ,  tangential ~ (f/angBins)*2PI*rad
+                    float dR = (f.y / radBins) * rad;
+                    float dT = (f.x / angBins) * 6.2831853 * rad;
+                    float dScreen = length(float2(dR, dT));
+                    // Small round dot; per-spark size variation keeps them non-uniform.
+                    float size = _EmberSize * (0.55 + 0.9 * hash21(cell + 19.1));
+                    float spark = saturate(1.0 - dScreen / max(size, 1e-4));
+                    spark *= spark; // crisp core, quick falloff
+                    // Fade out the singular hot-spot at the exact center; sparks are born just off it.
+                    float radialFade = smoothstep(0.04, 0.22, rad);
+                    ember += spark * step(1.0 - _EmberDensity * 0.5, h) * radialFade;
                 }
-                float3 emberCol = _FlameInner.rgb * 1.3;
+                float3 emberCol = _FlameInner.rgb * 1.4;
                 float emberAlpha = saturate(ember) * _Intensity;
 
                 // Warm vignette — a faint heat tint creeping in from the frame.
