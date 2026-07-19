@@ -1,6 +1,7 @@
 # Meteor Arrival Sequence Spec
 
-**Status:** ACTIVE — V14 shell built 2026-07-18 (see §12 build record); V13 not started
+**Status:** ACTIVE — V14 shell built + owner-validated 2026-07-18 (ticket closed; see §12 build
+record incl. round 2); V13 not started
 **Last Updated:** 2026-07-18
 **Owner:** Rendering / Vista
 **Phase:** Vista MVP follow-on (tickets V13 + V14)

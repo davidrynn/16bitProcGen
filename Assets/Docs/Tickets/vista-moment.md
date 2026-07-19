@@ -569,7 +569,10 @@ world assembling; shell timing tracks real readiness; break-open + V13 ignition 
   concurrent, not before) and the sky-drop spawn faces **straight down** (pitch 85°) so the
   shell breaks open onto the ground rushing up — emerging from the falling comet. Confirmed:
   the fall was never a timer; gravity + shell both key off the real gate release (12 s test
-  hold logged install t=0.00 → release t=12.02). Owner eyeball of the round-2 look remains.
+  hold logged install t=0.00 → release t=12.02).
+- **Owner eyeball PASSED — ticket closed (2026-07-18):** full arrival beat verified in play
+  ("it all looks great"). V13 (burning-descent VFX) is the natural follow-on — it ignites on
+  this shell's release signal.
 
 #### V15 — Sky mountain band: rugged silhouette + horizon line + snow _(opened 2026-07-09 — owner observation, discussed + built same day)_
 **Spec:** `Rendering/SKY_MOUNTAIN_BAND_SPEC.md` (ACTIVE — full design + dial table).
