@@ -105,7 +105,12 @@ namespace DOTS.Player.Bootstrap
             entityManager.AddComponentData(entity, new PlayerViewComponent
             {
                 YawDegrees = 0f,
-                PitchDegrees = 0f
+                // Sky-drop arrival (V14): start looking straight down at the ground rushing up,
+                // so the meteor break-open reads as emerging from the falling comet. 85 is the
+                // PlayerMovementConfig.MaxPitchDegrees clamp — the look system would clamp any
+                // steeper value on the first mouse delta anyway. Positive pitch = down
+                // (CameraEffectResolverSystem first-person forward.y = -sin(pitch)).
+                PitchDegrees = SkyDropEnabled ? 85f : 0f
             });
 
             // Movement MVP config components

@@ -29,7 +29,12 @@ namespace DOTS.Player.Bootstrap
             var root = new GameObject(RootName);
             Object.DontDestroyOnLoad(root);
             root.AddComponent<MeteorShellController>();
-            DebugSettings.LogPlayer("MeteorShellOverlay: installed (holding until readiness gate release).");
+            // forceLog: one-shot arrival-sequence lifecycle — a single line per boot, and the
+            // only visibility into the shell state machine (DDOL objects are invisible to
+            // editor tooling queries).
+            DebugSettings.LogPlayer(
+                $"MeteorShellOverlay: installed at t={Time.timeSinceLevelLoad:0.00}s (holding until readiness gate release).",
+                forceLog: true);
         }
 
         private sealed class MeteorShellController : MonoBehaviour
@@ -44,8 +49,14 @@ namespace DOTS.Player.Bootstrap
             // rather than trapping the player behind an opaque screen.
             private const float FailSafeSeconds = 20f;
 
-            private const float FlareSeconds = 0.25f;
-            private const float DissolveSeconds = 0.65f;
+            // The dissolve starts on the release beat itself (gravity releases the same frame the
+            // gate goes), so the plates burn off WHILE the player begins to fall — the owner call
+            // (2026-07-18): the break-open must read as emerging from the falling comet, never as
+            // the comet stopping first. The flare is an envelope inside the dissolve, not a delay
+            // before it.
+            private const float DissolveSeconds = 1.75f;
+            private const float FlareAttackSeconds = 0.12f;
+            private const float FlareDecaySeconds = 0.6f;
             private const int TextureSize = 512;
 
             private static readonly int OpenProgressId = Shader.PropertyToID("_OpenProgress");
@@ -76,16 +87,24 @@ namespace DOTS.Player.Bootstrap
 
             private void Update()
             {
+                if (_phase == Phase.Done)
+                {
+                    return;
+                }
+
+                // Rumble through the break-open too — the shell is still shedding plates.
+                ApplyRumbleJitter();
+
                 if (_phase != Phase.WaitingForRelease)
                 {
                     return;
                 }
 
-                ApplyRumbleJitter();
-
                 if (IsGateReleased())
                 {
-                    DebugSettings.LogPlayer("MeteorShellOverlay: readiness gate released — breaking open.");
+                    DebugSettings.LogPlayer(
+                        $"MeteorShellOverlay: readiness gate released at t={Time.timeSinceLevelLoad:0.00}s — breaking open.",
+                        forceLog: true);
                     StartCoroutine(BreakOpen());
                     return;
                 }
@@ -93,7 +112,8 @@ namespace DOTS.Player.Bootstrap
                 if (Time.unscaledTime - _installedTime >= FailSafeSeconds)
                 {
                     DebugSettings.LogPlayerWarning(
-                        "MeteorShellOverlay: no gate release observed before fail-safe timeout — force-opening the shell.");
+                        "MeteorShellOverlay: no gate release observed before fail-safe timeout — force-opening the shell.",
+                        forceLog: true);
                     StartCoroutine(BreakOpen());
                 }
             }
@@ -137,19 +157,16 @@ namespace DOTS.Player.Bootstrap
             {
                 _phase = Phase.BreakingOpen;
 
-                // Crack flare — the "cracks flare" beat before the shatter.
-                for (float t = 0f; t < FlareSeconds; t += Time.unscaledDeltaTime)
-                {
-                    SetShader(FlareId, t / FlareSeconds);
-                    yield return null;
-                }
-                SetShader(FlareId, 1f);
-
-                // Dissolve outward along the cracks; the view opens onto the plain below while
-                // the player is already falling — gravity released the same beat (spec §5.1).
+                // One loop: plates dissolve center-out (per-plate order baked in the texture's A
+                // channel) while the flare spikes and decays over the same window — the player is
+                // falling from frame one of this animation.
                 for (float t = 0f; t < DissolveSeconds; t += Time.unscaledDeltaTime)
                 {
                     SetShader(OpenProgressId, t / DissolveSeconds);
+                    float flare = t < FlareAttackSeconds
+                        ? t / FlareAttackSeconds
+                        : Mathf.Clamp01(1f - (t - FlareAttackSeconds) / FlareDecaySeconds);
+                    SetShader(FlareId, flare);
                     yield return null;
                 }
 
@@ -220,16 +237,20 @@ namespace DOTS.Player.Bootstrap
                 {
                     // Plain opaque cover — worse-looking but still an honest loading screen.
                     DebugSettings.LogPlayerWarning(
-                        "MeteorShellOverlay: Shaders/MeteorShellOverlay not found in Resources — using flat black fallback.");
+                        "MeteorShellOverlay: Shaders/MeteorShellOverlay not found in Resources — using flat black fallback.",
+                        forceLog: true);
                     _image.color = new Color(0.05f, 0.04f, 0.035f, 1f);
                 }
             }
 
             /// <summary>
             /// Packs the shell's static fields into one texture the shader animates:
-            /// R = rock luminance FBM, G = crack mask (Voronoi edge lines), B = radial distance
-            /// from screen center (drives both the interior vignette and the dissolve order).
-            /// Deterministic — no per-run variation to eyeball-tune against.
+            /// R = rock luminance FBM, G = crack mask (sharp Voronoi edge lines), B = crack halo
+            /// (wide falloff — warm light bleeding from the cracks onto the plates), A = the
+            /// plate's dissolve order (its Voronoi cell's distance from screen center + jitter,
+            /// so plates break away one by one, center-out). Radial vignette is computed from UV
+            /// in the shader, freeing the channel. Deterministic — no per-run variation to
+            /// eyeball-tune against.
             /// </summary>
             private static Texture2D GenerateShellTexture()
             {
@@ -242,21 +263,28 @@ namespace DOTS.Player.Bootstrap
                     wrapMode = TextureWrapMode.Clamp
                 };
 
-                // Jittered-grid Voronoi feature points (fixed seed).
+                // Jittered-grid Voronoi feature points (fixed seed), plus per-plate dissolve
+                // order: mostly the plate center's distance from screen center (center-out),
+                // a little hash jitter so equidistant plates don't pop in lockstep. Kept in
+                // [0.04, 0.88] so every plate finishes inside the shader's progress sweep.
                 var rng = new System.Random(0x5EED);
                 var points = new Vector2[cells * cells];
+                var plateOrder = new float[cells * cells];
+                var center = new Vector2(0.5f, 0.5f);
                 for (int cy = 0; cy < cells; cy++)
                 {
                     for (int cx = 0; cx < cells; cx++)
                     {
-                        points[cy * cells + cx] = new Vector2(
+                        int i = cy * cells + cx;
+                        points[i] = new Vector2(
                             (cx + (float)rng.NextDouble()) / cells,
                             (cy + (float)rng.NextDouble()) / cells);
+                        float centrality = Mathf.Clamp01(Vector2.Distance(points[i], center) / 0.65f);
+                        plateOrder[i] = Mathf.Clamp(0.04f + 0.74f * centrality + 0.10f * (float)rng.NextDouble(), 0.04f, 0.88f);
                     }
                 }
 
                 var pixels = new Color32[size * size];
-                var center = new Vector2(0.5f, 0.5f);
 
                 for (int y = 0; y < size; y++)
                 {
@@ -266,10 +294,12 @@ namespace DOTS.Player.Bootstrap
                         float u = (x + 0.5f) / size;
                         var p = new Vector2(u, v);
 
-                        // F2 - F1 over the 3×3 cell neighbourhood → small near plate borders.
+                        // F2 - F1 over the 3×3 cell neighbourhood → small near plate borders;
+                        // the F1 winner is the plate this pixel belongs to.
                         int pcx = Mathf.Clamp((int)(u * cells), 0, cells - 1);
                         int pcy = Mathf.Clamp((int)(v * cells), 0, cells - 1);
                         float f1 = float.MaxValue, f2 = float.MaxValue;
+                        int plateIndex = pcy * cells + pcx;
                         for (int oy = -1; oy <= 1; oy++)
                         {
                             for (int ox = -1; ox <= 1; ox++)
@@ -277,13 +307,14 @@ namespace DOTS.Player.Bootstrap
                                 int nx = pcx + ox, ny = pcy + oy;
                                 if (nx < 0 || ny < 0 || nx >= cells || ny >= cells) continue;
                                 float d = (points[ny * cells + nx] - p).sqrMagnitude;
-                                if (d < f1) { f2 = f1; f1 = d; }
+                                if (d < f1) { f2 = f1; f1 = d; plateIndex = ny * cells + nx; }
                                 else if (d < f2) { f2 = d; }
                             }
                         }
                         float edge = Mathf.Sqrt(f2) - Mathf.Sqrt(f1);
                         float crack = 1f - Mathf.Clamp01(edge / 0.045f);
                         crack = crack * crack; // sharpen the line profile
+                        float halo = 1f - Mathf.Clamp01(edge / 0.16f); // wide, for light bleed
 
                         // 4-octave rock FBM.
                         float rock = 0f, amp = 0.5f, freq = 5f;
@@ -294,13 +325,11 @@ namespace DOTS.Player.Bootstrap
                             freq *= 2.1f;
                         }
 
-                        float radial = Mathf.Clamp01(Vector2.Distance(p, center) / 0.7071f);
-
                         pixels[y * size + x] = new Color32(
                             (byte)(Mathf.Clamp01(rock) * 255f),
                             (byte)(crack * 255f),
-                            (byte)(radial * 255f),
-                            255);
+                            (byte)(halo * halo * 255f),
+                            (byte)(plateOrder[plateIndex] * 255f));
                     }
                 }
 

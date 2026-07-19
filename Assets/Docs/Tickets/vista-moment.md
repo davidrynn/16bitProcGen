@@ -561,6 +561,15 @@ world assembling; shell timing tracks real readiness; break-open + V13 ignition 
   `MeteorShellMinHoldSeconds` (1.75 s); shell off → min-hold 0 → gate timing byte-identical to
   pre-V14. 20 s fail-safe force-open. EditMode timing-contract tests in `MeteorArrivalGateTests`.
   Remaining: owner eyeball of the full arrival beat in play; V13 rides the same release signal.
+- **Round 2 (2026-07-18, owner feedback — built + play-verified same day, spec §12):**
+  (1) interior brightened — lit rock + crack-light bleed halo, plates no longer read black;
+  (2) dissolve is now **plate-by-plate, center-out** (per-Voronoi-cell order baked in the
+  texture A channel; ~0.2 s per plate over a 1.75 s sweep; burning front at the eroding edge;
+  subtle outward UV zoom = debris passing); (3) break-open starts **on the release beat** (flare
+  concurrent, not before) and the sky-drop spawn faces **straight down** (pitch 85°) so the
+  shell breaks open onto the ground rushing up — emerging from the falling comet. Confirmed:
+  the fall was never a timer; gravity + shell both key off the real gate release (12 s test
+  hold logged install t=0.00 → release t=12.02). Owner eyeball of the round-2 look remains.
 
 #### V15 — Sky mountain band: rugged silhouette + horizon line + snow _(opened 2026-07-09 — owner observation, discussed + built same day)_
 **Spec:** `Rendering/SKY_MOUNTAIN_BAND_SPEC.md` (ACTIVE — full design + dial table).

@@ -233,3 +233,35 @@ purpose; the sequence must stand as spectacle alone.
 - **Remaining:** owner eyeball of the full beat in play (interior read, flare→dissolve timing,
   min-hold feel); V13 ignition hook (V13 can key off the same gate-removal poll or a callback
   added to the overlay then).
+
+### Round 2 (2026-07-18, owner feedback on the first in-play look)
+
+Three owner calls, all built + play-verified same day:
+
+1. **Interior brightened** — plate surfaces were near-black between the cracks. Rock colors
+   raised (`_RockColor 0.50/0.40/0.32`, deep `0.21/0.17/0.14`, edge vignette floor 0.65) and a
+   new **crack-light bleed** term added: the packed texture gained a wide-falloff crack *halo*
+   channel (B) that warms nearby plate surface (`_CrackBleed`), so the cracks read as the light
+   source and the plates read as lit rock, not voids.
+2. **Plate-by-plate dissolve, center-out, more gradual** — the per-pixel radial erosion was
+   replaced by discrete plates: the texture's A channel bakes each Voronoi cell's dissolve
+   order (cell-center distance from screen center + hash jitter, range 0.04–0.88), the shader
+   sweeps `_OpenProgress` past those gates with per-pixel rock-noise erosion inside each plate
+   (~0.2 s per plate), a pre-burn heat ramp before each plate goes, and a bright **burning
+   front** at the eroding edge. Dissolve lengthened 0.65 s → **1.75 s**. A subtle outward UV
+   zoom (14% over the open) makes surviving plates grow toward the screen edges — debris
+   passing the emerging player.
+3. **Break-open = the fall, facing down** — confirmed the fall was never a timer (gravity and
+   shell both key off the real gate release); the disconnect was the 0.25 s flare running
+   *before* the dissolve. The flare is now an envelope inside the dissolve (attack 0.12 s /
+   decay 0.6 s) so plates start burning off on the release beat itself, and the sky-drop spawn
+   now initializes the player view **pitch 85° down** (`PlayerEntityBootstrap`, the
+   `MaxPitchDegrees` clamp), so the ground rushes up through the breaking shell — emerging from
+   the falling comet, not a stopped one.
+
+Verification note: the shell's lifecycle logs are now unconditional (`forceLog`) and stamped
+with `timeSinceLevelLoad` — a 12 s test hold logged install `t=0.00s` → release `t=12.02s`
+exactly. DDOL objects are invisible to editor tooling queries and camera-path screenshots omit
+overlay UI; full-screen OS captures are the way to see the shell (see the Unity-MCP constraints
+memory). The unfocused-editor throttle inflates `unscaledDeltaTime`, compressing the dissolve
+in captures — real focused play runs the full 1.75 s.
