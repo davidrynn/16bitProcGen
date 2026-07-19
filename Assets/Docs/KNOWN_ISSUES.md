@@ -22,6 +22,8 @@ Master tracker for active bugs, investigations, and resolved issues. Link to det
 
 The 2–3× scene gap suggests features unique to BasicTerrainScene account for a large share of the cost. The absolute numbers are surprising given DOTS/ECS + Burst + Job System usage.
 
+**Observation (2026-07-19, owner — STILL OPEN, keep optimizing):** manually deactivating `TreeSystemBootstrap` + `RockVisualBootstrap` in `Basic Terrain Scene` (trees/rocks are ~92% of scene vertices per [`Rendering/RENDER_PERF_PROFILE_REPORT.md`](Rendering/RENDER_PERF_PROFILE_REPORT.md)) **improved FPS but it still wasn't great**. So a **secondary bottleneck remains beyond scatter vertex count** — vertex reduction (ticket **R1** low-poly LODs) is necessary but *not sufficient*. Prime remaining suspects are the main-thread ones below (RecalculateNormals per upload, rebuild-budget saturation, per-chunk draw-call/instancing count — the ~1,180 draw calls / one instanced batch per chunk). Treat perf as an ongoing known issue, not a one-fix item.
+
 **Confirmed Root Causes and Fixes (2026-05-13 profiler):**
 
 1. **(Fixed) `TerrainChunkRenderPrepSystem` iterating all chunks every frame — 27ms/frame.** Query had no filter, iterating every active chunk (400–600 at Medium render distance) recalculating AABB and calling `EntityManager.HasComponent` three times per chunk on the main thread. Fix: added `.WithAll<TerrainChunkNeedsRenderUpload>()` filter and `[UpdateBefore(TerrainChunkMeshUploadSystem)]` ordering. Main thread dropped from 33ms → 17.8ms.
