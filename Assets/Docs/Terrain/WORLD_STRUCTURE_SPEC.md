@@ -268,6 +268,51 @@ determinism test (same seed → same lakes).
    exact world state; same anchor → same interior every run; zero impact on any exterior
    system while inside.
 
+### 10.1 Code triage — `WFCCollapseSystem` (Fable review, 2026-07-18)
+
+**Verdict: rewrite the collapse core; keep the data layer and spawn path.** The existing
+`WFCCollapseSystem` (649 lines) is a prototype that *approximates* WFC, not a paused
+implementation of it. Plan Phase F as "rewrite one well-understood algorithm against existing
+data shapes," not "fix bugs in a working system." Findings, most severe first:
+
+1. **The algorithm is not WFC.** There is no minimum-entropy cell selection and no
+   constraint-propagation wave. Instead: a per-frame sweep over *all* cells, each pruning
+   only against already-collapsed neighbors, with stochastic collapse hacks
+   (`possibleCount <= 3 && rand < 0.5`, a 10% per-frame "force collapse", and a meaningless
+   scalar `entropy -= 0.5` per frame). Comments admit it ("for testing: more aggressive
+   collapse logic"). Contradictions (`possibleCount == 0`) are absorbed silently as
+   `selectedPattern = -1` with no restart/backtrack — failed cells just become holes.
+2. **Determinism is frame-coupled.** Collapse depends on per-frame RNG draws over unordered
+   query iteration — results vary with frame pacing and chunk iteration order even under the
+   fixed seed. This violates §3's invariant and breaks D2's "same anchor → same interior."
+3. **O(n²)-per-frame with allocations.** `PruneWithCollapsedNeighbors`/`IsWallAt` call
+   `ToComponentDataArray` per cell per frame; `PropagateConstraintsToNeighbors` calls
+   `ToEntityArray` *inside* its loop. Fine for a 10×10 test grid; not a foundation.
+4. **Dead/vestigial code:** the `ProcessWFCCellsJob` at file bottom (never scheduled;
+   collapses by decaying float entropy), `HasAdjacentWall` (uncalled),
+   `PropagateConstraintsToNeighbors` (entropy-nudging, not constraints), and the compute
+   stub (§6.4 — park stands).
+5. **Legacy coupling:** `[UpdateAfter(LegacyHeightmapTerrainGenerationSystem)]` +
+   `using DOTS.Terrain.Legacy` tie it to the quarantined pipeline; the rewrite must not
+   reference `DOTS.Terrain.Legacy` (CLAUDE.md quarantine rule). Also `SystemBase` where the
+   project convention is `ISystem`.
+
+**Salvageable as-is (the good news):** the data layer — `WFCCell`'s 32-bit possibility mask +
+`WFCCellHelpers`, the `WFCPatternData`/`WFCConstraintData` blob shapes, `WFCBuilder`'s
+macro-tile pattern definitions and `PatternsAreCompatible` edge rules — and the downstream
+spawn path (`DungeonPrefabRegistry` → `DungeonEntitySpawningSystem`), which the board already
+records as functional. The rewrite slots between them.
+
+**Rewrite shape (small, well-bounded):** one Burst-compiled routine, classic WFC:
+initialize domain masks → loop { pick min-entropy uncollapsed cell (deterministic tie-break:
+hash(cell index, seed)) → collapse via `Random(hash(worldSeed, StableAnchorId))` → propagate
+constraints outward via a BFS queue until fixpoint } → on contradiction, restart with
+`seed+attempt` (bounded attempts, then flag failure loudly). Grids are small: run to
+completion in one frame or time-slice by iteration count — either way the result is a pure
+function of the seed, satisfying §3 by construction. EditMode tests: same seed → identical
+grid; all edges compatible post-run; contradiction restart works; no `Legacy` references
+(assembly-level assertion if cheap).
+
 ## 11. Sequencing & handoffs
 
 ```
