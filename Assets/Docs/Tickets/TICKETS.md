@@ -148,7 +148,7 @@ _Tickets not yet pulled into a work-set._
 | M3  | Thermal columns (vertical lift volumes) | Movement |
 | [M4](backlog.md#m4--bug-ballistic-takeoff-false-grounding-past-jump-apex-codex-review-2026-07-02) | BUG: Ballistic-takeoff false-grounding past jump apex — suppress by contact/separation, not velocity sign | Movement |
 | [M5](backlog.md#m5--harden-sky-drop-landing-against-high-speed-tunneling-open--spun-off-from-v7-2026-07-03) | Harden sky-drop landing against high-speed tunneling (thin/absent collider under landing XZ; no CCD) | Movement |
-| M6  | Terrain editing no longer works. Shifting to edit-mode then attempting to edit does nothing | Terrain |
+| M6  | ~~Terrain editing no longer works. Shifting to edit-mode then attempting to edit does nothing~~ **FIXED 2026-07-19** — root cause was config, not code: `ProjectFeatureConfig.asset` had `EnableTerrainEditInputSystem: 0` (code default is `true`), so `TerrainEditInputSystem` was never created at bootstrap — Tab still toggled edit mode but Q/E/click had no handler. Flipped the asset flag to 1 (via MCP); no errors on play-start. Actual Q/E carve/fill still owner-verify in play. NB pre-existing edit issues if exercised: BUG-004 (BlobAssetReference on edit raycast), BUG-008 (edit-buffer growth) | Terrain |
 | P1  | Basic HUD (charge indicator + chain window indicator) | Phase 1 |
 | P2  | Magic Hand System (raycast, charge, binary terrain edit) | Phase 1 |
 | E1  | Blocked-edit visual feedback — red-X reticle pulse (+ optional tooltip) when a terrain edit is rejected by the player-safety volume. Post-MVP: terrain editing itself needs substantial work first (owner 2026-07-03; salvaged from archived Cursor plan) | Editing UX |

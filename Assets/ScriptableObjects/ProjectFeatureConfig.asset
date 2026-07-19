@@ -42,7 +42,7 @@ MonoBehaviour:
   EnableTerrainCleanupSystem: 1
   EnableTerrainGlobPhysicsSystem: 1
   EnableTerrainChunkDensitySamplingSystem: 1
-  EnableTerrainEditInputSystem: 0
+  EnableTerrainEditInputSystem: 1
   TerrainEditPlacementMode: 1
   TerrainEditSnapSpace: 1
   TerrainEditCellFraction: 0.25
@@ -76,12 +76,16 @@ MonoBehaviour:
   SkyDropGravityHoldSeconds: 8
   EnableMeteorArrivalShell: 1
   MeteorShellMinHoldSeconds: 1.75
+  EnableMeteorDescentVfx: 1
+  MeteorDescentFadeStartY: 340
+  MeteorDescentFadeEndY: 240
   EnableStructurePlacementSystem: 1
   EnableRelicRealizationSystem: 1
   EnableRelicLodSelectionSystem: 1
   EnableDungeonEntitySpawningSystem: 0
   EnableWeatherGpuEffectsSystem: 0
   VistaCameraFarClip: 600
+  LandmarkDrawDistance: 2000
   EnableDistanceFog: 1
   FogMode: 3
   FogColor: {r: 0.62, g: 0.74, b: 0.85, a: 1}
