@@ -357,9 +357,20 @@ the board (ticket IDs are owner-discussed per the workflow convention — not as
    inside an enclosed interior (and the interior atmosphere preset from §10.4 suppresses the
    sky). Physics broadphase is comfortable at these coordinates. Fiction bonus: entering the
    hand *descends into the god's remains* — the portal goes down, which is better than a
-   teleport to nowhere. Executing sprint still validates: readiness-gate/terrain-safety
-   systems must not fight a player standing on interior prefabs below the slab (the V7 probe
-   only runs at startup, but check `PlayerTerrainSafetySystem`'s assumptions).
+   teleport to nowhere.
+
+   **Safety-system check (code-verified 2026-07-18): living below the slab is safe; the
+   teleport itself is the trap.** `PlayerTerrainSafetySystem` has no "must have ground below"
+   or absolute-Y assumption — it only snap-backs when the prev→current ray hits a collider
+   (tunneling), works on any collidable geometry (its own doc comment already claims dungeon
+   support), and is inert while grounded on interior prefab floors. **But a portal teleport is
+   a huge single-frame displacement whose prev→current ray crosses the terrain slab — the
+   safety net would "rescue" the player straight back out of the dungeon** (once per 0.5s
+   cooldown). Hard rule for the Phase F portal: on teleport, write
+   `PlayerMovementState.PreviousPosition = destination`, zero `PhysicsVelocity`, and reset
+   `FallTime` in the same frame — the precedent is exactly how the readiness gate seeds
+   `PreviousPosition` on release (`PlayerStartupReadinessSystem`). Any future fast-travel
+   inherits this rule.
 4. Whether `WorldStructureSettings` is a new asset or a `TerrainGenerationSettings` section —
    executor decides; the hash rule (§4.2) holds either way.
 
