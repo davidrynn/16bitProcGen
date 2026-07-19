@@ -332,8 +332,21 @@ the board (ticket IDs are owner-discussed per the workflow convention — not as
 
 ## 12. Open questions (deliberately few)
 
-1. Actual chunk vertical budget (drives `A_near`) — measure, don't assume (§5.3).
-2. Swim mode functional status — verify before Phase D scopes movement work.
+1. ~~Chunk vertical budget~~ **Answered (code-verified 2026-07-18):** the chunk grid is
+   **single-layer** (`TerrainBootstrapAuthoring` spawns `ChunkCoord = (x, 0, z)` only) with
+   16³ voxels at `VoxelSize` 1 (LOD0; LOD1/2 are coarser samplings of the same ~16u slab).
+   Total vertical window ≈ **16u**, already shared with the existing ±4u surface noise —
+   so **`A_near` ≈ ≤4u**, materially tighter than the §4.1 guess. Consequences: (a) the
+   near-field `H` term in Phase C is a *subtle* rolling-relief pass, which is fine — D3 puts
+   real relief beyond the world edge; (b) reachable mountains (Phase 2) strictly require the
+   vertical-chunking work (`UNDERGROUND_VERTICAL_STREAMING_SPEC.md`) — confirmed assumption,
+   now with numbers; (c) the §5.3 guard test asserts `|H| + noiseAmplitude` fits the 16u slab
+   inside the streamed radius.
+2. ~~Swim mode status~~ **Answered (code-verified 2026-07-18):** `SwimSpeed` exists in
+   `PlayerMovementConfig` (set 6f at bootstrap) but **no `Swimming` movement mode or branch
+   exists in `PlayerMovementSystem`** — it is config-only, never implemented. Phase D scopes
+   *building* the swim mode (mode enum entry, buoyancy/drag branch, water-volume detection),
+   not just a trigger volume. Budget Phase D accordingly.
 3. Pocket cell coordinates — verify against streaming/impostor/physics math (§5.8).
 4. Whether `WorldStructureSettings` is a new asset or a `TerrainGenerationSettings` section —
    executor decides; the hash rule (§4.2) holds either way.
