@@ -73,10 +73,29 @@ no collider queued. `TerrainColliderTimingSystem` measured spawn→collider late
 
 So the unbounded velocity above is real and still worth clamping (M7), but it is **not** what caused
 this event. The primary fix is a **player-distance sort on the density/mesh rebuild queues** —
-today `TerrainChunkDensitySamplingSystem` and `TerrainChunkMeshBuildSystem` iterate in arbitrary
-archetype order at 8/frame with no distance prioritisation, so the chunk the player is about to land
-on queues behind hundreds of irrelevant ones. This is the same saturation described in BUG-017
-suspect #2, now confirmed with numbers.
+`TerrainChunkDensitySamplingSystem` and `TerrainChunkMeshBuildSystem` iterated in arbitrary archetype
+order at 8/frame with no distance prioritisation, so the chunk the player was about to land on queued
+behind hundreds of irrelevant ones. This is the same saturation described in BUG-017 suspect #2, now
+confirmed with numbers.
+
+**FIXED + MEASURED 2026-07-21.** Both queues now sort nearest-player-first (commit `3b68d96`).
+Collider latency across a full traverse each side:
+
+| percentile | pre-fix | post-fix |
+|---|---|---|
+| p50 | 13.40 s | **6.71 s** |
+| p90 | 22.23 s | 11.28 s |
+| max | 71.11 s | 35.20 s |
+
+A uniform ~2× improvement at every percentile, achieved while doing **6× the collider builds**
+(4,799 vs 823). Zero below-world recoveries and zero tunneling warnings in the verification run, and
+the owner could not reproduce the fall-through by hand.
+
+**Status: mitigated, not closed.** 6.7 s median is still slow; what makes it survivable is ordering,
+not throughput. Remaining candidates (ticket M5): predictive streaming bias along velocity, retaining
+colliders through LOD promotion instead of drop-and-rebuild, per-fixed-step `ColliderCast` on the
+player, and raising throughput. Diagnostics restored to off — flip both `ProjectFeatureConfig` flags
+to `1` to re-measure against the table above.
 
 ---
 

@@ -34,13 +34,14 @@ regardless of the rest.
 | V19 | [~] | Hero hand rubble mound — **substantially built 2026-07-21**: `agony_mound_gen.py` (pose-refitting, deterministic), staging captured (`TILT_DEG 21.2047`, `PALM_ANCHOR`, `BURIAL_OFFSET`), `ColossalHand_AgonyRelic.fbx` exported + wired at scale 15 / yOffset 10, procedural stone surfacing (`RelicSurface.hlsl`, opt-in). Closes when V21+V22 land |
 | V21 | [ ] | Mound↔terrain seam — reuse the H3 `WorldStructureMask` flatten to give the mesh rim a known plane. **Confirm first** that the mask reaches `SdLayeredGround` (near-field `H` is World-Structure Phase C, not yet wired) |
 | V22 | [ ] | Mound surface parity — call `GroundPaletteMix` from `RelicSurface.hlsl` so relic and terrain share the palette. Call, never fork (`GroundNoiseCore` one-definition rule); don't reuse `GroundReliefNormal` |
-| M5  | [~] | High-speed tunneling / fall-through — **ROOT-CAUSED 2026-07-21 by instrumented traverse: pipeline starvation, NOT tunneling.** Breach snapshot showed all 9 chunks `Collider=False, NeedsCollider=False, MeshData=True, NeedsDensity=True` — LOD-demoted chunks mid-promotion, landing at only **42 m/s**. Collider latency **14–27 s / 274–617 frames**. **Primary fix BUILT 2026-07-21**: nearest-player-first ordering on **both** the density and mesh rebuild queues (previously arbitrary archetype order), matching what the collider stage already did. **Needs a re-run to confirm** — re-measure collider latency, which should collapse from 274–617 frames |
+| M5  | [~] | High-speed tunneling / fall-through — **ROOT-CAUSED 2026-07-21 by instrumented traverse: pipeline starvation, NOT tunneling.** Breach snapshot showed all 9 chunks `Collider=False, NeedsCollider=False, MeshData=True, NeedsDensity=True` — LOD-demoted chunks mid-promotion, landing at only **42 m/s**. Collider latency **14–27 s / 274–617 frames**. **Primary fix BUILT + VERIFIED 2026-07-21**: nearest-player-first ordering on **both** the density and mesh rebuild queues (previously arbitrary archetype order), matching what the collider stage already did. Measured **~2× faster at every percentile** (p50 13.40 s → 6.71 s, max 71.11 s → 35.20 s) while doing 6× the builds; 0 breaches in the verification run. **Mitigated, not closed** — 6.7 s median is still slow; ordering saves it, not throughput |
 | M8  | [x] | **BUILT 2026-07-21** — below-world recovery folded into `PlayerTerrainSafetySystem` (its natural home; no new system, no bootstrap wiring). Runs **before** that system's 0.5 s cooldown gate so a run-ending fall is never suppressed by it. Floor derived from the slab, not hardcoded, so U3 won't silently break it. Always logs |
 | M7  | [ ] | Chain-slingshot velocity clamp — **explicit stopgap**, not a design decision. Owner: speed should later scale with builds/ability. The clamp value becomes a progression knob. Note: **would not have prevented the observed event** (42 m/s landing) |
 
-**Diagnostics are temporarily ON** — `EnablePlayerFallThroughDiagnosticSystem` and
-`EnableTerrainColliderTimingSystem` are `1` in `ProjectFeatureConfig.asset`. **Flip both back to `0`
-when this work-set closes.**
+**Diagnostics restored to off** (2026-07-21, after the fix was measured). Flip
+`EnablePlayerFallThroughDiagnosticSystem` + `EnableTerrainColliderTimingSystem` to `1` in
+`ProjectFeatureConfig.asset` to re-measure; that pair plus `Editor.log` is the whole harness, and
+the percentile table in [`relic-grounding.md`](relic-grounding.md) is the baseline to beat.
 
 ---
 

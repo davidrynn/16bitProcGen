@@ -179,6 +179,39 @@ so the tunneling threshold was compared against a random chunk's LOD. Now reads 
 chunk. (`chunkStride` from `gridInfos[0]` is *safe* and stays — footprint is LOD-invariant, so the
 `Player chunk=` coord and the 3×3 grid were always correct. Only `voxelSize` varies by LOD.)
 
+The tunneling threshold was also raised to **2× voxel**. At 1× it fired on routine movement — one
+un-chained launch is 55 m/s ≈ 0.92 m/step — so the warning was permanently on and carried no
+information. Unity Physics expands the broadphase AABB by the full step displacement, so exceeding
+one voxel per step is a yellow flag, not a breach.
+
+### ✅ FIX VERIFIED — measured re-run, 2026-07-21
+
+Collider build latency, sampled from `Editor.log` across a full traverse each side:
+
+| percentile | pre-fix | post-fix | change |
+|---|---|---|---|
+| p10 | 5.13 s | 2.36 s | −54% |
+| p25 | 8.24 s | 5.01 s | −39% |
+| **p50** | **13.40 s** | **6.71 s** | **−50%** |
+| p75 | 17.11 s | 8.41 s | −51% |
+| p90 | 22.23 s | 11.28 s | −49% |
+| max | 71.11 s | 35.20 s | −50% |
+| under 1 s | 0 % | 3 % | — |
+
+A uniform ~2× improvement at **every** percentile — the shape a scheduling fix should have, rather
+than a mean shifted by a lucky few. The result is stronger than the table suggests: the post-fix run
+did **4,799 collider builds vs 823** pre-fix (~6× the load) and was still twice as fast per chunk.
+
+Note the true pre-fix tail was **71 s**, not the 26.8 s originally quoted from a last-12 sample.
+
+Same run: **0** below-world recoveries (M8 never had to fire), **0** tunneling warnings, no breach.
+Owner also could not reproduce the fall-through by hand.
+
+**Improved, not solved.** A 6.7 s median is still slow in absolute terms; what makes it survivable is
+the *ordering* — near chunks now win the budget and the long tail is far chunks that legitimately
+wait. The remaining candidates below all attack the absolute number rather than its ordering, and
+stay open.
+
 **Candidate fixes, ranked by cost/ceiling:**
 
 | Fix | Cost | Speed ceiling after |
@@ -252,7 +285,9 @@ and — because it shares the snapshot cooldown — would have masked real ungro
 requires one voxel of real penetration and logs the actual `sdf=` depth.
 
 `ProjectFeatureConfig.asset`: `EnablePlayerFallThroughDiagnosticSystem` and
-`EnableTerrainColliderTimingSystem` flipped 0 → 1. **Flip them back when this work-set closes.**
+`EnableTerrainColliderTimingSystem` were flipped 0 → 1 for the investigation and **restored to 0 on
+2026-07-21** once the fix was measured. Flip them back to `1` to re-measure — that pair plus
+`Editor.log` is the whole harness, and the percentile table above is the baseline to beat.
 
 ---
 
