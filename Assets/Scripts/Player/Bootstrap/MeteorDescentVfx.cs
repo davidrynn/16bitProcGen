@@ -22,14 +22,17 @@ namespace DOTS.Player.Bootstrap
         private const string RootName = "MeteorDescentVfxRoot";
 
         // Intensity envelope (public for the EditMode timing tests).
-        // Fall math from the 400u spawn: with the default 340→240 band the flames burn through the
-        // upper descent and extinguish well before landing (band raised 2026-07-19 to fade sooner /
-        // higher; the live band comes from ProjectFeatureConfig, spec §5.2 leans altitude).
+        // Fall math from the 400u spawn: the band now OPENS at the spawn altitude, so the burn-off
+        // begins the moment the gate releases rather than holding full strength for the first 60u
+        // (the live band comes from ProjectFeatureConfig, spec §5.2 leans altitude).
         public const float IgniteRampSeconds = 0.35f;
-        // Default burn-off band (world Y), raised from the original 230→120 so the flames
-        // extinguish sooner / higher in the descent (owner call 2026-07-19). The live values come
-        // from ProjectFeatureConfig via Install(); these consts are the fallback + test baseline.
-        public const float FadeStartY = 340f;
+        // Default burn-off band (world Y). Raised twice: 230→120 originally, then 340→240 to
+        // extinguish sooner/higher (2026-07-19), and now the top pinned to the 400u spawn height so
+        // the fade starts immediately on ignition instead of after a full-strength stretch (owner
+        // call 2026-07-21). Keep FadeStartY at/above SkyDropSpawnHeight or that full-strength
+        // plateau comes back. The live values come from ProjectFeatureConfig via Install(); these
+        // consts are the fallback + test baseline.
+        public const float FadeStartY = 400f;
         public const float FadeEndY = 240f;
 
         /// <summary>
@@ -118,6 +121,9 @@ namespace DOTS.Player.Bootstrap
                         {
                             _igniteTime = Time.unscaledTime;
                             _phase = Phase.Burning;
+                            // Start drawing only now (see BuildUi): everything before this point
+                            // would have been a full-screen pass resolving to zero.
+                            if (_image != null) _image.enabled = true;
                             DebugSettings.LogPlayer(
                                 $"MeteorDescentVfx: ignited at t={Time.timeSinceLevelLoad:0.00}s.", forceLog: true);
                         }
@@ -235,6 +241,11 @@ namespace DOTS.Player.Bootstrap
 
                 _image = imageGO.AddComponent<RawImage>();
                 _image.raycastTarget = false;
+                // Stay dark until ignition. The gate holds for 1.75-8s while the world streams in,
+                // and this is a full-screen procedural pass (flame FBM + two smoke FBMs + embers)
+                // that would resolve to nothing at _Intensity 0 — pure waste at the exact moment
+                // the frame budget is tightest. Re-enabled on the break-open signal.
+                _image.enabled = false;
 
                 var rect = _image.rectTransform;
                 rect.anchorMin = Vector2.zero;

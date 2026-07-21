@@ -5,10 +5,12 @@ namespace DOTS.Tests.EditMode
 {
     /// <summary>
     /// V13 burn-envelope contract (METEOR_ARRIVAL_SEQUENCE_SPEC.md §5.2/§9.5): flames ramp in
-    /// at ignition, burn at full strength through the upper descent, fade across the altitude
-    /// band, and are fully extinguished below it — well before landing. Pure-function tests
-    /// (same no-World pattern as MeteorArrivalGateTests); the screen-space visuals are Play
-    /// Mode / eyeball items.
+    /// at ignition, then fade across the altitude band and are fully extinguished below it —
+    /// well before landing. The band top now sits at the spawn altitude (owner call 2026-07-21),
+    /// so full strength is reached only at the very top of the descent and the burn-off begins
+    /// immediately; the assertions below still pin peak intensity at Y=400 because that IS the
+    /// band top. Pure-function tests (same no-World pattern as MeteorArrivalGateTests); the
+    /// screen-space visuals are Play Mode / eyeball items.
     /// </summary>
     [TestFixture]
     public class MeteorDescentVfxTests
@@ -22,7 +24,7 @@ namespace DOTS.Tests.EditMode
         }
 
         [Test]
-        public void AfterRamp_UpperDescent_BurnsAtFullStrength()
+        public void AfterRamp_AtBandTop_BurnsAtFullStrength()
         {
             Assert.AreEqual(1f, MeteorDescentVfx.EvaluateIntensity(400f, LongAfterIgnite), 1e-4f);
             Assert.AreEqual(1f, MeteorDescentVfx.EvaluateIntensity(MeteorDescentVfx.FadeStartY, LongAfterIgnite), 1e-4f);

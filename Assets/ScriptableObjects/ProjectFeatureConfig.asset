@@ -77,7 +77,7 @@ MonoBehaviour:
   EnableMeteorArrivalShell: 1
   MeteorShellMinHoldSeconds: 1.75
   EnableMeteorDescentVfx: 1
-  MeteorDescentFadeStartY: 340
+  MeteorDescentFadeStartY: 400
   MeteorDescentFadeEndY: 240
   EnableStructurePlacementSystem: 1
   EnableRelicRealizationSystem: 1

@@ -176,8 +176,10 @@ namespace DOTS.Core.Authoring
         public bool EnableMeteorDescentVfx = true;
         [Tooltip("V13 descent VFX burn-off band (world Y): the flames fade from full at FadeStartY " +
                  "down to fully out at FadeEndY as the player descends. Raise both to extinguish " +
-                 "sooner / higher up. Must keep FadeStartY > FadeEndY.")]
-        public float MeteorDescentFadeStartY = 340f;
+                 "sooner / higher up. Must keep FadeStartY > FadeEndY. FadeStartY sits at the " +
+                 "SkyDropSpawnHeight so the fade begins immediately on ignition; lowering it below " +
+                 "the spawn height reintroduces a full-strength stretch before any fade starts.")]
+        public float MeteorDescentFadeStartY = 400f;
         public float MeteorDescentFadeEndY = 240f;
 
         [Header("Structure Placement")]
