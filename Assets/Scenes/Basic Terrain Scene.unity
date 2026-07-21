@@ -174,10 +174,10 @@ MonoBehaviour:
     impostorMaterial: {fileID: 0}
     impostorScale: 30
   - templateId: relic_hand_hero
-    mesh: {fileID: -7757738251068451756, guid: 9d64fc193bd9f344a9a0a388b5e4a9d4, type: 3}
+    mesh: {fileID: 6736330747230250998, guid: 44045d75e1f77f54b9c65a8e834e9ea0, type: 3}
     material: {fileID: 2100000, guid: 6db16a9bb0a24b418ee9e9a7bbbaa396, type: 2}
-    scale: 10
-    yOffset: 2
+    scale: 15
+    yOffset: 10
     impostorMesh: {fileID: 0}
     impostorMaterial: {fileID: 0}
     impostorScale: 30

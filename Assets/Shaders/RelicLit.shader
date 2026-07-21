@@ -20,6 +20,17 @@ Shader "Relic/RelicLit"
         // R6 P4: per-instance spawn dissolve, driven by RelicSpawnFadeSystem through the
         // BRG instanced property. Material default 1 = solid, so non-ECS uses are unaffected.
         _RelicSpawnFade ("Spawn Fade (per-instance, ECS-driven)", Range(0, 1)) = 1
+
+        // Procedural weathered-stone surfacing (RelicSurface.hlsl). Strength defaults to 0
+        // so every existing relic material — relic_head, stone_outcrop — keeps the flat
+        // _BaseColor look untouched; only materials that opt in change.
+        _SurfaceStrength ("Surface Strength (0 = flat base colour)", Range(0, 1)) = 0
+        _SurfaceScale    ("Surface Grain Scale (cycles per world unit)", Range(0.005, 0.5)) = 0.06
+        _StrataScale     ("Strata Scale (bands per world unit, along Y)", Range(0.005, 0.5)) = 0.08
+        _StrataStrength  ("Strata Strength", Range(0, 1)) = 0.35
+        // Alpha on these two carries the blend amount, not opacity.
+        _StainTint       ("Stain (crevice/downface, A = amount)", Color) = (0.28, 0.26, 0.22, 0.45)
+        _BleachTint      ("Bleach (sunlit upface, A = amount)", Color) = (0.78, 0.76, 0.70, 0.35)
     }
 
     SubShader
@@ -47,12 +58,22 @@ Shader "Relic/RelicLit"
 
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
             #include "Assets/Shaders/Atmosphere.hlsl"
+            #include "Assets/Shaders/RelicSurface.hlsl"
 
+            // NOTE: this block must stay byte-identical to the DepthOnly pass's copy —
+            // each HLSLPROGRAM compiles standalone, but a mismatched UnityPerMaterial
+            // layout between passes reads garbage in whichever pass disagrees.
             CBUFFER_START(UnityPerMaterial)
                 half4 _BaseColor;
                 half  _AerialStrength;
                 half  _SunAttenuation;
                 float _RelicSpawnFade;
+                half  _SurfaceStrength;
+                half  _SurfaceScale;
+                half  _StrataScale;
+                half  _StrataStrength;
+                half4 _StainTint;
+                half4 _BleachTint;
             CBUFFER_END
 
             // BRG per-instance override (R6 P4): RelicSpawnFade IComponentData maps here
@@ -120,7 +141,14 @@ Shader "Relic/RelicLit"
                 half3 sun      = half3(mainLight.color) * mainLight.shadowAttenuation * ndotl * (half)_SunAttenuation;
                 half3 lighting = saturate(ambient + sun);
 
-                half3 color = _BaseColor.rgb * lighting;
+                // Procedural stone before lighting: this modulates albedo, not the lit
+                // result, so shadow and sun response stay exactly as tuned in V9.
+                half3 albedo = RelicWeatheredStone(_BaseColor.rgb, IN.positionWS, normalWS,
+                                                   _SurfaceStrength, _SurfaceScale,
+                                                   _StrataScale, _StrataStrength,
+                                                   _StainTint, _BleachTint);
+
+                half3 color = albedo * lighting;
 
                 // Hero exemption: reduced-strength shared aerial term instead of pipeline fog,
                 // WITHOUT the far-clip concealer (R6 P3) — the concealer hides the world's clip
@@ -227,12 +255,21 @@ Shader "Relic/RelicLit"
             #include "Assets/Shaders/Atmosphere.hlsl"
 
             // Same per-instance spawn fade as ForwardLit (R6 P4) — declared per-pass
-            // because each HLSLPROGRAM compiles standalone.
+            // because each HLSLPROGRAM compiles standalone. The surfacing fields are
+            // unused here but MUST be present in the same order: this pass only clips,
+            // yet a UnityPerMaterial layout that disagrees with ForwardLit would
+            // misalign _RelicSpawnFade and break the dissolve parity below.
             CBUFFER_START(UnityPerMaterial)
                 half4 _BaseColor;
                 half  _AerialStrength;
                 half  _SunAttenuation;
                 float _RelicSpawnFade;
+                half  _SurfaceStrength;
+                half  _SurfaceScale;
+                half  _StrataScale;
+                half  _StrataStrength;
+                half4 _StainTint;
+                half4 _BleachTint;
             CBUFFER_END
 
             #ifdef UNITY_DOTS_INSTANCING_ENABLED
