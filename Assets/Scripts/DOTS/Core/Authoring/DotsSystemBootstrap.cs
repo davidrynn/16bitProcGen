@@ -65,7 +65,11 @@ namespace DOTS.Core.Authoring
             // release signal, so it works even with the shell disabled.
             if (config.EnableSkyDropSpawn && config.EnableMeteorDescentVfx)
             {
-                MeteorDescentVfx.Install(config.MeteorDescentFadeStartY, config.MeteorDescentFadeEndY);
+                // Spawn height is passed in so the VFX can pin its band top to it — see
+                // MeteorDescentVfx.ResolveFadeStartY for why the two config fields can't just be
+                // trusted to agree.
+                MeteorDescentVfx.Install(
+                    config.MeteorDescentFadeStartY, config.MeteorDescentFadeEndY, config.SkyDropSpawnHeight);
             }
     
             // Diagnostic systems rely on fall-through/pipeline debug channels.

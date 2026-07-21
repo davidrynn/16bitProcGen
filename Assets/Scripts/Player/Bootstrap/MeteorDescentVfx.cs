@@ -29,9 +29,9 @@ namespace DOTS.Player.Bootstrap
         // Default burn-off band (world Y). Raised twice: 230→120 originally, then 340→240 to
         // extinguish sooner/higher (2026-07-19), and now the top pinned to the 400u spawn height so
         // the fade starts immediately on ignition instead of after a full-strength stretch (owner
-        // call 2026-07-21). Keep FadeStartY at/above SkyDropSpawnHeight or that full-strength
-        // plateau comes back. The live values come from ProjectFeatureConfig via Install(); these
-        // consts are the fallback + test baseline.
+        // call 2026-07-21). That pin is enforced, not just documented — Install() runs the authored
+        // value through ResolveFadeStartY against the live spawn height. The live values come from
+        // ProjectFeatureConfig via Install(); these consts are the fallback + test baseline.
         public const float FadeStartY = 400f;
         public const float FadeEndY = 240f;
 
@@ -55,20 +55,37 @@ namespace DOTS.Player.Bootstrap
         public static float EvaluateIntensity(float playerY, float secondsSinceIgnite)
             => EvaluateIntensity(playerY, secondsSinceIgnite, FadeStartY, FadeEndY);
 
-        public static void Install(float fadeStartY, float fadeEndY)
+        /// <summary>
+        /// Resolves the effective top of the burn-off band. The fade has to begin the moment the
+        /// gate releases, which means the band must open at or above the spawn altitude — an
+        /// authored value below it silently reintroduces a full-strength plateau for the first
+        /// (spawn − authored) units of descent, which is exactly the artefact the 340→400 change
+        /// removed. The two config fields are independent, so this rule lives here rather than
+        /// relying on them being kept equal by hand. Pure + public so the EditMode tests pin it.
+        /// </summary>
+        public static float ResolveFadeStartY(float authoredFadeStartY, float spawnHeight)
+            => Mathf.Max(authoredFadeStartY, spawnHeight);
+
+        public static void Install(float fadeStartY, float fadeEndY, float spawnHeight)
         {
             if (GameObject.Find(RootName) != null)
             {
                 return;
             }
 
+            float resolvedFadeStartY = ResolveFadeStartY(fadeStartY, spawnHeight);
+
             var root = new GameObject(RootName);
             Object.DontDestroyOnLoad(root);
             var controller = root.AddComponent<MeteorDescentVfxController>();
             // Seed the burn-off band before the first Update (Awake only builds the UI, not the
             // envelope).
-            controller.Configure(fadeStartY, fadeEndY);
-            DebugSettings.LogPlayer("MeteorDescentVfx: installed (waiting for break-open to ignite).", forceLog: true);
+            controller.Configure(resolvedFadeStartY, fadeEndY);
+            // Log the RESOLVED band: when the authored value gets clamped up, that's the number
+            // that explains what the descent actually looks like.
+            DebugSettings.LogPlayer(
+                $"MeteorDescentVfx: installed (band {resolvedFadeStartY:0}→{fadeEndY:0}, "
+                + "waiting for break-open to ignite).", forceLog: true);
         }
 
         private sealed class MeteorDescentVfxController : MonoBehaviour

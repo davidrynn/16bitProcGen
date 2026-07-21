@@ -50,6 +50,38 @@ namespace DOTS.Tests.EditMode
         }
 
         [Test]
+        public void ResolveFadeStartY_RaisesAnAuthoredValueBelowSpawnHeight()
+        {
+            // The trap this closes: spawn height moves up, the authored band top doesn't follow,
+            // and the descent silently regains a full-strength plateau before any fade starts.
+            Assert.AreEqual(600f, MeteorDescentVfx.ResolveFadeStartY(400f, 600f));
+            Assert.AreEqual(400f, MeteorDescentVfx.ResolveFadeStartY(340f, 400f));
+        }
+
+        [Test]
+        public void ResolveFadeStartY_LeavesABandTopAboveSpawnHeightAlone()
+        {
+            // Authoring the band ABOVE the spawn is still allowed — it only means the fade is
+            // already partway along at ignition, never that it starts late.
+            Assert.AreEqual(500f, MeteorDescentVfx.ResolveFadeStartY(500f, 400f));
+        }
+
+        [Test]
+        public void ResolvedBand_FadesFromTheVeryFirstFrameOfDescent()
+        {
+            // End-to-end on the resolved band: at the spawn altitude the burn is at full strength,
+            // and any descent below it is already fading — no plateau.
+            const float spawnY = 600f;
+            float start = MeteorDescentVfx.ResolveFadeStartY(400f, spawnY);
+
+            float atSpawn = MeteorDescentVfx.EvaluateIntensity(spawnY, LongAfterIgnite, start, MeteorDescentVfx.FadeEndY);
+            float justBelow = MeteorDescentVfx.EvaluateIntensity(spawnY - 5f, LongAfterIgnite, start, MeteorDescentVfx.FadeEndY);
+
+            Assert.AreEqual(1f, atSpawn, 1e-4f);
+            Assert.Less(justBelow, atSpawn);
+        }
+
+        [Test]
         public void RampIn_IsFastButNotInstant()
         {
             float halfRamp = MeteorDescentVfx.EvaluateIntensity(400f, MeteorDescentVfx.IgniteRampSeconds * 0.5f);
