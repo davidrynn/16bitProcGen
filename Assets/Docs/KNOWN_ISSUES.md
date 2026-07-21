@@ -1,13 +1,122 @@
 # Known Issues
 
 **Status:** ACTIVE
-**Last Updated:** 2026-05-13
+**Last Updated:** 2026-07-21
 
 Master tracker for active bugs, investigations, and resolved issues. Link to detailed specs rather than duplicating analysis here.
 
 ---
 
 ## Open Issues
+
+### BUG-018: Zero-vertex chunks re-queue forever and eat the mesh budget
+
+**Status:** OPEN (found 2026-07-21 while costing 3D vertical chunking)
+**Severity:** Low today · **Blocking** for vertical chunking
+**Affected Systems:** `TerrainChunkMeshBuildSystem`
+**Ticket:** U1 · **Related:** BUG-017 (perf)
+
+`Assets/Scripts/DOTS/Terrain/Meshing/TerrainChunkMeshBuildSystem.cs:91` — a chunk whose mesh job
+produces **zero vertices** hits `if (!meshBlob.IsCreated) continue;` and never reaches the
+`TerrainChunkNeedsMeshBuild` removal at lines 119-120. The chunk is therefore rescheduled **every
+frame, indefinitely**, permanently consuming one slot of `MaxMeshRebuildsPerFrame` (default 8).
+
+Currently near-invisible because almost every chunk in a single-layer heightfield world contains
+surface. It becomes fatal with vertical layers, where most stacked chunks are fully solid or fully
+air: a handful of empty chunks would starve the budget and new chunks would never settle.
+
+**Fix:** make the tag removal unconditional (or remove it on the zero-vertex path). Add an EditMode
+test asserting a uniform-density chunk settles and stops re-queuing.
+
+**Note:** this contradicts the assumption in `Terrain/UNDERGROUND_VERTICAL_STREAMING_SPEC.md`
+§Approach that fully-solid chunks "cost density sampling time but nothing at the GPU" — today they
+also cost a rebuild slot forever.
+
+---
+
+### BUG-019: Chain-slingshot velocity is unbounded (drives terrain fall-through)
+
+**Status:** OPEN (diagnosed 2026-07-21)
+**Severity:** High (gameplay — player falls through the world)
+**Affected Systems:** `SlingshotLaunchSystem`, `PlayerMovementSystem`, `TerrainChunkColliderBuildSystem`, `PlayerTerrainSafetySystem`
+**Tickets:** M5 (harden) · M7 (clamp stopgap) · **Detail:** [`Tickets/relic-grounding.md`](Tickets/relic-grounding.md)
+
+`SlingshotLaunchSystem` chains as `velocity * 0.85 + aim * impulse * chainBonus` with **no clamp
+anywhere in the project**: 55 → 115 → 181 → 250 → 309 m/s over five launches, asymptote **642 m/s**.
+`ChainCount` resets only when the 2 s window expires — matching the reported "after a number of
+slingshots".
+
+Amplifier: while charging, `Mode == SlingshotCharging`, so `PlayerMovementSystem` takes the
+**air-control** branch (`AirControl = 0.2`) even on the ground, leaving horizontal speed essentially
+undamped between launches.
+
+Unity Physics 1.4 has **no CCD** and `AngularExpansionFactor = 0`. At 250 m/s the player moves
+**4.2 m per 1/60 s step** through a **1 m**-voxel thin open shell. Measured: even the sky-drop alone
+reaches 1.0–1.4 m/step at 60–85 m/s terminal descent, so the margin at one un-chained launch
+(55 m/s ≈ 0.92 m/step) is already zero.
+
+Compounding: `TerrainChunkDensitySamplingSystem` and `TerrainChunkMeshBuildSystem` iterate in
+arbitrary archetype order at 8/frame with **no player-distance prioritisation** (only the collider
+system sorts by distance), so at speed the chunk ahead can be starved entirely. Colliders exist only
+within ~200 m (`ColliderMaxLod = 1`), and `PlayerTerrainSafetySystem` both requires a collider to
+exist and has a 0.5 s cooldown.
+
+**Owner intent:** speed should later scale with builds/ability levelling — so any clamp is an
+explicit stopgap whose value becomes a progression knob, not a permanent safety limit.
+
+**ROOT CAUSE FOUND 2026-07-21 (instrumented traverse) — it is starvation, not tunneling.** The
+reproduced fall-through happened **on landing at only 42.3 m/s**, and the breach snapshot showed all
+nine surrounding chunks with `Collider=False, NeedsCollider=False, MeshData=True,
+NeedsDensity=True` — LOD-demoted chunks caught mid-promotion, with the stale LOD2 mesh present and
+no collider queued. `TerrainColliderTimingSystem` measured spawn→collider latency of **14.6–26.8 s
+(274–617 frames)** across 2,645 builds.
+
+So the unbounded velocity above is real and still worth clamping (M7), but it is **not** what caused
+this event. The primary fix is a **player-distance sort on the density/mesh rebuild queues** —
+today `TerrainChunkDensitySamplingSystem` and `TerrainChunkMeshBuildSystem` iterate in arbitrary
+archetype order at 8/frame with no distance prioritisation, so the chunk the player is about to land
+on queues behind hundreds of irrelevant ones. This is the same saturation described in BUG-017
+suspect #2, now confirmed with numbers.
+
+---
+
+### BUG-021: Falling out of the world is unrecoverable
+
+**Status:** OPEN (observed 2026-07-21)
+**Severity:** High (run-ending)
+**Ticket:** M8
+
+Once the player passes the terrain surface there is no floor, no kill plane, and no respawn. Measured
+in the instrumented traverse: `FallTime = 90.088 s`, `pos.y = -36,094`, `speed = 842.4 m/s`, still
+accelerating. The session is unrecoverable without restarting play.
+
+Independent of BUG-019's cause — worth fixing regardless, since it converts any fall-through into a
+hiccup. Cost is one float compare per frame plus a stored last-grounded position.
+
+**Do not hardcode the floor:** the terrain slab currently bottoms at Y = −7.5, but ticket U3
+(vertical chunking) moves the world floor. Derive it from the streaming window's lowest layer.
+
+---
+
+### BUG-020: `PlayerFallThroughDiagnosticSystem` reported against the wrong surface — FIXED
+
+**Status:** FIXED 2026-07-21
+**Severity:** Medium (masked BUG-019 for an unknown period)
+
+Three defects, all fixed:
+1. Called `SDFMath.SdGround` (legacy sine field) while the density sampler had moved to
+   `SdLayeredGround` — `BELOW_SURFACE` was tested against a surface that is never meshed, giving
+   false positives *and* negatives. Now builds an `SDFTerrainField` the same way
+   `TerrainChunkDensitySamplingSystem` does and calls `Sample()`, passing the `SDFEdit` buffer.
+2. Tunneling check was **vertical-only** (`abs(velocityY) * dt`), silent on a slingshot near apex —
+   exactly the tunneling case. Now uses full velocity magnitude against the **fixed** step from
+   `FixedStepSimulationSystemGroup.RateManager`.
+3. The tunneling warning was gated on `_framesSinceLastSnapshot` but never reset it, so it logged
+   **every frame** once the cooldown elapsed. Now has its own counter.
+
+Also added a one-voxel tolerance to `BELOW_SURFACE`: the player's transform origin **is** the capsule
+base, so standing samples ≈ 0 and tripped constantly, masking real ungrounding events via the shared
+cooldown.
 
 ### BUG-017: Low FPS — sub-20 in BasicTerrainScene, 40–70 in Smoke_BasicPlayable
 

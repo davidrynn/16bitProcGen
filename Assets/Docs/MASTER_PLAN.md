@@ -105,6 +105,16 @@ Historical vision doc: [`Archives/TerrainDesign/Stylized_Procedural_Terrain_Syst
   determinism invariant). The compute-propagation path is an unimplemented stub. Phase F must budget
   a **rewrite of the collapse core**, not a bug-fix pass — triage in `WORLD_STRUCTURE_SPEC.md` §10.1.
 
+- **"SDF terrain" is one 15-unit slab, not a volume.** The chunk grid is effectively 2D — chunks are
+  keyed by XZ and a single layer spans world Y ∈ [−7.5, +7.5]. Caves, overhangs and pits work *within*
+  that slab, but anything taller or deeper does not fit. This silently caps three separate ambitions:
+  `H`'s `AFar` amplitude ramp (150–250u — which is why Phase C is still unwired), destructible hero
+  relics (a 220 m hand needs ~15 stacked layers), and underground content generally. Cost inventory:
+  [`Terrain/UNDERGROUND_VERTICAL_STREAMING_SPEC.md`](Terrain/UNDERGROUND_VERTICAL_STREAMING_SPEC.md)
+  §"3D grid cost inventory" (ticket U3). Note the dependency runs **both** ways — with today's
+  pure-heightfield field, vertical chunking would resolve to one layer and buy nothing, so it must be
+  committed alongside the content that needs it.
+
 ### 🔨 Phase 1 — the loop does not close yet
 
 The vista hook is delivered, but it starts a loop that has no second beat: **you arrive, you travel

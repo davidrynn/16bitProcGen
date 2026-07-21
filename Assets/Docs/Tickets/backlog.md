@@ -19,6 +19,11 @@ rotate them via the existing anchor hash. Runtime destructibility is **W2**, not
 polish — the hero reads fine as-is. _(Opened 2026-07-11.)_
 
 ### V19 — Hero hand rubble mound base
+
+> **PULLED into the Relic Grounding work-set 2026-07-21 and substantially built** — see
+> [`relic-grounding.md`](relic-grounding.md). The mound exists, is exported and wired; what remains
+> is the seam (V21) and surface parity (V22). Body below is the original backlog framing.
+
 **The highest-value Vista follow-up.** The hand still reads as *floating* at ground level and from
 the spawn vista; per `Docs/Temp_OpeningInspiration.png` it must rise out of a broad rocky rubble
 mound tapering into the plain.
@@ -97,6 +102,12 @@ marks `IsGrounded = true` mid-air — firing landing logic before real touchdown
   cosmetic fix. Enable `DebugSettings.EnableFallThroughDebug` to observe the ungrounded/grounded transitions.
 
 ### M5 — Harden sky-drop landing against high-speed tunneling _(open — spun off from V7, 2026-07-03)_
+
+> **PULLED into the Relic Grounding work-set 2026-07-21 and diagnosed** — see
+> [`relic-grounding.md`](relic-grounding.md) and KNOWN_ISSUES **BUG-019**. Scope grew: the trigger is
+> not only the sky-drop but **unclamped chain-slingshot velocity** (55→309 m/s over five launches,
+> asymptote 642). The note below correctly predicted the mechanism — it just under-estimated how
+> fast the player can get. Body below is the original framing.
 The sky-drop (V7) lands stably today only because the landing chunk carries a *thick* Surface Nets mesh
 collider — Unity.Physics penetration recovery catches the ~−87 m/s body without CCD. A thin or absent collider
 under the landing XZ could still tunnel. Direction: guarantee a built collider under the spawn XZ before the
@@ -209,6 +220,14 @@ Residual validation folded into **V20**. Spec: `Rendering/LANDMARK_DRAW_DISTANCE
 ---
 
 ### W2 — Destructible hero relics: mesh at distance, SDF stamp up close _(idea — not fleshed out; owner 2026-07-09, from the V11 Blender session)_
+
+> **Owner re-confirmed wanted 2026-07-21** — *"I had always conceived of these relics as
+> destructible."* Now scoped in
+> [`../Structures/RELIC_TERRAIN_INTEGRATION_SPEC.md`](../Structures/RELIC_TERRAIN_INTEGRATION_SPEC.md)
+> §4, which confirms this note's own hunch: the hand really is ~17 primitives, so the generator can
+> emit capsules from the **posed armature**, keeping Blender posing intact.
+> **Blocked on U2** (per-chunk `SDFEdit` AABB culling) **and U3** (3D sparse vertical chunking — the
+> chunk grid is one 15 m slab; a 220 m hand needs ~15 layers).
 
 **Concept.** Hero relics (starting with the colossal hand) become *fully destructible* near the player by
 representing them in the terrain density field instead of only as mesh instances. Up close, the relic is

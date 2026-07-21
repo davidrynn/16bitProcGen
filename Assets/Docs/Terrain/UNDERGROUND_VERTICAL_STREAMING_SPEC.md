@@ -1,8 +1,22 @@
 # Underground & Vertical Streaming Spec
 
 **Status:** DESIGN
-**Last Updated:** 2026-05-14
-**Relates to:** TERRAIN_ECS_NEXT_STEPS_SPEC.md, KNOWN_ISSUES.md, BIOME_TERRAIN_FIELD_SPEC.md
+**Last Updated:** 2026-07-21
+**Relates to:** TERRAIN_ECS_NEXT_STEPS_SPEC.md, KNOWN_ISSUES.md, BIOME_TERRAIN_FIELD_SPEC.md,
+[`../Structures/RELIC_TERRAIN_INTEGRATION_SPEC.md`](../Structures/RELIC_TERRAIN_INTEGRATION_SPEC.md)
+(destructible relics — the first customer), [`WORLD_STRUCTURE_SPEC.md`](WORLD_STRUCTURE_SPEC.md)
+(the `H` `AFar` ramp is blocked by the same slab)
+
+> **2026-07-21 — full cost inventory added as §"3D grid cost inventory" below.** It supersedes the
+> "Files that need no changes" table in the *scatter* and *empty-chunk* respects: that table is
+> accurate for the systems it lists but **misses two whole problem classes** (scatter topmost-surface
+> determination, and a live mesh-budget bug). Read the inventory before estimating.
+>
+> **Read this first:** with today's SDF field this work buys **nothing**. `SdLayeredGround` is a pure
+> heightfield whose amplitudes sum to 6.45 against a 15-unit slab — everything already fits in one
+> layer, so sparse 3D allocation would resolve to exactly one occupied layer. **Vertical chunking is
+> gated on vertical CONTENT existing** (destructible relics, caves, or `H`'s `AFar` amplitude), not
+> the other way round. Do not build it speculatively.
 
 ---
 
@@ -40,6 +54,89 @@ All chunks share `ChunkCoord.y = 0`. The streaming window is a 2D XZ square; des
 | `TerrainChunkRenderPrepSystem.cs` | Reads `TerrainChunkBounds.WorldOrigin`; works at any Y |
 | `TerrainChunkColliderBuildSystem.cs` | Chunk-local; no Y dependency |
 | `SDFTerrainField` | Already samples `float3` world position |
+
+---
+
+## 3D grid cost inventory _(added 2026-07-21)_
+
+Full read of the codebase against a **sparse 3D vertical grid**. Classified as must-change vs
+already-safe vs genuinely hard.
+
+### Blocking bug — fix before enabling any vertical layer
+
+**`TerrainChunkMeshBuildSystem.cs:91`** — a chunk that meshes to **zero vertices** hits
+`if (!meshBlob.IsCreated) continue;` and never reaches the `TerrainChunkNeedsMeshBuild` removal at
+line 119-120. It is rescheduled **every frame, forever**, eating a slot of
+`MaxMeshRebuildsPerFrame` (default 8).
+
+Invisible today because nearly every chunk has surface. In a stacked world most chunks are fully
+solid or fully air, so a handful of empty chunks would **permanently starve the mesh budget** and new
+chunks would never settle. This directly contradicts the §"Approach" claim above that solid chunks
+"cost density sampling time but nothing at the GPU" — today they also cost a budget slot in
+perpetuity. Ticket **U1**.
+
+### Costing reality: LOD does not reduce chunk count
+
+`TerrainLodSettings.cs:43-46` keeps chunk world footprint invariant — `(res-1) × voxel = 15` on all
+three LODs, on **all three axes** (cubic resolutions, uniform voxel). So chunk count is purely
+`(2R+1)² × verticalLayers`. LOD changes only per-chunk sample cost (4096 → 729 → 125, a 33× spread).
+
+**A 4-layer window is therefore a hard 4× on entity count, ECB traffic, physics broadphase entries
+and query iteration, and LOD gives none of it back.**
+
+### Must change
+
+| File | Work |
+|---|---|
+| `Streaming/TerrainChunkStreamingSystem.cs` | `int2`→`int3` map (note `TryAdd` silently drops stacked layers today); derive player Y layer; 3-deep spawn loop; `originY = base − span*0.5 + layer*span`; 3D despawn. `ChunkCoord = new int3(coord.x, **0**, coord.y)` at :170 is the hardcode. **Highest-risk file** — despawn teardown at :209-246 is delicate |
+| `Meshing/TerrainChunkMeshBuildSystem.cs:91` | The zero-vertex tag leak above. **Must land first** |
+| `LOD/TerrainChunkLodSelectionSystem.cs` | Y-aware distance or explicit off-layer guard; otherwise every off-layer chunk demotes at range 0 |
+| `Physics/TerrainChunkColliderBuildSystem.cs:145-197` | 3D distance in the priority sort + a vertical-layer gate; today a chunk 3 layers below sorts as distance 0 and steals the budget-exempt near-player slots |
+| `LOD/TerrainLodSettings.cs`, `ProjectFeatureConfig.cs`, `DotsSystemBootstrap.cs` | Vertical radii + feature flag plumbing |
+| `Debug/TerrainChunkDebugState.cs:12`, `TerrainDebugConfig.FixedCenterChunk` | `int2` schema — cannot represent a layer |
+
+### Already 3D-safe (verified by reading, not assumed)
+
+`TerrainChunkDensitySamplingSystem` (float3 origin, fully position-agnostic) · `SDFTerrainField` /
+`SdLayeredGround` · `TerrainChunkMeshBuilder` · `TerrainChunkRenderPrepSystem` ·
+`TerrainChunkMeshUploadSystem` (already stores `int3`) · `TerrainChunkEditUtility` (true 3D AABB, so
+vertical dirty-marking already works) · `TerrainEditInputSystem` (**already layer-aware** — iterates
+every chunk in a column for `minLayerOriginY`) · `SurfaceScatterRenderBoundsUtility`.
+
+**Vertical seams already work.** The `Resolution + 1` density overlap is isotropic on all three axes,
+and `SurfaceNetsJob` emits all three face families (`GenerateXYFaces`, `GenerateXZFaces`,
+`GenerateYZFaces`). **No mesher change is required.** Only the seam *validators* need a third
+direction — they currently know just `East`/`North` (`TerrainChunkMeshBorderUtility.BorderDirection`).
+
+**No disk persistence for terrain exists**, so there is no save-format migration.
+
+### Genuinely hard — the real cost is scatter, not streaming
+
+1. **`SurfaceScatterPlacementMath.TryFindSurfaceHeight`** scans only its **own** chunk's density blob
+   and returns the first air→solid crossing. Every family depends on it (trees, rocks, pebbles). In a
+   stacked world a cave-floor chunk reports a valid "surface" and grows **trees inside the cave**.
+   There is no column-occupancy index to filter against — it does not exist. **This is design work,
+   not a port.** Ticket **U4**.
+2. **`SurfaceScatterPlacementMath.CandidateHash:15-24`** takes `int3` but mixes only `.x` and `.z`.
+   Stacked chunks produce identical jitter/variant/yaw. One-line fix that **re-rolls every tree, rock
+   and pebble in the world** — recoverable via `GenerationVersion`, but a determinism break.
+3. **Grass** documents the rule (`TerrainChunkGrassSurface.cs:15-19`: *"Only topmost solid-layer
+   chunks…"*) but has **no production tagger** — tagging is an editor menu item that tags everything.
+4. **Seam validators fail silently.** Four `NativeParallelHashMap<int2,Entity>` sites where `TryAdd`
+   drops stacked layers. Nothing throws; you just lose coverage and get bogus mismatch reports.
+
+### Tests encoding 2D assumptions
+
+`TerrainChunkBorderContinuityTests` · `TerrainMeshBorderContinuityTests` ·
+`TerrainBandingDiagnosticTests` (all rebuild their own `int2` maps). `TerrainLodTests` is safe if the
+Y-guard goes **around** `ComputeTargetLod` rather than inside it.
+
+### Prerequisite for the relic use case
+
+`SDFTerrainField.Sample` loops **every** edit at **every** sample with no spatial culling, and
+`CopyEditsToTempArray` copies the whole singleton buffer per chunk dispatch. A 17-primitive SDF hand
+= ~70 k capsule evaluations **per chunk, world-wide**. **Per-chunk edit AABB culling is a
+prerequisite, not an optimisation** (ticket **U2**); it also directly relieves BUG-008.
 
 ---
 

@@ -1,6 +1,6 @@
 # Document Index
 
-**Last Updated:** 2026-07-09
+**Last Updated:** 2026-07-21
 
 > **New here?** Start with [MASTER_PLAN.md](MASTER_PLAN.md) — it has the project vision, current status, phase roadmap, and a curated document map.
 
@@ -103,6 +103,7 @@ Quick-reference index of all project documentation. Docs are organized by featur
 | [Structures/STRUCTURE_PLACEMENT_PLAN.md](Structures/STRUCTURE_PLACEMENT_PLAN.md) | DESIGN | Rollout plan for deterministic semantic structure placement (dungeons, villages, relics, ruins) |
 | [Structures/STRUCTURE_PLACEMENT_SPEC.md](Structures/STRUCTURE_PLACEMENT_SPEC.md) | DESIGN | Runtime contract for region-scale anchors, hard spacing constraints, and structure-family realization |
 | [Structures/MAGIC_GRID_SPEC.md](Structures/MAGIC_GRID_SPEC.md) | DESIGN | Analytic world-space XZ magic lattice: power-source nodes, WFC-build-on-node affordance, sparse claimed-node alignment state, per-template NodeAffinity, two-sources-one-pipeline with the free placer + universal influence query; chunk-decoupled, additive brightness cue (air-warp deferred) |
+| [Structures/RELIC_TERRAIN_INTEGRATION_SPEC.md](Structures/RELIC_TERRAIN_INTEGRATION_SPEC.md) | DESIGN | **How a hero relic meets the ground** — mound↔terrain seam (V21), surface parity across it (V22), and the path to destructible relics (W2). Records the current built state of the Agony mound + its export invariants |
 | [Structures/RELIC_LOD_IMPOSTOR_SPEC.md](Structures/RELIC_LOD_IMPOSTOR_SPEC.md) | IMPLEMENTED | Distance-based full-mesh ↔ impostor swap for large relics; supersedes archived `RELIC_RENDER_REFACTOR_SPEC.md` §8. Far-plane clipping now masked by distance fog. |
 | [Structures/RELIC_BILLBOARD_IMPOSTOR_SPEC.md](Structures/RELIC_BILLBOARD_IMPOSTOR_SPEC.md) | DESIGN | Pre-baked camera-facing billboard as LOD 1 impostor for relics (atlas bake tool + Y-axis facing system); future work for distant vistas |
 
@@ -153,6 +154,7 @@ Quick-reference index of all project documentation. Docs are organized by featur
 | Document | Status | Description |
 |----------|--------|-------------|
 | [Tickets/TICKETS.md](Tickets/TICKETS.md) | ACTIVE | Slim ticket board — status tables for the current work-set + backlog, linking into the detail docs below |
+| [Tickets/relic-grounding.md](Tickets/relic-grounding.md) | **CURRENT FOCUS** | Open work-set — Relic Grounding & Traversal Safety (opened 2026-07-21): mound seam/parity (V19/V21/V22), high-speed fall-through (M5/M7), blocking mesh-budget bug (U1) |
 | [Tickets/done/vista-moment.md](Tickets/done/vista-moment.md) | DONE | Completed work-set — MVP Vista Moment (closed 2026-07-21); Vista/Camera Feel/Animation build history |
 | [Tickets/backlog.md](Tickets/backlog.md) | ACTIVE | Backlog ticket detail, not yet pulled into a work-set |
 | [Tickets/done/](Tickets/done/) | — | Completed work-set docs move here untouched (empty until the first work-set finishes) |

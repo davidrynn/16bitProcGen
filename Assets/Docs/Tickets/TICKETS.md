@@ -8,10 +8,39 @@ Lightweight task tracker. Status: `[ ]` pending · `[x]` done · `[-]` blocked
 **Ticket ID scheme** (canonical): prefix = track, number increments within the track and is never
 reused. `V` Vista Moment · `C` Camera Feel · `A` Animation · `M` Movement · `P` Phase 1 core ·
 `W` World Power/WFC · `R` Rendering · `T` Testing · `B` Biome Art · `H` World Structure (the `H`
-macro-structure authority — `WORLD_STRUCTURE_SPEC.md`).
+macro-structure authority — `WORLD_STRUCTURE_SPEC.md`) · `U` Underground/Vertical terrain
+(`UNDERGROUND_VERTICAL_STREAMING_SPEC.md`, added 2026-07-21 — terrain-infrastructure tickets had been
+landing under unrelated prefixes).
 
 This tracker runs as **Kanban**: backlog → current focus → done. Work-sets are scoped by content,
 not timeboxed — a work-set stays "current focus" until it's actually done, however long that takes.
+
+---
+
+## Current focus: Relic Grounding & Traversal Safety _(opened 2026-07-21)_
+
+Detail: [`relic-grounding.md`](relic-grounding.md)
+
+Opened straight after Vista Moment closed — both threads were surfaced by *playing* the vista that
+was just shipped. The hero hand now has a mound, but it meets the terrain in a cliff and doesn't look
+like the ground it stands on; and the player falls through terrain after chained slingshots.
+
+Plus **U1**, a live terrain bug found while costing the destructible-relic work, which must be fixed
+regardless of the rest.
+
+| ID  | Status | Subject |
+|-----|--------|---------|
+| U1  | [x] | **FIXED 2026-07-21** — zero-vertex chunks now drop `TerrainChunkNeedsMeshBuild` instead of re-queuing forever and eating a mesh slot (`TerrainChunkMeshBuildSystem`, BUG-018). EditMode test for a uniform-density chunk settling still owed |
+| V19 | [~] | Hero hand rubble mound — **substantially built 2026-07-21**: `agony_mound_gen.py` (pose-refitting, deterministic), staging captured (`TILT_DEG 21.2047`, `PALM_ANCHOR`, `BURIAL_OFFSET`), `ColossalHand_AgonyRelic.fbx` exported + wired at scale 15 / yOffset 10, procedural stone surfacing (`RelicSurface.hlsl`, opt-in). Closes when V21+V22 land |
+| V21 | [ ] | Mound↔terrain seam — reuse the H3 `WorldStructureMask` flatten to give the mesh rim a known plane. **Confirm first** that the mask reaches `SdLayeredGround` (near-field `H` is World-Structure Phase C, not yet wired) |
+| V22 | [ ] | Mound surface parity — call `GroundPaletteMix` from `RelicSurface.hlsl` so relic and terrain share the palette. Call, never fork (`GroundNoiseCore` one-definition rule); don't reuse `GroundReliefNormal` |
+| M5  | [~] | High-speed tunneling / fall-through — **ROOT-CAUSED 2026-07-21 by instrumented traverse: pipeline starvation, NOT tunneling.** Breach snapshot showed all 9 chunks `Collider=False, NeedsCollider=False, MeshData=True, NeedsDensity=True` — LOD-demoted chunks mid-promotion, landing at only **42 m/s**. Collider latency **14–27 s / 274–617 frames**. **Primary fix BUILT 2026-07-21**: nearest-player-first ordering on **both** the density and mesh rebuild queues (previously arbitrary archetype order), matching what the collider stage already did. **Needs a re-run to confirm** — re-measure collider latency, which should collapse from 274–617 frames |
+| M8  | [x] | **BUILT 2026-07-21** — below-world recovery folded into `PlayerTerrainSafetySystem` (its natural home; no new system, no bootstrap wiring). Runs **before** that system's 0.5 s cooldown gate so a run-ending fall is never suppressed by it. Floor derived from the slab, not hardcoded, so U3 won't silently break it. Always logs |
+| M7  | [ ] | Chain-slingshot velocity clamp — **explicit stopgap**, not a design decision. Owner: speed should later scale with builds/ability. The clamp value becomes a progression knob. Note: **would not have prevented the observed event** (42 m/s landing) |
+
+**Diagnostics are temporarily ON** — `EnablePlayerFallThroughDiagnosticSystem` and
+`EnableTerrainColliderTimingSystem` are `1` in `ProjectFeatureConfig.asset`. **Flip both back to `0`
+when this work-set closes.**
 
 ---
 
@@ -76,21 +105,22 @@ _Tickets not yet pulled into a work-set._
 | ID  | Subject | Group |  
 |-----|---------|-------|
 | [V18](backlog.md#v18--hero-hand-weathered--ruined-variants) | Hero hand weathered/ruined variants — Blender fracture cuts on the V11 cage before the subsurf bake | Vista follow-up |
-| [V19](backlog.md#v19--hero-hand-rubble-mound-base) | **Hero hand rubble mound base** — the hand still reads as *floating* from spawn; Blender-authored mound joined into the hero mesh. Highest-value Vista follow-up | Vista follow-up |
 | [V20](backlog.md#v20--vista-residual-polish-bundle) | Vista residual polish bundle — V9 P5 saturation + day/night sweep, V13/V15/V17/R6 owner eyeballs. Deferred 2026-07-21 as good-enough | Vista follow-up |
+| U2  | Per-chunk `SDFEdit` AABB culling — `Sample` loops every edit at every sample with no spatial culling; a 17-primitive SDF relic = ~70k evaluations per chunk **world-wide**. Prerequisite for W2; directly relieves BUG-008 | Terrain |
+| U3  | 3D sparse vertical chunking (Level 2 of `UNDERGROUND_VERTICAL_STREAMING_SPEC.md`). ~1–2 weeks against the existing spec + its 2026-07-21 cost inventory. **Gated on vertical content existing** — with today's pure-heightfield field it resolves to one layer and buys nothing | Terrain |
+| U4  | Scatter topmost-surface determination — `TryFindSurfaceHeight` scans only its own chunk, so stacked layers grow trees inside caves. No column-occupancy index exists. **Design work, not a port** — the genuine unknown in U3 | Terrain |
 | [C1–C3](backlog.md#c1c3--camera-feel-slingshot) | Camera Feel — charge pullback + FOV narrow (C1), launch FOV punch + speed lines (C2), landing dip + dust burst (C3). Never started | Camera Feel |
 | [A2/A3/A8/A9](backlog.md#a2a3a8a9--animation-carried-out-of-the-vista-work-set) | Animation — A9 first-person arms viewmodel (the real FPS-only payoff, rigging started 2026-07-12); A2/A3/A8 third-person body, dev-toggle only | Animation |
 | M1  | ~~Glide mechanic (Space hold → GlideCharging → Gliding)~~ **APPEARS BUILT — verify & close (2026-07-21).** Code check during the MASTER_PLAN reconciliation found `Assets/Scripts/Player/Systems/GlideSystem.cs` implementing both mode transitions, created by `DotsSystemBootstrap` under `EnableGlideSystem` (code default `true`, `ProjectFeatureConfig.asset` = 1), plus `CameraGlideFeedbackSystem` and animator states. Ticket has been sitting in the backlog as unbuilt. Needs one in-play confirmation (Space-hold → glide → landing feels right), then close — or re-scope to whatever is actually missing | Movement |
-| M2  | Chain slingshot (chain window + additive velocity) | Movement |
+| M2  | ~~Chain slingshot (chain window + additive velocity)~~ **APPEARS BUILT — verify & close (2026-07-21).** `SlingshotLaunchSystem`/`SlingshotChargeSystem`/`ChainWindowSystem` implement the chain window and additive velocity (`ChainVelocityPreservation 0.85`, `ChainImpulseMultiplierStep 0.25`, `ChainMaxCount 3`, `ChainWindowDuration 2.0`). Same situation as M1. Note it is the *unclamped* form of this that drives M5/M7 | Movement |
 | M3  | Thermal columns (vertical lift volumes) | Movement |
 | [M4](backlog.md#m4--bug-ballistic-takeoff-false-grounding-past-jump-apex-codex-review-2026-07-02) | BUG: Ballistic-takeoff false-grounding past jump apex — suppress by contact/separation, not velocity sign | Movement |
-| [M5](backlog.md#m5--harden-sky-drop-landing-against-high-speed-tunneling-open--spun-off-from-v7-2026-07-03) | Harden sky-drop landing against high-speed tunneling (thin/absent collider under landing XZ; no CCD) | Movement |
 | M6  | ~~Terrain editing no longer works. Shifting to edit-mode then attempting to edit does nothing~~ **FIXED 2026-07-19** — root cause was config, not code: `ProjectFeatureConfig.asset` had `EnableTerrainEditInputSystem: 0` (code default is `true`), so `TerrainEditInputSystem` was never created at bootstrap — Tab still toggled edit mode but Q/E/click had no handler. Flipped the asset flag to 1 (via MCP); no errors on play-start. Actual Q/E carve/fill still owner-verify in play. NB pre-existing edit issues if exercised: BUG-004 (BlobAssetReference on edit raycast), BUG-008 (edit-buffer growth) | Terrain |
 | P1  | Basic HUD (charge indicator + chain window indicator) | Phase 1 |
 | P2  | Magic Hand System (raycast, charge, binary terrain edit) | Phase 1 |
 | E1  | Blocked-edit visual feedback — red-X reticle pulse (+ optional tooltip) when a terrain edit is rejected by the player-safety volume. Post-MVP: terrain editing itself needs substantial work first (owner 2026-07-03; salvaged from archived Cursor plan) | Editing UX |
 | [W1](backlog.md#w1--magic-power-grid-placeholder--design-stage-not-yet-broken-into-tickets) | Magic power grid (placeholder — see `Structures/MAGIC_GRID_SPEC.md`) | Phase 2 / World Power |
-| [W2](backlog.md#w2--destructible-hero-relics-mesh-at-distance-sdf-stamp-up-close-idea--not-fleshed-out-owner-2026-07-09-from-the-v11-blender-session) | Destructible hero relics — mesh at distance, SDF stamp up close (idea, not fleshed out; V11 master rig doubles as the SDF description) | Terrain |
+| [W2](backlog.md#w2--destructible-hero-relics-mesh-at-distance-sdf-stamp-up-close-idea--not-fleshed-out-owner-2026-07-09-from-the-v11-blender-session) | **Destructible hero relics** — mesh at distance, SDF stamp up close. **Owner confirmed wanted 2026-07-21** ("I had always conceived of these relics as destructible"). Now scoped in [`../Structures/RELIC_TERRAIN_INTEGRATION_SPEC.md`](../Structures/RELIC_TERRAIN_INTEGRATION_SPEC.md) §4: the hand is already ~17 primitives, so the generator can emit capsules from the posed armature and keep Blender posing. **Blocked on U2 + U3** | Terrain |
 | [R1](backlog.md#r1--low-poly-treerock-lods--enable-relic-lod) | Low-poly tree/rock LODs + enable relic LOD | Rendering |
 | [R2](backlog.md#r2--speed-biased-scatter-lod-drop-detail-during-fast-airborne-movement) | Speed-biased scatter LOD (drop detail during fast airborne movement) | Rendering |
 | [R3](backlog.md#r3--r4--t1--surface-scatter-lod-follow-ups-deferred-from-codex-review-2026-06-27) | Camera-specific scatter LOD bucketing (multi-camera correctness) | Rendering |
@@ -110,8 +140,8 @@ _Tickets not yet pulled into a work-set._
 
 ## How this works
 
-- Current-focus detail lives in the work-set doc. **No work-set is currently open** — both Vista
-  Moment and World Structure Phase A closed; the next one is under discussion (2026-07-21).
+- Current-focus detail lives in the work-set doc. **Open work-set: Relic Grounding & Traversal
+  Safety** ([`relic-grounding.md`](relic-grounding.md), opened 2026-07-21).
 - When a work-set completes, its doc moves to `done/` **untouched**
   (`done/vista-moment.md` is the first).
 - Backlog detail lives in `backlog.md` until a ticket is pulled into a current work-set.
