@@ -8,6 +8,13 @@ Quick-reference index of all project documentation. Docs are organized by featur
 
 ---
 
+## Design / Vision
+
+| Document | Status | Description |
+|----------|--------|-------------|
+| [MASTER_PLAN.md](MASTER_PLAN.md) | ACTIVE | Project vision, design pillars, current status, and phase roadmap ("what / when") |
+| [GAME_DESIGN.md](GAME_DESIGN.md) | DESIGN (v0.1) | The GDD — what makes it fun, core loop, the travel-is-fun north star, WFC fast-build, progression ("why it's fun"). Minimal, iterating |
+
 ## Terrain
 
 | Document | Status | Description |
