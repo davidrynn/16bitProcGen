@@ -14,6 +14,20 @@ namespace DOTS.Terrain
     public partial struct TerrainChunkDensitySamplingSystem : ISystem
     {
         private EntityQuery chunkQuery;
+        // Drives nearest-first rebuild ordering. Without it this system consumed its per-frame
+        // budget in arbitrary archetype order, so a chunk the player was about to land on could
+        // queue behind hundreds of irrelevant ones — measured 14.6-26.8 s (274-617 frames)
+        // spawn->collider latency, and the confirmed cause of the 2026-07-21 fall-through
+        // (KNOWN_ISSUES BUG-019: the landing chunk had MeshData but no collider and none queued).
+        private EntityQuery playerQuery;
+
+        /// <summary>Sort key: Chebyshev chunk distance to the player, nearest first.</summary>
+        private struct PendingDensityChunk : System.IComparable<PendingDensityChunk>
+        {
+            public int Distance;
+            public int Index;
+            public int CompareTo(PendingDensityChunk other) => Distance.CompareTo(other.Distance);
+        }
 
         public void OnCreate(ref SystemState state)
         {
@@ -24,6 +38,50 @@ namespace DOTS.Terrain
                 ComponentType.ReadOnly<TerrainChunkGridInfo>(),
                 ComponentType.ReadOnly<TerrainChunkBounds>(),
                 ComponentType.ReadOnly<TerrainChunkNeedsDensityRebuild>());
+            playerQuery = state.GetEntityQuery(
+                ComponentType.ReadOnly<DOTS.Player.Components.PlayerTag>(),
+                ComponentType.ReadOnly<Unity.Transforms.LocalTransform>());
+        }
+
+        /// <summary>
+        /// Orders <paramref name="chunkEntities"/> nearest-player-first. Returns an index order
+        /// array, or an uncreated array when there is no player / no LOD policy — callers then fall
+        /// back to natural order, which is the pre-2026-07-21 behaviour.
+        /// </summary>
+        private NativeArray<PendingDensityChunk> BuildNearestFirstOrder(
+            ref SystemState state, NativeArray<Entity> chunkEntities)
+        {
+            if (playerQuery.IsEmpty
+                || !SystemAPI.TryGetSingleton<DOTS.Terrain.LOD.TerrainLodSettings>(out var lodPolicy))
+                return default;
+
+            // LOD0 stride, matching TerrainChunkColliderBuildSystem, so both systems agree on which
+            // chunk the player is in. Footprint is LOD-invariant so this is safe for any chunk.
+            var stride = math.max(0, lodPolicy.Lod0Resolution.x - 1) * lodPolicy.Lod0VoxelSize;
+            if (stride <= 0f)
+                return default;
+
+            var em = state.EntityManager;
+            var playerPos = em.GetComponentData<Unity.Transforms.LocalTransform>(
+                playerQuery.GetSingletonEntity()).Position;
+            var playerChunk = new int2(
+                (int)math.floor(playerPos.x / stride),
+                (int)math.floor(playerPos.z / stride));
+
+            var order = new NativeArray<PendingDensityChunk>(chunkEntities.Length, Allocator.Temp);
+            for (int i = 0; i < chunkEntities.Length; i++)
+            {
+                var coord = em.GetComponentData<TerrainChunk>(chunkEntities[i]).ChunkCoord;
+                order[i] = new PendingDensityChunk
+                {
+                    Distance = math.max(
+                        math.abs(coord.x - playerChunk.x),
+                        math.abs(coord.z - playerChunk.y)),
+                    Index = i
+                };
+            }
+            order.Sort();
+            return order;
         }
 
         public void OnUpdate(ref SystemState state)
@@ -94,11 +152,18 @@ namespace DOTS.Terrain
                 // ── Phase 1: schedule all density jobs ────────────────────────────────
                 // Jobs are dispatched to worker threads and run in parallel.
                 // Multiple jobs sharing the same [ReadOnly] edits array is safe.
-                foreach (var entity in chunkEntities)
+                // Nearest-player-first: the budget is small (8/frame by default), so WHICH chunks it
+                // is spent on matters more than how many. Falls back to natural order if there is
+                // no player yet (e.g. before bootstrap completes).
+                var order = BuildNearestFirstOrder(ref state, chunkEntities);
+                var useOrder = order.IsCreated;
+
+                for (int o = 0; o < chunkEntities.Length; o++)
                 {
                     if (scheduledCount >= maxDensityRebuilds)
                         break;
 
+                    var entity = chunkEntities[useOrder ? order[o].Index : o];
                     var grid = entityManager.GetComponentData<TerrainChunkGridInfo>(entity);
                     if (grid.VoxelCount <= 0)
                         continue;
@@ -133,6 +198,9 @@ namespace DOTS.Terrain
                     boundsInfos[scheduledCount]        = bounds;
                     scheduledCount++;
                 }
+
+                if (useOrder)
+                    order.Dispose();
 
                 // ── Phase 2: complete all jobs ────────────────────────────────────────
                 // Worker threads finish in parallel; main thread waits once for all of them.
