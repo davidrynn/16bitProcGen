@@ -72,9 +72,17 @@ All three land on `CameraEffectResolverSystem` (the camera driver).
 
 ### O1–O4 — Opening Scene _(PLACEHOLDER — opened 2026-07-21, intent not yet pinned down)_
 
-> **Placeholder only.** Owner sketch: *"falling from the sky, crash effects on landing, scripted
-> initial events (mysteries being healed and imbued with powers)."* Not broken down, not estimated,
-> not scoped. Discuss intent before writing a spec.
+> **Intent settled 2026-07-21 — see [`../GAME_DESIGN.md`](../GAME_DESIGN.md) §4.1 (the opening beat)
+> and §6.1 (the gem).** That is the authority on *what this is*; below is only what building it
+> depends on. Still not estimated or broken down.
+
+**The beat:** meteor across the sky previewing biomes and creatures that look up → crash landing →
+player injured, vision blurred → a **mysterious being** approaches, takes the player's hand, and
+imbues powers of traversal (and later telekinesis, WFC building). **One-time**, authored — not
+replayed per session.
+
+*(Earlier notes here read "mystery being healed" — that was a mishearing of **mysterious being**.
+There is no healing mechanic implied.)*
 
 **Read this before starting: a large part of the arrival is already built.** The gap is not the
 descent — it is what *happens* when you land.
@@ -90,27 +98,37 @@ descent — it is what *happens* when you land.
 
 Existing spec for the built portion: [`../Rendering/METEOR_ARRIVAL_SEQUENCE_SPEC.md`](../Rendering/METEOR_ARRIVAL_SEQUENCE_SPEC.md).
 
-Provisional shape — renumber freely once intent is settled:
+Provisional shape — renumber freely:
 
-- **O1** — Landing impact beat. Almost certainly **C3 pulled forward** rather than new work; C3 is
-  already scoped as the thing V13's descent VFX burns off *into*. Check whether O1 is just "do C3"
-  before opening anything new.
-- **O2** — Scripted arrival sequence: an authored, ordered set of events firing after the readiness
-  gate releases. Needs a decision on the driver — ECS system, timeline, or data-driven step list.
-- **O3** — "Mysteries healed / imbued with powers." **Design question, not an implementation one.**
-  This is player-fantasy and progression, so it wants a `GAME_DESIGN.md` statement of intent first —
-  what a mystery *is*, what a power *does*, how it changes the loop. Ticket follows the design.
-- **O4** — Audio for the opening. **Blocked: no audio pipeline exists.** Same blocker that stopped
-  the V13 comet SFX; see [`../Audio/AUDIO_SPEC.md`](../Audio/AUDIO_SPEC.md) (DESIGN, proposed).
+- **O1** — Landing impact beat (crash, injury, blurred vision). The impact half is almost certainly
+  **C3 pulled forward** — C3 is already scoped as what V13's descent VFX burns off *into*. The
+  injury/blur is new: a post-process + a scripted camera state on `CameraEffectResolverSystem`.
+- **O2** — Scripted arrival sequence: an authored, ordered event list firing after the readiness gate
+  releases. Needs a driver decision (ECS system / timeline / data-driven step list). **One-time means
+  it needs a "has played" persisted flag** — MVP persistence scope is `WORLD_STRUCTURE_SPEC.md` §9.
+- **O3** — The being + the hand-grant moment. **Hard dependency on A9** (see below).
+- **O4** — Opening audio. **Blocked: no audio pipeline exists.** Same blocker that stopped the V13
+  comet SFX; see [`../Audio/AUDIO_SPEC.md`](../Audio/AUDIO_SPEC.md) (DESIGN, proposed).
+- **O5** — The gem, visually. **Explicitly optional** — §6.1 establishes the gem gates nothing, so no
+  power is blocked by its absence. Cut first if MVP is tight.
 
-**Open questions for the owner:**
-1. Is the opening a one-time story beat, or replayed every session? That decides whether it is
-   authored content or a systemic sequence — and it changes everything downstream.
-2. Does "imbued with powers" mean the movement abilities the player already has (slingshot, glide),
-   framed narratively — or genuinely new mechanics? The former is presentation; the latter is a
-   feature track of its own.
-3. Does this precede or follow the MVP loop closing? `MASTER_PLAN` §5 holds the current MVP
-   definition, and the loop does not close yet.
+**Dependencies that are not obvious from the beat description:**
+
+1. **A9 (first-person arms viewmodel) becomes load-bearing.** The MVP is first-person, and the
+   climax is *a being taking the player's hand* — with a gem on that hand/forearm. Both require
+   visible player arms. A9 has now been dropped twice (once at the Vista re-anchor, once during the
+   2026-07-21 relic session). **The opening cannot be built as described without it.**
+2. **The aerial preview needs content that does not exist.** It shows *biomes* (one exists —
+   Windswept Colossus Plains) and *creatures* (none exist, no AI or creature system at all). Either
+   the preview is stubbed/stylised for MVP, or this ticket waits on world content.
+3. **Telekinesis is a genuinely new mechanic**, not a reframing. Traversal powers already exist
+   (slingshot, glide); telekinesis is a feature track of its own.
+4. **WFC-as-a-power inherits the WFC blocker.** `MASTER_PLAN` §2 records that the collapse core is
+   not actually WFC and needs a rewrite, not a bug-fix pass.
+
+**Still open (owner):** does this precede or follow the MVP loop closing? `MASTER_PLAN` §5 holds the
+MVP definition and the loop does not close yet — an authored opening in front of an unclosed loop may
+be the wrong order.
 
 ### A2/A3/A8/A9 — Animation
 - **A9 — first-person arms viewmodel.** The real animation payoff for an FPS-only MVP. Arms source =

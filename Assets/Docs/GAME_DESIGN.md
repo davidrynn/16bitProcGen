@@ -113,6 +113,29 @@ extends reach → reach reveals a new need farther out.** Exploration is gated b
 never by tedium. The "one more run" pull is structural: there is always a farther, stranger place just
 past what you can currently reach, and always a fresh demand that a new node would answer.
 
+### 4.1 The opening — one-time, authored _(owner-settled 2026-07-21)_
+
+The loop above begins mid-sentence at ARRIVE. This is what precedes it, and it is a **one-time story
+beat**, not a systemic sequence replayed each session.
+
+1. A meteor streaks across the sky. The camera travels with it, **previewing biomes** the player has
+   not reached and **creatures that look up** as it passes — the world is shown to be inhabited and
+   varied *before* the player can reach any of it.
+2. The meteor — the player — **lands in a crash**. The player is **injured**; vision blurs.
+3. Through the blur, a **mysterious being** approaches, **takes the player's hand**, and **imbues
+   them with powers** — traversal first, others later.
+
+*Why it earns its place:* this is a **diegetic tutorial that hands you the toy the game is about.**
+The north star (§2) is that travel is the fun; the opening's climax is literally being given the
+ability to travel. It also plants the two hooks the loop needs — a world worth crossing (the biome
+preview) and someone who knows more than you (the being).
+
+The aerial preview does double duty: it is the *far* horizon promise, where §4's vista relic is the
+*near* one.
+
+**Open — not settled here:** who the being is, whether it recurs, and whether it connects to the
+ossified-god framing in §7.5.
+
 ## 5. Building — earned depth, effortless beauty
 
 Two modes, both from `MAGIC_GRID_SPEC.md`:
@@ -139,6 +162,35 @@ Progression should make the **two joys deeper**: move better, build better.
 - Unlocks are **earned through the struggle** (§3) and immediately **open new territory** (§4) —
   progression and exploration are the *same axis*.
 
+### 6.1 The gem — powers are fiction-wrapped, not gem-gated _(owner-settled 2026-07-21)_
+
+The powers granted in §4.1 are expressed through a **gem set into the player's forearm or hand**
+(which reads better is undecided). In fiction, the player **turns or touches the gem** to activate a
+power; in play, that corresponds to a keypress.
+
+**The gem is a story device, not a dynamic.** Owner call, and worth stating plainly because it is a
+scoping gift: the gem **gates nothing, costs nothing, and has no resource behind it.** It is the
+narrative and visual wrapper around ability activation — the reason the player has these powers and
+the object they touch to use them. A power works identically whether or not the gem is ever drawn.
+
+*Why it earns its place:* it converts a menu of abilities into a **single diegetic object the player
+owns**, granted by a character in the opening. Powers stop being a UI and become a possession — which
+matters for a game whose fantasy is *becoming capable of crossing this world.*
+
+Powers it wraps, current thinking:
+
+| Power | Status in the fantasy |
+|---|---|
+| **Traversal** — slingshot, glide, and successors | The first grant, the north star made playable |
+| **WFC fast-build** (§5) | The building joy, framed as a power rather than a menu |
+| **Telekinesis** — grab items at range | New idea; answers "reaching a thing" without the trip being tedious |
+
+Additional powers are expected; the gem is the frame that lets them be *given* rather than unlocked
+in an interface.
+
+*Ideal but not required:* a hand/forearm animation for activation. Nice, plausibly beyond MVP, and —
+because the gem gates nothing — **its absence blocks no power from shipping.**
+
 ## 7. What we are NOT deciding yet (iterate on these)
 
 1. **Currency of progression** — resources? discovery? building milestones? a mix?
@@ -148,7 +200,9 @@ Progression should make the **two joys deeper**: move better, build better.
 4. **The alignment hook** — the archived good-vs-evil / order-vs-corruption fantasy (your builds shift
    the world's alignment). Revive, cut, or reshape?
 5. **Setting fiction** — the ossified-god / colossus-remains framing (the V11 hero relic). How central
-   is it to the fantasy, and does it carry a narrative?
+   is it to the fantasy, and does it carry a narrative? _(Partly answered 2026-07-21: §4.1 establishes
+   there **is** a narrative and at least one character — the mysterious being. Still open: who they
+   are, whether they recur, and whether they connect to the ossified gods.)_
 6. **Session shape** — persistent world, run-based, or both?
 7. **Working title / name.** The Hand of the Colossus...?
 
