@@ -39,9 +39,12 @@ A deterministic, stylized **16-bit retro sandbox** built in **Unity 6.2 / DOTS**
 The pillars say *what systems exist*. The thesis says *what they are for* — and it is the tiebreaker
 whenever a roadmap call is ambiguous:
 
-1. **Travel is the reward, not a tax.** In most crafting games, traversal is what you endure between
-   the fun. Here it *is* the fun — a skill toy worth using for its own sake. Every other system
-   serves that.
+1. **No system is a tax — every system is fun to *use*.** Feel, sound and dynamics are why a system
+   earns its place, not polish added at the end. A merely *functional* system is unfinished.
+   **Traversal is the exemplar, not the thesis** _(clarified 2026-07-21)_: it is named first because
+   it is the clearest failure in comparable games, but gathering, building and destruction are held
+   to the same bar. Grind is fine — things should be *earned*; the enemy is effort that feels like
+   nothing (holding W, waiting on a bar, shuffling a menu).
 2. **Friction belongs in the world, never in locomotion.** Scarcity, distance, danger and survival
    pressure are the challenge. Sluggish movement is not challenge, it is tax.
 3. **Building is how world-friction gets answered.** Every pressure the world applies has a
@@ -51,6 +54,11 @@ whenever a roadmap call is ambiguous:
 **The two joys are move better and build better** (`GAME_DESIGN.md` §6). Weight roadmap decisions
 against both — a plan that deepens traversal while leaving building a debug tool is only half the
 game. The causal loop these produce is `GAME_DESIGN.md` §4 and is the authority on player experience.
+
+**Narrative spine** _(added 2026-07-21)_: an authored opening grants the player their powers
+(`GAME_DESIGN.md` §4.1), and the endgame has them **become a giant and ossify** (§6.2) — which makes
+every colossus relic in the world a previous cycle. The ossified-god framing is now central rather
+than set dressing, and the MVP vista relic reads as foreshadowing.
 
 ### The MVP "Wow Moment" — Vista Discovery ✅ _(delivered 2026-07-21)_
 

@@ -38,9 +38,23 @@ place them.
 
 Pillars (established, `MASTER_PLAN.md` §1): **Exploration · Destruction · Movement · Crafting · Minimalism.**
 
-**North star — the thing that makes us different:** in most crafting games, travel is a *tax* you pay
-between the fun (Minecraft: hold-W across empty terrain for five minutes). Here, **travel is the
-fun** — traversal is a skill toy you *want* to use for its own sake. Every other system serves that.
+**North star — no system is a tax. Every system is fun to *use*.** Feel, sound, and dynamics are not
+polish applied at the end; they are the reason each system earns its place. A system that is merely
+*functional* is unfinished, whatever its feature list says.
+
+**Traversal is the exemplar, not the thesis** _(owner clarification 2026-07-21)_. It gets named first
+because it is the clearest failure in comparable games — in most crafting games travel is a tax you
+pay between the fun (Minecraft: hold-W across empty terrain for five minutes), and fixing that is a
+real differentiator. But it is *one* application of the principle, not the principle. Gathering,
+building, destruction and combat are each held to the same bar: **good to do, moment to moment.**
+
+> **Do not read this as "traversal is the game and everything serves it."** An earlier draft said
+> exactly that, and it was wrong — it also contradicted §6, which has always named **two** joys.
+
+**Grind is not the enemy — bad feel is.** Things should still be *earned*; §3's world-friction and
+§6's progression both depend on it. The distinction is between **effort that feels good** (a hard
+throw you land, a hard-won resource, a structure that snaps into place) and **effort that feels like
+nothing** (holding W, waiting on a bar, shuffling a menu). Keep the first. Cut the second.
 
 ## 3. The core tension (design on purpose)
 
@@ -61,9 +75,9 @@ the _locomotion_.**
 | Skill mastery (movement, building) | Backtracking as a time-sink |
 | Earning progression | Waiting / padding |
 
-Travel is the **reward-delivery vehicle**, not the grind. You never pay tedium to get somewhere — the
-getting-there is the toy. You grind by *doing interesting things in interesting places*, and the trip
-between them is a pleasure, not a cost.
+Travel is a **reward-delivery vehicle**, not the grind. You never pay tedium to get somewhere. You
+grind by *doing interesting things in interesting places* — and per §2 those things must themselves
+feel good to do, or we have only moved the tax rather than removed it.
 
 **The corollary — every survival pressure must have a buildable answer.** The trap most crafting games
 fall into is *maintenance you wait through*: hunger you pause to eat past, durability you stop to
@@ -191,18 +205,59 @@ in an interface.
 *Ideal but not required:* a hand/forearm animation for activation. Nice, plausibly beyond MVP, and —
 because the gem gates nothing — **its absence blocks no power from shipping.**
 
+## 6.2 Endgame — you become a giant, then ossify _(owner sketch 2026-07-21; feasibility open)_
+
+The endgame event: the player **becomes one of the giants** for a limited time, then **ossifies**.
+Controls are deliberately difficult; the destruction available is enormous and the point is that it
+is *fun*.
+
+**Why this is bigger than an endgame.** It closes the fiction loop. The world is littered with
+ossified colossi — the hero relic is a giant's hand reaching out of the earth. If the player's arc
+ends in becoming a giant and ossifying, then **the relics are previous runs, previous players,
+previous cycles.** The landmark the whole MVP is built around retroactively becomes a *portrait of
+your own ending*. The vista stops being scenery and becomes foreshadowing.
+
+That reframes the opening too (§4.1): a mysterious being grants a newcomer power at the start, and
+the newcomer eventually ossifies into the landscape. Whether the being is a former player, and
+whether the cycle is explicit, is open — but the shape is there.
+
+**Why it fits §2.** A giant body in a world built for a 2 m character *will* feel unwieldy. That is
+usually a bug; here it is the design. The difficulty is diegetic — you are enormous and the world is
+small — and it makes the destruction land. It also inverts every skill the player has spent the game
+mastering, which is a strong final-act move.
+
+**Feasibility — genuinely open, and the honest read is "hard":**
+
+- **Scale vs. the terrain slab.** SDF terrain is one ~15 u vertical slab with 1 m voxels. A colossus-
+  scale player has the same problem as the SDF relic (`Structures/RELIC_TERRAIN_INTEGRATION_SPEC.md`
+  §4): it does not fit. Likely shares the vertical-chunking prerequisite (ticket U3).
+- **Destruction volume.** Giant-scale carving means very large or very many `SDFEdit`s, and edits are
+  currently evaluated per sample with no spatial culling (ticket U2) and no compaction (BUG-008).
+  This is probably the hardest constraint, not the scale itself.
+- **Physics.** We have just spent a sprint on a 2 m capsule tunnelling through 1 m voxels. A 200 m
+  body against the same shell is a different regime entirely.
+- **Cheaper alternative worth considering:** rather than scaling the player up, scale the *world*
+  representation down for the sequence — an authored arena rather than the live procedural world.
+  Loses "destroy the world you built," which may be the whole point. Owner call.
+
+**Not a near-term ticket.** Recorded so the fiction and the technical prerequisites are visible
+early — several of them (U2, U3) are already on the board for other reasons.
+
 ## 7. What we are NOT deciding yet (iterate on these)
 
 1. **Currency of progression** — resources? discovery? building milestones? a mix?
-2. **Win / endgame** — a goal, or open-ended sandbox? (MVP is open-ended.)
+2. **Win / endgame** — a goal, or open-ended sandbox? (MVP is open-ended.) _(Partly answered
+   2026-07-21: §6.2 gives an endgame **event** — become a giant, then ossify. Still open: whether
+   reaching it ends a run, and what happens after.)_
 3. **Shape of the struggle** — enemies/mobs? environmental hazard? survival needs (hunger/cold)? how
    much combat vs. environmental challenge?
 4. **The alignment hook** — the archived good-vs-evil / order-vs-corruption fantasy (your builds shift
    the world's alignment). Revive, cut, or reshape?
 5. **Setting fiction** — the ossified-god / colossus-remains framing (the V11 hero relic). How central
-   is it to the fantasy, and does it carry a narrative? _(Partly answered 2026-07-21: §4.1 establishes
-   there **is** a narrative and at least one character — the mysterious being. Still open: who they
-   are, whether they recur, and whether they connect to the ossified gods.)_
+   is it to the fantasy, and does it carry a narrative? _(Largely answered 2026-07-21 — it is
+   **central**. §4.1 gives a narrative and a character; §6.2 makes ossification the player's own
+   ending, which reframes every relic in the world as a previous cycle. Still open: who the being is,
+   whether they recur, and whether the cycle is stated or merely implied.)_
 6. **Session shape** — persistent world, run-based, or both?
 7. **Working title / name.** The Hand of the Colossus...?
 
