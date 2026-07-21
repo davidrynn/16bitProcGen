@@ -1,7 +1,7 @@
 # Game Design (GDD) — working title TBD
 
 **Status:** DESIGN — v0.1 (minimal draft, built to iterate — do not treat as settled)
-**Last Updated:** 2026-07-19
+**Last Updated:** 2026-07-21
 **Owner:** Design
 
 **Purpose:** One current, minimal answer to *"what is the game, what makes it fun, and why keep
@@ -9,6 +9,21 @@ playing"* — the connective tissue the technical specs assume but never state. 
 established pillars (`MASTER_PLAN.md` §1), the movement-feel thesis (`MOVEMENT_PLANNING.md`), the
 vista hook (`MVP_VISTA_MOMENT_SPEC.md`), and the node-building mechanic (`MAGIC_GRID_SPEC.md`) into
 one loop. Deliberately minimal — expand by iteration, not up front.
+
+### Scope — what this document is, and is not
+
+> **This is the authoritative gameplay-intent document.** It defines the player fantasy, the core
+> loop, and the design principles that decide *why* a feature earns its place.
+>
+> **It does not track implementation status, sequencing, or schedule.** Nothing here should be read
+> as a claim that something is built.
+>
+> - Execution sequencing and phase direction: [`MASTER_PLAN.md`](MASTER_PLAN.md) — the *what* and *when*
+> - Current execution state: [`Tickets/TICKETS.md`](Tickets/TICKETS.md) — the live truth
+>
+> When intent and roadmap disagree, **this document wins on intent** and `MASTER_PLAN.md` wins on
+> ordering. `MASTER_PLAN.md` §1 adopts §2's north star and §6's two joys as its product thesis, so
+> the two are meant to stay in lockstep — if they drift, fix the drift rather than picking a side.
 
 ---
 

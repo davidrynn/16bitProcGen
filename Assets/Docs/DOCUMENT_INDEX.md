@@ -12,8 +12,13 @@ Quick-reference index of all project documentation. Docs are organized by featur
 
 | Document | Status | Description |
 |----------|--------|-------------|
-| [MASTER_PLAN.md](MASTER_PLAN.md) | ACTIVE | Project vision, design pillars, current status, and phase roadmap ("what / when") |
-| [GAME_DESIGN.md](GAME_DESIGN.md) | DESIGN (v0.1) | The GDD — what makes it fun, core loop, the travel-is-fun north star, WFC fast-build, progression ("why it's fun"). Minimal, iterating |
+**Three complementary authorities — each settles a different kind of question:**
+
+| Document | Status | Description |
+|----------|--------|-------------|
+| [MASTER_PLAN.md](MASTER_PLAN.md) | ACTIVE | **Overview + roadmap authority ("what / when").** Vision, product thesis, design pillars, phase-level direction, doc map, and the current MVP definition. Carries *no* ticket-level status by design |
+| [GAME_DESIGN.md](GAME_DESIGN.md) | DESIGN (v0.1) | **Gameplay-intent authority ("why it's fun").** Player fantasy, core loop, the travel-is-the-reward north star + the two joys (move better / build better), WFC fast-build, progression. Tracks *no* implementation status. Minimal, iterating |
+| [Tickets/TICKETS.md](Tickets/TICKETS.md) | ACTIVE | **Execution-state authority ("where we are").** Kanban board — open work-set, ticket states, backlog. The only doc that changes week to week |
 
 ## Terrain
 
