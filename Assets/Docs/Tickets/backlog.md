@@ -70,6 +70,48 @@ are invisible in normal play).
 
 All three land on `CameraEffectResolverSystem` (the camera driver).
 
+### O1–O4 — Opening Scene _(PLACEHOLDER — opened 2026-07-21, intent not yet pinned down)_
+
+> **Placeholder only.** Owner sketch: *"falling from the sky, crash effects on landing, scripted
+> initial events (mysteries being healed and imbued with powers)."* Not broken down, not estimated,
+> not scoped. Discuss intent before writing a spec.
+
+**Read this before starting: a large part of the arrival is already built.** The gap is not the
+descent — it is what *happens* when you land.
+
+| Beat | State |
+|---|---|
+| Sky-drop spawn (Y=400, gravity hold, readiness gate) | ✅ built — V7, validated 2026-07-03 |
+| Meteor loading shell (diegetic, breaks on real readiness) | ✅ built — V14, closed 2026-07-18 |
+| Burning-descent VFX (smoke trail, ignition fade) | ✅ built — V13, closed 2026-07-21 |
+| Landing camera dip + dust burst | ⬜ **C3**, never started — already the V13 handoff target |
+| Scripted narrative events on arrival | ⬜ nothing exists |
+| Power granting / progression hooks | ⬜ nothing exists |
+
+Existing spec for the built portion: [`../Rendering/METEOR_ARRIVAL_SEQUENCE_SPEC.md`](../Rendering/METEOR_ARRIVAL_SEQUENCE_SPEC.md).
+
+Provisional shape — renumber freely once intent is settled:
+
+- **O1** — Landing impact beat. Almost certainly **C3 pulled forward** rather than new work; C3 is
+  already scoped as the thing V13's descent VFX burns off *into*. Check whether O1 is just "do C3"
+  before opening anything new.
+- **O2** — Scripted arrival sequence: an authored, ordered set of events firing after the readiness
+  gate releases. Needs a decision on the driver — ECS system, timeline, or data-driven step list.
+- **O3** — "Mysteries healed / imbued with powers." **Design question, not an implementation one.**
+  This is player-fantasy and progression, so it wants a `GAME_DESIGN.md` statement of intent first —
+  what a mystery *is*, what a power *does*, how it changes the loop. Ticket follows the design.
+- **O4** — Audio for the opening. **Blocked: no audio pipeline exists.** Same blocker that stopped
+  the V13 comet SFX; see [`../Audio/AUDIO_SPEC.md`](../Audio/AUDIO_SPEC.md) (DESIGN, proposed).
+
+**Open questions for the owner:**
+1. Is the opening a one-time story beat, or replayed every session? That decides whether it is
+   authored content or a systemic sequence — and it changes everything downstream.
+2. Does "imbued with powers" mean the movement abilities the player already has (slingshot, glide),
+   framed narratively — or genuinely new mechanics? The former is presentation; the latter is a
+   feature track of its own.
+3. Does this precede or follow the MVP loop closing? `MASTER_PLAN` §5 holds the current MVP
+   definition, and the loop does not close yet.
+
 ### A2/A3/A8/A9 — Animation
 - **A9 — first-person arms viewmodel.** The real animation payoff for an FPS-only MVP. Arms source =
   rig the baked V11 hand mesh directly (armature → relaxed re-pose → owner tweaks). Rigging phase

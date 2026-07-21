@@ -10,7 +10,7 @@ reused. `V` Vista Moment · `C` Camera Feel · `A` Animation · `M` Movement · 
 `W` World Power/WFC · `R` Rendering · `T` Testing · `B` Biome Art · `H` World Structure (the `H`
 macro-structure authority — `WORLD_STRUCTURE_SPEC.md`) · `U` Underground/Vertical terrain
 (`UNDERGROUND_VERTICAL_STREAMING_SPEC.md`, added 2026-07-21 — terrain-infrastructure tickets had been
-landing under unrelated prefixes).
+landing under unrelated prefixes) · `O` Opening Scene (added 2026-07-21, placeholder).
 
 This tracker runs as **Kanban**: backlog → current focus → done. Work-sets are scoped by content,
 not timeboxed — a work-set stays "current focus" until it's actually done, however long that takes.
@@ -110,7 +110,8 @@ _Tickets not yet pulled into a work-set._
 | U2  | Per-chunk `SDFEdit` AABB culling — `Sample` loops every edit at every sample with no spatial culling; a 17-primitive SDF relic = ~70k evaluations per chunk **world-wide**. Prerequisite for W2; directly relieves BUG-008 | Terrain |
 | U3  | 3D sparse vertical chunking (Level 2 of `UNDERGROUND_VERTICAL_STREAMING_SPEC.md`). ~1–2 weeks against the existing spec + its 2026-07-21 cost inventory. **Gated on vertical content existing** — with today's pure-heightfield field it resolves to one layer and buys nothing | Terrain |
 | U4  | Scatter topmost-surface determination — `TryFindSurfaceHeight` scans only its own chunk, so stacked layers grow trees inside caves. No column-occupancy index exists. **Design work, not a port** — the genuine unknown in U3 | Terrain |
-| [C1–C3](backlog.md#c1c3--camera-feel-slingshot) | Camera Feel — charge pullback + FOV narrow (C1), launch FOV punch + speed lines (C2), landing dip + dust burst (C3). Never started | Camera Feel |
+| [O1–O4](backlog.md#o1o4--opening-scene-placeholder--opened-2026-07-21-intent-not-yet-pinned-down) | **Opening Scene (PLACEHOLDER)** — landing impact, scripted arrival events, "mysteries healed / imbued with powers", opening audio. Intent not yet pinned down. **Note: the descent is already built** (V7 sky-drop, V13 VFX, V14 shell) — the gap is what happens on *landing*. O1 may just be C3 pulled forward; O3 needs a GAME_DESIGN statement first; O4 blocked on the missing audio pipeline | Opening Scene |
+| [C1–C3](backlog.md#c1c3--camera-feel-slingshot) | Camera Feel — charge pullback + FOV narrow (C1), launch FOV punch + speed lines (C2), landing dip + dust burst (C3). Never started. **C3 overlaps O1** | Camera Feel |
 | [A2/A3/A8/A9](backlog.md#a2a3a8a9--animation-carried-out-of-the-vista-work-set) | Animation — A9 first-person arms viewmodel (the real FPS-only payoff, rigging started 2026-07-12); A2/A3/A8 third-person body, dev-toggle only | Animation |
 | M1  | ~~Glide mechanic (Space hold → GlideCharging → Gliding)~~ **APPEARS BUILT — verify & close (2026-07-21).** Code check during the MASTER_PLAN reconciliation found `Assets/Scripts/Player/Systems/GlideSystem.cs` implementing both mode transitions, created by `DotsSystemBootstrap` under `EnableGlideSystem` (code default `true`, `ProjectFeatureConfig.asset` = 1), plus `CameraGlideFeedbackSystem` and animator states. Ticket has been sitting in the backlog as unbuilt. Needs one in-play confirmation (Space-hold → glide → landing feels right), then close — or re-scope to whatever is actually missing | Movement |
 | M2  | ~~Chain slingshot (chain window + additive velocity)~~ **APPEARS BUILT — verify & close (2026-07-21).** `SlingshotLaunchSystem`/`SlingshotChargeSystem`/`ChainWindowSystem` implement the chain window and additive velocity (`ChainVelocityPreservation 0.85`, `ChainImpulseMultiplierStep 0.25`, `ChainMaxCount 3`, `ChainWindowDuration 2.0`). Same situation as M1. Note it is the *unclamped* form of this that drives M5/M7 | Movement |
