@@ -4,7 +4,7 @@
 **Phase Fit:** Phase 1 (MVP vista polish) — interim system; silhouette *source* superseded in Phase 2 by the seed-driven horizon impostor
 **Last Updated:** 2026-07-09
 **Owner:** David Rynn
-**Ticket:** V15 (`../Tickets/vista-moment.md`)
+**Ticket:** V15 (`../Tickets/done/vista-moment.md`)
 
 **Purpose:** Make the skybox mountain band read as a rugged, layered, *distinct* distant range instead
 of a smooth sine ridge that blends seamlessly into the terrain. Everything lives in the mountain block
@@ -149,4 +149,4 @@ this band is disposable fiction by design.
 - `HORIZON_IMPOSTOR_SEED_DRIVEN_SPEC.md` — Phase 2 replacement for the silhouette source
 - `MVP_VISTA_MOMENT_SPEC.md` §2.4 — mountains-as-skybox MVP decision this refines
 - `GROUND_PLANE_IMPOSTOR_SPEC.md` — the disc whose far edge hands off to the below-line skirt
-- `../Tickets/vista-moment.md` — ticket V15
+- `../Tickets/done/vista-moment.md` — ticket V15

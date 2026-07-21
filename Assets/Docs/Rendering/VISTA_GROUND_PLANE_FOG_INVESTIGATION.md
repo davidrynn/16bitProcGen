@@ -8,7 +8,7 @@
 
 > Working doc, not a spec. Captures what the impostor + fog **actually do today** vs. what they
 > should do, so V1/V2 are re-scoped from evidence (screenshots) rather than from the stale
-> "unbuilt" assumption in `Tickets/vista-moment.md`. Promote decisions into the source specs once confirmed.
+> "unbuilt" assumption in `Tickets/done/vista-moment.md`. Promote decisions into the source specs once confirmed.
 
 ---
 
@@ -49,7 +49,7 @@ Two specific complaints driving this investigation:
 ### 2.2 Ground plane impostor
 - **Live and enabled:** `EnableGroundPlaneImpostor: 1`; the `GroundPlaneImpostorBootstrap` GameObject
   is in `Basic Terrain Scene.unity` with `_enabled: 1`. (V1 is **built**, contradicting
-  `Tickets/vista-moment.md`'s "mostly unbuilt".)
+  `Tickets/done/vista-moment.md`'s "mostly unbuilt".)
 - **Mesh:** `GenerateDiscMesh()` actually builds a **square** 64×64 uniform grid spanning −1500..+1500u
   (3000u across). It is not a disc; roundness is meant to come from the shader's radial alpha fade.
 - **Render path:** `GroundPlaneImpostorSystem` (PresentationSystemGroup, SystemBase) issues one

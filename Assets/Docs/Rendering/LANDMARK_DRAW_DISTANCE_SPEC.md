@@ -15,7 +15,7 @@ aerial perspective, far fade, vista
 
 Hero-scale relics currently pop in and out at the camera far clip (~600u). The old concealment was a
 thick fog wall; the V9 round-5 haze re-tune (owner call, 2026-07-06 — thin 10u-scale-height ground
-layer, see `../Tickets/vista-moment.md`) deliberately removed that wall, so the pop is now naked.
+layer, see `../Tickets/done/vista-moment.md`) deliberately removed that wall, so the pop is now naked.
 
 This spec adopts the industry-standard answer for landmark-scale objects — **landmarks never cull** —
 by raising the camera far plane while keeping the *world's* effective draw distance where it is, plus
@@ -192,5 +192,5 @@ where the build refined the design:
 - `ATMOSPHERE_COLOR_AUTHORITY_SPEC.md` — `_Atmo*` contract; §5.3 concealer semantics this spec adjusts
 - `HORIZON_IMPOSTOR_SEED_DRIVEN_SPEC.md` §19 — R5 cards (the >2000u continuation)
 - `GROUND_PLANE_IMPOSTOR_SPEC.md` — disc; unchanged, but its alpha handoff depends on P2
-- `../Tickets/vista-moment.md` — V9 rounds 3–5 build record (skirt, alpha far-clip, thin haze)
+- `../Tickets/done/vista-moment.md` — V9 rounds 3–5 build record (skirt, alpha far-clip, thin haze)
 - `RENDER_PERF_PROFILE_REPORT.md` — vertex-bound evidence behind the "cheap far plane" premise

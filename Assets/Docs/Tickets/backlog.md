@@ -1,9 +1,83 @@
 # Backlog ticket detail
 
 **Status:** ACTIVE
-**Last Updated:** 2026-07-05
+**Last Updated:** 2026-07-21
 
 Board: [`TICKETS.md`](TICKETS.md)
+
+---
+
+## Carried out of the Vista Moment work-set _(closed 2026-07-21)_
+
+Full build history for all of these lives in [`done/vista-moment.md`](done/vista-moment.md) — moved
+there untouched when the work-set closed. Only the *remaining* work is restated here.
+
+### V18 — Hero hand weathered / ruined variants
+Blender fracture cuts on the V11 bake cage **before** the subsurf bake (uneven mid-segment breaks +
+rubble per the ossified-god fiction), separate FBX per variant, template entries so procedural hands
+rotate them via the existing anchor hash. Runtime destructibility is **W2**, not this. Post-MVP
+polish — the hero reads fine as-is. _(Opened 2026-07-11.)_
+
+### V19 — Hero hand rubble mound base
+**The highest-value Vista follow-up.** The hand still reads as *floating* at ground level and from
+the spawn vista; per `Docs/Temp_OpeningInspiration.png` it must rise out of a broad rocky rubble
+mound tapering into the plain.
+
+**Blender, not procedural** (owner-decided 2026-07-19): at the 900u vista distance there is no
+streamed terrain under the hero — it renders as a landmark mesh past the ~180u streaming radius —
+and near-field `H` is capped at ~4u by the single-layer 16u chunk slab, so a procedural terrain
+raise cannot make the from-spawn base. Author a low-poly mound in the hero master
+(`ArtSource/ColossalHand.blend`), **joined into the hero Mesh on export** (the relic render path is
+single-Mesh) so it inherits R6 never-cull + `RelicHero` haze automatically. Retune `yOffset` so the
+wrist emerges from the mound crown.
+
+Notes: up close the broad base will lightly clip the ~flat streamed terrain (buried base —
+acceptable); no collider at MVP (look-at scope). _(Opened 2026-07-19.)_
+
+### V20 — Vista residual polish bundle
+Everything deliberately deferred when the work-set was closed as good-enough (owner, 2026-07-21).
+Pull items individually; none of them gate anything.
+
+- **V9 P5 — saturation grade.** The last unbuilt slice of the atmosphere authority: a one-shot
+  global grade, sequenced last on purpose because V17 P1 changed the luminance distribution it
+  grades. Spec: `Rendering/ATMOSPHERE_COLOR_AUTHORITY_SPEC.md`.
+- **V9 — full day/night sweep** and the drop-altitude P3 terrain↔disc seam check (ground-level and
+  noon vista already eyeballed OK 2026-07-15).
+- **V13 — owner eyeball** of the burn + radial sparks + the retuned 340→240u fade band in play.
+- **V13 — comet-drop SFX. BLOCKED:** no audio pipeline exists at all (see `Audio/AUDIO_SPEC.md`).
+  This is the ticket that will force the audio-track decision.
+- **V15 — drop-altitude skirt check** on the sky mountain band (ground look approved 2026-07-09).
+- **V17 — owner eyeball** of the P4 patchy haze in normal play.
+- **V17 P3 — disc vertex undulation.** *Re-homed:* per `WORLD_STRUCTURE_SPEC.md` §7, P3 is now a
+  **Phase B** item executed against `H` rather than private noise. Don't build it here.
+- **R6 — eyeball the 0.5 s spawn dissolve** on a relic-streaming session; confirm permanence at
+  1500u+.
+
+### C1–C3 — Camera Feel (slingshot)
+Never started. Was the sprint lead pre-2026-06-29, demoted to secondary by the Vista re-anchor, and
+carried out unbuilt. In first-person these are the *primary* in-game feel feedback (A1–A8 body clips
+are invisible in normal play).
+
+- **C1** — camera charge pullback + FOV narrow during slingshot charge.
+- **C2** — camera FOV punch + speed lines on launch.
+- **C3** — landing camera dip + dust burst. _(Also the handoff target the V13 descent VFX burns off
+  before — see `Rendering/METEOR_ARRIVAL_SEQUENCE_SPEC.md`.)_
+
+All three land on `CameraEffectResolverSystem` (the camera driver).
+
+### A2/A3/A8/A9 — Animation
+- **A9 — first-person arms viewmodel.** The real animation payoff for an FPS-only MVP. Arms source =
+  rig the baked V11 hand mesh directly (armature → relaxed re-pose → owner tweaks). Rigging phase
+  started 2026-07-12, then dropped when Vista polish took over.
+- **A2** — fix animator controller transition blend times (blocked by A1, done).
+- **A3** — stabilize landing animations; verify hidden-animator state first (may still fire into
+  dead states).
+- **A8** — simplify airborne animation to a single fall clip while in air.
+- **A4/A5** remain blocked on the Kevin Iglesias pack import (player rig is Humanoid for exactly
+  this reason).
+
+A1–A8 are **third-person body** work and are not MVP-gating — the body is hidden in first-person
+play; they only show under the V-key dev toggle.
 
 ---
 
@@ -116,9 +190,9 @@ ever demanded (not planned — contradicts the dissolve-into-haze vista language
 
 ---
 
-### R6 — Landmark draw distance — relics never cull _(pulled into the Vista Moment work-set 2026-07-07)_
-Detail moved to [`vista-moment.md`](vista-moment.md) per the kanban convention (Build-order step 1 there).
-Spec: `Rendering/LANDMARK_DRAW_DISTANCE_SPEC.md`.
+### R6 — Landmark draw distance — relics never cull _(CLOSED 2026-07-21)_
+Built and closed in the Vista Moment work-set; detail in [`done/vista-moment.md`](done/vista-moment.md).
+Residual validation folded into **V20**. Spec: `Rendering/LANDMARK_DRAW_DISTANCE_SPEC.md`.
 
 ---
 

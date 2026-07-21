@@ -147,6 +147,6 @@ rewrite:
 ## 10. Related Docs
 
 - `Rendering/METEOR_ARRIVAL_SEQUENCE_SPEC.md` — the comet drop; audio's first consumer (V13/V14 signals)
-- `Tickets/vista-moment.md` — C1/C2/C3 Camera Feel events the later sounds hook into
+- `Tickets/done/vista-moment.md` — C1/C2/C3 Camera Feel events the later sounds hook into
 - `Process/THIRD_PARTY_ASSET_EVALUATION_PLAYBOOK.md` — clip provenance / third-party screening
 - `../DOCUMENTATION_SYSTEM_SPEC.md` — doc conventions this follows

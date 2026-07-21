@@ -191,7 +191,7 @@ purpose; the sequence must stand as spectacle alone.
   C3 landing dust (Phase 4 handoff).
 - `../Player/PLAYER_BOOTSTRAP_FIX_SPEC.md` / ticket **V7** — the readiness gate this sequence gives
   a face to; **V10** — nearest-first collider builds it waits on.
-- Tickets: `../Tickets/vista-moment.md` **V13**, **V14**.
+- Tickets: `../Tickets/done/vista-moment.md` **V13**, **V14**.
 
 ---
 

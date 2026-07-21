@@ -148,7 +148,7 @@ Quick-reference index of all project documentation. Docs are organized by featur
 | Document | Status | Description |
 |----------|--------|-------------|
 | [Tickets/TICKETS.md](Tickets/TICKETS.md) | ACTIVE | Slim ticket board — status tables for the current work-set + backlog, linking into the detail docs below |
-| [Tickets/vista-moment.md](Tickets/vista-moment.md) | ACTIVE | Current work-set ticket detail — MVP Vista Moment (Vista/Camera Feel/Animation tickets) |
+| [Tickets/done/vista-moment.md](Tickets/done/vista-moment.md) | DONE | Completed work-set — MVP Vista Moment (closed 2026-07-21); Vista/Camera Feel/Animation build history |
 | [Tickets/backlog.md](Tickets/backlog.md) | ACTIVE | Backlog ticket detail, not yet pulled into a work-set |
 | [Tickets/done/](Tickets/done/) | — | Completed work-set docs move here untouched (empty until the first work-set finishes) |
 

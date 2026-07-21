@@ -109,7 +109,7 @@ Player_Falling_Loop
 Player_Land_Hard
 ```
 
-**MVP decision (2026-06-10):** while the character is in the air, every airborne state (rising and falling arcs alike) plays the single existing fall clip (`HumanM@Fall01`). The distinct state labels (`BallisticRise`, `Falling`) are kept so a dedicated ballistic/rise animation can replace the upward-arc clip later without re-plumbing transitions. See ticket A8 in `Assets/Docs/Tickets/vista-moment.md`.
+**MVP decision (2026-06-10):** while the character is in the air, every airborne state (rising and falling arcs alike) plays the single existing fall clip (`HumanM@Fall01`). The distinct state labels (`BallisticRise`, `Falling`) are kept so a dedicated ballistic/rise animation can replace the upward-arc clip later without re-plumbing transitions. See ticket A8 in `Assets/Docs/Tickets/done/vista-moment.md`.
 
 For this task, only wire the three slingshot clips and provide a clean transition point into an existing or placeholder airborne state.
 

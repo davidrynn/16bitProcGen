@@ -1,9 +1,14 @@
 # Work-set: MVP Vista Moment
 
-**Status:** ACTIVE
-**Last Updated:** 2026-07-15
+**Status:** DONE — work-set closed 2026-07-21
+**Last Updated:** 2026-07-21
 
-Board: [`TICKETS.md`](TICKETS.md)
+Board: [`../TICKETS.md`](../TICKETS.md)
+
+> **Closed 2026-07-21 (owner call: "the vista is good enough").** V9/V13/V15/V17/R6 closed as-is;
+> their residual polish became backlog ticket **V20**. V18/V19 (hero variants, rubble mound),
+> C1–C3 (Camera Feel) and A2/A3/A8/A9 (Animation) were carried out **unfinished** to the backlog —
+> see [`../backlog.md`](../backlog.md). **Body below is the original work-set record, unedited.**
 
 ---
 

@@ -3,7 +3,7 @@
 **Status:** ACTIVE — MVP slice (P1 + P4 + P4b, plus the disc's fog-call conversion) built & validated
 2026-07-05; P2 (disc palette + `SyncTerrainColor` deletion) built 2026-07-07, pending owner validation;
 P3 built 2026-07-08 (re-scoped to direct palette consumption — see §6a), pending owner validation;
-P5 pending. See ticket V9 in `../Tickets/vista-moment.md` for the build record.
+P5 pending. See ticket V9 in `../Tickets/done/vista-moment.md` for the build record.
 **Last Updated:** 2026-07-08
 **Owner:** Rendering / Vista
 **Phase:** Vista MVP (ties ticket V9; folds V8 Route B; consumed by V3)
@@ -437,7 +437,7 @@ differs. Let them stay two thin bootstraps that happen to consume the same globa
   evidence for the color-desync diagnosis.
 - [../Biomes/Windswept_Colossus_Plains_Biome_Spec.md](../Biomes/Windswept_Colossus_Plains_Biome_Spec.md) —
   biome palette source for the Plains (Cloudbreak).
-- Tickets: `Assets/Docs/Tickets/vista-moment.md` — **V9** (this authority), **V3** (mountain panel, folds into P4),
+- Tickets: `Assets/Docs/Tickets/done/vista-moment.md` — **V9** (this authority), **V3** (mountain panel, folds into P4),
   **V8** (distance-graded fog — merged into this spec 2026-07-05; Route B ships as the §5.3a height term).
 
 ---
