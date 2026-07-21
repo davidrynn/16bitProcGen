@@ -20,7 +20,31 @@ namespace DOTS.Terrain.Debug
     {
         private bool _prevIsGrounded;
         private int _framesSinceLastSnapshot;
+        // Separate counter: the tunneling check shares no state with the snapshot trigger, and
+        // gating it on _framesSinceLastSnapshot (which it never reset) made it log every single
+        // frame once the cooldown elapsed — unusable during exactly the sustained high-speed
+        // traverse it exists to catch.
+        private int _framesSinceLastTunnelWarning;
         private const int SnapshotCooldownFrames = 30;
+
+        // Penetration (in voxels) before BELOW_SURFACE counts as anomalous.
+        //
+        // Cannot be 0: the player's transform origin IS the capsule's base (Vertex0 = (0,0.5,0),
+        // radius 0.5), so simply standing puts the sample point on the contact surface, where
+        // Surface Nets' approximation of the analytical zero-crossing reads slightly negative.
+        // At 0 this fired ~every cooldown while the player stood still, and because it shares
+        // the cooldown with UNEXPECTED_UNGROUNDING it would mask real events.
+        private const float BelowSurfaceVoxelTolerance = 1.0f;
+
+        // Step displacement, in voxels, before tunneling is genuinely at risk.
+        //
+        // Deliberately NOT 1.0. Unity Physics expands the broadphase AABB by the full step
+        // displacement (Motion.cs: Linear = LinearVelocity * timeStep), so the pair is still found
+        // and speculative contacts resolve it against a shell that has real thickness — exceeding
+        // one voxel per step is a yellow flag, not a breach. At 1.0 this fired on ROUTINE movement
+        // (a single un-chained launch is 55 m/s = 0.92 m/step; the sky-drop reaches 85 m/s), so the
+        // warning was permanently on and therefore carried no information.
+        private const float TunnelWarnVoxelMultiple = 2.0f;
 
         public void OnCreate(ref SystemState state)
         {
@@ -34,13 +58,20 @@ namespace DOTS.Terrain.Debug
                 return;
 
             _framesSinceLastSnapshot++;
+            _framesSinceLastTunnelWarning++;
 
             var entityManager = state.EntityManager;
-            var deltaTime = SystemAPI.Time.DeltaTime;
+
+            // Tunneling is a PHYSICS-step phenomenon, so it must be measured against the fixed
+            // step, not the variable frame delta this system sees in SimulationSystemGroup.
+            var fixedStep = 1f / 60f;
+            var fixedGroup = state.World.GetExistingSystemManaged<FixedStepSimulationSystemGroup>();
+            if (fixedGroup != null && fixedGroup.RateManager != null)
+                fixedStep = fixedGroup.RateManager.Timestep;
 
             // Get player state
             float3 playerPos = float3.zero;
-            float velocityY = 0f;
+            float3 velocityLinear = float3.zero;
             bool isGrounded = false;
             float fallTime = 0f;
             bool hasPlayer = false;
@@ -50,12 +81,15 @@ namespace DOTS.Terrain.Debug
                          .WithAll<PlayerTag>())
             {
                 playerPos = transform.ValueRO.Position;
-                velocityY = velocity.ValueRO.Linear.y;
+                velocityLinear = velocity.ValueRO.Linear;
                 isGrounded = movementState.ValueRO.IsGrounded;
                 fallTime = movementState.ValueRO.FallTime;
                 hasPlayer = true;
                 break;
             }
+
+            var velocityY = velocityLinear.y;
+            var speed = math.length(velocityLinear);
 
             if (!hasPlayer)
                 return;
@@ -75,7 +109,9 @@ namespace DOTS.Terrain.Debug
             using var chunkComponents = chunkQuery.ToComponentDataArray<TerrainChunk>(Allocator.Temp);
             using var gridInfos = chunkQuery.ToComponentDataArray<TerrainChunkGridInfo>(Allocator.Temp);
 
-            // Determine chunk stride from first chunk
+            // Stride is safe to read off any chunk: TerrainLodSettings keeps the world footprint
+            // invariant across LODs ((res-1) * voxel = 15), so every chunk agrees regardless of its
+            // current LOD.
             var gridInfo = gridInfos[0];
             var chunkStride = math.max(0, gridInfo.Resolution.x - 1) * gridInfo.VoxelSize;
             if (chunkStride <= 0f)
@@ -88,28 +124,73 @@ namespace DOTS.Terrain.Debug
                 (int)math.floor(playerPos.x / chunkStride),
                 (int)math.floor(playerPos.z / chunkStride));
 
+            // Voxel size, unlike stride, DOES vary by LOD (1.0 / 1.875 / 3.75), so it must come from
+            // the chunk the player is actually in. Reading gridInfos[0] compared the tunneling
+            // threshold against an arbitrary chunk's LOD, which made `vs voxel=` in the logs
+            // meaningless (observed 2026-07-21: a LOD1 voxel reported while the player stood on LOD0).
+            var voxelSize = gridInfo.VoxelSize;
+            for (int i = 0; i < chunkComponents.Length; i++)
+            {
+                if (chunkComponents[i].ChunkCoord.x == playerChunkCoord.x &&
+                    chunkComponents[i].ChunkCoord.z == playerChunkCoord.y)
+                {
+                    voxelSize = gridInfos[i].VoxelSize;
+                    break;
+                }
+            }
+
             // Check trigger conditions
             bool unexpectedUngrounding = _prevIsGrounded && !isGrounded && velocityY <= 0f;
 
-            // Check if player is below analytical terrain surface
+            // Check if player is below the terrain surface.
+            //
+            // Built through SDFTerrainField rather than calling an SDFMath function directly: this
+            // system previously called SdGround (the legacy sine field) while the density sampler
+            // had moved to SdLayeredGround, so BELOW_SURFACE was tested against a surface that was
+            // never meshed — false positives AND false negatives. Mirroring how
+            // TerrainChunkDensitySamplingSystem builds its field keeps the two from drifting again,
+            // and passing the edit buffer means dug-out terrain doesn't read as solid ground.
             bool belowSurface = false;
+            float signedDistance = float.NaN;   // logged: how deep, not just whether
             if (SystemAPI.TryGetSingleton<SDFTerrainFieldSettings>(out var fieldSettings))
             {
-                var sd = SDFMath.SdGround(playerPos, fieldSettings.Amplitude, fieldSettings.Frequency,
-                    fieldSettings.BaseHeight, fieldSettings.NoiseValue);
-                belowSurface = sd < 0f;
+                var field = new SDFTerrainField
+                {
+                    BaseHeight = fieldSettings.BaseHeight,
+                    Amplitude  = fieldSettings.Amplitude,
+                    Frequency  = fieldSettings.Frequency,
+                    NoiseValue = fieldSettings.NoiseValue
+                };
+
+                if (SystemAPI.HasSingleton<TerrainFieldSettings>() && SystemAPI.HasSingleton<TerrainGenerationContext>())
+                {
+                    field.LayeredSettings = SystemAPI.GetSingleton<TerrainFieldSettings>();
+                    field.WorldSeed       = SystemAPI.GetSingleton<TerrainGenerationContext>().WorldSeed;
+                    field.UseLayeredNoise = true;
+                }
+
+                var edits = SystemAPI.TryGetSingletonBuffer<SDFEdit>(out var editBuffer)
+                    ? editBuffer.AsNativeArray()
+                    : default;
+
+                signedDistance = field.Sample(playerPos, edits);
+                belowSurface = signedDistance < -BelowSurfaceVoxelTolerance * voxelSize;
             }
 
-            // Tunneling risk check
-            var voxelSize = gridInfo.VoxelSize;
-            if (math.abs(velocityY) * deltaTime > voxelSize)
+            // Tunneling risk check.
+            //
+            // Measured on the FULL velocity magnitude, not just the vertical component: a slingshot
+            // arc near apex has velocity.y ~ 0 with hundreds of m/s horizontal, so the old
+            // vertical-only test stayed silent on precisely the case that tunnels.
+            var stepDistance = speed * fixedStep;
+            var tunnelThreshold = voxelSize * TunnelWarnVoxelMultiple;
+            if (stepDistance > tunnelThreshold && _framesSinceLastTunnelWarning >= SnapshotCooldownFrames)
             {
-                if (_framesSinceLastSnapshot >= SnapshotCooldownFrames)
-                {
-                    DebugSettings.LogFallThroughWarning(
-                        $"TUNNELING RISK: |velocity.y|*dt={math.abs(velocityY) * deltaTime:F3} > voxelSize={voxelSize:F2}. " +
-                        $"velocity.y={velocityY:F3}, pos={playerPos}");
-                }
+                _framesSinceLastTunnelWarning = 0;
+                DebugSettings.LogFallThroughWarning(
+                    $"TUNNELING RISK: speed*fixedStep={stepDistance:F3} > {TunnelWarnVoxelMultiple:F1}x voxel={tunnelThreshold:F2}. " +
+                    $"speed={speed:F1} (h={math.length(velocityLinear.xz):F1}, y={velocityY:F1}), " +
+                    $"fixedStep={fixedStep:F4}, pos={playerPos}");
             }
 
             // Log detailed snapshot on trigger
@@ -127,8 +208,10 @@ namespace DOTS.Terrain.Debug
                 var trigger = unexpectedUngrounding ? "UNEXPECTED_UNGROUNDING" : "BELOW_SURFACE";
                 DebugSettings.LogFallThroughWarning(
                     $"--- {trigger} SNAPSHOT ---\n" +
-                    $"  Player pos={playerPos}, velocity.y={velocityY:F3}, IsGrounded={isGrounded}, FallTime={fallTime:F3}\n" +
-                    $"  Player chunk=({playerChunkCoord.x},{playerChunkCoord.y})\n" +
+                    $"  Player pos={playerPos}, speed={speed:F1} (h={math.length(velocityLinear.xz):F1}, y={velocityY:F1}), " +
+                    $"stepDist={speed * fixedStep:F2} vs voxel={voxelSize:F2}, " +
+                    $"IsGrounded={isGrounded}, FallTime={fallTime:F3}\n" +
+                    $"  Player chunk=({playerChunkCoord.x},{playerChunkCoord.y}), sdf={signedDistance:F2}\n" +
                     BuildChunkGridStatus(entityManager, map, playerChunkCoord));
 
                 map.Dispose();
